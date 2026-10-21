@@ -56,7 +56,7 @@ final class LefuTorreBridgeTest extends TestCase
             'encodedImpedance100Khz' => 14358271,
         ]], array_column(self::telemetry($mqtt, 'body_impedance'), 'data'));
         // Três estados diferentes; a trama intermédia repetida não sai.
-        self::assertSame(['measuring', 'measured'], array_values(array_unique(array_column(array_column(self::telemetry($mqtt, 'weighing_status'), 'data'), 'heartRate'))));
+        self::assertSame(['measuring', 'measured'], array_values(array_unique(array_column(array_column(self::telemetry($mqtt, 'weighing_status'), 'data'), 'heartRatePhase'))));
         self::assertCount(2, self::telemetry($mqtt, 'weighing_status'));
     }
 
@@ -70,7 +70,7 @@ final class LefuTorreBridgeTest extends TestCase
             $bridge->handleReceivedMessage(self::TOPIC, self::frame('fff3', $hex));
         }
 
-        self::assertSame(['settling', 'stable'], array_column(array_column(self::telemetry($mqtt, 'weighing_status'), 'data'), 'weight'));
+        self::assertSame(['settling', 'stable'], array_column(array_column(self::telemetry($mqtt, 'weighing_status'), 'data'), 'weightPhase'));
     }
 
     /** Mau contacto: a impedância em claro vem implausível, e a falha fica no estado da pesagem. */
@@ -80,7 +80,7 @@ final class LefuTorreBridgeTest extends TestCase
         $this->bridge($mqtt)->handleReceivedMessage(self::TOPIC, self::frame('fff3', '010d3580fd25000000320000640000'));
 
         self::assertSame([], self::telemetry($mqtt, 'body_impedance'));
-        self::assertSame('failed', self::telemetry($mqtt, 'weighing_status')[0]['data']['impedance']);
+        self::assertSame('failed', self::telemetry($mqtt, 'weighing_status')[0]['data']['impedancePhase']);
         self::assertSame([['weightKg' => 97.25]], array_column(self::telemetry($mqtt, 'weight'), 'data'));
     }
 

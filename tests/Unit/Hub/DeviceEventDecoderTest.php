@@ -345,12 +345,9 @@ final class DeviceEventDecoderTest extends TestCase
 
         self::assertSame(['heart_rate'], array_column($heartRate, 'feature'));
         self::assertSame(83, $heartRate[0]['value']['bpm']);
-        self::assertSame(['heartbeat', 'battery'], array_column($heartbeat, 'feature'));
-        self::assertSame('ok', $heartbeat[0]['value']['status']);
-        self::assertSame(90, $heartbeat[0]['value']['batteryPercent']);
-        self::assertSame(0, $heartbeat[0]['value']['chargingState']);
-        self::assertSame(90, $heartbeat[1]['value']['percent']);
-        self::assertSame(0, $heartbeat[1]['value']['chargingState']);
+        self::assertSame(['battery'], array_column($heartbeat, 'feature'));
+        self::assertSame(90, $heartbeat[0]['value']['percent']);
+        self::assertFalse($heartbeat[0]['value']['charging']);
     }
 
     public function testDecodesWonlexDocumentDateFields(): void
@@ -430,7 +427,7 @@ final class DeviceEventDecoderTest extends TestCase
         }
     }
 
-    public function testDecodesFourPTouchConfigWithAckAndSettings(): void
+    public function testDecodesFourPTouchConfigAsTheOutcomeOnly(): void
     {
         $events = (new DeviceEventDecoder())->decode(
             $this->session('four-p-touch'),
@@ -448,9 +445,7 @@ final class DeviceEventDecoderTest extends TestCase
 
         self::assertCount(1, $events);
         self::assertSame('device_config', $events[0]['feature']);
-        self::assertSame('ok', $events[0]['value']['status']);
-        self::assertSame('1', $events[0]['value']['ack']);
-        self::assertSame(['UPLOAD' => '600', 'LANG' => 'pt'], $events[0]['value']['settings']);
+        self::assertSame(['status' => 'ok'], $events[0]['value']);
     }
 
     public function testDecodesFourPTouchTakePillsReplyAsDeviceConfig(): void
@@ -469,8 +464,7 @@ final class DeviceEventDecoderTest extends TestCase
         self::assertCount(1, $events);
         self::assertSame('device_config', $events[0]['feature']);
         self::assertSame('TAKEPILLS', $events[0]['nativeType']);
-        self::assertSame('ok', $events[0]['value']['status']);
-        self::assertSame('1', $events[0]['value']['ack']);
+        self::assertSame(['status' => 'ok'], $events[0]['value']);
     }
 
     public function testDecodesRejectedFourPTouchTakePillsReplyAsFailedDeviceConfig(): void
@@ -484,8 +478,7 @@ final class DeviceEventDecoderTest extends TestCase
         );
 
         self::assertCount(1, $events);
-        self::assertSame('failed', $events[0]['value']['status']);
-        self::assertSame('0', $events[0]['value']['ack']);
+        self::assertSame(['status' => 'failed'], $events[0]['value']);
     }
 
     public function testIgnoresVivistarRequestAckTypesAsTelemetry(): void
@@ -534,7 +527,6 @@ final class DeviceEventDecoderTest extends TestCase
         self::assertSame('6', $events[0]['value']['mnc']);
         self::assertSame('8820', $events[0]['value']['lac']);
         self::assertSame('677900', $events[0]['value']['cellId']);
-        self::assertSame(117, $events[0]['value']['gsmSignal']);
         self::assertCount(1, $events[0]['value']['baseStations']);
         self::assertCount(4, $events[0]['value']['wifiAccessPoints']);
         self::assertSame(-117, $events[0]['value']['baseStations'][0]['signalStrengthDbm']);

@@ -6,20 +6,23 @@ namespace Hub\Ingress\Mqtt\Qinglanst;
 
 final class PayloadDecoder
 {
-    /** Os códigos do documento do fabricante, já na enumeração que sai no MQTT. */
+    /**
+     * Os códigos do documento do fabricante, já na enumeração que sai no MQTT. O 9 e o 11 são o
+     * mesmo sentar na cama, numa cama comum e numa de monitorização.
+     */
     private const POSTURE = [
         0 => 'initialization',
         1 => 'walking',
         2 => 'suspected_fall',
         3 => 'sitting',
         4 => 'standing',
-        5 => 'fall_confirmation',
+        5 => 'fallen',
         6 => 'lying_down',
         7 => 'suspected_sitting_on_ground',
-        8 => 'confirmed_sitting_on_ground',
-        9 => 'sitting_up_bed',
-        10 => 'suspected_sitting_up_bed',
-        11 => 'confirmed_sitting_up_bed',
+        8 => 'sitting_on_ground',
+        9 => 'sitting_up_in_bed',
+        10 => 'suspected_sitting_up_in_bed',
+        11 => 'sitting_up_in_bed',
     ];
 
     private const LAST_EVENT = [
@@ -59,7 +62,9 @@ final class PayloadDecoder
     ];
 
     /**
-     * @return array{type: string, device_code: string, ...}|null
+     * Os campos saem já com os nomes do contrato.
+     *
+     * @return array{type: string, deviceCode: string|null, ...}|null
      */
     public function decode(string $messageType, string $base64, ?string $deviceCode): ?array
     {
@@ -86,7 +91,7 @@ final class PayloadDecoder
     /**
      * Dezasseis bytes por pessoa; um comprimento que não divida não se lê.
      *
-     * @return array{type: string, device_code: string, people: list<array<string, mixed>>}|null
+     * @return array{type: string, deviceCode: string|null, people: list<array<string, mixed>>}|null
      */
     private function decodePosition(string $raw, ?string $deviceCode): ?array
     {
@@ -108,26 +113,26 @@ final class PayloadDecoder
             $eventCode = ord($raw[$offset + 14]);
 
             $people[] = [
-                'person_index' => $personIndex,
-                'x_position_dm' => $x,
-                'y_position_dm' => $y,
-                'z_position_cm' => ord($raw[$offset + 3]),
-                'time_left_s' => ord($raw[$offset + 12]),
-                'posture_state' => self::POSTURE[$postureCode] ?? 'unknown',
-                'last_event' => self::LAST_EVENT[$eventCode] ?? 'unknown',
-                'region_id' => ord($raw[$offset + 15]),
+                'personIndex' => $personIndex,
+                'xPositionDm' => $x,
+                'yPositionDm' => $y,
+                'zPositionCm' => ord($raw[$offset + 3]),
+                'timeLeftS' => ord($raw[$offset + 12]),
+                'posture' => self::POSTURE[$postureCode] ?? 'unknown',
+                'lastEvent' => self::LAST_EVENT[$eventCode] ?? 'unknown',
+                'areaId' => ord($raw[$offset + 15]),
             ];
         }
 
         return [
             'type' => 'position',
-            'device_code' => $deviceCode,
+            'deviceCode' => $deviceCode,
             'people' => $people,
         ];
     }
 
     /**
-     * @return array{type: string, device_code: string, ...}
+     * @return array{type: string, deviceCode: string|null, ...}
      */
     private function decodeHeartBreath(string $raw, ?string $deviceCode): array
     {
@@ -136,15 +141,15 @@ final class PayloadDecoder
 
         return [
             'type' => 'heartbreath',
-            'device_code' => $deviceCode,
-            'breathing' => ord($raw[1]),
-            'heart_rate' => ord($raw[2]),
-            'sleep_state' => self::SLEEP_STATE[$sleepStateBits] ?? 'undefined',
+            'deviceCode' => $deviceCode,
+            'breathsPerMinute' => ord($raw[1]),
+            'heartRateBpm' => ord($raw[2]),
+            'sleepState' => self::SLEEP_STATE[$sleepStateBits] ?? 'undefined',
         ];
     }
 
     /**
-     * @return array{type: string, device_code: string, ...}
+     * @return array{type: string, deviceCode: string|null, ...}
      */
     private function decodePosStatics(string $raw, ?string $deviceCode): array
     {
@@ -153,21 +158,21 @@ final class PayloadDecoder
 
         return [
             'type' => 'posstatics',
-            'device_code' => $deviceCode,
+            'deviceCode' => $deviceCode,
             'version' => $version,
-            'people' => ord($raw[2]),
-            'walking_distance' => (ord($raw[3]) << 8) + ord($raw[4]),
-            'walking_time' => ord($raw[5]),
-            'meditation_time' => ord($raw[6]),
-            'in_bed_time' => ord($raw[7]),
-            'standing_time' => ord($raw[8]),
-            'multiplayer_time' => ord($raw[9]),
-            'breathing_active' => $breathingActive,
+            'peopleCount' => ord($raw[2]),
+            'walkingDistanceMeters' => (ord($raw[3]) << 8) + ord($raw[4]),
+            'walkingTimeS' => ord($raw[5]),
+            'meditationTimeS' => ord($raw[6]),
+            'inBedTimeS' => ord($raw[7]),
+            'standingTimeS' => ord($raw[8]),
+            'multiplayerTimeS' => ord($raw[9]),
+            'breathingActive' => $breathingActive,
         ];
     }
 
     /**
-     * @return array{type: string, device_code: string, ...}
+     * @return array{type: string, deviceCode: string|null, ...}
      */
     private function decodeHbStatics(string $raw, ?string $deviceCode): array
     {
@@ -175,15 +180,15 @@ final class PayloadDecoder
 
         return [
             'type' => 'hbstatics',
-            'device_code' => $deviceCode,
-            'real_time_breathing' => ord($raw[1]),
-            'real_time_heart_rate' => ord($raw[2]),
-            'avg_breathing_per_minute' => ord($raw[5]),
-            'avg_heart_rate_per_minute' => ord($raw[6]),
-            'breathing_status_per_minute' => self::BREATHING_STATUS[$statusByte & 0b00000011] ?? 'normal',
-            'heart_rate_status_per_minute' => self::HEART_STATUS[($statusByte & 0b00001100) >> 2] ?? 'normal',
-            'vital_signs_status' => self::VITAL_STATUS[($statusByte & 0b00110000) >> 4] ?? 'normal',
-            'sleep_state_status' => self::SLEEP_STATE[($statusByte & 0b11000000) >> 6] ?? 'undefined',
+            'deviceCode' => $deviceCode,
+            'realTimeBreathsPerMinute' => ord($raw[1]),
+            'realTimeHeartRateBpm' => ord($raw[2]),
+            'avgBreathsPerMinute' => ord($raw[5]),
+            'avgHeartRateBpm' => ord($raw[6]),
+            'breathingStatus' => self::BREATHING_STATUS[$statusByte & 0b00000011] ?? 'normal',
+            'heartRateStatus' => self::HEART_STATUS[($statusByte & 0b00001100) >> 2] ?? 'normal',
+            'vitalSignsStatus' => self::VITAL_STATUS[($statusByte & 0b00110000) >> 4] ?? 'normal',
+            'sleepState' => self::SLEEP_STATE[($statusByte & 0b11000000) >> 6] ?? 'undefined',
         ];
     }
 }

@@ -100,9 +100,9 @@ final class TorreFrameDecoder
             'impedance50KhzOhm' => $impedance === 'measured' ? round(self::uint16($b, 10) / 10, 1) : null,
             'impedance100KhzOhm' => $impedance === 'measured' ? round(self::uint16($b, 13) / 10, 1) : null,
             'status' => [
-                'weight' => $weight,
-                'impedance' => $impedance,
-                'heartRate' => $heartRate,
+                'weightPhase' => $weight,
+                'impedancePhase' => $impedance,
+                'heartRatePhase' => $heartRate,
                 'displayUnit' => self::UNITS[$b[6]] ?? null,
                 'shuttingDown' => ($b[3] & 0x40) !== 0,
             ],

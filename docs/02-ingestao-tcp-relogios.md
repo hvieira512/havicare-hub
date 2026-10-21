@@ -231,7 +231,7 @@ vida da 4P Touch produz três: o próprio sinal, a atividade e a bateria.
 | `upBO` · `upBS` · `upBodyTemperature` · `upBreathe` | `blood_oxygen` · `blood_sugar` · `temperature` · `breath_rate` |
 | `upECG` · `upHRV` · `upPPG` · `upRR` | `ecg` · `hrv` · `ppg` · `rr_interval` |
 | `upBattery` | `battery` |
-| `heartbeat` | `heartbeat` + `battery` |
+| `heartbeat` | `battery` |
 | `upLocation` | `location` |
 | `upStep` · `upKcal` · `upDistance` · `upTodayActivity` · `upRun` · `upWalk` | `activity` |
 | `upSleep` | `sleep` |
@@ -250,7 +250,7 @@ vida da 4P Touch produz três: o próprio sinal, a atividade e a bateria.
 | `APHP` | `heart_rate` + `blood_pressure` + `blood_oxygen` + `blood_sugar` |
 | `AP50` | `temperature` + `battery` |
 | `AP10` | `alarm` + `location` + `battery` |
-| `AP03` | `heartbeat` + `battery` + `activity` |
+| `AP03` | `battery` + `activity` |
 | `AP12` `AP14` `AP28` `AP33` `AP40` `AP43` `AP76` `AP77` `AP84` `AP85` `AP86` `APJZ` | `device_config` |
 | `AP16` `AP87` `APXL` `APXY` `APXT` `APXZ` | *(reconhecidos e deliberadamente ignorados)* |
 
@@ -258,7 +258,7 @@ vida da 4P Touch produz três: o próprio sinal, a atividade e a bateria.
 
 | Tipo nativo | Capacidades produzidas |
 |---|---|
-| `LK` | `heartbeat` + `activity` + `battery` |
+| `LK` | `activity` + `battery` |
 | `bphrt` | `blood_pressure` + `heart_rate` |
 | `oxygen` · `btemp2` | `blood_oxygen` · `temperature` |
 | `UD` `UD2` `UD_WCDMA` `UD_LTE` | `location` + `activity` + `battery` |
@@ -312,7 +312,7 @@ configure — põe o juízo da frequência no servidor. O hub descodifica-o, mas
   enquanto a bateria está fraca. Sai como `battery.lowBattery`, e o `low_battery`
   só sai quando acende.
 - **Wonlex:** o `batteryType` 3 no `upBattery` e no `heartbeat` é o próprio
-  relógio a dar o alarme. Sai o `low_battery`, com a percentagem.
+  relógio a dar o alarme; no `battery` sai como `reportReason: "low_battery"`. Sai o `low_battery`, com a percentagem.
 
 **O alarme sai no canal `events`, a QoS 1**, e não em `telemetry`. É um
 acontecimento e não uma medição, e a garantia de entrega é a mesma que a de uma

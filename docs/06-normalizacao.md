@@ -95,7 +95,8 @@ promove-se a um campo próprio do `data`.
 
 Um instante promovido ao `data` sai na mesma forma do `occurredAt` — UTC, RFC
 3339, ao segundo — e é o relógio do aparelho e não o do hub. É o caso do
-`startTime` e do `endTime` do sono. Um instante em número não entra no contrato:
+`startTime` e do `endTime` do sono, do `startedAt` das ondas e do `measuredAt` de
+cada intervalo R-R. Um instante em número não entra no contrato:
 obriga quem integra a adivinhar a unidade, e o nome do campo não a diz.
 
 ## 3. Capacidades
@@ -115,8 +116,10 @@ essa comparação é de quem integra, que tem o que leu da vez passada. Colapsar
 repetições mudaria o significado do silêncio — deixaria de se distinguir «não
 mudou» de «não houve leitura».
 
-Um nome só por grandeza. A unidade vive no nome do campo, e quando o tipo já a
-nomeia — `met` — o campo não a repete. Duas capacidades cujos nomes só se
+Um nome só por grandeza, igual em todos os tipos que a levam: os passos são
+`steps` na `activity` e no `steps`, o HRV é `hrvMilliseconds` no `hrv` e no `ecg`.
+A unidade vive no nome do campo, mesmo quando o tipo já a diz — `met.met`,
+`hrv.hrvMilliseconds`. Duas capacidades cujos nomes só se
 distingam por um sufixo são um sinal de que uma delas já tem nome noutro sítio:
 o acumulado do dia é `activity` em toda a frota, e os passos de uma janela são
 `steps` com a janela no próprio valor.
@@ -141,9 +144,12 @@ o acumulado do dia é `activity` em toda a frota, e os passos de uma janela são
 
 | `type` | `data` |
 |---|---|
-| `ecg` · `ppg` | `samples[]`, `frequencyHz`, `collectionId`, `startedAt`, `packetStatus`, `block` |
-| `hrv` | `milliseconds` |
-| `rr_interval` | `intervals[{timestamp, milliseconds}]`, `frequencyHz`, `collectionId` |
+| `ecg` · `ppg` | `samples[]`, `frequencyHz`, `collectionId`, `startedAt`, `block` |
+| `hrv` | `hrvMilliseconds` |
+| `rr_interval` | `intervals[{measuredAt, rrIntervalMilliseconds}]`, `frequencyHz`, `collectionId` |
+
+Uma grandeza tem o mesmo nome em todos os tipos: o `hrvMilliseconds` e o
+`rrIntervalMilliseconds` do `hrv` e do `rr_interval` são os do resumo do `ecg`.
 
 ### Atividade e estado
 
@@ -151,11 +157,10 @@ o acumulado do dia é `activity` em toda a frota, e os passos de uma janela são
 |---|---|
 | `activity` | `steps`, `distanceMeters`, `distanceKm`, `caloriesKcal`, `exerciseSeconds`, `standMinutes` — **o acumulado do dia**, e não um incremento |
 | `sleep` | `startTime`, `endTime`, `isAccumulative`, `totalDurationMinutes`, `timingValid`, `segments[]` |
-| `battery` | `percent` **ou** `voltageMv`, `chargingState`, `batteryType`, `mainsPowered`, `lowBattery` — ver a tabela abaixo, que diz quem manda o quê |
-| `heartbeat` | `status`, `steps`, `gsmSignal`, `satelliteCount`, `batteryPercent`, `chargingState`, `batteryType`, `rollFrequency`, `remainingSpace`, `fortificationState`, `workMode` |
-| `device_state` | `state`, `resetStatus`, `reason` |
+| `battery` | `percent` **ou** `voltageMv`, `charging`, `reportReason`, `mainsPowered`, `lowBattery` — ver a tabela abaixo, que diz quem manda o quê |
+| `device_state` | `state`, `reason` |
 | `firmware_version` | `version` e, no radar, `communicationVersion` |
-| `device_config` | `status`, `ack`, `settings` |
+| `device_config` | `status` (`ok` · `failed`) e, quando o hub sabe traduzir o que o aparelho diz ter, `settings` com as chaves das configurações do hub |
 | `location` | ver a secção 4 |
 
 Os alarmes e alertas — `help_call`, `fall`, `low_battery`, `zone_entry` e os
@@ -171,16 +176,14 @@ manda tudo. Quem integra tem de contar com a ausência de qualquer um deles.
 |---|---|---|
 | `percent` | todos menos o gateway MKGW4 | A carga, de 0 a 100 |
 | `voltageMv` | pulseiras MOKO sem percentagem, e o gateway MKGW4 | A tensão em milivolts. **Alternativa** ao `percent`, nunca vem com ele: converter uma na outra exigia a curva da célula |
-| `chargingState` | relógios Wonlex e o dispensador | Se está a carregar. Chega em **duas formas** — ver abaixo |
-| `batteryType` | relógios Wonlex | **Apesar do nome, não é o tipo da bateria**: é o motivo do envio. `0` ao ligar, `1` ao desligar, `2` envio periódico, `3` bateria fraca |
+| `charging` | relógios Wonlex e o dispensador | Se está a carregar. No dispensador falta quando ele diz que não tem bateria |
+| `reportReason` | relógios Wonlex | O motivo do envio: `power_on`, `power_off`, `periodic` ou `low_battery`. É o `batteryType` do fabricante, que apesar do nome não é o tipo da bateria |
 | `mainsPowered` | dispensador | Se está ligado à ficha. É outra pergunta: um aparelho cheio e ligado não carrega nada |
-| `lowBattery` | relógios 4P Touch e Wonlex, pulseiras Veepoo, dispensador | A bandeira comum de bateria fraca. É sempre o aparelho a dizê-lo, e nunca um limiar nosso sobre a percentagem: o bit 0 do estado no 4P Touch, o `batteryType` 3 na Wonlex, o `lowVoltage` na Veepoo, o `0x8104` a `2` no dispensador. Sem a informação, falta |
+| `lowBattery` | relógios 4P Touch e Wonlex, pulseiras Veepoo, dispensador | A bandeira comum de bateria fraca. É sempre o aparelho a dizê-lo, e nunca um limiar nosso sobre a percentagem: o bit 0 do estado no 4P Touch, o `reportReason` `low_battery` na Wonlex, o `lowVoltage` na Veepoo, o `0x8104` a `2` no dispensador. Sem a informação, falta |
 
-O `chargingState` tem dois tipos no mesmo campo, e quem o lê tem de aceitar os
-dois: os relógios Wonlex mandam o **inteiro** `0` ou `1` — o `batteryState` do
-fabricante —, e o dispensador manda uma **enumeração**, `normal`, `full`, `low`,
-`charging` ou `absent`. O dispensador só o consegue fazer porque o descodificador
-dele não passa pelo `FeatureNormalizer`, que converteria a palavra em `null`.
+O `charging` é o `batteryState` da Wonlex, `0` ou `1`, e no dispensador o `0x8104`
+a `3`; os outros estados do dispensador — cheia, fraca — já estão no `percent` e no
+`lowBattery`.
 
 Os relógios 4P Touch e Vivistar **não reportam carga** — as especificações dos
 dois não têm bit nenhum para ela, só a percentagem e um alarme de bateria fraca.
@@ -192,28 +195,28 @@ sair depois de ela ter apagado.
 
 | `type` | Quem | `data` |
 |---|---|---|
-| `presence` | radar | `count`, `people[]` |
+| `presence` | radar | `peopleCount`, `people[]` — ver o [capítulo do radar](04-ingestao-mqtt-radar.md) |
 | `sleep_state` | radar | `state` |
-| `position_minute_stats` · `vitals_minute_stats` | radar | resumos por minuto |
-| `steps` | pulseira | `count`, `periodSeconds` — quantos passos naquela janela. O acumulado do dia é `activity` |
+| `position_minute_stats` · `vitals_minute_stats` | radar | resumos por minuto, com a unidade em cada campo — ver o [capítulo do radar](04-ingestao-mqtt-radar.md) |
+| `steps` | pulseira | `steps`, `periodSeconds` — quantos passos naquela janela. O acumulado do dia é `activity` |
 | `wear_state` | pulseira | `state`: `worn` ou `not_worn`, em cada bloco |
-| `met` | pulseira | `value` — equivalentes metabólicos, com uma casa decimal. O nome do tipo é a unidade |
-| `stress` | pulseira | `score` — inteiro, como o fabricante o reporta e a app o mostra |
+| `met` | pulseira | `met` — equivalentes metabólicos, com uma casa decimal; o nome do campo é a unidade |
+| `stress` | pulseira | `stressScore` — inteiro, como o fabricante o reporta e a app o mostra |
 | `blood_lipids` | pulseira | `totalCholesterolMmolPerL`, `triglyceridesMmolPerL`, `hdlMmolPerL`, `ldlMmolPerL` |
 | `uric_acid` | pulseira | `umolPerL` |
 | `sleep_apnea` | pulseira | `episodes`, `hypoxiaSeconds` — contagens do bloco, e não leituras por minuto |
 | `ecg` | pulseira, tensiómetro HC-6679B | `samples`, `frequencyHz` e, no tensiómetro, `heartRateBpm` (as amostras em unidade por conhecer — [capítulo 23](23-tensiometro.md)); nas pulseiras, `heartRateBpm`, `hrvMilliseconds`, `qtcMilliseconds`, `rrIntervalMilliseconds` — o que o exame apurou, junto com o traçado |
 | `sleep_quality` | pulseira | `qualityStars`, `deepSleepScore`, `efficiencyScore`, `fallAsleepScore`, `durationScore`, `nightWakingScore`, `insomniaScore`, `awakeningCount`, `firstDeepSleepMinutes`, `nightAwakeMinutes`, `returnToDeepSleepMeanMinutes` — as pontuações que o firmware atribui à noite |
-| `cardiac_load` | pulseira | `value` — sem unidade nem escala documentadas pelo fabricante |
+| `cardiac_load` | pulseira | `cardiacLoad` — sem unidade nem escala documentadas pelo fabricante |
 | `find_device` | pulseira | `state`: `searching`, `stopped` ou `timed_out`. A pulseira desiste sozinha ao fim de cerca de um minuto, e é `timed_out` que o diz |
 | `body_composition` | pulseira, balança | `bmi`, `bodyFatPercent`, `fatMassKg`, `leanMassKg`, `musclePercent`, `muscleMassKg`, `subcutaneousFatPercent`, `bodyWaterPercent`, `waterMassKg`, `skeletalMusclePercent`, `boneMassKg`, `proteinPercent`, `proteinMassKg`, `basalMetabolicRateKcal`. Na balança é o hub que a calcula, a cada pesagem com impedância medida e um utilizador em linha com sexo, idade e altura (um utilizador atleta fica só com o `bmi`): `bmi`, `bodyFatPercent`, `fatMassKg`, `leanMassKg`, `muscleMassKg`, `musclePercent`, `subcutaneousFatPercent`, `bodyWaterPercent`, `boneMassKg`, `idealWeightKg`, `fatControlKg`, `muscleControlKg`, `weightControlKg` (o que falta para o peso ideal, negativo quando sobra) e `scaleUserId` |
 | `weight` | balança | `weightKg`, sempre em quilogramas seja qual for a unidade do visor; `scaleUserId`, o identificador que o hub deu ao utilizador da balança, quando há um em linha: o último que a balança aceitou, que ela guarda entre ligações. Só sai a trama final da pesagem, e a repetida nos 2 s seguintes é ignorada. Do histórico sai com o `occurredAt` da pesagem e `fromHistory: true`; o `heart_rate` e o `body_impedance` seguem a mesma regra |
 | `body_impedance` | balança | `impedance50KhzOhm`, `impedance100KhzOhm` (em claro) e, quando a trama `02` chegou na mesma pesagem, `electrodes` (`four` · `four_dual_frequency` · `eight`), `encodedImpedance50Khz` e `encodedImpedance100Khz` — as cifradas são o que o algoritmo da Lefu precisa para a composição corporal |
 | `body_impedance_channel` | balança | `channel`, `impedanceOhm`: a impedância em claro canal a canal (trama `03`) |
-| `weighing_status` | balança | `weightKg`, `weight` (`idle` · `settling` · `stable` · `overload`), `impedance` e `heartRate` (`idle` · `measuring` · `measured` · `failed`), `displayUnit` (`kg` · `lb` · `jin` · `st` · `st_lb`), `shuttingDown`. Sai só quando muda a fase, e não a cada oscilação do peso |
+| `weighing_status` | balança | `weightKg`, `weightPhase` (`idle` · `settling` · `stable` · `overload`), `impedancePhase` e `heartRatePhase` (`idle` · `measuring` · `measured` · `failed`), `displayUnit` (`kg` · `lb` · `jin` · `st` · `st_lb`), `shuttingDown`. Sai só quando muda a fase, e não a cada oscilação do peso |
 | `motion` | pulseira | `xMg`, `yMg`, `zMg`, `magnitudeMg` |
 | `proximity` | pulseira, sensor de fralda | `gatewayId`, `state`, `rssiDbm`, `rssiMaxDbm`, `rssiMedianDbm`, `rssiMinDbm`, `samples`, `windowSeconds` |
-| `connectivity` | gateway, radar, relógio 4P Touch, dispensador | `interface`, `networkType`, `signalQuality`, `signalStrengthDbm`. No radar vem da leitura `deviceProp`: `interface` `wifi` com `signalStrengthDbm`, ou `4g` com `signalQuality` (CSQ, 0–31) |
+| `connectivity` | gateway, radar, relógio 4P Touch, dispensador | `interface` (`cellular` · `wifi` · `ethernet` · `ethernet_wifi`), `radioType` (a enumeração da `location`), `signalQuality` (CSQ, 0–31), `signalStrengthDbm`; a 4P Touch junta `wifiEnabled`, `wifiConnected` e `cellularEnabled`. No radar vem da leitura `deviceProp`: `wifi` com `signalStrengthDbm`, ou `cellular` com `signalQuality` |
 | `tilt` | radar | `xDegrees`, `yDegrees`, `zDegrees`, `factoryCalibrated` — o ângulo do radar com os três eixos; no teto o X e o Y ficam dentro de ±10° |
 | `diaper_moisture` · `diaper_moisture_level` · `diaper_condition` | sensor de fralda | ver o [capítulo 17](17-sensor-de-fralda.md) |
 | `medication_intake` | dispensador | `alarmSlot` (1–9), `scheduledAt`, `takenAt`, `cellNumber`, `method`: `on_time` · `early` · `late`, `result`: `on_time` · `late` · `abnormal` · `missed` |
@@ -241,7 +244,8 @@ durações corretas e instantes inválidos conserva utilidade analítica; instan
 inválidos apresentados como válidos não.
 
 Os tipos de segmento são unificados em `deep_sleep`, `light_sleep`, `rem` e
-`awake`, independentemente da designação de origem. A pulseira acrescenta
+`awake`, independentemente da designação de origem. Um segmento de designação
+desconhecida sai sem `type`, e não com a etiqueta do fabricante. A pulseira acrescenta
 `insomnia`, que o firmware distingue de `awake`: um é estar deitado sem dormir,
 o outro é ter-se levantado.
 
@@ -352,6 +356,11 @@ Cinco regras de normalização:
 - **O campo `signalStrengthDbm` só é aceite com valor negativo.** Um valor
   positivo indica outra escala de medida.
 
+Os números levam a unidade no nome: `speedKmh`, `headingDegrees`,
+`altitudeMeters`, `accuracyMeters`, `signalStrengthDbm`, e o `satelliteCount` é
+uma contagem. A força do sinal só sai em dBm: o que os relógios mandam noutras
+escalas — percentagem, `rxlev` — fica no `raw`.
+
 Os vocabulários fechados: `radioType` assume `gsm`, `wcdma`, `lte`, `cdma` ou
 `nr`; `coordinateSystem` assume `wgs84`, `gcj02`, `bd09`, `google` ou `tencent`;
 `reportKind` assume `periodic`, `requested`, `alarm` ou `replay`.
@@ -401,13 +410,15 @@ que são a diferença entre fornecedores do mesmo aparelho:
 O `telemetryKeysForProtocol` e o `protocolSpecificKeys` do `CapabilityCatalog`
 saem daqui.
 
-São listas distintas. Duas capacidades publicadas são **deliberadamente**
-excluídas do catálogo:
+São listas distintas. Uma capacidade publicada é **deliberadamente** excluída do
+catálogo:
 
 | `type` publicado | Fundamento da exclusão |
 |---|---|
-| `heartbeat` | Sinal de vida, não medição. Excluído também do histórico da dashboard |
 | `device_config` | Confirmação de uma configuração, não leitura |
+
+Os relógios não publicam sinal de vida: o que o `heartbeat` deles traz sai como
+`battery` e `activity`, e o estado da ligação é o canal `status`.
 
 O catálogo na base de dados segue o código a cada arranque: uma capacidade que o
 código declare passa a existir na tabela `capabilities`, e é associada aos
@@ -417,7 +428,7 @@ modelos cujo protocolo a publica (ver a [persistência](14-persistencia.md)).
 
 | Ficheiro | Responsabilidade |
 |---|---|
-| `src/Device/FeatureNormalizer.php` | As dezanove capacidades dos relógios e as suas formas |
+| `src/Device/FeatureNormalizer.php` | As capacidades dos relógios e as suas formas |
 | `src/Device/DeviceEventDecoder.php` | Tipo nativo → capacidades, por protocolo |
 | `src/Device/DeviceEventPayloadBuilder.php` | Monta o envelope das medições e dos alarmes |
 | `src/Device/RawPayload.php` | Monta os envelopes de `raw`, `status` e ciclo de vida |

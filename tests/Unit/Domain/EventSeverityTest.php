@@ -24,9 +24,9 @@ final class EventSeverityTest extends TestCase
     {
         return [
             'help call' => ['help_call', [], 'alarm'],
-            'confirmed fall' => ['fall', ['confirmed' => true, 'posture' => 'lying'], 'alarm'],
+            'confirmed fall' => ['fall', ['confirmed' => true, 'posture' => 'lying_down'], 'alarm'],
             'watch fall' => ['fall', ['confirmed' => true], 'alarm'],
-            'suspected fall' => ['fall', ['confirmed' => false, 'posture' => 'lying'], 'alert'],
+            'suspected fall' => ['fall', ['confirmed' => false, 'posture' => 'lying_down'], 'alert'],
             'very high heart rate' => ['heart_rate_high', ['bpm' => 172], 'alarm'],
             'high heart rate' => ['heart_rate_high', ['bpm' => 134], 'alert'],
             'high heart rate at the limit' => ['heart_rate_high', ['bpm' => 160], 'alert'],

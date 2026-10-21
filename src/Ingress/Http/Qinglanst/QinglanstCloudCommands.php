@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Hub\Ingress\Http\Qinglanst;
 
+use Hub\Ingress\Mqtt\Qinglanst\QinglanstBridge;
+
 /**
  * As configurações do hub de e para a API Cloud2cloud. Cada escrita parte do que o radar tem
  * nesse momento (o `deviceProp`): os pedidos com vários campos levam os que não mudaram como lá
@@ -94,20 +96,12 @@ final class QinglanstCloudCommands
         if ($layout !== null) {
             $room = $layout['room'];
             $configurations['detection_boundary'] = [
-                'leftM' => self::metres(-$room['x_min_dm']),
-                'rightM' => self::metres($room['x_max_dm']),
-                'frontM' => self::metres($room['y_max_dm']),
-                'backM' => self::metres(-$room['y_min_dm']),
+                'leftM' => self::metres(-$room['xMinDm']),
+                'rightM' => self::metres($room['xMaxDm']),
+                'frontM' => self::metres($room['yMaxDm']),
+                'backM' => self::metres(-$room['yMinDm']),
             ];
-            $configurations['radar_areas'] = ['items' => array_map(static fn (array $area): array => [
-                'key' => (int)$area['key'],
-                'type' => (int)$area['type'],
-                'name' => (string)$area['name'],
-                'xMinDm' => (int)$area['x_min_dm'],
-                'yMinDm' => (int)$area['y_min_dm'],
-                'xMaxDm' => (int)$area['x_max_dm'],
-                'yMaxDm' => (int)$area['y_max_dm'],
-            ], $layout['areas'])];
+            $configurations['radar_areas'] = ['items' => $layout['areas']];
         }
 
         return $configurations;
@@ -128,7 +122,7 @@ final class QinglanstCloudCommands
             // O Wi-Fi vem em dBm, negativo; o 4G vem em CSQ, de 0 a 31.
             $telemetry['connectivity'] = (int)$signal < 0
                 ? ['interface' => 'wifi', 'signalStrengthDbm' => (int)$signal]
-                : ['interface' => '4g', 'signalQuality' => (int)$signal];
+                : ['interface' => 'cellular', 'signalQuality' => (int)$signal];
         }
 
         $tilt = explode(':', (string)($props['accelera'] ?? ''));
@@ -332,13 +326,7 @@ final class QinglanstCloudCommands
     {
         $current = [];
         foreach ($this->layouts->parse($props)['areas'] ?? [] as $area) {
-            $current[(int)$area['key']] = [
-                (int)$area['type'],
-                (int)$area['x_min_dm'],
-                (int)$area['y_min_dm'],
-                (int)$area['x_max_dm'],
-                (int)$area['y_max_dm'],
-            ];
+            $current[(int)$area['key']] = [$area['type'], $area['xMinDm'], $area['yMinDm'], $area['xMaxDm'], $area['yMaxDm']];
         }
 
         $requests = [];
@@ -346,7 +334,7 @@ final class QinglanstCloudCommands
         foreach ($items as $item) {
             $key = (int)$item['key'];
             $wanted[$key] = true;
-            $box = [(int)$item['type'], (int)$item['xMinDm'], (int)$item['yMinDm'], (int)$item['xMaxDm'], (int)$item['yMaxDm']];
+            $box = [(string)$item['type'], (int)$item['xMinDm'], (int)$item['yMinDm'], (int)$item['xMaxDm'], (int)$item['yMaxDm']];
             if (($current[$key] ?? null) === $box) {
                 continue;
             }
@@ -354,7 +342,7 @@ final class QinglanstCloudCommands
             $requests[] = ['path' => self::COORDS, 'body' => [
                 'uid' => $uid,
                 'coordKey' => (string)$key,
-                'type' => $type,
+                'type' => array_search($type, QinglanstBridge::AREA_TYPES, true),
                 'lowLeft' => "{$xMin},{$yMin}",
                 'lowRight' => "{$xMax},{$yMin}",
                 'upLeft' => "{$xMin},{$yMax}",

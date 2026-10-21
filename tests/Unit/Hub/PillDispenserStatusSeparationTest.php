@@ -75,7 +75,9 @@ final class PillDispenserStatusSeparationTest extends TestCase
         ])['battery'] ?? [];
 
         self::assertSame(100, $battery['percent'] ?? null);
-        self::assertSame('charging', $battery['chargingState'] ?? null);
+        self::assertTrue($battery['charging'] ?? null);
+        self::assertFalse($this->telemetry([0x8104 => "\x01"])['battery']['charging'] ?? null);
+        self::assertArrayNotHasKey('charging', $this->telemetry([0x8104 => "\x04"])['battery'] ?? []);
         self::assertTrue($battery['mainsPowered'] ?? null);
     }
 

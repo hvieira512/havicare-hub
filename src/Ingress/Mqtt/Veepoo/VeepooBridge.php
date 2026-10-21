@@ -281,11 +281,7 @@ final class VeepooBridge extends MqttBridgeBase implements DispatchesQueued
             return;
         }
 
-        $identity = [
-            'id' => $deviceKey,
-            'supplier' => (string)($device['supplier'] ?? ''),
-            'model' => (string)($device['model'] ?? ''),
-        ];
+        $identity = DeviceDescriptor::of($deviceKey, $device);
 
         foreach ($this->blocks($message['payload'] ?? null) as $block) {
             // O gateway relê o dia corrente de cinco em cinco minutos: um bloco igual já saiu.

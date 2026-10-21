@@ -18,7 +18,6 @@ final class FourPTouchEventDecoder
     {
         return match (true) {
             $nativeType === 'LK' => array_values(array_filter([
-                DeviceEventDecoder::event('heartbeat', $nativeType, $payload),
                 DeviceEventDecoder::event('activity', $nativeType, ['steps' => $payload['steps'] ?? null]),
                 DeviceEventDecoder::event('battery', $nativeType, ['batteryPercent' => $payload['batteryPercent'] ?? null]),
             ])),

@@ -10,15 +10,14 @@
 const POSTURE_STYLE = {
     standing: { icon: "fa-person", glyph: "", tone: "success" },
     walking: { icon: "fa-person-walking", glyph: "", tone: "success" },
-    confirmed_sitting_up_bed: { icon: "fa-bed", glyph: "", tone: "success" },
+    sitting_up_in_bed: { icon: "fa-bed", glyph: "", tone: "success" },
     lying_down: { icon: "fa-bed", glyph: "", tone: "info" },
-    sitting_up_bed: { icon: "fa-bed", glyph: "", tone: "info" },
-    suspected_sitting_up_bed: { icon: "fa-bed", glyph: "", tone: "warning" },
+    suspected_sitting_up_in_bed: { icon: "fa-bed", glyph: "", tone: "warning" },
     sitting: { icon: "fa-chair", glyph: "", tone: "warning" },
     suspected_sitting_on_ground: { icon: "fa-chair", glyph: "", tone: "warning" },
     suspected_fall: { icon: "fa-triangle-exclamation", glyph: "", tone: "warning" },
-    confirmed_sitting_on_ground: { icon: "fa-chair", glyph: "", tone: "danger" },
-    fall_confirmation: { icon: "fa-triangle-exclamation", glyph: "", tone: "danger" },
+    sitting_on_ground: { icon: "fa-chair", glyph: "", tone: "danger" },
+    fallen: { icon: "fa-triangle-exclamation", glyph: "", tone: "danger" },
     initialization: { icon: "fa-question", glyph: "?", tone: "secondary" },
     unknown: { icon: "fa-question", glyph: "?", tone: "secondary" },
 };
@@ -32,19 +31,22 @@ export function postureStyle(posture) {
 
 /** A cor de cada tipo de área declarada no aparelho, em tokens do tema. */
 const AREA_TYPE_STYLE = {
-    1: { label: "Personalizada", color: "var(--bs-secondary-color)" },
-    2: { label: "Cama", color: "var(--brand)" },
-    3: { label: "Interferência", color: "var(--bs-secondary)" },
-    4: { label: "Porta", color: "var(--bs-warning)" },
-    5: { label: "Cama de monitorização", color: "var(--bs-info)" },
-    6: { label: "Região de alarme", color: "var(--bs-danger)" },
-    7: { label: "Mobília", color: "var(--bs-tertiary-color)" },
+    custom: { label: "Personalizada", color: "var(--bs-secondary-color)" },
+    bed: { label: "Cama", color: "var(--brand)" },
+    interference: { label: "Interferência", color: "var(--bs-secondary)" },
+    door: { label: "Porta", color: "var(--bs-warning)" },
+    monitoring_bed: { label: "Cama de monitorização", color: "var(--bs-info)" },
+    alarm_area: { label: "Região de alarme", color: "var(--bs-danger)" },
+    furniture: { label: "Mobília", color: "var(--bs-tertiary-color)" },
 };
 
-/** Um tipo que o fabricante acrescente fica cinzento e com o número à vista, em vez de sumir. */
+/** Um tipo que o fabricante acrescente fica cinzento e à vista, em vez de sumir. */
 export function areaTypeStyle(type) {
-    return AREA_TYPE_STYLE[Number(type)] || { label: `Tipo ${type}`, color: "var(--bs-secondary-color)" };
+    return AREA_TYPE_STYLE[type] || { label: `Tipo ${type}`, color: "var(--bs-secondary-color)" };
 }
+
+/** Uma área a que o fabricante não deu nome chega sem ele, e mostra-se pelo número. */
+export const areaName = (area) => area.name || `Área ${area.key}`;
 
 /**
  * Uma cor CSS resolvida para a tela, que não lê variáveis: o tema do momento, com a opacidade

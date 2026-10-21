@@ -90,7 +90,7 @@ test("a row tooltip does not show entities literally", () => {
         type: "battery",
         seq: 1,
         occurredAt: "2026-10-01T09:00:00Z",
-        data: { percent: 50, batteryType: "A & B" },
+        data: { percent: 50, reportReason: "A & B" },
     });
 
     const root = document.createElement("div");

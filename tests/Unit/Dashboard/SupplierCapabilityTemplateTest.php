@@ -26,10 +26,10 @@ final class SupplierCapabilityTemplateTest extends TestCase
         self::assertContains('find_device', SupplierCapabilityTemplate::keysForSupplierDeviceType('Wonlex', 'bracelet'));
     }
 
-    /** O alarme cardíaco da 4P não se anuncia no modelo, mas um disparo real é acontecimento. */
-    public function testTheUnconfirmedHeartRateAlarmIsNotAnnouncedButStaysAnEvent(): void
+    /** O bit 22 do `AL` da 4P Touch é descodificado e publicado, e o catálogo diz que é. */
+    public function testTheFourPTouchHeartRateAlarmIsDeclaredWhereItIsPublished(): void
     {
-        self::assertNotContains('heart_rate_abnormal', SupplierCapabilityTemplate::keysForModel('4P Touch', 'Y6L', 'watch'));
-        self::assertTrue(CapabilityCatalog::isEventType('heart_rate_abnormal'));
+        self::assertContains('heart_rate_abnormal', CapabilityCatalog::protocolSpecificKeys('four-p-touch'));
+        self::assertNotContains('heart_rate_abnormal', CapabilityCatalog::protocolSpecificKeys('vivistar-iw'));
     }
 }

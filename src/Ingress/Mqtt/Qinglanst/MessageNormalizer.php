@@ -10,12 +10,12 @@ final class MessageNormalizer
 {
     /** O que cada postura e cada movimento levantam. A ordem é a da procura: a postura ganha. */
     private const POSITION_DETECTIONS = [
-        'posture_state' => [
-            'fall_confirmation' => ['fall', ['confirmed' => true, 'posture' => 'lying']],
-            'suspected_fall' => ['fall', ['confirmed' => false, 'posture' => 'lying']],
-            'confirmed_sitting_on_ground' => ['fall', ['confirmed' => true, 'posture' => 'sitting_on_ground']],
+        'posture' => [
+            'fallen' => ['fall', ['confirmed' => true, 'posture' => 'lying_down']],
+            'suspected_fall' => ['fall', ['confirmed' => false, 'posture' => 'lying_down']],
+            'sitting_on_ground' => ['fall', ['confirmed' => true, 'posture' => 'sitting_on_ground']],
         ],
-        'last_event' => [
+        'lastEvent' => [
             'enter_room' => ['zone_entry', ['zone' => 'room']],
             'leave_room' => ['zone_exit', ['zone' => 'room']],
             'enter_area' => ['zone_entry', ['zone' => 'area']],
@@ -25,30 +25,30 @@ final class MessageNormalizer
 
     /** Campo descodificado, o evento que cada estado levanta, e a média que o justifica. */
     private const VITALS_STATUS_DETECTIONS = [
-        ['breathing_status_per_minute', [
+        ['breathingStatus', [
             'apnea' => ['apnea', null],
             'hyperpnea' => ['breath_rate_high', 'breathsPerMinute'],
             'hypopnea' => ['breath_rate_low', 'breathsPerMinute'],
         ]],
-        ['heart_rate_status_per_minute', [
+        ['heartRateStatus', [
             'high' => ['heart_rate_high', 'bpm'],
             'low' => ['heart_rate_low', 'bpm'],
         ]],
-        ['vital_signs_status', [
+        ['vitalSignsStatus', [
             'weak' => ['weak_vital_signs', null],
         ]],
     ];
 
     /** A média do minuto que acompanha cada campo do `data`. */
     private const VITALS_AVERAGES = [
-        'breathsPerMinute' => 'avg_breathing_per_minute',
-        'bpm' => 'avg_heart_rate_per_minute',
+        'breathsPerMinute' => 'avgBreathsPerMinute',
+        'bpm' => 'avgHeartRateBpm',
     ];
 
     /**
      * Uma mensagem do fabricante dá uma ou mais telemetrias, e zero ou mais alarmes.
      *
-     * @param array{type: string, device_code: string, ...} $decoded
+     * @param array{type: string, deviceCode: string|null, ...} $decoded
      * @param array{imei: string, supplier: string, model: string, deviceType: string, licenseId: int, company?: string} $device
      * @return array{telemetry: array<string, array<string, mixed>>, events: list<array<string, mixed>>}
      */
@@ -72,23 +72,11 @@ final class MessageNormalizer
     {
         $people = $this->occupiedPeople($decoded['people']);
 
-        // A postura e o último evento ficam dentro de cada pessoa. Não é o `location` canónico:
-        // as coordenadas são decímetros relativos ao radar.
+        // Não é o `location` canónico: as coordenadas são decímetros relativos ao radar.
         $telemetry = [
             'presence' => $this->envelope($topic, $device, 'presence', 'position', [
-                'count' => count($people),
-                'people' => array_map(static function (array $person): array {
-                    return [
-                        'personIndex' => $person['person_index'],
-                        'xPositionDm' => $person['x_position_dm'],
-                        'yPositionDm' => $person['y_position_dm'],
-                        'zPositionCm' => $person['z_position_cm'],
-                        'timeLeftS' => $person['time_left_s'],
-                        'regionId' => $person['region_id'],
-                        'posture' => (string)($person['posture_state'] ?? 'unknown'),
-                        'lastEvent' => (string)($person['last_event'] ?? 'unknown'),
-                    ];
-                }, $people),
+                'peopleCount' => count($people),
+                'people' => $people,
             ]),
         ];
 
@@ -105,7 +93,7 @@ final class MessageNormalizer
     private function occupiedPeople(array $people): array
     {
         return array_values(array_filter($people, static function (array $person): bool {
-            return (int)($person['person_index'] ?? 0) !== 88;
+            return (int)($person['personIndex'] ?? 0) !== 88;
         }));
     }
 
@@ -128,9 +116,9 @@ final class MessageNormalizer
                 }
 
                 [$type, $data] = $detection;
-                $data['personIndex'] = $person['person_index'];
+                $data['personIndex'] = $person['personIndex'];
                 if (($data['zone'] ?? null) === 'area') {
-                    $data['areaId'] = $person['region_id'];
+                    $data['areaId'] = $person['areaId'];
                 }
                 $events[] = $this->envelope($topic, $device, $type, 'position', $data);
                 break;
@@ -147,8 +135,8 @@ final class MessageNormalizer
      */
     private function normalizeVitals(array $decoded, QinglanstTopic $topic, array $device): array
     {
-        $breathing = (int)($decoded['breathing'] ?? 0);
-        $heartRate = (int)($decoded['heart_rate'] ?? 0);
+        $breathing = (int)($decoded['breathsPerMinute'] ?? 0);
+        $heartRate = (int)($decoded['heartRateBpm'] ?? 0);
 
         // As formas são as do `FeatureNormalizer`. Um zero é o radar a não medir ninguém, e não
         // uma leitura.
@@ -164,7 +152,7 @@ final class MessageNormalizer
             ]);
         }
 
-        $sleepState = (string)($decoded['sleep_state'] ?? 'undefined');
+        $sleepState = (string)($decoded['sleepState'] ?? 'undefined');
         if ($sleepState !== 'undefined') {
             $telemetry['sleep_state'] = $this->envelope($topic, $device, 'sleep_state', 'heartbreath', [
                 'state' => $sleepState,
@@ -202,27 +190,21 @@ final class MessageNormalizer
     {
         return [
             'telemetry' => [
-                'position_minute_stats' => $this->envelope(
-                    $topic,
-                    $device,
-                    'position_minute_stats',
-                    'posstatics',
-                    [
-                        'version' => $decoded['version'],
-                        'people' => $decoded['people'],
-                        // Sem sufixo: a unidade da distância não está confirmada.
-                        'walkingDistance' => $decoded['walking_distance'],
-                        'walkingTimeS' => $decoded['walking_time'],
-                        'meditationTimeS' => $decoded['meditation_time'],
-                        'inBedTimeS' => $decoded['in_bed_time'],
-                        'standingTimeS' => $decoded['standing_time'],
-                        'multiplayerTimeS' => $decoded['multiplayer_time'],
-                        'breathingActive' => $decoded['breathing_active'],
-                    ],
-                ),
+                'position_minute_stats' => $this->envelope($topic, $device, 'position_minute_stats', 'posstatics', self::fields($decoded)),
             ],
             'events' => [],
         ];
+    }
+
+    /**
+     * Os campos descodificados, que já têm os nomes do contrato.
+     *
+     * @param array<string, mixed> $decoded
+     * @return array<string, mixed>
+     */
+    private static function fields(array $decoded): array
+    {
+        return array_diff_key($decoded, ['type' => true, 'deviceCode' => true]);
     }
 
     /**
@@ -232,17 +214,7 @@ final class MessageNormalizer
      */
     private function normalizeHbStatics(array $decoded, QinglanstTopic $topic, array $device): array
     {
-        // Sem `PerMinute` nos campos: a capacidade já se chama `vitals_minute_stats`.
-        $telemetry = $this->envelope($topic, $device, 'vitals_minute_stats', 'hbstatics', [
-            'realTimeBreathing' => $decoded['real_time_breathing'],
-            'realTimeHeartRate' => $decoded['real_time_heart_rate'],
-            'avgBreathing' => $decoded['avg_breathing_per_minute'],
-            'avgHeartRate' => $decoded['avg_heart_rate_per_minute'],
-            'breathingStatus' => $decoded['breathing_status_per_minute'],
-            'heartRateStatus' => $decoded['heart_rate_status_per_minute'],
-            'vitalSignsStatus' => $decoded['vital_signs_status'],
-            'sleepState' => $decoded['sleep_state_status'],
-        ]);
+        $telemetry = $this->envelope($topic, $device, 'vitals_minute_stats', 'hbstatics', self::fields($decoded));
 
         $events = [];
         foreach (self::VITALS_STATUS_DETECTIONS as [$field, $detections]) {

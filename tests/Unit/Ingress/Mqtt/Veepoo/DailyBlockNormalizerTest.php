@@ -45,7 +45,7 @@ final class DailyBlockNormalizerTest extends TestCase
 
         self::assertSame(['systolicMmHg' => 118, 'diastolicMmHg' => 76], $byType['blood_pressure']);
         // Zero passos é uma leitura verdadeira, ao contrário de zero batimentos.
-        self::assertSame(['count' => 0, 'periodSeconds' => 300], $byType['steps']);
+        self::assertSame(['steps' => 0, 'periodSeconds' => 300], $byType['steps']);
     }
 
     public function testEmptyBlockFromAnUnwornBandProducesOnlyStepsAndWearState(): void
@@ -87,8 +87,8 @@ final class DailyBlockNormalizerTest extends TestCase
         self::assertSame(
             [
                 'intervals' => [
-                    ['timestamp' => '2026-09-09T03:20:00Z', 'milliseconds' => 810],
-                    ['timestamp' => '2026-09-09T03:20:12Z', 'milliseconds' => 790],
+                    ['measuredAt' => '2026-09-09T03:20:00Z', 'rrIntervalMilliseconds' => 810],
+                    ['measuredAt' => '2026-09-09T03:20:12Z', 'rrIntervalMilliseconds' => 790],
                 ],
             ],
             $byType['rr_interval'][0]['data'],
@@ -129,7 +129,7 @@ final class DailyBlockNormalizerTest extends TestCase
             'bef341903987',
         );
 
-        self::assertSame(['count' => 37, 'periodSeconds' => 300], self::ofType($out, 'steps')[0]['data']);
+        self::assertSame(['steps' => 37, 'periodSeconds' => 300], self::ofType($out, 'steps')[0]['data']);
         self::assertSame([], self::ofType($out, 'activity'));
     }
 
@@ -166,8 +166,8 @@ final class DailyBlockNormalizerTest extends TestCase
 
         $byType = array_column($out, 'data', 'type');
 
-        self::assertSame(['value' => 0.9], $byType['met']);
-        self::assertSame(['score' => 39], $byType['stress']);
+        self::assertSame(['met' => 0.9], $byType['met']);
+        self::assertSame(['stressScore' => 39], $byType['stress']);
     }
 
     /** Os valores observados (0, 112, 136, 144, 200, 208) não variam entre dia e noite: traduzi-los seria inventar. */
@@ -269,10 +269,10 @@ final class DailyBlockNormalizerTest extends TestCase
 
         // Contagens do bloco inteiro: somadas, com os sentinelas fora.
         self::assertSame(['episodes' => 3, 'hypoxiaSeconds' => 60], $byType['sleep_apnea'][0]);
-        self::assertSame(['value' => 7], $byType['cardiac_load'][0]);
+        self::assertSame(['cardiacLoad' => 7], $byType['cardiac_load'][0]);
         // Stress e MET são por minuto, como as grandezas vitais.
-        self::assertSame([['score' => 31], ['score' => 28]], $byType['stress']);
-        self::assertSame('2026-09-09T14:02:00Z', $out[array_search(['score' => 28], array_column($out, 'data'), true)]['occurredAt']);
+        self::assertSame([['stressScore' => 31], ['stressScore' => 28]], $byType['stress']);
+        self::assertSame('2026-09-09T14:02:00Z', $out[array_search(['stressScore' => 28], array_column($out, 'data'), true)]['occurredAt']);
         // O ácido úrico sai à parte dos lípidos: não é um deles e tem unidade própria.
         self::assertSame(['totalCholesterolMmolPerL' => 4.2, 'triglyceridesMmolPerL' => 1.1, 'ldlMmolPerL' => 2.4], $byType['blood_lipids'][0]);
         self::assertSame(['umolPerL' => 327.0], $byType['uric_acid'][0]);

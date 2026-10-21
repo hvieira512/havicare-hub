@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Hub\Ingress\Mqtt\Moko;
 
 use Hub\Device\DeviceDescriptor;
+use Hub\Device\LocationNormalizer;
 use Hub\Support\Values;
 
 final class GatewayNormalizer
@@ -61,7 +62,7 @@ final class GatewayNormalizer
             $csq = is_numeric($data['csq'] ?? null) ? (int)$data['csq'] : null;
             $connectivity = array_filter([
                 'interface' => 'cellular',
-                'networkType' => isset($data['network_type']) ? trim((string)$data['network_type']) : null,
+                'radioType' => LocationNormalizer::normalizeRadioType($data['network_type'] ?? null),
                 'signalQuality' => $csq,
                 'signalStrengthDbm' => $csq !== null && $csq >= 0 && $csq <= 31 ? -113 + (2 * $csq) : null,
             ], static fn(mixed $value): bool => $value !== null && $value !== '');

@@ -104,8 +104,7 @@ export function allDetailItems() {
     const recent = state.selectedDetail.recent || {};
     for (const row of recent.telemetry || []) {
         const payload = rowPayload(row);
-        // O heartbeat não é uma leitura: o que traz sai dele como eventos próprios.
-        if (payload && !payload.debug && payload.type !== "heartbeat")
+        if (payload && !payload.debug)
             items.push({ _source: "telemetry", raw: row, payload });
     }
     for (const row of recent.events || []) {

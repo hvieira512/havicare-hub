@@ -7,7 +7,6 @@ const CONNECTIVITY_INTERFACE_LABELS = {
     ethernet: "Ethernet",
     ethernet_wifi: "Ethernet + Wi-Fi",
     cellular: "Rede móvel",
-    "4g": "4G",
 };
 
 const CONNECTIVITY_INTERFACE_ICONS = {
@@ -15,7 +14,6 @@ const CONNECTIVITY_INTERFACE_ICONS = {
     ethernet: "fa-ethernet",
     ethernet_wifi: "fa-network-wired",
     cellular: "fa-tower-cell",
-    "4g": "fa-tower-cell",
 };
 
 export function connectivityIcon(data) {
@@ -32,9 +30,9 @@ export function connectivityValue(data) {
         parts.push(CONNECTIVITY_INTERFACE_LABELS[iface] || titleize(iface));
     }
 
-    const networkType = String(data?.networkType || "").trim();
-    if (networkType !== "") {
-        parts.push(networkType);
+    const radioType = String(data?.radioType || "").trim();
+    if (radioType !== "") {
+        parts.push(radioType.toUpperCase());
     }
 
     // Um gateway com fios não reporta RSSI e 0 dBm é leitura legítima: testar contra null.

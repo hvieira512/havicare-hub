@@ -19,10 +19,10 @@ final class MessageNormalizerTest extends TestCase
 
         $result = $normalizer->normalize([
             'type' => 'heartbreath',
-            'device_code' => 'radar-topic-uid',
-            'breathing' => 12,
-            'heart_rate' => 72,
-            'sleep_state' => 'light_sleep',
+            'deviceCode' => 'radar-topic-uid',
+            'breathsPerMinute' => 12,
+            'heartRateBpm' => 72,
+            'sleepState' => 'light_sleep',
         ], $topic, $this->device());
 
         self::assertSame(
@@ -46,10 +46,10 @@ final class MessageNormalizerTest extends TestCase
 
         $result = $normalizer->normalize([
             'type' => 'heartbreath',
-            'device_code' => 'radar-topic-uid',
-            'breathing' => 0,
-            'heart_rate' => 0,
-            'sleep_state' => 'undefined',
+            'deviceCode' => 'radar-topic-uid',
+            'breathsPerMinute' => 0,
+            'heartRateBpm' => 0,
+            'sleepState' => 'undefined',
         ], $topic, $this->device());
 
         self::assertSame([], $result['telemetry']);
@@ -64,22 +64,22 @@ final class MessageNormalizerTest extends TestCase
 
         $result = $normalizer->normalize([
             'type' => 'posstatics',
-            'device_code' => 'radar-topic-uid',
+            'deviceCode' => 'radar-topic-uid',
             'version' => 2,
             'people' => 1,
-            'walking_distance' => 42,
-            'walking_time' => 4,
-            'meditation_time' => 5,
-            'in_bed_time' => 6,
-            'standing_time' => 7,
-            'multiplayer_time' => 8,
-            'breathing_active' => true,
+            'walkingDistanceMeters' => 42,
+            'walkingTimeS' => 4,
+            'meditationTimeS' => 5,
+            'inBedTimeS' => 6,
+            'standingTimeS' => 7,
+            'multiplayerTimeS' => 8,
+            'breathingActive' => true,
         ], $topic, $this->device());
 
         $telemetry = $result['telemetry']['position_minute_stats'];
         self::assertSame('position_minute_stats', $telemetry['type']);
         self::assertSame('posstatics', $telemetry['source']['nativeType']);
-        self::assertSame(42, $telemetry['data']['walkingDistance']);
+        self::assertSame(42, $telemetry['data']['walkingDistanceMeters']);
     }
 
     public function testPositionNormalizationDropsSentinelPersonIndex88(): void
@@ -89,20 +89,20 @@ final class MessageNormalizerTest extends TestCase
 
         $result = $normalizer->normalize([
             'type' => 'position',
-            'device_code' => 'radar-topic-uid',
+            'deviceCode' => 'radar-topic-uid',
             'people' => [[
-                'person_index' => 88,
-                'x_position_dm' => 0,
-                'y_position_dm' => 0,
-                'z_position_cm' => 0,
-                'time_left_s' => 0,
-                'posture_state' => 'Unknown',
-                'last_event' => 'no_event',
-                'region_id' => 0,
+                'personIndex' => 88,
+                'xPositionDm' => 0,
+                'yPositionDm' => 0,
+                'zPositionCm' => 0,
+                'timeLeftS' => 0,
+                'posture' => 'Unknown',
+                'lastEvent' => 'no_event',
+                'areaId' => 0,
             ]],
         ], $topic, $this->device());
 
-        self::assertSame(0, $result['telemetry']['presence']['data']['count']);
+        self::assertSame(0, $result['telemetry']['presence']['data']['peopleCount']);
         self::assertSame([], $result['telemetry']['presence']['data']['people']);
         self::assertSame([], $result['events']);
     }
@@ -114,36 +114,36 @@ final class MessageNormalizerTest extends TestCase
 
         $result = $normalizer->normalize([
             'type' => 'position',
-            'device_code' => 'radar-topic-uid',
+            'deviceCode' => 'radar-topic-uid',
             'people' => [
                 [
-                    'person_index' => 88,
-                    'x_position_dm' => 0,
-                    'y_position_dm' => 0,
-                    'z_position_cm' => 0,
-                    'time_left_s' => 0,
-                    'posture_state' => 'Unknown',
-                    'last_event' => 'no_event',
-                    'region_id' => 0,
+                    'personIndex' => 88,
+                    'xPositionDm' => 0,
+                    'yPositionDm' => 0,
+                    'zPositionCm' => 0,
+                    'timeLeftS' => 0,
+                    'posture' => 'Unknown',
+                    'lastEvent' => 'no_event',
+                    'areaId' => 0,
                 ],
                 [
-                    'person_index' => 2,
-                    'x_position_dm' => 4,
-                    'y_position_dm' => 5,
-                    'z_position_cm' => 6,
-                    'time_left_s' => 7,
-                    'posture_state' => 'fall_confirmation',
-                    'last_event' => 'leave_room',
-                    'region_id' => 8,
+                    'personIndex' => 2,
+                    'xPositionDm' => 4,
+                    'yPositionDm' => 5,
+                    'zPositionCm' => 6,
+                    'timeLeftS' => 7,
+                    'posture' => 'fallen',
+                    'lastEvent' => 'leave_room',
+                    'areaId' => 8,
                 ],
             ],
         ], $topic, $this->device());
 
         $presence = $result['telemetry']['presence']['data'];
-        self::assertSame(1, $presence['count']);
+        self::assertSame(1, $presence['peopleCount']);
         self::assertCount(1, $presence['people']);
         self::assertSame(2, $presence['people'][0]['personIndex']);
-        self::assertSame('fall_confirmation', $presence['people'][0]['posture']);
+        self::assertSame('fallen', $presence['people'][0]['posture']);
         self::assertSame('leave_room', $presence['people'][0]['lastEvent']);
 
         self::assertSame('fall', $result['events'][0]['type']);
@@ -158,18 +158,18 @@ final class MessageNormalizerTest extends TestCase
 
         $result = $normalizer->normalize([
             'type' => 'position',
-            'device_code' => 'radar-topic-uid',
+            'deviceCode' => 'radar-topic-uid',
             'people' => [
                 $this->person(1, 'standing'),
-                $this->person(2, 'fall_confirmation'),
+                $this->person(2, 'fallen'),
                 $this->person(3, 'walking'),
             ],
         ], $topic, $this->device());
 
         $presence = $result['telemetry']['presence']['data'];
-        self::assertSame(3, $presence['count']);
+        self::assertSame(3, $presence['peopleCount']);
         self::assertSame(
-            ['standing', 'fall_confirmation', 'walking'],
+            ['standing', 'fallen', 'walking'],
             array_column($presence['people'], 'posture'),
         );
         self::assertSame([1, 2, 3], array_column($presence['people'], 'personIndex'));
@@ -188,9 +188,9 @@ final class MessageNormalizerTest extends TestCase
         foreach ([180, 30] as $bpm) {
             $result = $normalizer->normalize([
                 'type' => 'heartbreath',
-                'device_code' => 'radar-topic-uid',
-                'breathing' => 14,
-                'heart_rate' => $bpm,
+                'deviceCode' => 'radar-topic-uid',
+                'breathsPerMinute' => 14,
+                'heartRateBpm' => $bpm,
             ], $topic, $this->device());
 
             self::assertSame([], $result['events']);
@@ -215,7 +215,7 @@ final class MessageNormalizerTest extends TestCase
 
         $result = $normalizer->normalize([
             'type' => 'position',
-            'device_code' => 'radar-topic-uid',
+            'deviceCode' => 'radar-topic-uid',
             'people' => [$this->person(1, $posture, $lastEvent)],
         ], $topic, $this->device());
 
@@ -233,9 +233,9 @@ final class MessageNormalizerTest extends TestCase
         $area = ['zone' => 'area', 'personIndex' => 1, 'areaId' => 5];
 
         return [
-            'confirmed fall'  => ['fall_confirmation', 'no_event', 'fall', $fall(true, 'lying')],
-            'suspected fall'    => ['suspected_fall', 'no_event', 'fall', $fall(false, 'lying')],
-            'sitting on the floor'   => ['confirmed_sitting_on_ground', 'no_event', 'fall', $fall(true, 'sitting_on_ground')],
+            'confirmed fall'  => ['fallen', 'no_event', 'fall', $fall(true, 'lying_down')],
+            'suspected fall'    => ['suspected_fall', 'no_event', 'fall', $fall(false, 'lying_down')],
+            'sitting on the floor'   => ['sitting_on_ground', 'no_event', 'fall', $fall(true, 'sitting_on_ground')],
             'entered the room'    => ['walking', 'enter_room', 'zone_entry', $room],
             'left the room'      => ['walking', 'leave_room', 'zone_exit', $room],
             'entered the area'  => ['walking', 'enter_area', 'zone_entry', $area],
@@ -251,8 +251,8 @@ final class MessageNormalizerTest extends TestCase
 
         $result = $normalizer->normalize([
             'type' => 'position',
-            'device_code' => 'radar-topic-uid',
-            'people' => [$this->person(1, 'fall_confirmation', 'enter_room')],
+            'deviceCode' => 'radar-topic-uid',
+            'people' => [$this->person(1, 'fallen', 'enter_room')],
         ], $topic, $this->device());
 
         self::assertSame(['fall'], array_column($result['events'], 'type'));
@@ -266,10 +266,10 @@ final class MessageNormalizerTest extends TestCase
 
         $result = $normalizer->normalize([
             'type' => 'position',
-            'device_code' => 'radar-topic-uid',
+            'deviceCode' => 'radar-topic-uid',
             'people' => [
                 $this->person(1, 'walking', 'enter_room'),
-                $this->person(2, 'fall_confirmation'),
+                $this->person(2, 'fallen'),
             ],
         ], $topic, $this->device());
 
@@ -281,14 +281,14 @@ final class MessageNormalizerTest extends TestCase
     private function person(int $index, string $posture, string $lastEvent = 'no_event'): array
     {
         return [
-            'person_index' => $index,
-            'x_position_dm' => 1,
-            'y_position_dm' => 2,
-            'z_position_cm' => 3,
-            'time_left_s' => 4,
-            'posture_state' => $posture,
-            'last_event' => $lastEvent,
-            'region_id' => 5,
+            'personIndex' => $index,
+            'xPositionDm' => 1,
+            'yPositionDm' => 2,
+            'zPositionCm' => 3,
+            'timeLeftS' => 4,
+            'posture' => $posture,
+            'lastEvent' => $lastEvent,
+            'areaId' => 5,
         ];
     }
 
@@ -300,15 +300,15 @@ final class MessageNormalizerTest extends TestCase
 
         $result = $normalizer->normalize([
             'type' => 'hbstatics',
-            'device_code' => 'radar-topic-uid',
-            'real_time_breathing' => 0,
-            'real_time_heart_rate' => 0,
-            'avg_breathing_per_minute' => 0,
-            'avg_heart_rate_per_minute' => 30,
-            'breathing_status_per_minute' => 'apnea',
-            'heart_rate_status_per_minute' => 'low',
-            'vital_signs_status' => 'weak',
-            'sleep_state_status' => 'undefined',
+            'deviceCode' => 'radar-topic-uid',
+            'realTimeBreathsPerMinute' => 0,
+            'realTimeHeartRateBpm' => 0,
+            'avgBreathsPerMinute' => 0,
+            'avgHeartRateBpm' => 30,
+            'breathingStatus' => 'apnea',
+            'heartRateStatus' => 'low',
+            'vitalSignsStatus' => 'weak',
+            'sleepState' => 'undefined',
         ], $topic, $this->device());
 
         self::assertSame(
@@ -325,15 +325,15 @@ final class MessageNormalizerTest extends TestCase
 
         $result = $normalizer->normalize([
             'type' => 'hbstatics',
-            'device_code' => 'radar-topic-uid',
-            'real_time_breathing' => 12,
-            'real_time_heart_rate' => 66,
-            'avg_breathing_per_minute' => 13,
-            'avg_heart_rate_per_minute' => 70,
-            'breathing_status_per_minute' => 'hypopnea',
-            'heart_rate_status_per_minute' => 'normal',
-            'vital_signs_status' => 'normal',
-            'sleep_state_status' => 'light_sleep',
+            'deviceCode' => 'radar-topic-uid',
+            'realTimeBreathsPerMinute' => 12,
+            'realTimeHeartRateBpm' => 66,
+            'avgBreathsPerMinute' => 13,
+            'avgHeartRateBpm' => 70,
+            'breathingStatus' => 'hypopnea',
+            'heartRateStatus' => 'normal',
+            'vitalSignsStatus' => 'normal',
+            'sleepState' => 'light_sleep',
         ], $topic, $this->device());
 
         $data = $result['telemetry']['vitals_minute_stats']['data'];
@@ -353,15 +353,15 @@ final class MessageNormalizerTest extends TestCase
 
         $result = $normalizer->normalize([
             'type' => 'hbstatics',
-            'device_code' => 'radar-topic-uid',
-            'real_time_breathing' => 30,
-            'real_time_heart_rate' => 130,
-            'avg_breathing_per_minute' => 28,
-            'avg_heart_rate_per_minute' => 128,
-            'breathing_status_per_minute' => 'hyperpnea',
-            'heart_rate_status_per_minute' => 'high',
-            'vital_signs_status' => 'normal',
-            'sleep_state_status' => 'undefined',
+            'deviceCode' => 'radar-topic-uid',
+            'realTimeBreathsPerMinute' => 30,
+            'realTimeHeartRateBpm' => 130,
+            'avgBreathsPerMinute' => 28,
+            'avgHeartRateBpm' => 128,
+            'breathingStatus' => 'hyperpnea',
+            'heartRateStatus' => 'high',
+            'vitalSignsStatus' => 'normal',
+            'sleepState' => 'undefined',
         ], $topic, $this->device());
 
         self::assertSame(['breath_rate_high', 'heart_rate_high'], array_column($result['events'], 'type'));
@@ -430,49 +430,49 @@ final class MessageNormalizerTest extends TestCase
         return [
             'position' => [[
                 'type' => 'position',
-                'device_code' => 'radar-topic-uid',
+                'deviceCode' => 'radar-topic-uid',
                 'people' => [[
-                    'person_index' => 1,
-                    'x_position_dm' => 1,
-                    'y_position_dm' => 2,
-                    'z_position_cm' => 3,
-                    'time_left_s' => 4,
-                    'posture_state' => 'standing',
-                    'last_event' => 'no_event',
-                    'region_id' => 5,
+                    'personIndex' => 1,
+                    'xPositionDm' => 1,
+                    'yPositionDm' => 2,
+                    'zPositionCm' => 3,
+                    'timeLeftS' => 4,
+                    'posture' => 'standing',
+                    'lastEvent' => 'no_event',
+                    'areaId' => 5,
                 ]],
             ]],
             'heartbreath' => [[
                 'type' => 'heartbreath',
-                'device_code' => 'radar-topic-uid',
-                'breathing' => 12,
-                'heart_rate' => 72,
-                'sleep_state' => 'light_sleep',
+                'deviceCode' => 'radar-topic-uid',
+                'breathsPerMinute' => 12,
+                'heartRateBpm' => 72,
+                'sleepState' => 'light_sleep',
             ]],
             'posstatics' => [[
                 'type' => 'posstatics',
-                'device_code' => 'radar-topic-uid',
+                'deviceCode' => 'radar-topic-uid',
                 'version' => 2,
                 'people' => 1,
-                'walking_distance' => 10,
-                'walking_time' => 5,
-                'meditation_time' => 1,
-                'in_bed_time' => 2,
-                'standing_time' => 3,
-                'multiplayer_time' => 0,
-                'breathing_active' => true,
+                'walkingDistanceMeters' => 10,
+                'walkingTimeS' => 5,
+                'meditationTimeS' => 1,
+                'inBedTimeS' => 2,
+                'standingTimeS' => 3,
+                'multiplayerTimeS' => 0,
+                'breathingActive' => true,
             ]],
             'hbstatics' => [[
                 'type' => 'hbstatics',
-                'device_code' => 'radar-topic-uid',
-                'real_time_breathing' => 12,
-                'real_time_heart_rate' => 66,
-                'avg_breathing_per_minute' => 13,
-                'avg_heart_rate_per_minute' => 70,
-                'breathing_status_per_minute' => 'normal',
-                'heart_rate_status_per_minute' => 'normal',
-                'vital_signs_status' => 'normal',
-                'sleep_state_status' => 'light_sleep',
+                'deviceCode' => 'radar-topic-uid',
+                'realTimeBreathsPerMinute' => 12,
+                'realTimeHeartRateBpm' => 66,
+                'avgBreathsPerMinute' => 13,
+                'avgHeartRateBpm' => 70,
+                'breathingStatus' => 'normal',
+                'heartRateStatus' => 'normal',
+                'vitalSignsStatus' => 'normal',
+                'sleepState' => 'light_sleep',
             ]],
         ];
     }

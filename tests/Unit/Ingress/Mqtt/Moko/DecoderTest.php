@@ -42,7 +42,7 @@ final class DecoderTest extends TestCase
         ]);
         self::assertSame(['connectivity', 'battery'], array_column($telemetry, 'type'));
         self::assertSame([
-            'interface' => 'cellular', 'networkType' => 'FDD LTE',
+            'interface' => 'cellular', 'radioType' => 'lte',
             'signalQuality' => 18, 'signalStrengthDbm' => -77,
         ], $telemetry[0]['data']);
         self::assertSame(['voltageMv' => 4212], $telemetry[1]['data']);

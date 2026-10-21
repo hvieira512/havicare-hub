@@ -77,10 +77,10 @@ Blocos de **16 bytes**, um por pessoa detetada:
 | 12 | tempo restante | segundos |
 | 13 | postura | de pé, sentado, deitado, no chão… |
 | 14 | último acontecimento | entrada, saída, queda… |
-| 15 | região | identificador da zona configurada no radar |
+| 15 | área | o número da área da planta em que a pessoa entrou ou saiu |
 
-Sai como telemetria `presence`, com `count` e a lista `people` — oito chaves por
-pessoa:
+Sai como telemetria `presence`, com `peopleCount` e a lista `people` — oito chaves
+por pessoa:
 
 | Chave | |
 |---|---|
@@ -88,9 +88,15 @@ pessoa:
 | `xPositionDm` · `yPositionDm` | Decímetros, com sinal, relativos ao radar |
 | `zPositionCm` | Centímetros |
 | `timeLeftS` | Segundos |
-| `regionId` | A zona configurada no radar |
-| `posture` | `unknown` quando a trama não a traz |
+| `areaId` | O número da área na planta, o mesmo das entradas e saídas |
+| `posture` | Ver abaixo; `unknown` quando a trama não a traz |
 | `lastEvent` | `unknown` quando a trama não o traz |
+
+A `posture` é a enumeração do hub, e a da queda é a mesma: `initialization`,
+`walking`, `standing`, `sitting`, `lying_down`, `suspected_fall`, `fallen`,
+`suspected_sitting_on_ground`, `sitting_on_ground`, `suspected_sitting_up_in_bed`,
+`sitting_up_in_bed`. O fabricante distingue o sentar numa cama comum do sentar na
+cama de monitorização; para o hub é o mesmo `sitting_up_in_bed`.
 
 > **Isto não é o `location` canónico.** São coordenadas relativas ao próprio
 > radar, em decímetros, dentro de uma divisão — não latitude e longitude. O
@@ -127,16 +133,14 @@ no `source.nativeType`, que é onde a identidade de protocolo pertence.
 
 | Capacidade | `data` |
 |---|---|
-| `position_minute_stats` | `people`, `walkingDistance`, `walkingTimeS`, `meditationTimeS`, `inBedTimeS`, `standingTimeS`, `multiplayerTimeS`, `breathingActive`, `version` |
-| `vitals_minute_stats` | `realTimeBreathing`, `realTimeHeartRate`, `avgBreathing`, `avgHeartRate`, `breathingStatus`, `heartRateStatus`, `vitalSignsStatus`, `sleepState` |
+| `position_minute_stats` | `peopleCount`, `walkingDistanceMeters`, `walkingTimeS`, `meditationTimeS`, `inBedTimeS`, `standingTimeS`, `multiplayerTimeS`, `breathingActive`, `version` |
+| `vitals_minute_stats` | `realTimeBreathsPerMinute`, `realTimeHeartRateBpm`, `avgBreathsPerMinute`, `avgHeartRateBpm`, `breathingStatus`, `heartRateStatus`, `vitalSignsStatus`, `sleepState` |
 
 Os tempos são **segundos dentro da janela de um minuto**: nunca passam de 60, e
 os quatro estados de postura somam no máximo 60 entre si.
 
-> A unidade do `walkingDistance` não está confirmada. O documento do fabricante
-> não está no repositório e o valor observado em produção foi sempre zero, pelo
-> que o campo fica sem sufixo de unidade até alguém a poder confirmar. A
-> dashboard apresenta-o como metros, o que é uma suposição e não um facto.
+A distância é em metros, como o documento do fabricante a declara (secção 3.3.4
+do *Cloud2cloud integration*).
 
 ## 3. Detecções
 
@@ -145,9 +149,9 @@ mesma coisa, e a gravidade vai na `severity` (ver o [contrato MQTT](08-contrato-
 
 | Origem | O que o radar diz | `type` | `data` |
 |---|---|---|---|
-| `position` | `fall_confirmation` | `fall` | `confirmed: true`, `posture: lying`, `personIndex` |
-| `position` | `suspected_fall` | `fall` | `confirmed: false`, `posture: lying`, `personIndex` |
-| `position` | `confirmed_sitting_on_ground` | `fall` | `confirmed: true`, `posture: sitting_on_ground`, `personIndex` |
+| `position` | `fallen` | `fall` | `confirmed: true`, `posture: lying_down`, `personIndex` |
+| `position` | `suspected_fall` | `fall` | `confirmed: false`, `posture: lying_down`, `personIndex` |
+| `position` | `sitting_on_ground` | `fall` | `confirmed: true`, `posture: sitting_on_ground`, `personIndex` |
 | `position` | `enter_room` · `leave_room` | `zone_entry` · `zone_exit` | `zone: room`, `personIndex` |
 | `position` | `enter_area` · `leave_area` | `zone_entry` · `zone_exit` | `zone: area`, `personIndex`, `areaId`, `areaName`, `areaType` |
 | `hbstatics` | `heartRateStatus` `high` · `low` | `heart_rate_high` · `heart_rate_low` | `bpm`, a média do minuto |
@@ -232,22 +236,28 @@ segundo campo é o tipo. São sete, e a tabela abaixo é a do próprio console d
 fabricante — o `baseList` do componente da planta, que é onde os nomes e as
 cores vivem.
 
-| Tipo | Fabricante (EN) | Fabricante (ZH) | Na dashboard |
-|---|---|---|---|
-| 1 | Customize | 自定义 | Personalizada |
-| 2 | Bed | 床 | Cama |
-| 3 | Exclusive area | 干扰区域 | Interferência |
-| 4 | Door | 门 | Porta |
-| 5 | Monitoring Bed | 监护床 | Cama de monitorização |
-| 6 | Sensing area | 告警区域 | Região de alarme |
-| 7 | Furniture | 家具 | Mobília |
+| Tipo | No hub | Fabricante (EN) | Fabricante (ZH) | Na dashboard |
+|---|---|---|---|---|
+| 1 | `custom` | Customize | 自定义 | Personalizada |
+| 2 | `bed` | Bed | 床 | Cama |
+| 3 | `interference` | Exclusive area | 干扰区域 | Interferência |
+| 4 | `door` | Door | 门 | Porta |
+| 5 | `monitoring_bed` | Monitoring Bed | 监护床 | Cama de monitorização |
+| 6 | `alarm_area` | Sensing area | 告警区域 | Região de alarme |
+| 7 | `furniture` | Furniture | 家具 | Mobília |
+
+O número fica no fabricante e na base de dados; para fora — o MQTT, a planta da
+API e o `radar_areas` — o tipo vai sempre na enumeração do hub
+(`QinglanstBridge::AREA_TYPES`). A planta da API leva as caixas em `xMinDm`,
+`yMinDm`, `xMaxDm` e `yMaxDm`.
 
 O nome que cada área leva na planta é escolhido por quem a instalou e não diz o
 tipo: no radar 208 da emeis Iberia, as três áreas de tipo 7 chamam-se «Mesita»,
-«Table or Chairs» e «Mesita».
+«Table or Chairs» e «Mesita». Uma área a que ninguém deu nome sai com
+`name: null`, e a dashboard mostra-a como «Área N».
 
-Um tipo que a tabela não conheça aparece como «Tipo N» e fica cinzento, em vez
-de desaparecer da planta — foi assim que o 7 se deu a conhecer. A tabela está em
+Um número que a tabela não conheça não entra na planta e fica no `skipped` com
+`unknown_area_type`. As cores e os nomes em português estão em
 [`radar-style.js`](../src/Dashboard/dashboard/radar-style.js).
 
 ## 7. Ligado e desligado
@@ -284,7 +294,7 @@ que o `getDeviceInfo` devolve: `modelNumber` 2, **HC2**, nos radares todos.
 | Sistema | `working_mode` | `mode`: `full_function` · `fall_detection` · `people_tracking` · `sleep_monitoring` | `prop` (`scene` 1–4) |
 | | `radar_installation` | `mounting` `ceiling` · `wall`, `heightCm` 150–330 | `prop` (`installType` e `height` em dm, juntos) |
 | | `detection_boundary` | `leftM`, `rightM`, `frontM`, `backM` | `border` (quatro vértices em dm; na parede o Y começa no radar) |
-| | `radar_areas` | `items[]`: `key` 0–15, `type` 1–6, `name`, `xMinDm`, `yMinDm`, `xMaxDm`, `yMaxDm` | `coords`, um por área que mudou; a que desaparece vai com o tipo 0 |
+| | `radar_areas` | `items[]`: `key` 0–15, `type` (os seis da tabela da secção 6 sem `furniture`), `name`, `xMinDm`, `yMinDm`, `xMaxDm`, `yMaxDm` | `coords`, um por área que mudou; a que desaparece vai com o tipo 0 |
 | | `measure_boundary` *(ação)* | `enabled`: começar ou parar | `border` com −127 ou 127 nos quatro vértices |
 | | `read_device_state` *(ação)* | — | `deviceProp` |
 

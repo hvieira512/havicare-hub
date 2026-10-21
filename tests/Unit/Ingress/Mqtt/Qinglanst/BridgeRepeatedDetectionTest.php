@@ -86,7 +86,7 @@ final class BridgeRepeatedDetectionTest extends TestCase
     {
         $mqtt = new RecordingHubMqttBridge();
         $layouts = static fn (string $imei): ?array => $imei === self::RADAR
-            ? ['areas' => [['key' => 2, 'type' => 4, 'name' => 'Porta'], ['key' => 0, 'type' => 5, 'name' => 'Cama']]]
+            ? ['areas' => [['key' => 2, 'type' => 'door', 'name' => 'Porta'], ['key' => 0, 'type' => 'monitoring_bed', 'name' => 'Cama']]]
             : null;
         $bridge = $this->bridge($mqtt, $layouts);
 

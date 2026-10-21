@@ -11,6 +11,14 @@ final class FeatureNormalizer
     /** O `batteryType` com que a Wonlex manda o relatório de pouca energia. */
     public const WONLEX_LOW_POWER_REPORT = 3;
 
+    /** O `batteryType` da Wonlex não é o tipo da bateria: é porque é que a leitura foi enviada. */
+    private const WONLEX_REPORT_REASONS = [
+        0 => 'power_on',
+        1 => 'power_off',
+        2 => 'periodic',
+        self::WONLEX_LOW_POWER_REPORT => 'low_battery',
+    ];
+
     /**
      * @param array<string, mixed> $payload
      * @return array<string, mixed>
@@ -28,11 +36,10 @@ final class FeatureNormalizer
             'activity' => self::activity($payload),
             'sleep' => self::sleep($payload),
             'ecg' => self::waveform($payload, 'samples'),
-            'hrv' => self::scalar($payload, 'milliseconds', ['hrv', 'value', 'data', 'date']),
+            'hrv' => self::scalar($payload, 'hrvMilliseconds', ['hrv', 'value', 'data', 'date']),
             'ppg' => self::waveform($payload, 'samples'),
             'rr_interval' => self::rrIntervals($payload),
             'device_state' => self::deviceState($payload),
-            'heartbeat' => self::heartbeat($payload),
             'location' => LocationNormalizer::location($payload),
             'device_config' => self::deviceConfig($payload),
             'firmware_version' => self::firmwareVersion($payload),
@@ -138,10 +145,12 @@ final class FeatureNormalizer
     private static function battery(array $payload): array
     {
         $value = self::first($payload, ['batteryPercent', 'battery', 'batteryLevel', 'power', 'value']);
+        $charging = self::int($payload['batteryState'] ?? null);
+
         return Values::withoutNulls([
             'percent' => $value === null ? null : (int)$value,
-            'chargingState' => self::int($payload['chargingState'] ?? $payload['batteryState'] ?? null),
-            'batteryType' => self::int($payload['batteryType'] ?? null),
+            'charging' => $charging === null ? null : $charging === 1,
+            'reportReason' => self::WONLEX_REPORT_REASONS[self::int($payload['batteryType'] ?? null) ?? -1] ?? null,
             'lowBattery' => self::lowBattery($payload),
         ]);
     }
@@ -272,15 +281,14 @@ final class FeatureNormalizer
 
     private static function normalizeSleepType(mixed $value): ?string
     {
-        $raw = strtolower(trim((string)$value));
-        $key = str_replace(['_', '-', ' '], '', $raw);
+        $key = str_replace(['_', '-', ' '], '', strtolower(trim((string)$value)));
 
         return match ($key) {
             'deepsleep', 'deep' => 'deep_sleep',
             'lightsleep', 'light' => 'light_sleep',
             'rem' => 'rem',
             'sober', 'awake', 'wake', 'waking' => 'awake',
-            default => $raw !== '' ? $raw : null,
+            default => null,
         };
     }
 
@@ -304,8 +312,7 @@ final class FeatureNormalizer
             $field => $samples !== [] ? $samples : null,
             'frequencyHz' => self::int($payload['frequency'] ?? $payload['Frequency'] ?? null),
             'collectionId' => self::stringOrNull($payload['collectionLogo'] ?? null),
-            'startedAt' => self::int($payload['dataStartTime'] ?? $payload['Data start time'] ?? null),
-            'packetStatus' => self::int($payload['dataStatus'] ?? $payload['Data Status'] ?? null),
+            'startedAt' => self::instantFromMilliseconds(self::validEpochMilliseconds($payload['dataStartTime'] ?? $payload['Data start time'] ?? null)),
             'block' => self::int($payload['block'] ?? null),
         ]);
     }
@@ -323,7 +330,10 @@ final class FeatureNormalizer
             if (count($parts) < 2 || !is_numeric($parts[0]) || !is_numeric($parts[1])) {
                 continue;
             }
-            $intervals[] = ['timestamp' => (int)$parts[0], 'milliseconds' => (int)$parts[1]];
+            $intervals[] = [
+                'measuredAt' => self::instantFromMilliseconds(self::validEpochMilliseconds($parts[0])),
+                'rrIntervalMilliseconds' => (int)$parts[1],
+            ];
         }
 
         return Values::withoutNulls([
@@ -341,29 +351,7 @@ final class FeatureNormalizer
     {
         return Values::withoutNulls([
             'state' => self::stringOrNull($payload['state'] ?? null),
-            'resetStatus' => self::int($payload['status'] ?? null),
             'reason' => self::stringOrNull($payload['reason'] ?? null),
-        ]);
-    }
-
-    /**
-     * @param array<string, mixed> $payload
-     * @return array<string, mixed>
-     */
-    private static function heartbeat(array $payload): array
-    {
-        return Values::withoutNulls([
-            'status' => 'ok',
-            'steps' => self::int($payload['steps'] ?? $payload['step'] ?? null),
-            'gsmSignal' => self::int($payload['gsmSignal'] ?? null),
-            'satelliteCount' => self::int($payload['satellites'] ?? $payload['satelliteCount'] ?? null),
-            'batteryPercent' => self::int($payload['batteryPercent'] ?? $payload['battery'] ?? $payload['batteryLevel'] ?? null),
-            'chargingState' => self::int($payload['chargingState'] ?? $payload['batteryState'] ?? null),
-            'batteryType' => self::int($payload['batteryType'] ?? null),
-            'rollFrequency' => self::int($payload['rollFrequency'] ?? $payload['rollsFrequency'] ?? null),
-            'remainingSpace' => self::int($payload['remainingSpace'] ?? null),
-            'fortificationState' => self::int($payload['fortificationState'] ?? $payload['fortification'] ?? null),
-            'workMode' => self::int($payload['workMode'] ?? $payload['workingMode'] ?? null),
         ]);
     }
 
@@ -404,15 +392,11 @@ final class FeatureNormalizer
      */
     private static function deviceConfig(array $payload): array
     {
-        $configs = isset($payload['configs']) && is_array($payload['configs']) ? $payload['configs'] : null;
+        // As chaves do fabricante não saem: a configuração reportada que o hub entende chega
+        // como `settings` pelos descodificadores que a traduzem.
         $ack = $payload['configAck'] ?? null;
-        $normalizedAck = is_scalar($ack) && $ack !== '' ? (string)$ack : null;
 
-        return Values::withoutNulls([
-            'status' => $normalizedAck === '0' ? 'failed' : 'ok',
-            'ack' => $normalizedAck,
-            'settings' => $configs !== [] ? $configs : null,
-        ]);
+        return ['status' => is_scalar($ack) && (string)$ack === '0' ? 'failed' : 'ok'];
     }
 
     /**
