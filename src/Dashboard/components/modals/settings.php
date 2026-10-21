@@ -32,88 +32,90 @@ ob_start();
                             <li class="breadcrumb-item d-none" id="modelsBreadcrumbCurrent"></li>
                         </ol>
                     </nav>
-                    <div id="modelsPanes">
-                        <div>
-                            <?= tab_pane_header(
-                                'Catálogo',
-                                'modelsTabSummary',
-                                '<button type="button" class="btn btn-primary btn-sm flex-shrink-0" id="modelsNewModelBtn">' . icon('fa-plus', 'me-1')
-                                . '<span class="d-sm-none">Novo</span><span class="d-none d-sm-inline">Novo modelo</span></button>'
-                            ) ?>
-                            <?= search_input('modelsListSearch', 'Procurar modelo, fornecedor ou tipo', 'mt-3') ?>
-                            <div id="modelCatalog" class="mt-3"></div>
-                        </div>
-                        <div hidden>
-                            <div class="d-flex flex-column gap-4">
-                                <div class="d-flex flex-column gap-2">
-                                    <div id="modelWizardProgress"></div>
-                                    <div class="d-flex align-items-center gap-2">
-                                        <div class="wizard-trail d-flex align-items-center flex-wrap gap-2 flex-grow-1 min-w-0" id="modelWizardTrail"></div>
-                                        <span class="text-secondary text-nowrap flex-shrink-0" id="modelWizardStepCount"></span>
+                    <div id="modelsCarousel" class="carousel slide" data-bs-touch="false">
+                        <div class="carousel-inner">
+                            <div class="carousel-item active">
+                                <?= tab_pane_header(
+                                    'Catálogo',
+                                    'modelsTabSummary',
+                                    '<button type="button" class="btn btn-primary btn-sm flex-shrink-0" id="modelsNewModelBtn">' . icon('fa-plus', 'me-1')
+                                    . '<span class="d-sm-none">Novo</span><span class="d-none d-sm-inline">Novo modelo</span></button>'
+                                ) ?>
+                                <?= search_input('modelsListSearch', 'Procurar modelo, fornecedor ou tipo', 'mt-3') ?>
+                                <div id="modelCatalog" class="mt-3"></div>
+                            </div>
+                            <div class="carousel-item">
+                                <div class="d-flex flex-column gap-4">
+                                    <div class="d-flex flex-column gap-2">
+                                        <div id="modelWizardProgress"></div>
+                                        <div class="d-flex align-items-center gap-2">
+                                            <div class="wizard-trail d-flex align-items-center flex-wrap gap-2 flex-grow-1 min-w-0" id="modelWizardTrail"></div>
+                                            <span class="text-secondary text-nowrap flex-shrink-0" id="modelWizardStepCount"></span>
+                                        </div>
                                     </div>
-                                </div>
-                                <div class="wizard-ask" id="modelWizardAsk"></div>
-                                <div class="small text-secondary d-none" id="modelWizardTemplateSummary"></div>
-                                <div class="d-flex align-items-center gap-2 border-top pt-3">
-                                    <button type="button" class="btn btn-outline-secondary d-none" id="modelWizardBackBtn"></button>
-                                    <button type="button" class="btn btn-primary ms-auto" id="modelWizardSaveBtn"></button>
+                                    <div class="wizard-ask" id="modelWizardAsk"></div>
+                                    <div class="small text-secondary d-none" id="modelWizardTemplateSummary"></div>
+                                    <div class="d-flex align-items-center gap-2 border-top pt-3">
+                                        <button type="button" class="btn btn-outline-secondary d-none" id="modelWizardBackBtn"></button>
+                                        <button type="button" class="btn btn-primary ms-auto" id="modelWizardSaveBtn"></button>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                        <div hidden>
-                            <div class="d-flex align-items-center gap-2 mb-3">
-                                <button type="button" class="btn btn-sm btn-outline-secondary" data-action="backToModelList"><?= icon('fa-arrow-left', 'me-1') ?>Voltar</button>
-                            </div>
-                            <div class="row g-3 g-lg-4 mb-4">
-                                <div class="col-lg-8" id="modelDetailFields">
-                                    <div class="mb-3">
-                                        <label for="modelDetailCommercialName" class="section-label">Nome comercial</label>
-                                        <input type="text" class="form-control fw-semibold" id="modelDetailCommercialName">
-                                    </div>
-                                    <div class="row g-3">
-                                        <div class="col-md-4">
-                                            <label for="modelDetailSupplierSelect" class="section-label">Fornecedor</label>
-                                            <select class="form-select" id="modelDetailSupplierSelect"></select>
-                                        </div>
-                                        <div class="col-md-4">
-                                            <label for="modelDetailDeviceType" class="section-label">Tipo</label>
-                                            <select class="form-select" id="modelDetailDeviceType"></select>
-                                        </div>
-                                        <div class="col-md-4">
-                                            <label for="modelDetailInternalModel" class="section-label">Modelo interno</label>
-                                            <input type="text" class="form-control" id="modelDetailInternalModel">
-                                        </div>
-                                    </div>
-                                    <div class="d-flex align-items-center gap-2 mt-3">
-                                        <span class="state-badge badge rounded-pill d-inline-flex align-items-center gap-1 text-uppercase fw-semibold lh-sm px-2 bg-secondary-subtle text-body-secondary" id="modelDetailDirtyState"><span class="state-badge-dot rounded-circle d-inline-block"></span>Sem alterações</span>
-                                        <button type="button" class="btn btn-primary btn-sm d-none" id="modelDetailSaveBtn"><?= icon('fa-floppy-disk', 'me-1') ?>Guardar</button>
-                                        <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none d-none" id="modelDetailResetBtn">Descartar</button>
-                                    </div>
+                            <div class="carousel-item">
+                                <div class="d-flex align-items-center gap-2 mb-3">
+                                    <button type="button" class="btn btn-sm btn-outline-secondary" data-action="backToModelList"><?= icon('fa-arrow-left', 'me-1') ?>Voltar</button>
                                 </div>
-                                <div class="col-lg-4 order-first order-lg-last">
-                                    <div class="showcase-preview border rounded d-flex align-items-center justify-content-center p-3 p-lg-4 h-100 position-relative" role="button" tabindex="0" title="Clique ou arraste para alterar a imagem">
-                                        <input type="file" id="modelDetailImageInput" accept="image/*" class="position-absolute top-0 start-0 w-100 h-100 opacity-0 cursor-pointer">
-                                        <div id="modelDetailImage" class="text-center w-100">
-                                            <div class="text-secondary">
-                                                <?= icon('fa-microchip', 'fs-1 opacity-50') ?>
-                                                <div class="small mt-2" id="modelDetailName">Modelo</div>
+                                <div class="row g-3 g-lg-4 mb-4">
+                                    <div class="col-lg-8" id="modelDetailFields">
+                                        <div class="mb-3">
+                                            <label for="modelDetailCommercialName" class="section-label">Nome comercial</label>
+                                            <input type="text" class="form-control fw-semibold" id="modelDetailCommercialName">
+                                        </div>
+                                        <div class="row g-3">
+                                            <div class="col-md-4">
+                                                <label for="modelDetailSupplierSelect" class="section-label">Fornecedor</label>
+                                                <select class="form-select" id="modelDetailSupplierSelect"></select>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <label for="modelDetailDeviceType" class="section-label">Tipo</label>
+                                                <select class="form-select" id="modelDetailDeviceType"></select>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <label for="modelDetailInternalModel" class="section-label">Modelo interno</label>
+                                                <input type="text" class="form-control" id="modelDetailInternalModel">
+                                            </div>
+                                        </div>
+                                        <div class="d-flex align-items-center gap-2 mt-3">
+                                            <span class="state-badge badge rounded-pill d-inline-flex align-items-center gap-1 text-uppercase fw-semibold lh-sm px-2 bg-secondary-subtle text-body-secondary" id="modelDetailDirtyState"><span class="state-badge-dot rounded-circle d-inline-block"></span>Sem alterações</span>
+                                            <button type="button" class="btn btn-primary btn-sm d-none" id="modelDetailSaveBtn"><?= icon('fa-floppy-disk', 'me-1') ?>Guardar</button>
+                                            <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none d-none" id="modelDetailResetBtn">Descartar</button>
+                                        </div>
+                                    </div>
+                                    <div class="col-lg-4 order-first order-lg-last">
+                                        <div class="showcase-preview border rounded d-flex align-items-center justify-content-center p-3 p-lg-4 h-100 position-relative" role="button" tabindex="0" title="Clique ou arraste para alterar a imagem">
+                                            <input type="file" id="modelDetailImageInput" accept="image/*" class="position-absolute top-0 start-0 w-100 h-100 opacity-0 cursor-pointer">
+                                            <div id="modelDetailImage" class="text-center w-100">
+                                                <div class="text-secondary">
+                                                    <?= icon('fa-microchip', 'fs-1 opacity-50') ?>
+                                                    <div class="small mt-2" id="modelDetailName">Modelo</div>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
-                            </div>
-                            <div class="mb-3 border-top pt-4">
-                                <div class="section-label mb-1" id="capabilityTitle">Capacidades</div>
-                                <div class="small text-secondary" id="capabilitySubtitle"></div>
-                            </div>
-                            <div id="capabilitySectionNav" class="capability-section-nav d-flex py-1 mb-3" role="group" aria-label="Secções de capacidade"></div>
-                            <div id="capabilityGroups"></div>
-                            <div class="border-top mt-4 pt-3 d-flex align-items-center justify-content-between gap-3 flex-wrap">
-                                <div>
-                                    <div class="fw-semibold">Apagar este modelo</div>
-                                    <div class="small text-secondary" id="modelDetailDeleteHint">Os dispositivos que o usam ficam sem template de capacidades.</div>
+                                <div class="mb-3 border-top pt-4">
+                                    <div class="section-label mb-1" id="capabilityTitle">Capacidades</div>
+                                    <div class="small text-secondary" id="capabilitySubtitle"></div>
                                 </div>
-                                <button type="button" class="btn btn-outline-danger btn-sm flex-shrink-0" id="modelDetailDeleteBtn"><?= icon('fa-trash', 'me-1') ?>Apagar modelo</button>
+                                <div id="capabilitySectionNav" class="capability-section-nav d-flex py-1 mb-3" role="group" aria-label="Secções de capacidade"></div>
+                                <div id="capabilityGroups"></div>
+                                <div class="border-top mt-4 pt-3 d-flex align-items-center justify-content-between gap-3 flex-wrap">
+                                    <div>
+                                        <div class="fw-semibold">Apagar este modelo</div>
+                                        <div class="small text-secondary" id="modelDetailDeleteHint">Os dispositivos que o usam ficam sem template de capacidades.</div>
+                                    </div>
+                                    <button type="button" class="btn btn-outline-danger btn-sm flex-shrink-0" id="modelDetailDeleteBtn"><?= icon('fa-trash', 'me-1') ?>Apagar modelo</button>
+                                </div>
                             </div>
                         </div>
                     </div>

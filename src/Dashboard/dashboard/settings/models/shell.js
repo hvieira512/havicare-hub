@@ -11,13 +11,11 @@ export function getSettingsModelsRuntime() {
     return { els, ui };
 }
 
-/** Mostra um dos painéis: 0 a lista, 1 o modelo novo, 2 a ficha. */
+/** Desliza o carrossel para um dos painéis: 0 a lista, 1 o modelo novo, 2 a ficha. */
 export function showModelsPane(index) {
-    [...els.modelsPanes.children].forEach((pane, at) => {
-        pane.hidden = at !== index;
-    });
+    bootstrap.Carousel.getOrCreateInstance(els.modelsCarousel, { interval: false, wrap: false, touch: false }).to(index);
 }
 
 export function isModelListShown() {
-    return !els.modelsPanes.firstElementChild.hidden;
+    return els.modelsCarousel.querySelector(".carousel-item").classList.contains("active");
 }

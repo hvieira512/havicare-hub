@@ -3,8 +3,11 @@ import { html } from "../../html.js";
 import { joinMarkup } from "./shared.js";
 import { countLabel } from "../../i18n.js";
 
+/** O par 0,0 é como os protocolos dizem «sem fixo», mesmo marcado com coordenadas. */
 export function locationCoordinates(data) {
-    return data?.hasCoordinates === true ? { lat: Number(data.lat), lon: Number(data.lon) } : null;
+    const [lat, lon] = [Number(data?.lat), Number(data?.lon)];
+
+    return data?.hasCoordinates === true && (lat !== 0 || lon !== 0) ? { lat, lon } : null;
 }
 
 /** Onde está, ou um travessão. Cinco decimais são ~1 m, a precisão do melhor fixo do mapa de rádio. */
