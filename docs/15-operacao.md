@@ -173,26 +173,24 @@ liga um erro 500 a uma linha do log.
 ## 5. Configuração da máquina
 
 A configuração do sistema que pertence ao hub está versionada em `config/`, para
-que a perda da máquina não leve consigo o que estava montado nela. A cópia no
-servidor é idêntica à do repositório.
+que a perda da máquina não leve consigo o que estava montado nela. A firewall, o
+proxy e os certificados são da infraestrutura partilhada da máquina e não vivem
+neste repositório.
 
 | Ficheiro versionado | Destino na máquina |
 |---|---|
 | `config/logrotate/havicare-hub` | `/etc/logrotate.d/havicare-hub` |
-| `config/nftables/havicare-hub.nft` | `/etc/sysconfig/nftables.conf` |
 | `config/systemd/watchdog.conf` | `…/havicare-hub*.service.d/watchdog.conf` |
-| `config/systemd/ev-loop.conf` | `…/havicare-hub*.service.d/ev-loop.conf` |
 | `config/systemd/limit-nofile.conf` | `…/havicare-hub*.service.d/limit-nofile.conf` |
 
-Os três drop-ins do systemd têm cada um o seu próprio cabeçalho a explicar o que
-resolve e o que exige; os dois últimos **só se instalam juntos**, e só depois de
-uma extensão de event loop, pelas razões da secção seguinte.
+O `limit-nofile.conf` **só se instala depois de uma extensão de event loop**,
+pelas razões da secção seguinte.
 
 ```bash
-sudo cp config/logrotate/havicare-hub    /etc/logrotate.d/havicare-hub
-sudo cp config/nftables/havicare-hub.nft /etc/sysconfig/nftables.conf
-sudo nft -f /etc/sysconfig/nftables.conf
-sudo systemctl enable --now nftables
+sudo cp config/logrotate/havicare-hub /etc/logrotate.d/havicare-hub
+sudo install -Dm644 config/systemd/watchdog.conf \
+    /etc/systemd/system/havicare-hub-dev.service.d/watchdog.conf
+sudo systemctl daemon-reload && sudo systemctl restart havicare-hub-dev
 ```
 
 **A rotação dos registos** limita os dois canais por tamanho e não por calendário,
@@ -201,17 +199,8 @@ cobre as duas instâncias: sem o asterisco, a de desenvolvimento crescia sem
 limite — chegou aos 47 MB num único ficheiro. O `copytruncate` é obrigatório,
 porque o processo mantém os descritores abertos e o Monolog não os reabre.
 
-**A firewall** fecha o porto 3306 à internet. O MariaDB escuta em `0.0.0.0` e
-estava a receber milhares de tentativas de autenticação contra `root` e `admin`;
-passam apenas o localhost e o endereço de quem administra.
-
-> A política da tabela é `accept` e existe uma única regra de recusa, para o 3306.
-> Uma política de recusa obrigaria a enumerar o SSH da porta 1983, a ingestão TCP
-> do 8080, as dashboards e o nginx — e um esquecimento nessa lista tirava os
-> dispositivos da rede.
-
-A linha do endereço do administrador é a única a rever ao instalar noutra máquina,
-por ser residencial e mudar. Um túnel dispensa-a por completo:
+**A firewall** é da máquina e gere-se fora deste repositório. Ao MySQL chega-se
+por um túnel:
 
 ```bash
 ssh -L 3306:127.0.0.1:3306 hub-prod
@@ -228,9 +217,8 @@ sem deixar rasto em código.
 
 Esse teto é partilhado por tudo o que o processo aceita: as ligações TCP dos
 relógios, os sockets MQTT, os pedidos HTTP e cada ligação aberta ao
-`/api/stream`. Medido com o `simulator/stream-stress-probe.php`, que abre N
-streams de inquilino em simultâneo contra `127.0.0.1`, o que acontece ao passar
-dos 1024 é isto:
+`/api/stream`. Medido com N streams de inquilino abertos em simultâneo contra
+`127.0.0.1`, o que acontece ao passar dos 1024 é isto:
 
 - O `stream_select()` começa a avisar `You MUST recompile PHP with a larger value
   of FD_SETSIZE`, **uma vez por iteração do loop** — e o loop itera milhares de
@@ -251,14 +239,12 @@ php -d extension=ev -r 'require "vendor/autoload.php";
 > O pacote instala um ini global, carregado por **todos** os processos PHP da
 > máquina: `/etc/php.d/40-ev.ini` no Fedora, `/etc/php/8.4/cli/conf.d/20-ev.ini`
 > no Debian. Com ele activo, qualquer instância troca de loop no próximo
-> reinício. O `config/systemd/ev-loop.conf` serve para quem quiser a troca por
-> instância: desactiva-se o ini global e carrega-se a extensão pela linha de
-> comando de uma unit só.
->
-> **No `hub-prod` o ini global fica activo, e o drop-in não se instala.** Os
-> reencaminhadores, os workers e a integração correm na mesma máquina e usam o
-> `ev` por esse ini. Com os dois ao mesmo tempo, a extensão carregava duas vezes
-> e cada arranque deixava `Module "ev" is already loaded` no journal.
+> reinício. No `hub-prod` fica activo: os reencaminhadores, os workers e a
+> integração correm na mesma máquina e usam o `ev` por esse ini.
+
+Com o `ExtEvLoop` confirmado, o `config/systemd/limit-nofile.conf` sobe os
+descritores para 8192, e o `DASHBOARD_MAX_OPEN_STREAMS` pode subir dos 400 para
+cerca de 2000 (~128 KB por ligação).
 
 ### Reiniciar um processo que não morreu
 
@@ -300,13 +286,17 @@ visível no `systemctl status`.
 > segue com os valores de omissão — a mesma falha silenciosa que estas linhas
 > existem para fechar.
 
+O `RestartSteps` e o `RestartMaxDelaySec` exigem systemd 254. Depois de instalado,
+o `StartupBanner` diz `Watchdog: ping a cada 30.0s`; se disser `desligado`, o
+`NOTIFY_SOCKET` não chegou ao processo.
+
 ## 6. Funcionalidades configuráveis
 
 | Variável | Omissão | O que controla |
 |---|---|---|
 | `DASHBOARD_API_AUTH_REQUIRED` | `true` | **A autenticação inteira.** A `false`, tudo é administrador anónimo |
 | `NCS_ENABLED` | `true` | Ingestão Voerka |
-| `GATEWAY_ENABLED` | `true` | Ingestão de gateways e do que eles retransmitem por BLE. Chamava-se `MOKO_GATEWAY_ENABLED`, e esse nome continua a ser lido |
+| `GATEWAY_ENABLED` | `true` | Ingestão de gateways e do que eles retransmitem por BLE |
 | `GATEWAY_COMMANDS_ENABLED` | `true` | Se a instância escreve nos gateways BLE. A dev lê os gateways reais, e com isto a `false` não lhes manda nada: nem as ordens da dashboard nem as automáticas, como acertar o relógio |
 | `QINGLANST_ENABLED` | **`false`** | Ingestão de radares |
 | `LOCATION_RESOLUTION_ENABLED` | `true` | Localização sem GPS |
@@ -406,7 +396,6 @@ comandos para equipamento em serviço.
 | `bin/migrate.php` | O passo explícito de esquema |
 | `bin/backup-db.sh` | A cópia diária da base de dados — ver o [capítulo 18](18-backups.md) |
 | `config/logrotate/havicare-hub` | A rotação dos registos das duas instâncias |
-| `config/nftables/havicare-hub.nft` | A firewall que fecha o porto 3306 |
 | `bin/dev.sh` | O vigia de ficheiros do contentor |
 | `src/Runtime/StartupBanner.php` | O resumo de arranque |
 | `src/Runtime/CrashWatch.php` | A deteção de paragem suja |

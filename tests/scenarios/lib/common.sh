@@ -30,12 +30,9 @@ export MQTT_TOPIC_PREFIX=""
 export QINGLANST_ENABLED="false"
 export QINGLANST_MQTT_HOST=""
 
-export MQTT_PUBLISHER_USERNAME="${MQTT_PUBLISHER_USERNAME:-hub_publisher}"
-export MQTT_PUBLISHER_PASSWORD="${MQTT_PUBLISHER_PASSWORD:-hub_publisher_pass}"
-export MQTT_SMOKE_USERNAME="${MQTT_SMOKE_USERNAME:-hub_smoke}"
-export MQTT_SMOKE_PASSWORD="${MQTT_SMOKE_PASSWORD:-hub_smoke_pass}"
-export MQTT_USERNAME="$MQTT_PUBLISHER_USERNAME"
-export MQTT_PASSWORD="$MQTT_PUBLISHER_PASSWORD"
+# O mosquitto local é anónimo.
+export MQTT_USERNAME=""
+export MQTT_PASSWORD=""
 
 SCENARIO_NAME=""
 SCENARIO_DIR=""
@@ -131,10 +128,6 @@ wait_for_hub_tcp() {
 }
 
 start_mqtt_subscriber() {
-  if [ -z "${MQTT_SMOKE_USERNAME:-}" ] || [ -z "${MQTT_SMOKE_PASSWORD:-}" ]; then
-    scenario_fail "stream_failure" "MQTT_SMOKE_USERNAME/MQTT_SMOKE_PASSWORD are required"
-  fi
-
   local probe_topic="null/0/watch/scenario-subscriber-probe/raw"
   local probe_payload="ready-$(date +%s)-$$"
 
@@ -146,20 +139,20 @@ start_mqtt_subscriber() {
   ' >/dev/null 2>&1 || true
 
   docker compose exec -d mosquitto sh -lc "
-    mosquitto_sub -h 127.0.0.1 -p 1883 -u '${MQTT_SMOKE_USERNAME}' -P '${MQTT_SMOKE_PASSWORD}' -v -t '#' > /tmp/scenario-mqtt-capture.log 2>&1
+    mosquitto_sub -h 127.0.0.1 -p 1883 -v -t '#' > /tmp/scenario-mqtt-capture.log 2>&1
   "
 
   sleep 2
 
   docker compose exec -T mosquitto sh -lc "
-    mosquitto_pub -h 127.0.0.1 -p 1883 -u '${MQTT_PUBLISHER_USERNAME}' -P '${MQTT_PUBLISHER_PASSWORD}' -t '$probe_topic' -m '$probe_payload' -r
+    mosquitto_pub -h 127.0.0.1 -p 1883 -t '$probe_topic' -m '$probe_payload' -r
   " >/dev/null 2>&1 || true
 
   for _ in $(seq 1 20); do
     capture_mqtt_log
     if grep -Fq "$probe_topic $probe_payload" "$MQTT_LOG_FILE"; then
       docker compose exec -T mosquitto sh -lc "
-        mosquitto_pub -h 127.0.0.1 -p 1883 -u '${MQTT_PUBLISHER_USERNAME}' -P '${MQTT_PUBLISHER_PASSWORD}' -t '$probe_topic' -n -r
+        mosquitto_pub -h 127.0.0.1 -p 1883 -t '$probe_topic' -n -r
       " >/dev/null 2>&1 || true
       return 0
     fi

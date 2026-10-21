@@ -11,11 +11,7 @@
 .env
 .env.*
 !.env.example
-/config/ssl/*
-!/config/ssl/.gitkeep
 /config/whitelist.json
-/config/mosquitto.passwd
-/config/mosquitto.acl
 
 # O fabricante do dispensador imprimiu na documentação um company_code e um
 # company_secret que autenticam mesmo no backend dele, e este repositório é público.

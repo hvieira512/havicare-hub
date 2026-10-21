@@ -1,4 +1,4 @@
-.PHONY: up down build rebuild logs shell ps simulate simulate-vivistar-tcp listen-vivistar-tcp hub hub-logs mqtt mqtt-logs dev-dashboard smoke-hub clean-test-artifacts ssl-setup require-instance update restart status journal
+.PHONY: simulate-vivistar-tcp listen-vivistar-tcp require-instance update restart status journal
 
 # O diretório é a instância: o serviço sai dele, para não haver escolha que se possa fazer
 # mal. `/opt/havicare-hub` é a produção e `/opt/havicare-hub-dev` a de desenvolvimento.
@@ -11,77 +11,17 @@ else ifeq ($(CURDIR),$(DEV_DIR))
   HUB_SERVICE = havicare-hub-dev
 endif
 
-up:
-	docker compose up -d
-
-down:
-	docker compose down
-
-build:
-	docker compose build
-
-rebuild: down build up
-
-logs:
-	docker compose logs -f
-
-shell:
-	docker compose exec hub bash
-
-simulate:
-	docker compose exec hub php simulator/simulate.php $(ARGS)
-
 simulate-vivistar-tcp:
 	docker compose exec hub php simulator/simulate.php \
 		--server tcp://127.0.0.1:9000 \
-		--model $(or $(MODEL),VIVISTAR-CARE) \
 		--imei $(or $(IMEI),861265061009822) \
 		--command $(or $(COMMAND),AP49)
 
 listen-vivistar-tcp:
 	docker compose exec hub php simulator/simulate.php \
 		--server tcp://127.0.0.1:9000 \
-		--model $(or $(MODEL),VIVISTAR-CARE) \
 		--imei $(or $(IMEI),861265061009822) \
 		--listen
-
-hub:
-	docker compose up -d hub
-
-hub-logs:
-	docker compose logs -f hub
-
-mqtt:
-	docker compose up -d mosquitto
-
-mqtt-logs:
-	docker compose logs -f mosquitto
-
-smoke-hub:
-	tests/scenarios/scenario_hub_raw_mqtt_roundtrip.sh
-
-# Os testes correm-se pelo `composer test` (o portão completo) ou pelos passos avulsos
-# `test:unit`, `test:integration`, `test:frontend`, `test:scenarios`, `analyse` e `style`.
-
-clean-test-artifacts:
-	tests/scenarios/cleanup-artifacts.sh
-
-ssl-setup:
-	mkdir -p config/ssl && openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
-		-keyout config/ssl/privkey.pem \
-		-out config/ssl/fullchain.pem \
-		-subj "/C=PT/O=Havicare/CN=localhost"
-
-ps:
-	docker compose ps
-
-# Levanta o hub com recarregamento a cada alteração na dashboard. Para o contentor normal
-# primeiro, porque os dois disputam a mesma porta.
-dev-dashboard:
-	docker compose stop hub 2>/dev/null; \
-	docker compose run --rm --service-ports --name havicare-hub-watch \
-		-e WATCH_DIRS="/app/src/Dashboard /app/config/whitelist.json" \
-		hub bin/dev.sh php bin/server-hub.php
 
 # Fora dos dois diretórios do servidor não há instância nenhuma, e parar é melhor do que
 # adivinhar -- sem isto, um alvo destes numa cópia local reiniciava um serviço à sorte.
