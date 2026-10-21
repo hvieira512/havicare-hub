@@ -3,15 +3,6 @@
  * Apresentação de um fornecedor só, e por isso fora do `domain.js`.
  */
 
-/** Os tons em hexadecimal, para a tela da planta; são os mesmos das pastilhas. */
-const TONE_HEX = {
-    success: "#198754",
-    info: "#0dcaf0",
-    warning: "#ffc107",
-    danger: "#dc3545",
-    secondary: "#6c757d",
-};
-
 /**
  * A postura de uma pessoa vista por um radar. O `glyph` é o `icon` em ponto de código, para a
  * tela, escrito como escape porque é da área de uso privado.
@@ -36,21 +27,35 @@ const POSTURE_STYLE = {
 export function postureStyle(posture) {
     const style = POSTURE_STYLE[String(posture)] || POSTURE_STYLE.unknown;
 
-    return { ...style, color: TONE_HEX[style.tone] };
+    return { ...style, color: `var(--bs-${style.tone}-text-emphasis)` };
 }
 
-/** As cores do fabricante para cada tipo de área declarada no aparelho. */
+/** A cor de cada tipo de área declarada no aparelho, em tokens do tema. */
 const AREA_TYPE_STYLE = {
-    1: { label: "Personalizada", color: "#a9a9a9" },
-    2: { label: "Cama", color: "#20c997" },
-    3: { label: "Interferência", color: "#808080" },
-    4: { label: "Porta", color: "#ffa500" },
-    5: { label: "Cama de monitorização", color: "#32cd32" },
-    6: { label: "Região de alarme", color: "#ff4500" },
-    7: { label: "Mobília", color: "#adb9ca" },
+    1: { label: "Personalizada", color: "var(--bs-secondary-color)" },
+    2: { label: "Cama", color: "var(--brand)" },
+    3: { label: "Interferência", color: "var(--bs-secondary)" },
+    4: { label: "Porta", color: "var(--bs-warning)" },
+    5: { label: "Cama de monitorização", color: "var(--bs-info)" },
+    6: { label: "Região de alarme", color: "var(--bs-danger)" },
+    7: { label: "Mobília", color: "var(--bs-tertiary-color)" },
 };
 
 /** Um tipo que o fabricante acrescente fica cinzento e com o número à vista, em vez de sumir. */
 export function areaTypeStyle(type) {
-    return AREA_TYPE_STYLE[Number(type)] || { label: `Tipo ${type}`, color: "#a9a9a9" };
+    return AREA_TYPE_STYLE[Number(type)] || { label: `Tipo ${type}`, color: "var(--bs-secondary-color)" };
+}
+
+/**
+ * Uma cor CSS resolvida para a tela, que não lê variáveis: o tema do momento, com a opacidade
+ * multiplicada pela que o token já traga.
+ */
+export function canvasColor(cssColor, alpha = 1) {
+    const probe = document.createElement("span");
+    probe.style.color = cssColor;
+    document.body.append(probe);
+    const [r, g, b, a = 1] = getComputedStyle(probe).color.match(/[\d.]+/g).map(Number);
+    probe.remove();
+
+    return `rgba(${r}, ${g}, ${b}, ${a * alpha})`;
 }
