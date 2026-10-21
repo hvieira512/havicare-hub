@@ -172,8 +172,9 @@ final class FourPTouchAdapterTest extends TestCase
         self::assertIsArray($payload);
         self::assertSame('WIFIINFOUP', $payload['type']);
         self::assertSame('Home', $payload['data']['wifiName']);
-        self::assertSame('12345678', $payload['data']['wifiPassword']);
         self::assertSame('08:c0:21:1e:68:e0', $payload['data']['wifiSsid']);
+        self::assertArrayNotHasKey('wifiPassword', $payload['data'], 'a palavra-passe da rede não sai do adaptador');
+        self::assertArrayNotHasKey('wifiPasswordHex', $payload['data']);
     }
 
     public function testDecodeIncomingRejectsInvalidLength(): void
