@@ -9,10 +9,7 @@ use Hub\Domain\Capability\CapabilityCatalog;
 use Hub\Protocol\Adapter\PillDispenserAdapter;
 use PHPUnit\Framework\TestCase;
 
-/**
- * Um botão por pergunta, e não por grandeza: o `0x07` pede sempre as 31 TAGs do `STATUS_TAGS` e
- * enche as sete leituras de uma vez.
- */
+/** O `0x07` pede sempre as 31 TAGs do `STATUS_TAGS` e enche as sete leituras de uma vez: um botão por pergunta, não por grandeza. */
 final class PillDispenserRequestCardsTest extends TestCase
 {
     /**
@@ -30,19 +27,13 @@ final class PillDispenserRequestCardsTest extends TestCase
         return $requests;
     }
 
-    /**
-     * Dois mosaicos: o estado no `0x07` e a configuração no `0x05`. São as duas perguntas
-     * que o aparelho responde, e pedem-se como qualquer outra.
-     */
+    /** O estado no `0x07` e a configuração no `0x05` são as duas perguntas que o aparelho responde, e pedem-se como as outras. */
     public function testTheTwoReadsAreRequestCards(): void
     {
         self::assertSame(['device_status', 'sync_configuration'], array_keys($this->requests()));
     }
 
-    /**
-     * Como no relógio: a bateria vem no `device_status`, e a frequência cardíaca tem botão porque
-     * carregar nela manda medir.
-     */
+    /** Como no relógio: a bateria vem no `device_status`, e a frequência cardíaca tem botão porque carregar nela manda medir. */
     public function testTheSevenReadingsTheStatusFrameFillsAreNotRequestedOnTheirOwn(): void
     {
         $requests = $this->requests();
@@ -81,10 +72,7 @@ final class PillDispenserRequestCardsTest extends TestCase
         );
     }
 
-    /**
-     * Cada um tem de saber que trama manda e que resposta espera, senão não fecha o ciclo. A
-     * configuração vai em duas porque as TAGs já não cabem numa trama de 300 bytes.
-     */
+    /** Cada pedido sabe que trama manda e que resposta espera; a configuração vai em duas porque as TAGs não cabem em 300 bytes. */
     public function testEachRequestKnowsItsCommandAndItsReply(): void
     {
         $sync = $this->requests()['sync_configuration'] ?? [];
@@ -98,10 +86,7 @@ final class PillDispenserRequestCardsTest extends TestCase
         }
     }
 
-    /**
-     * As sondas da descoberta não ficam: a resposta não serve decisão nenhuma ao
-     * administrador, e as listas estão no capítulo 19.
-     */
+    /** As sondas da descoberta não servem decisão nenhuma ao administrador, e as listas estão no capítulo 19. */
     public function testTheIntegrationProbesAreNotPartOfTheProduct(): void
     {
         $keys = array_column(CapabilityCatalog::definitionsForDeviceType('pill_dispenser'), 'key');
@@ -112,10 +97,7 @@ final class PillDispenserRequestCardsTest extends TestCase
         }
     }
 
-    /**
-     * Um mosaico do ecrã principal dispara ao primeiro clique, sem confirmação: dispensar consome uma
-     * dose e reiniciar corta a ligação.
-     */
+    /** Um mosaico dispara ao primeiro clique, e dispensar consome uma dose e reiniciar corta a ligação. */
     public function testNothingThatChangesTheDeviceIsARequest(): void
     {
         foreach (['dispense_now', 'restart_device', 'reset_tray', 'mute_alarm', 'calibrate_clock'] as $feature) {

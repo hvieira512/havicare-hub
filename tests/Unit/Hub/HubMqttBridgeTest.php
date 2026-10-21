@@ -120,10 +120,7 @@ final class HubMqttBridgeTest extends TestCase
         self::assertFalse($publisher->lastRetain);
     }
 
-    /**
-     * Um dispositivo com dono: com os sentinelas dos outros testes, um erro na ordem dos dois
-     * primeiros segmentos não se vê.
-     */
+    /** Com os sentinelas dos outros testes, uma troca na ordem dos dois primeiros segmentos não se vê. */
     public function testATopicCarriesTheCompanyAndTheLicenceInThatOrder(): void
     {
         $publisher = new FakeMqttPublisher();
@@ -169,10 +166,7 @@ final class HubMqttBridgeTest extends TestCase
         self::assertCount(5, explode('/', (string)$publisher->lastTopic));
     }
 
-    /**
-     * A derivação para os streams acontece no mesmo sítio onde a mensagem é publicada, e
-     * leva o payload já serializado -- o mesmo que vai para o fio, sem segunda codificação.
-     */
+    /** Os streams derivam-se onde a mensagem é publicada, do payload já serializado que vai para o fio, sem segunda codificação. */
     public function testPublishingFansOutUnderTheScopeOfTheDeviceThatSentIt(): void
     {
         $fanout = new MessageFanout();
@@ -193,10 +187,7 @@ final class HubMqttBridgeTest extends TestCase
         self::assertSame('{"type":"heart_rate"}', $received[0][1]);
     }
 
-    /**
-     * A 1001 do hitcare e a 1001 do havicare são clientes diferentes, e por isso a chave de
-     * encaminhamento é o par empresa+licença.
-     */
+    /** A 1001 do hitcare e a 1001 do havicare são clientes diferentes, e a chave de encaminhamento é o par empresa+licença. */
     public function testTheSameLicenceNumberInAnotherCompanyIsADifferentScope(): void
     {
         $fanout = new MessageFanout();

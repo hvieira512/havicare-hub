@@ -9,10 +9,7 @@ use Hub\Device\HubMqttBridge;
 use PHPUnit\Framework\TestCase;
 use Tests\Support\Doubles\IngressFixtures;
 
-/**
- * Os tópicos publicados são contrato externo, e o `licenseId`, inteiro no domínio, só se torna
- * texto aqui.
- */
+/** Os tópicos são contrato externo, e o `licenseId`, inteiro no domínio, só se torna texto aqui. */
 final class DeviceTopicShapeTest extends TestCase
 {
     private function bridge(): HubMqttBridge

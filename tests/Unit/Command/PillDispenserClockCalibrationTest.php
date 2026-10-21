@@ -8,10 +8,7 @@ use Hub\Command\DeviceCommandCatalog;
 use Hub\Protocol\Adapter\PillDispenserAdapter;
 use PHPUnit\Framework\TestCase;
 
-/**
- * A TAG `0xA101` não leva fuso e as horas dos alarmes são locais. O fuso é o configurado no hub, em
- * INT16S HHMM como a TAG `0x1015`: `+100` é uma hora à frente.
- */
+/** A TAG `0xA101` não leva fuso e os alarmes são locais: o fuso do hub vai em INT16S HHMM como na `0x1015`, `+100` é uma hora. */
 final class PillDispenserClockCalibrationTest extends TestCase
 {
     private const IMEI = '869243062262262';
@@ -42,10 +39,7 @@ final class PillDispenserClockCalibrationTest extends TestCase
         );
     }
 
-    /**
-     * Sem fuso conhecido fica UTC: errado por um valor conhecido, e não por uma hora
-     * inventada.
-     */
+    /** Sem fuso conhecido fica UTC: errado por um valor conhecido, e não por uma hora inventada. */
     public function testWithoutAKnownZoneItStaysUtc(): void
     {
         $sent = $this->calibrateWith([]);

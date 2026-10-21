@@ -11,10 +11,7 @@ use Tests\Support\Doubles\FakeMqttSubscriber;
 use Tests\Support\Doubles\IngressFixtures;
 use Tests\Support\Doubles\RecordingHubMqttBridge;
 
-/**
- * Encaminhamento de uma W6B pelo gateway MOKO, na forma que um MKGW3 publica de facto: os beacons
- * MOKO chegam já interpretados, sem bytes de anúncio.
- */
+/** Na forma que um MKGW3 publica de facto, os beacons MOKO chegam já interpretados, sem bytes de anúncio. */
 final class BridgeW6bTest extends TestCase
 {
     private const GATEWAY = 'd48c49f7909c';

@@ -62,10 +62,7 @@ final class PillDispenserConfigurationLifecycleTest extends TestCase
         self::assertFalse($protocol->replyAccepted($this->decodeFrame($recusado)));
     }
 
-    /**
-     * O M228 4G não tem WiFi e recusa o `0x810A` numa leitura que trouxe o resto da telemetria:
-     * isso não é o aparelho a recusar o pedido.
-     */
+    /** O M228 4G não tem WiFi: recusar o `0x810A` numa leitura com o resto da telemetria não é recusar o pedido. */
     public function testAReadThatAnswersIsAcceptedEvenComARefusedTag(): void
     {
         $protocol = $this->protocol();

@@ -8,10 +8,7 @@ use Hub\Log\Logger;
 use Hub\Mqtt\ReconnectsOnLoopFailure;
 use PHPUnit\Framework\TestCase;
 
-/**
- * Uma ligação que cai diz também quando voltou, senão não se distingue de uma que caiu e
- * nunca mais voltou.
- */
+/** Uma ligação que cai diz quando volta, para se distinguir de uma que nunca mais voltou. */
 final class ReconnectsOnLoopFailureTest extends TestCase
 {
     private string $logFile;

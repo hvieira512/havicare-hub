@@ -13,10 +13,7 @@ use Tests\Support\Doubles\FakeMqttSubscriber;
 use Tests\Support\Doubles\IngressFixtures;
 use Tests\Support\Doubles\RecordingHubMqttBridge;
 
-/**
- * As medições pedidas ao momento, por oposição ao histórico de blocos: é aqui que o tipo do SDK,
- * que o gateway reenvia sem interpretar, vira uma grandeza do hub.
- */
+/** É aqui que o tipo do SDK, que o gateway reenvia sem interpretar, vira uma grandeza do hub. */
 final class BridgeMeasurementTest extends TestCase
 {
     private const GATEWAY = 'bef341903987';
@@ -128,10 +125,7 @@ final class BridgeMeasurementTest extends TestCase
         );
     }
 
-    /**
-     * Enquanto o sensor procura o sinal o firmware repete a trama a zero: é ausência de
-     * leitura, e não uma saturação de 0%.
-     */
+    /** Enquanto o sensor procura sinal o firmware repete a trama a zero, que é ausência de leitura e não 0% de saturação. */
     public function testZeroWhileMeasuringIsNotPublished(): void
     {
         $mqtt = new RecordingHubMqttBridge();
@@ -151,10 +145,7 @@ final class BridgeMeasurementTest extends TestCase
         self::assertSame([], $mqtt->telemetry);
     }
 
-    /**
-     * O firmware reporta `wearNotPass` e conta quedas de derivação (`leadOffType`) com dezenas de
-     * tramas a zero: o operador sabe porquê uma vez, e não sessenta.
-     */
+    /** Com `wearNotPass` ou `leadOffType` vêm dezenas de tramas a zero, e o operador sabe porquê uma vez, não sessenta. */
     public function testEcgWithoutSkinContactIsReportedOnceAndNotAsTelemetry(): void
     {
         $mqtt = new RecordingHubMqttBridge();
@@ -201,10 +192,7 @@ final class BridgeMeasurementTest extends TestCase
         self::assertSame(['reason' => 'no_signal'], $failures[0]['payload']['error']);
     }
 
-    /**
-     * São dezasseis mil amostras por exame, e a dashboard guarda cem entradas por aparelho e não
-     * desenha ondas.
-     */
+    /** São dezasseis mil amostras por exame, e a dashboard guarda cem entradas por aparelho e não desenha ondas. */
     public function testTheDashboardKeepsTheSummaryAndNotTheWholeTracing(): void
     {
         $mqtt = new RecordingHubMqttBridge();
@@ -255,10 +243,7 @@ final class BridgeMeasurementTest extends TestCase
         self::assertSame([], $mqtt->telemetry);
     }
 
-    /**
-     * O firmware repete a trama a cada segundo enquanto mede -- dezanove leituras entre 79 e 97 num
-     * só pedido real --, e o resultado é o valor com que ela assentou.
-     */
+    /** O firmware repete a trama a cada segundo enquanto mede, e o resultado é o valor em que ela assenta. */
     public function testAMeasurementYieldsTheValueItSettledOn(): void
     {
         $mqtt = new RecordingHubMqttBridge();
@@ -277,10 +262,7 @@ final class BridgeMeasurementTest extends TestCase
         self::assertSame(90, $readings[0]['payload']['data']['bpm']);
     }
 
-    /**
-     * Se a caixa morrer entre a última trama e a confirmação, o valor sai na mesma; o prazo excede a
-     * medição mais lenta, a composição corporal, de dois minutos.
-     */
+    /** O valor sai mesmo sem confirmação, com um prazo acima da medição mais lenta, a composição corporal, de dois minutos. */
     public function testAReadingIsNotLostWhenTheConfirmationNeverArrives(): void
     {
         $mqtt = new RecordingHubMqttBridge();

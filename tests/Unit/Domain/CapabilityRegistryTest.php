@@ -9,10 +9,7 @@ use PHPUnit\Framework\TestCase;
 
 final class CapabilityRegistryTest extends TestCase
 {
-    /**
-     * Uma configuração é um downlink à espera de acontecer, e é assim que fica por
-     * omissão: só quem se marca com o `HubAppliedCapability` é que o hub aplica sozinho.
-     */
+    /** Por omissão uma configuração é um downlink; só o que se marca com `HubAppliedCapability` o hub aplica sozinho. */
     public function testACapabilityTravelsToTheDeviceUnlessItSaysOtherwise(): void
     {
         $registry = new CapabilityRegistry();
@@ -24,10 +21,7 @@ final class CapabilityRegistryTest extends TestCase
         self::assertTrue($registry->travelsToDevice('uma_capacidade_que_nao_existe'));
     }
 
-    /**
-     * O `data` e o `fields` são a trama nativa já montada; vindos da API, chegavam ao relógio sem
-     * passar pela validação do construtor.
-     */
+    /** O `data` e o `fields` são a trama nativa já montada, e vindos da API chegariam ao relógio sem a validação do construtor. */
     public function testAPublicValueCannotCarryARawNativePayload(): void
     {
         $registry = new CapabilityRegistry();

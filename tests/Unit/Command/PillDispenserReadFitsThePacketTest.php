@@ -8,10 +8,7 @@ use Hub\Command\DeviceCommandCatalog;
 use Hub\Protocol\Adapter\PillDispenserAdapter;
 use PHPUnit\Framework\TestCase;
 
-/**
- * O aparelho deixa cair em silêncio uma trama maior do que o `0x8003` declara, e a leitura da
- * configuração é a única que cresce com cada definição nova.
- */
+/** O aparelho deixa cair em silêncio uma trama maior do que o `0x8003` declara, e a leitura da configuração cresce com cada definição. */
 final class PillDispenserReadFitsThePacketTest extends TestCase
 {
     private const IMEI = '869243062262262';

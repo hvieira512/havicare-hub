@@ -84,10 +84,7 @@ final class PayloadDecoderTest extends TestCase
         self::assertSame('sitting', $payload['people'][0]['posture_state']);
     }
 
-    /**
-     * Um código que a tabela não conheça sai na enumeração de reserva, e não em branco: o
-     * firmware pode acrescentar estados, e o que ele disse não se deita fora.
-     */
+    /** O firmware pode acrescentar estados, e um código desconhecido sai na enumeração de reserva em vez de se deitar fora. */
     public function testAnUnknownCodeFallsBackWithoutLosingTheReading(): void
     {
         $decoder = new PayloadDecoder();

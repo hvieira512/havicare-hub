@@ -7,10 +7,7 @@ namespace Tests\Unit\Command;
 use Hub\Command\Configuration\Payload\FourPTouchPayloadBuilder;
 use PHPUnit\Framework\TestCase;
 
-/**
- * O tecto do áudio de voz do TAKEPILLS: o `ffmpeg` corre síncrono no event loop, e um lembrete
- * tem no máximo 15 segundos.
- */
+/** O `ffmpeg` corre síncrono no event loop, e um lembrete do TAKEPILLS tem no máximo 15 segundos. */
 final class FourPTouchVoiceDataLimitTest extends TestCase
 {
     /** Um lembrete válido, para o payload não falhar por outra razão. */

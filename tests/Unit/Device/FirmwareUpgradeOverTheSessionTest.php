@@ -14,10 +14,7 @@ use PHPUnit\Framework\TestCase;
 use Tests\Support\Doubles\InMemoryFirmwareUpgradeStore;
 use Tests\Unit\Hub\PillFakeConnection;
 
-/**
- * A transferência sai pela sessão do aparelho, que é a única ligação que existe: ele é que
- * liga ao hub. Cada trama que ele manda é a oportunidade de enviar o pacote seguinte.
- */
+/** O aparelho é que liga ao hub, e cada trama que manda é a oportunidade de enviar o pacote seguinte pela sessão dele. */
 final class FirmwareUpgradeOverTheSessionTest extends TestCase
 {
     private const IMEI = '869243062262262';
@@ -41,10 +38,7 @@ final class FirmwareUpgradeOverTheSessionTest extends TestCase
         self::assertSame(FirmwareUpgrade::CHUNK, strlen($sent['body']) - 4);
     }
 
-    /**
-     * O aparelho espera o `0x82` por cada `0x02`, e sem ele acaba por cortar a ligação a meio da
-     * transferência.
-     */
+    /** O aparelho espera o `0x82` por cada `0x02`, e sem ele corta a ligação a meio da transferência. */
     public function testTheHeartbeatIsStillAcknowledgedWhileTheUpgradeStarts(): void
     {
         $store = $this->store(['status' => 'requested', 'offset' => 0]);
@@ -60,10 +54,7 @@ final class FirmwareUpgradeOverTheSessionTest extends TestCase
         self::assertSame(['heartbeat_ack', 'upgrade_start'], $types);
     }
 
-    /**
-     * A secção 4 manda os campos de subpacote a zero num pedido partido em vários pacotes; o
-     * resto do protocolo manda `subtotal` a 1.
-     */
+    /** Num pedido em vários pacotes a secção 4 manda os campos de subpacote a zero; no resto do protocolo o `subtotal` é 1. */
     public function testTheUpgradePacketsCarryNoSubpacketFields(): void
     {
         $store = $this->store(['status' => 'starting', 'offset' => 0]);

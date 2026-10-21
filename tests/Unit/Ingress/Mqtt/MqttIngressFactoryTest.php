@@ -11,10 +11,7 @@ use Hub\Runtime\HubServices;
 use PHPUnit\Framework\TestCase;
 use React\EventLoop\StreamSelectLoop;
 
-/**
- * Os caminhos ligados abrem sessão MQTT no construtor e só se exercitam no `tests/scenarios`;
- * aqui prende-se que um fornecedor desligado não é registado, pelas chaves certas.
- */
+/** Os caminhos ligados abrem sessão MQTT e só se exercitam no `tests/scenarios`; aqui prende-se o fornecedor desligado. */
 final class MqttIngressFactoryTest extends TestCase
 {
     public function testNothingIsRegisteredWhenEverySupplierIsOff(): void

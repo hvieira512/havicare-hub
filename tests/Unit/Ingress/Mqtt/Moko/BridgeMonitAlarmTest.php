@@ -15,10 +15,7 @@ use Tests\Support\Doubles\MutableDiaperSensitivity;
 use Tests\Support\Doubles\RecordingHubMqttBridge;
 use Tests\Support\Doubles\FakeMqttSubscriber;
 
-/**
- * O alarme `change_required` do MONIT MECS-PRO pelo caminho dos eventos, onde um alarme de
- * primeira observação se pode perder; a telemetria está no `BridgeTest`.
- */
+/** O `change_required` do MONIT MECS-PRO pelo caminho dos eventos, onde um alarme de primeira observação se pode perder. */
 final class BridgeMonitAlarmTest extends TestCase
 {
     private const GATEWAY = 'd48c49f7909c';

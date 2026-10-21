@@ -10,10 +10,7 @@ use PHPUnit\Framework\TestCase;
 use Tests\Support\Doubles\IngressFixtures;
 use Tests\Support\Doubles\RecordingHubMqttBridge;
 
-/**
- * A camada TCP não tem tipo de dispositivo por omissão: um `'watch'` por omissão publica um
- * dispensador debaixo de `/watch/` sem erro nenhum. O tipo sai da whitelist.
- */
+/** Um `'watch'` por omissão publicaria um dispensador debaixo de `/watch/` sem erro; o tipo sai da whitelist. */
 final class TcpLayerHasNoDeviceTypeDefaultTest extends TestCase
 {
     public function testADispenserPublishesUnderItsOwnDeviceType(): void

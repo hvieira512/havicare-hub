@@ -8,10 +8,7 @@ use Hub\Ingress\Mqtt\Gateway\RedisObservationStateStore;
 use PHPUnit\Framework\TestCase;
 use Tests\Support\Doubles\InMemoryRedisClient;
 
-/**
- * Uma etiqueta que muda de gateway ou desaparece deixaria a chave para sempre; as chaves só servem
- * dentro da janela de refrescamento, e o prazo não altera a decisão de publicar.
- */
+/** Uma etiqueta que muda de gateway ou desaparece deixaria a chave para sempre, e o prazo não altera a decisão de publicar. */
 final class RedisObservationStateStoreTest extends TestCase
 {
     public function testShouldPublishKeyHasATtl(): void

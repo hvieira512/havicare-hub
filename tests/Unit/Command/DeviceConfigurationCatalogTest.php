@@ -1208,8 +1208,7 @@ final class DeviceConfigurationCatalogTest extends TestCase
     }
 
     /**
-     * Um interruptor é o comando dele mais um `1` ou um `0`, e o que distingue estes é só o
-     * nome nativo: a forma é a mesma para todos.
+     * Um interruptor é o comando mais um `1` ou `0`; só o nome nativo distingue estes, a forma é a mesma.
      *
      * @dataProvider nativeToggleProvider
      */
@@ -1313,11 +1312,9 @@ final class DeviceConfigurationCatalogTest extends TestCase
     }
 
     /**
-     * A validação devolve a mensagem, e é a mensagem que chega ao utilizador: por isso é ela
-     * que se afirma, e não só que houve recusa.
+     * A mensagem da validação é o que chega ao utilizador, por isso afirma-se ela e não só a recusa.
      *
      * @param array<string, mixed> $desired
-     *
      * @dataProvider rejectedConfigurationProvider
      */
     public function testValidationRefusesTheConfigurationAndSaysWhy(
@@ -1329,10 +1326,7 @@ final class DeviceConfigurationCatalogTest extends TestCase
         self::assertSame($message, DeviceConfigurationCatalog::validate($protocol, $key, $desired));
     }
 
-    /**
-     * Uma entrada transiente é uma acção, e o catálogo tem de a anunciar como tal: é a
-     * `/requests` que a aceita, e a `PATCH` das configurações recusa-a.
-     */
+    /** Uma entrada transiente é uma acção: a `/requests` aceita-a e a `PATCH` das configurações recusa-a. */
     public function testTransientEntriesAreAnnouncedAsRequestsAndTheRestAsConfig(): void
     {
         $transientSeen = 0;

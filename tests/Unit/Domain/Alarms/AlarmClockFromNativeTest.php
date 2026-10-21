@@ -8,10 +8,7 @@ use Hub\Domain\Capability\AlarmClock\FourPTouch;
 use Hub\Domain\Capability\AlarmClock\Vivistar;
 use PHPUnit\Framework\TestCase;
 
-/**
- * A 4P Touch procura `alarms` primeiro e a Vivistar `items`: é a única diferença entre os dois
- * handlers, e é fácil de achatar sem nada ficar vermelho.
- */
+/** A 4P Touch procura `alarms` primeiro e a Vivistar `items`, a única diferença entre os dois handlers. */
 final class AlarmClockFromNativeTest extends TestCase
 {
     private const ALARM = ['time' => '07:30', 'enabled' => true, 'mode' => 1, 'custom' => ''];

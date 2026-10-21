@@ -13,10 +13,7 @@ use Tests\Support\Doubles\FakeMqttSubscriber;
 
 final class BridgeTest extends TestCase
 {
-    /**
-     * O âmbito do tópico é livre do lado da Voerka -- o manual usa `0` e os gateways
-     * instalados usam nomes -- e por isso só um número conta como licença.
-     */
+    /** O âmbito do tópico é livre na Voerka (o manual usa `0`, as instalações usam nomes), e só um número conta como licença. */
     public function testUnregisteredNcsCreatesDashboardNotification(): void
     {
         $deviceStore = $this->createMock(DeviceStoreContract::class);
@@ -43,10 +40,7 @@ final class BridgeTest extends TestCase
         );
     }
 
-    /**
-     * O âmbito de `/voerka/{âmbito}/devices/…` dá a licença, o único campo do assistente que não se
-     * deduz do protocolo; é só uma pista, porque a atribuição sai da whitelist.
-     */
+    /** O âmbito de `/voerka/{âmbito}/devices/…` dá a licença só como pista, porque a atribuição sai da whitelist. */
     public function testUnregisteredNcsNotificationCarriesTheTopicLicense(): void
     {
         $deviceStore = $this->createMock(DeviceStoreContract::class);

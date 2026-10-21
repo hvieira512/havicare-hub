@@ -141,10 +141,7 @@ final class PillDispenserNormalizationTest extends TestCase
         self::assertSame([], $byFeature['help_call']);
     }
 
-    /**
-     * Uma TAG recusada não tem valor: o que lá está é o eco do que mandámos, e é o estado no Flag
-     * que diz se há valor.
-     */
+    /** Uma TAG recusada traz o eco do que mandámos, e é o estado no Flag que diz se há valor. */
     public function testARefusedTagIsNotReadAsAValue(): void
     {
         $decoded = $this->decode([

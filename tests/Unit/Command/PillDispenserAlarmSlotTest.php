@@ -8,10 +8,7 @@ use Hub\Command\DeviceCommandCatalog;
 use Hub\Protocol\Adapter\PillDispenserAdapter;
 use PHPUnit\Framework\TestCase;
 
-/**
- * O slot vai dentro de cada plano; um plano sem slot é colocado por posição, que é o que os planos
- * já guardados trazem.
- */
+/** O slot vai em cada plano, e um plano sem slot, como os já guardados, é colocado por posição. */
 final class PillDispenserAlarmSlotTest extends TestCase
 {
     private const IMEI = '869243062262262';
@@ -30,10 +27,7 @@ final class PillDispenserAlarmSlotTest extends TestCase
         self::assertSame(24, $this->byte($tlv, 0x1023));
     }
 
-    /**
-     * Os nove vão sempre, e um slot que o plano não use vai vazio: `24:60`, porque `00:00` é a
-     * meia-noite e gastaria uma dose.
-     */
+    /** Os nove slots vão sempre, e o que o plano não usa vai a `24:60`, porque `00:00` é a meia-noite e gastaria uma dose. */
     public function testTheUnusedSlotsAreEmptyAndNotMidnight(): void
     {
         $tlv = $this->plan([['slot' => 9, 'hour' => 8, 'minute' => 0]]);
@@ -47,10 +41,7 @@ final class PillDispenserAlarmSlotTest extends TestCase
         self::assertSame(1, $this->byte($tlv, 0x1049), 'alarme 9');
     }
 
-    /**
-     * Um plano com o interruptor desligado vai vazio: a firmware ignora o interruptor, e quem o
-     * desligou quer o alarme calado.
-     */
+    /** A firmware ignora o interruptor, e quem o desligou quer o alarme calado. */
     public function testASlotSwitchedOffInAStoredPlanGoesOutEmpty(): void
     {
         $tlv = $this->plan([['slot' => 1, 'hour' => 16, 'minute' => 30, 'enabled' => false]]);

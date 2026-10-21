@@ -795,8 +795,7 @@ final class DeviceEventDecoderTest extends TestCase
     }
 
     /**
-     * Cada bit da 4P Touch vira o tipo do que aconteceu, com o mesmo nome que o radar e a
-     * pulseira usam para a mesma coisa.
+     * Cada bit da 4P Touch vira o tipo do evento com o nome que o radar e a pulseira usam para a mesma coisa.
      *
      * @dataProvider fourPTouchAlarmBits
      * @param array<string, mixed> $expectedValue

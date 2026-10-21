@@ -40,10 +40,7 @@ final class BridgeTest extends TestCase
         self::assertSame([], $mqtt->telemetry);
     }
 
-    /**
-     * O gateway BLE da Havicare não fala MOKO, mas está vivo enquanto publica: o que ele reencaminha
-     * não é dele, e a presença é.
-     */
+    /** O gateway BLE da Havicare não fala MOKO, mas está vivo enquanto publica: o que reencaminha não é dele, e a presença é. */
     public function testTheHavicareGatewayIsOnlineWhileItRelays(): void
     {
         $mqtt = new RecordingHubMqttBridge();
@@ -199,10 +196,7 @@ final class BridgeTest extends TestCase
         self::assertSame(['online', 'offline'], array_column(array_column($mqtt->statuses, 'payload'), 'state'));
     }
 
-    /**
-     * O assistente de registo tira do protocolo o fornecedor, o tipo e os modelos: com uma
-     * chave que o `ProtocolRegistry` não conheça, o formulário abre vazio.
-     */
+    /** O assistente de registo tira do protocolo fornecedor, tipo e modelos, e uma chave que o `ProtocolRegistry` não conheça abre-o vazio. */
     public function testAnUnregisteredJsonGatewayIsReportedAsMkgw3(): void
     {
         $this->assertRejectedProtocol(

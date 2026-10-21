@@ -10,10 +10,7 @@ use Hub\Device\DeviceSession;
 use Hub\Protocol\Adapter\PillDispenserAdapter;
 use PHPUnit\Framework\TestCase;
 
-/**
- * O que se escreve no aparelho volta a ler-se igual: o `0x06` montado pelo construtor real
- * lê-se como se fosse a resposta `0x86`.
- */
+/** O `0x06` montado pelo construtor real lê-se como se fosse a resposta `0x86`. */
 final class PillDispenserReadBackRoundTripTest extends TestCase
 {
     private const IMEI = '869243062262262';
@@ -39,10 +36,7 @@ final class PillDispenserReadBackRoundTripTest extends TestCase
         self::assertSame(['cells' => 14], $settings['loaded_cells'] ?? null);
     }
 
-    /**
-     * O ano do período viaja em INT16U e tem de ser lido como INT16U. 2026 cabe também no
-     * INT16S, e por isso a discordância não dá erro nenhum.
-     */
+    /** O ano do período viaja em INT16U, e lê-lo como INT16S não dá erro porque 2026 cabe nos dois. */
     public function testThePlanPeriodComesBackWithBothDates(): void
     {
         $settings = $this->roundTrip('medicationPeriod', [

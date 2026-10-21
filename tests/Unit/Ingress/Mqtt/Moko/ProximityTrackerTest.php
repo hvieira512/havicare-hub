@@ -7,10 +7,7 @@ namespace Tests\Unit\Ingress\Mqtt\Moko;
 use Hub\Ingress\Mqtt\Moko\ProximityTracker;
 use PHPUnit\Framework\TestCase;
 
-/**
- * As estatísticas da janela sobre as quais um cliente põe limiares, com leituras reais da
- * pulseira fb:d8:7c:59:ba:8b imóvel numa mesa, via MKGW4 c5:e3:90:f3:0b:ce.
- */
+/** As estatísticas sobre as quais um cliente põe limiares, com leituras reais de uma pulseira imóvel junto de um MKGW4. */
 final class ProximityTrackerTest extends TestCase
 {
     /** Leituras reais: 15 dB de dispersão num aparelho que nunca se mexeu. */

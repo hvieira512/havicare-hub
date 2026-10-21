@@ -13,10 +13,7 @@ use Tests\Support\Doubles\InMemoryRedisClient;
 use Tests\Support\Doubles\IngressFixtures;
 use Tests\Support\Doubles\RecordingHubMqttBridge;
 
-/**
- * Um gateway que estava ligado quando o hub reiniciou, e que não volta a falar, é dado como
- * desligado: o Redis lembra-se dele mesmo que a ponte nova nunca o tenha ouvido.
- */
+/** Um gateway ligado quando o hub reinicia e que se cala dá-se como desligado: o Redis lembra-se dele, mesmo sem a ponte nova o ouvir. */
 final class GatewaySilentAcrossRestartTest extends TestCase
 {
     private const PREFIX = 'test:dashboard:gwrestart';

@@ -7,10 +7,7 @@ namespace Tests\Unit\Ingress\Mqtt\Veepoo;
 use Hub\Ingress\Mqtt\Veepoo\SleepNormalizer;
 use PHPUnit\Framework\TestCase;
 
-/**
- * O sono preciso que a pulseira guarda três dias: `sleep` é a noite e `sleep_quality` as pontuações.
- * Os significados vêm da secção 9.4 do `VeepooUniAppSDK`, e não dos nomes dos campos, que enganam.
- */
+/** `sleep` é a noite e `sleep_quality` as pontuações, segundo a secção 9.4 do `VeepooUniAppSDK`, porque os nomes dos campos enganam. */
 final class SleepNormalizerTest extends TestCase
 {
     private const DEVICE = ['id' => '9f69c4866e6c', 'supplier' => 'Wonlex', 'model' => 'MF91'];
@@ -19,10 +16,7 @@ final class SleepNormalizerTest extends TestCase
     /** 2026-09-15 12:00:00Z, o instante a que o gateway leu o registo. */
     private const NOW = 1789473600;
 
-    /**
-     * Começo, fim, duração e os troços, que vêm da curva: nove horas de sono sem forma não dizem se
-     * foram seguidas ou nove despertares.
-     */
+    /** Os troços vêm da curva: nove horas de sono sem forma não dizem se foram seguidas ou nove despertares. */
     public function testTheNightBecomesOneSleepRecord(): void
     {
         $out = self::sleep(self::night());
@@ -35,10 +29,7 @@ final class SleepNormalizerTest extends TestCase
         self::assertSame(480, $out['data']['totalDurationMinutes']);
     }
 
-    /**
-     * Os valores da curva são os do fabricante: 0 sono profundo, 1 leve, 2 REM, 3 insónia,
-     * 4 acordado. Os nomes do hub são os que os relógios já usam para o mesmo.
-     */
+    /** A curva usa os valores do fabricante (0 profundo, 1 leve, 2 REM, 3 insónia, 4 acordado) com os nomes que os relógios já usam. */
     public function testTheCurveBecomesSegmentsWithTheContractTypes(): void
     {
         $out = self::sleep(self::night(curve: '00112234'));
@@ -61,10 +52,7 @@ final class SleepNormalizerTest extends TestCase
         self::assertSame($out['data']['endTime'], $segments[1]['endTime']);
     }
 
-    /**
-     * Sem curva, a noite continua a valer: o firmware dá os totais de cada fase à parte, e
-     * eles chegam para saber quanto se dormiu de cada maneira, mesmo sem saber quando.
-     */
+    /** Sem curva, os totais de cada fase chegam para saber quanto se dormiu de cada maneira, mesmo sem saber quando. */
     public function testWithoutACurveTheTotalsStillBecomeSegments(): void
     {
         $out = self::sleep(self::night(curve: null));
@@ -78,10 +66,7 @@ final class SleepNormalizerTest extends TestCase
         );
     }
 
-    /**
-     * Como nos relógios: uma noite com durações certas e instantes errados ainda conta horas de sono,
-     * mas instantes errados dados por certos não servem.
-     */
+    /** Como nos relógios: durações certas ainda contam horas de sono, mas instantes errados não se dão por certos. */
     public function testImpossibleInstantsAreDroppedAndFlagged(): void
     {
         $out = self::sleep(self::night(fallAsleep: '25-09-14-23', exitSleep: '25-09-15-07'));
@@ -104,10 +89,7 @@ final class SleepNormalizerTest extends TestCase
         self::assertArrayNotHasKey('startTime', $out['data']['segments'][0]);
     }
 
-    /**
-     * `nightScore` é 起夜得分, a pontuação das idas à casa de banho, e não a da noite.
-     * `sleepQuality` vem 0-4 e a app mostra 1-5 estrelas: o nome leva a escala.
-     */
+    /** `nightScore` pontua as idas à casa de banho e não a noite; `sleepQuality` vem em 0-4 e o nome leva a escala. */
     public function testTheScoresBecomeTheirOwnCapability(): void
     {
         $out = self::ofType(SleepNormalizer::normalize(self::night(), self::DEVICE, self::GATEWAY, 0, self::NOW), 'sleep_quality');
@@ -133,10 +115,7 @@ final class SleepNormalizerTest extends TestCase
         self::assertSame([], SleepNormalizer::normalize([], self::DEVICE, self::GATEWAY, 0, self::NOW));
     }
 
-    /**
-     * `nativeType` é `precise_sleep`, o nome da secção 9.4 do fabricante, e distingue-o do sono dos
-     * blocos de cinco minutos, ainda por decifrar.
-     */
+    /** `precise_sleep` é o nome da secção 9.4 do fabricante e distingue-o do sono dos blocos de cinco minutos. */
     public function testTheEnvelopeNamesTheManufacturerRecord(): void
     {
         $out = self::sleep(self::night());
@@ -147,10 +126,7 @@ final class SleepNormalizerTest extends TestCase
         self::assertSame(self::DEVICE, $out['device']);
     }
 
-    /**
-     * O firmware data o registo só com mês e dia: tomar sempre o ano corrente punha o sono de 31 de
-     * dezembro onze meses no futuro.
-     */
+    /** O firmware data o registo só com mês e dia, e o ano corrente poria o sono de 31 de dezembro no futuro. */
     public function testANightBeforeNewYearIsNotDatedInTheFuture(): void
     {
         // 2027-01-01 09:00:00Z a ler o sono da noite de 31 de dezembro.

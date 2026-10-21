@@ -7,10 +7,7 @@ namespace Tests\Unit\Domain\Capability;
 use Hub\Domain\Capability\CapabilityCatalog;
 use PHPUnit\Framework\TestCase;
 
-/**
- * «De quanto em quanto tempo o relógio mede ou envia X» é sempre a mesma pergunta, e vive
- * sempre na mesma secção do painel.
- */
+/** «De quanto em quanto tempo o relógio mede ou envia X» é sempre a mesma pergunta, e vive na mesma secção do painel. */
 final class IntervalSectionTest extends TestCase
 {
     public function testEveryReportingAndMeasurementIntervalSharesOneSection(): void

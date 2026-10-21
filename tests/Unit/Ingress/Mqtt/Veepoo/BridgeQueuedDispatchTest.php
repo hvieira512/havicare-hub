@@ -13,10 +13,7 @@ use Tests\Support\Doubles\FakeMqttSubscriber;
 use Tests\Support\Doubles\IngressFixtures;
 use Tests\Support\Doubles\RecordingHubMqttBridge;
 
-/**
- * Entrega de um comando criado com a sessão já aberta: a pulseira é alcançável entre sessões, e
- * esperar pelo anúncio seguinte custaria até um intervalo de heartbeat por ordem.
- */
+/** A pulseira é alcançável entre sessões, e esperar pelo anúncio seguinte custaria até um intervalo de heartbeat por ordem. */
 final class BridgeQueuedDispatchTest extends TestCase
 {
     private const GATEWAY = 'bef341903987';
@@ -40,10 +37,7 @@ final class BridgeQueuedDispatchTest extends TestCase
         self::assertSame(['enabled' => true], $mqtt->gatewayCommands[0]['payload']['payload']);
     }
 
-    /**
-     * O que não for confirmado fica em fila, mas não se repete a cada volta: o gateway ignora
-     * a mesma chave durante minutos e a entrega nunca pararia.
-     */
+    /** O gateway ignora a mesma chave durante minutos, e repetir a cada volta o que não foi confirmado nunca pararia a entrega. */
     public function testAnUnconfirmedCommandIsNotResentOnEveryTick(): void
     {
         $mqtt = new RecordingHubMqttBridge();
@@ -88,10 +82,7 @@ final class BridgeQueuedDispatchTest extends TestCase
         self::assertSame([], $mqtt->gatewayCommands);
     }
 
-    /**
-     * O travão só marca a chave como entregue depois de a publicação passar; senão um gateway
-     * inalcançável calaria a ordem trinta segundos sem ela ter saído.
-     */
+    /** A chave só se marca entregue depois de a publicação passar, para um gateway inalcançável não calar a ordem trinta segundos. */
     public function testACommandWhosePublishFailsIsRetriedOnTheNextTick(): void
     {
         $queue = self::queue();
@@ -124,10 +115,7 @@ final class BridgeQueuedDispatchTest extends TestCase
         self::assertCount(1, $mqtt->gatewayCommands, 'a ordem que nunca saiu tem de voltar a ser tentada');
     }
 
-    /**
-     * O hub repete de sessenta em sessenta segundos o que espera confirmação, e é pelo identificador
-     * que o gateway reconhece a reentrega e não volta a medir.
-     */
+    /** O hub repete a cada sessenta segundos o que espera confirmação, e o gateway reconhece a reentrega pelo identificador. */
     public function testTheRequestIdentityTravelsToTheGateway(): void
     {
         $mqtt = new RecordingHubMqttBridge();

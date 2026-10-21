@@ -7,10 +7,7 @@ namespace Tests\Unit\Command;
 use Hub\Command\Configuration\Payload\ZayataPayloadBuilder;
 use PHPUnit\Framework\TestCase;
 
-/**
- * O aparelho aceita as datas (`0x1004`–`0x1006` e `0x1007`–`0x1009`) sem reclamar da ordem, e um
- * plano ao contrário nunca vale: os alarmes não tocam, sem erro.
- */
+/** O aparelho aceita as datas sem verificar a ordem, e um plano ao contrário deixa os alarmes calados sem erro. */
 final class PillDispenserPeriodValidationTest extends TestCase
 {
     public function testTheSameDayAtBothEndsIsAValidPeriod(): void

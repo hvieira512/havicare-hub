@@ -12,10 +12,7 @@ use Tests\Support\Doubles\FakeMqttSubscriber;
 use Tests\Support\Doubles\IngressFixtures;
 use Tests\Support\Doubles\RecordingHubMqttBridge;
 
-/**
- * Em repouso a W6 anuncia a trama do acelerómetro (`bxp-acc`); um toque liga durante trinta
- * segundos o slot Eddystone-UID com o instance id desse modo, sem contador cumulativo.
- */
+/** Em repouso a W6 anuncia o `bxp-acc`; um toque liga por trinta segundos o slot Eddystone-UID, sem contador cumulativo. */
 final class BridgeW6Test extends TestCase
 {
     private const GATEWAY = 'c5e390f30bce';
@@ -162,10 +159,7 @@ final class BridgeW6Test extends TestCase
         self::assertSame(self::GATEWAY, $events[0]['payload']['source']['gatewayId']);
     }
 
-    /**
-     * O slot anuncia-se durante trinta segundos e cada gateway ao alcance repete-o: um toque
-     * não pode virar trinta pedidos de ajuda.
-     */
+    /** Cada gateway ao alcance repete o slot durante trinta segundos, e um toque não pode virar trinta pedidos de ajuda. */
     public function testTheRepeatedFrameOfOnePressRaisesOneHelpCall(): void
     {
         $mqtt = new RecordingHubMqttBridge();

@@ -52,10 +52,7 @@ final class JoyTechThermometerBridgeTest extends TestCase
         self::assertStringStartsWith('faaaaaaf000f86', $mqtt->gatewayCommands[0]['payload']['payload']['writes'][0]['hex']);
     }
 
-    /**
-     * A memória vem toda numa trama e responde-se-lhe. A mais recente, com menos de 5 min, é ao
-     * vivo; as outras são histórico, e as de 2024 ficam.
-     */
+    /** A memória vem numa trama e responde-se-lhe: a mais recente com menos de 5 min é ao vivo, as outras são histórico, mesmo as de 2024. */
     public function testTheMemoryLeavesWithTheFirstOneLive(): void
     {
         $mqtt = new RecordingHubMqttBridge();

@@ -10,10 +10,7 @@ use Hub\Ingress\Tcp\Supplier\Zayata\PillDispenserTcpProtocol;
 use Hub\Protocol\Adapter\PillDispenserAdapter;
 use PHPUnit\Framework\TestCase;
 
-/**
- * O heartbeat do M228 repete as TAGs de estado a cada minuto: uma avaria ou uma chamada que dura
- * dá um evento quando começa, e não um por heartbeat.
- */
+/** O heartbeat do M228 repete as TAGs de estado a cada minuto, e uma condição que dura dá um evento só quando começa. */
 final class PillDispenserRepeatedConditionsTest extends TestCase
 {
     private const FAULT_TRAY = 0x8122;

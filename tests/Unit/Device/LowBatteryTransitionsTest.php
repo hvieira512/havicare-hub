@@ -7,10 +7,7 @@ namespace Tests\Unit\Device;
 use Hub\Device\LowBatteryTransitions;
 use PHPUnit\Framework\TestCase;
 
-/**
- * Os aparelhos que repetem a bandeira de bateria fraca em cada leitura dão um `low_battery` só
- * quando ela acende, e não um por leitura.
- */
+/** Estes aparelhos repetem a bandeira de bateria fraca em cada leitura, e o `low_battery` sai só quando ela acende. */
 final class LowBatteryTransitionsTest extends TestCase
 {
     public function testTheFlagRaisesTheEventWhenItTurnsOn(): void

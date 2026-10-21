@@ -8,10 +8,7 @@ use Hub\Domain\Capability\FourPTouch\FourPTouchGenericHandler;
 use Hub\Domain\Capability\GenericCapability;
 use PHPUnit\Framework\TestCase;
 
-/**
- * A capacidade genérica é de quem não tem contrato próprio, e anuncia todos os protocolos:
- * sem tradução, o nome nativo é a própria chave genérica.
- */
+/** A capacidade genérica anuncia todos os protocolos, e sem tradução o nome nativo é a própria chave genérica. */
 final class GenericCapabilityPassthroughTest extends TestCase
 {
     /** Instanciada directamente, para não depender de que chaves têm hoje contrato próprio. */

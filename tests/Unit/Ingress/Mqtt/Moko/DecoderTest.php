@@ -67,10 +67,7 @@ final class DecoderTest extends TestCase
         self::assertSame(87, (new MonitMecsProDecoder())->decode($decoded['data'][0])['batteryPercent'] ?? null);
     }
 
-    /**
-     * Uma entrada 0x30A0 real do MKGW4 c5e390f30bce a retransmitir a W6B fbd87c59ba8b: um MKGW4
-     * só manda os campos interpretados, e é o único caminho até ao `W6bDecoder`.
-     */
+    /** Um MKGW4 só manda os campos interpretados, e esta entrada 0x30A0 real é o único caminho até ao `W6bDecoder`. */
     public function testDecodesMkgw4ButtonScanEntryTheSameWayAsAMkgw3(): void
     {
         $entry = '00000107010006fbd87c59ba8b020001010300056a83297600040001b80a0001200b000103'

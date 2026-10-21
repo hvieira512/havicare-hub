@@ -31,10 +31,7 @@ final class HubMqttBridgeDrainTest extends TestCase
         self::assertTrue($reconnected, 'uma falha no drain reconecta o publicador em vez de propagar');
     }
 
-    /**
-     * O `connect` bloqueia o loop que envia o sinal de vida ao systemd: sem recuo, o watchdog
-     * mata o processo.
-     */
+    /** O `connect` bloqueia o loop que dá sinal de vida ao systemd, e sem recuo o watchdog mata o processo. */
     public function testTheDrainBacksOffInsteadOfReconnectingOnEveryTick(): void
     {
         $publisher = $this->createMock(MqttClient::class);
@@ -57,10 +54,7 @@ final class HubMqttBridgeDrainTest extends TestCase
         self::assertSame(1, $attempts, 'um broker que continua a largar a ligação não pode dar uma reconexão por tick');
     }
 
-    /**
-     * A biblioteca lê qualquer escrita parcial no socket não-bloqueante como queda, e reconectar
-     * descarta a mensagem a meio de publicar numa ligação viva.
-     */
+    /** A biblioteca lê uma escrita parcial no socket não-bloqueante como queda, e reconectar descarta a mensagem a meio. */
     public function testAFailedWriteDoesNotReconnectBecauseTheConnectionIsAlive(): void
     {
         $publisher = $this->createMock(MqttClient::class);

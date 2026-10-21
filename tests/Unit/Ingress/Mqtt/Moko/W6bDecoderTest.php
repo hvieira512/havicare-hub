@@ -7,10 +7,7 @@ namespace Tests\Unit\Ingress\Mqtt\Moko;
 use Hub\Ingress\Mqtt\Moko\W6bDecoder;
 use PHPUnit\Framework\TestCase;
 
-/**
- * Os vectores de campos do gateway são observações capturadas tal e qual de um MKGW3 a
- * retransmitir uma W6B real (fb:d8:7c:59:ba:8b) com o botão premido.
- */
+/** Vectores capturados tal e qual de um MKGW3 a retransmitir uma W6B real com o botão premido. */
 final class W6bDecoderTest extends TestCase
 {
     /** Toque simples, com os campos da resposta ao scan presentes. */

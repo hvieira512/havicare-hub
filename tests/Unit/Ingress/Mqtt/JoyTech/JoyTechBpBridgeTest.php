@@ -71,10 +71,7 @@ final class JoyTechBpBridgeTest extends TestCase
         self::assertSame([['bpm' => 76]], array_column(self::telemetry($mqtt, 'heart_rate'), 'data'));
     }
 
-    /**
-     * Da memória sai com a hora do aparelho e `fromHistory`. As de antes de 2025 têm a data
-     * errada e ficam.
-     */
+    /** Da memória sai com a hora do aparelho e `fromHistory`, e as leituras com data anterior a 2025, que está errada, ficam. */
     public function testTheMemoryLeavesDatedByTheMonitor(): void
     {
         $mqtt = new RecordingHubMqttBridge();
@@ -113,10 +110,7 @@ final class JoyTechBpBridgeTest extends TestCase
         self::assertSame([], $mqtt->telemetry);
     }
 
-    /**
-     * Cada ligação começa com uma medição, que chega antes da memória: o que se mediu sem gateway
-     * antes dela continua a entrar.
-     */
+    /** Cada ligação começa com uma medição, que chega antes da memória, e o que se mediu sem gateway continua a entrar. */
     public function testWhatWasMeasuredOfflineBeforeALiveResultStillComesFromTheMemory(): void
     {
         $later = self::reading(118, 79, 70, 26, 10, 16, 15, 0, 1);
@@ -224,10 +218,7 @@ final class JoyTechBpBridgeTest extends TestCase
         self::assertArrayNotHasKey('fromHistory', self::telemetry($mqtt, 'blood_pressure')[0]['data']);
     }
 
-    /**
-     * O aparelho só se liga quando se carrega em Start, e a leitura ao ligar chega a meio da
-     * medição: pede-se outra vez depois das repetições do resultado.
-     */
+    /** A leitura ao ligar chega a meio da medição, e por isso pede-se outra vez depois das repetições do resultado. */
     public function testTheMemoryIsReadAgainAfterTheLiveResult(): void
     {
         $mqtt = new RecordingHubMqttBridge();
@@ -261,10 +252,7 @@ final class JoyTechBpBridgeTest extends TestCase
         self::assertCount(2, $mqtt->gatewayCommands);
     }
 
-    /**
-     * O pedido da dashboard fecha-o o gateway, que só responde depois do `0x8B` dele; o fim de uma
-     * leitura automática não fecha o pedido de ninguém.
-     */
+    /** O pedido da dashboard fecha-se com a resposta do gateway após o `0x8B`; uma leitura automática não fecha o pedido de ninguém. */
     public function testOnlyTheGatewayClosesTheRequestedRead(): void
     {
         $marked = [];
@@ -285,10 +273,7 @@ final class JoyTechBpBridgeTest extends TestCase
         self::assertSame([['op-1', 'waiting'], ['op-1', 'acked']], $marked);
     }
 
-    /**
-     * Duas leituras seguidas: os registos que a primeira já trouxe são repetições, mas continuam a
-     * ser da memória, e o que vem depois deles também.
-     */
+    /** Os registos que a primeira leitura já trouxe são repetições, mas continuam a ser da memória, e o que vem depois também. */
     public function testRepeatedRecordsKeepTheReadOpen(): void
     {
         $october = self::reading(131, 84, 72, 26, 10, 1, 9, 0, 1);

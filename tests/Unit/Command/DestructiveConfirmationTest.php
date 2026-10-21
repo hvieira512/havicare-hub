@@ -9,10 +9,7 @@ use Hub\Domain\Capability\CapabilityCatalog;
 use Hub\Domain\ProtocolRegistry;
 use PHPUnit\Framework\TestCase;
 
-/**
- * `reset_device` é sempre a reposição de fábrica e `restart_device` sempre o reinício. A frase
- * de confirmação vive na definição porque o efeito exato é do aparelho de cada protocolo.
- */
+/** A frase de confirmação vive na definição porque o efeito exato da reposição ou do reinício é do aparelho de cada protocolo. */
 final class DestructiveConfirmationTest extends TestCase
 {
     /**

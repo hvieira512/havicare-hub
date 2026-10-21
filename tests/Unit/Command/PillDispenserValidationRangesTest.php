@@ -7,10 +7,7 @@ namespace Tests\Unit\Command;
 use Hub\Command\DeviceConfigurationCatalog;
 use PHPUnit\Framework\TestCase;
 
-/**
- * Cada gama do `ZayataPayloadBuilder` leva aqui um valor ilegal: uma escrita que o aparelho recuse
- * fica «em envio» até alguém reparar.
- */
+/** Uma escrita que o aparelho recuse fica «em envio» até alguém reparar, por isso cada gama do `ZayataPayloadBuilder` leva um valor ilegal. */
 final class PillDispenserValidationRangesTest extends TestCase
 {
     /**

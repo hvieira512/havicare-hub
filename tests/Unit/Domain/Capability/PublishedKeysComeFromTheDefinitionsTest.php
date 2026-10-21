@@ -9,16 +9,10 @@ use Hub\Domain\Capability\Definition\CapabilityDefinitions;
 use Hub\Domain\ProtocolRegistry;
 use PHPUnit\Framework\TestCase;
 
-/**
- * Quem publica uma capacidade é facto da capacidade, e sai do ficheiro de definições do tipo
- * de aparelho dela.
- */
+/** Quem publica uma capacidade sai do ficheiro de definições do tipo de aparelho dela. */
 final class PublishedKeysComeFromTheDefinitionsTest extends TestCase
 {
-    /**
-     * O que distingue os três relógios: o `TS` é da 4P Touch, as ondas são da Wonlex, e o
-     * `device_status` não é anunciado por nenhum -- chega como resposta a um pedido.
-     */
+    /** O `TS` é da 4P Touch, as ondas são da Wonlex, e o `device_status` não é anunciado: chega como resposta a um pedido. */
     public function testEachProtocolPublishesWhatItsCapabilityDeclares(): void
     {
         self::assertSame(['four-p-touch'], self::protocolsPublishing('connectivity', 'watch'));

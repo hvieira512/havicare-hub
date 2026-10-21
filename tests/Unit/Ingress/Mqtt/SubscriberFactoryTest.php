@@ -69,10 +69,7 @@ final class SubscriberFactoryTest extends TestCase
         self::assertSame([['/voerka/x', 'payload']], $ingress->received);
     }
 
-    /**
-     * O id de um subscritor não leva pid: com `cleanSession = false` cada reinício deixaria
-     * uma sessão órfã, e truncados a 23 caracteres dois pids podem dar o mesmo id.
-     */
+    /** Com `cleanSession = false` um pid deixaria uma sessão órfã a cada reinício, e truncados a 23 caracteres dois pids podem coincidir. */
     public function testSubscriberClientIdsNeverCarryThePid(): void
     {
         $connections = $this->connections();

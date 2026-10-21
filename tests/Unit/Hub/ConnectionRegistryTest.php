@@ -35,10 +35,7 @@ final class ConnectionRegistryTest extends TestCase
         self::assertNull($registry->connectionFor('865028000000306'));
     }
 
-    /**
-     * Um relógio celular reconecta antes de a ligação antiga fechar, e reautenticar o mesmo IMEI
-     * fecha a anterior.
-     */
+    /** Um relógio celular reconecta antes de a ligação antiga fechar, e reautenticar o mesmo IMEI fecha a anterior. */
     public function testReauthenticatingAnImeiClosesThePreviousConnection(): void
     {
         $registry = new ConnectionRegistry();

@@ -61,8 +61,7 @@ final class VeepooPayloadShapeTest extends TestCase
     }
 
     /**
-     * O que desce é o nome da operação, e não uma trama: quem escreve na pulseira é o gateway
-     * que tem a sessão BLE.
+     * O que desce é o nome da operação e não uma trama, porque quem escreve na pulseira é o gateway com a sessão BLE.
      *
      * @dataProvider configurations
      * @param array<string, mixed> $input
@@ -75,10 +74,7 @@ final class VeepooPayloadShapeTest extends TestCase
         self::assertSame($command, DeviceCommandCatalog::buildDownlink(self::PROTOCOL, self::IMEI, $command));
     }
 
-    /**
-     * Um campo declarado que o construtor não escreve nunca chega à pulseira, e nada o diz:
-     * o SDK ignora o que não reconhece e a configuração fica por aplicar.
-     */
+    /** O SDK ignora o que não reconhece, e um campo declarado que o construtor não escreve fica por aplicar sem aviso. */
     public function testEveryDeclaredFieldIsWrittenIntoThePayload(): void
     {
         $samples = [];

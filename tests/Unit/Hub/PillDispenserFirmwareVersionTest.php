@@ -10,10 +10,7 @@ use Hub\Domain\Capability\CapabilityCatalog;
 use Hub\Protocol\Adapter\PillDispenserAdapter;
 use PHPUnit\Framework\TestCase;
 
-/**
- * A versão do firmware chega no pacote de registo e sai pela capacidade que os relógios e as
- * pulseiras já usam.
- */
+/** A versão do firmware chega no pacote de registo e sai pela capacidade que os relógios e as pulseiras já usam. */
 final class PillDispenserFirmwareVersionTest extends TestCase
 {
     public function testTheRegistrationPacketCarriesTheFirmwareVersion(): void
@@ -51,10 +48,7 @@ final class PillDispenserFirmwareVersionTest extends TestCase
         self::assertContains('firmware_version', $keys);
     }
 
-    /**
-     * Não é pedível: só o registo a traz, e esse é do aparelho. Um botão que não tivesse
-     * downlink por onde sair ficaria a prometer uma leitura que nunca chegava.
-     */
+    /** Só o registo do aparelho a traz, e um botão sem downlink prometeria uma leitura que nunca chega. */
     public function testItIsNotRequestable(): void
     {
         foreach (CapabilityCatalog::definitionsForDeviceType('pill_dispenser') as $definition) {

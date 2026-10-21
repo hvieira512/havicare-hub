@@ -9,10 +9,7 @@ use Hub\Device\DeviceSession;
 use Hub\Protocol\Adapter\PillDispenserAdapter;
 use PHPUnit\Framework\TestCase;
 
-/**
- * O estado de cada um dos nove alarmes, pelas TAGs `0x8131`--`0x8139` pedidas num `0x07`: vêm
- * em claro, mas sem a hora nem a célula do evento cifrado `0x03`.
- */
+/** As TAGs `0x8131`--`0x8139` pedidas num `0x07` vêm em claro, mas sem a hora nem a célula do evento cifrado `0x03`. */
 final class PillDispenserAlarmStatusTest extends TestCase
 {
     public function testEachAlarmStateBecomesTelemetry(): void
@@ -54,10 +51,7 @@ final class PillDispenserAlarmStatusTest extends TestCase
         self::assertArrayNotHasKey('medication_alarm_status', $events);
     }
 
-    /**
-     * O aparelho devolve uma TAG recusada com os zeros que lhe mandámos, e é o estado nos bits
-     * 5--7 do Flag que a distingue de um alarme inactivo.
-     */
+    /** Uma TAG recusada volta com os zeros que mandámos, e só o estado nos bits 5--7 do Flag a distingue de um alarme inactivo. */
     public function testARefusedTagIsNotReportedAsIdle(): void
     {
         $events = $this->statusEvents([

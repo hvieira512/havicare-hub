@@ -9,10 +9,7 @@ use Hub\Command\DeviceConfigurationCatalog;
 use Hub\Protocol\Adapter\PillDispenserAdapter;
 use PHPUnit\Framework\TestCase;
 
-/**
- * Da chave pública aos bytes, pelo caminho da API. As TAGs esperadas são escritas à mão da secção 5
- * da especificação: derivá-las do código fazia o teste concordar consigo próprio.
- */
+/** As TAGs esperadas são escritas à mão da secção 5 da especificação, para o teste não concordar consigo próprio. */
 final class PillDispenserDownlinkEndToEndTest extends TestCase
 {
     private const IMEI = '869243062262262';
@@ -134,11 +131,7 @@ final class PillDispenserDownlinkEndToEndTest extends TestCase
         self::assertSame($value, $read, sprintf('%s na TAG 0x%04X', $key, $tag));
     }
 
-    /**
-     * Nenhuma definição do catálogo fica pelo caminho.
-     *
-     * O provider acima é escrito à mão; isto exercita uma definição nova que ninguém lá pôs.
-     */
+    /** O provider acima é escrito à mão, e isto exercita uma definição nova do catálogo que ninguém lá pôs. */
     public function testEveryStoredConfigurationIsCovered(): void
     {
         $covered = [];
@@ -158,10 +151,7 @@ final class PillDispenserDownlinkEndToEndTest extends TestCase
         self::assertSame($declared, $covered);
     }
 
-    /**
-     * Uma escrita `0x06` é reconhecida por um `0x86` e uma ordem `0x08` por um `0x88`; a resposta
-     * errada deixa o pedido pendente para sempre.
-     */
+    /** Uma escrita `0x06` confirma-se com `0x86` e uma ordem `0x08` com `0x88`; a resposta errada deixa o pedido pendente. */
     public function testTheExpectedReplyMatchesThePacketThatIsSent(): void
     {
         $expected = [0x06 => 'write_config_ack', 0x05 => 'read_config_ack', 0x08 => 'control_ack'];
@@ -186,10 +176,7 @@ final class PillDispenserDownlinkEndToEndTest extends TestCase
         }
     }
 
-    /**
-     * Um valor que o aparelho recusaria pára na validação, que é onde a API o transforma num
-     * 400 — e não mais à frente, a lançar de dentro do construtor da trama.
-     */
+    /** Um valor que o aparelho recusaria pára na validação, onde a API dá 400, e não no construtor da trama. */
     public function testAnIllegalValueStopsAtTheValidationStep(): void
     {
         self::assertSame(

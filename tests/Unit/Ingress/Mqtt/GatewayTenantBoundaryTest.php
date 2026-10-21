@@ -12,10 +12,7 @@ use Tests\Support\Doubles\FakeMqttSubscriber;
 use Tests\Support\Doubles\IngressFixtures;
 use Tests\Support\Doubles\RecordingHubMqttBridge;
 
-/**
- * Um gateway só fala por aparelhos do mesmo cliente e licença; a regra está escrita duas vezes, em
- * `MokoBridge::linkedDevice()` e no `VeepooBridge::handleMessage()`.
- */
+/** A regra do mesmo cliente e licença está escrita duas vezes, em `MokoBridge::linkedDevice()` e no `VeepooBridge::handleMessage()`. */
 final class GatewayTenantBoundaryTest extends TestCase
 {
     private const MOKO_GATEWAY = 'd48c49f7909c';
@@ -83,10 +80,7 @@ final class GatewayTenantBoundaryTest extends TestCase
         self::assertSame([], $mqtt->events);
     }
 
-    /**
-     * O caso de controlo: com o mesmo cliente e a mesma licença, a mensagem passa. Sem ele,
-     * os quatro testes acima passariam à mesma se o payload deixasse de ser reconhecido.
-     */
+    /** Caso de controlo: com o mesmo cliente e licença passa, e prova que as recusas acima não vêm de o payload não ser reconhecido. */
     public function testTheSameTenantIsStillRelayed(): void
     {
         $mqtt = new RecordingHubMqttBridge();

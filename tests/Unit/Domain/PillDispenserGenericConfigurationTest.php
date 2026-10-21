@@ -10,10 +10,7 @@ use Hub\Domain\Capability\CapabilityRegistry;
 use Hub\Domain\Capability\ConfigurationInputDefaults;
 use PHPUnit\Framework\TestCase;
 
-/**
- * As configurações sem contrato próprio caem na `GenericCapability`, que traduz por protocolo.
- * Percorre-se o catálogo inteiro para a configuração seguinte entrar no teste sozinha.
- */
+/** Percorre-se o catálogo inteiro para cada configuração nova sem contrato próprio entrar no teste sozinha. */
 final class PillDispenserGenericConfigurationTest extends TestCase
 {
     public function testEveryDispenserConfigurationSurvivesTheGenericContract(): void

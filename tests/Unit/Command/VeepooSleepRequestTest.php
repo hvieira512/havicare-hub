@@ -8,10 +8,7 @@ use Hub\Command\DeviceCommandCatalog;
 use Hub\Domain\Capability\CapabilityCatalog;
 use PHPUnit\Framework\TestCase;
 
-/**
- * Os blocos de cinco minutos são relidos sozinhos, mas o registo de sono só entra quando o gateway
- * arranca; a pulseira responde ao pedido a qualquer momento.
- */
+/** O registo de sono só entra quando o gateway arranca, mas a pulseira responde ao pedido a qualquer momento. */
 final class VeepooSleepRequestTest extends TestCase
 {
     private const PROTOCOL = 'veepoo-ble';
@@ -25,10 +22,7 @@ final class VeepooSleepRequestTest extends TestCase
         self::assertSame('request', $commands[0]['kind']);
     }
 
-    /**
-     * O pedido fecha-se quando a trama chega, e ela produz duas capacidades: a noite e as
-     * pontuações. As duas têm de estar declaradas para o registo do comando fechar.
-     */
+    /** A trama produz a noite e as pontuações, e as duas têm de estar declaradas para o registo do comando fechar. */
     public function testTheRequestExpectsBothHalvesOfTheRecord(): void
     {
         $commands = DeviceCommandCatalog::commandsForFeature(self::PROTOCOL, 'sleep');
@@ -48,10 +42,7 @@ final class VeepooSleepRequestTest extends TestCase
         self::assertTrue($sleep[0]['isRequestable']);
     }
 
-    /**
-     * Ler não é medir: o sono é um registo que o firmware já tem. Um `measure.` dava o pedido
-     * por falhado sem leitura -- e não ter dormido não é falha da pulseira.
-     */
+    /** O sono é um registo que o firmware já tem, e um `measure.` daria o pedido por falhado quando não houve sono. */
     public function testItIsAReadAndNotAMeasurement(): void
     {
         $commands = DeviceCommandCatalog::commandsForFeature(self::PROTOCOL, 'sleep');

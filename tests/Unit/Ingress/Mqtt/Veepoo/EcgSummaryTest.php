@@ -11,10 +11,7 @@ use Tests\Support\Doubles\FakeMqttSubscriber;
 use Tests\Support\Doubles\IngressFixtures;
 use Tests\Support\Doubles\RecordingHubMqttBridge;
 
-/**
- * O que um exame de ECG diz além do traçado. Este firmware não tem o relatório final documentado,
- * só tramas de estado por segundo; os valores são de uma medição real, com artefactos.
- */
+/** Este firmware não documenta o relatório final, só tramas de estado por segundo; os valores são de uma medição real, com artefactos. */
 final class EcgSummaryTest extends TestCase
 {
     private const GATEWAY = 'bef341903987';
@@ -38,10 +35,7 @@ final class EcgSummaryTest extends TestCase
         self::assertSame(1000, $data['rrIntervalMilliseconds']);
     }
 
-    /**
-     * Nos primeiros segundos o firmware repete a trama a zeros, e contá-las puxava a mediana para
-     * baixo de tudo o que o exame mediu de verdade.
-     */
+    /** Nos primeiros segundos o firmware repete a trama a zeros, que puxariam a mediana para baixo do que o exame mediu. */
     public function testFramesWhileTheSignalSettlesDoNotCount(): void
     {
         $data = $this->ecg([
@@ -54,10 +48,7 @@ final class EcgSummaryTest extends TestCase
         self::assertSame(390, $data['qtcMilliseconds']);
     }
 
-    /**
-     * Um QTc de 712 ms e um HRV de 8 ms, ambos da medição real, são o algoritmo a falhar um complexo:
-     * um QTc acima de 600 ms não é um coração saudável a 59 batimentos.
-     */
+    /** Um QTc de 712 ms e um HRV de 8 ms da medição real são o algoritmo a falhar um complexo, não um coração a 59 batimentos. */
     public function testAnOutlierDoesNotMoveTheResult(): void
     {
         $data = $this->ecg([
@@ -83,10 +74,7 @@ final class EcgSummaryTest extends TestCase
         self::assertSame(106, $data['hrvMilliseconds']);
     }
 
-    /**
-     * A respiração e a velocidade da onda de pulso vieram a zero nas 34 tramas da medição real:
-     * publicá-las dava zero ciclos por minuto a quem respirava.
-     */
+    /** A respiração e a velocidade da onda de pulso vêm a zero nas 34 tramas da medição real, e publicá-las daria zero ciclos por minuto. */
     public function testWhatTheBandNeverMeasuresIsNotPublished(): void
     {
         $data = $this->ecg(self::captured());

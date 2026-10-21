@@ -7,10 +7,7 @@ namespace Tests\Unit\Ingress\Http\Qinglanst;
 use Hub\Ingress\Http\Qinglanst\QinglanstCloudCommands;
 use PHPUnit\Framework\TestCase;
 
-/**
- * As configurações do hub de e para os campos do `deviceProp` e dos quatro pedidos de escrita da
- * cloud. O ponto de partida é o que o radar «Quarto» devolveu a 30 de setembro.
- */
+/** Mapeia as configurações do hub para os campos do `deviceProp` e para os quatro pedidos de escrita da cloud. */
 final class QinglanstCloudCommandsTest extends TestCase
 {
     private const UID = 'AD8A613B0493';

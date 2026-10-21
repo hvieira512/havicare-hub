@@ -11,10 +11,7 @@ use Tests\Support\Doubles\FakeMqttSubscriber;
 use Tests\Support\Doubles\IngressFixtures;
 use Tests\Support\Doubles\RecordingHubMqttBridge;
 
-/**
- * A manutenção do tique publica, e uma publicação que falha é do publicador: não sobe ao
- * `IngressRunner` como queda do ingresso nem leva a varredura dos gateways seguintes.
- */
+/** Uma publicação que falha é do publicador: não sobe ao `IngressRunner` como queda do ingresso nem trava os gateways seguintes. */
 final class BridgeMaintenanceFailureTest extends TestCase
 {
     private const GATEWAY = 'd48c49f7909c';

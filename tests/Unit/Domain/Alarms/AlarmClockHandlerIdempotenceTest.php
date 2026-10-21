@@ -10,10 +10,7 @@ use Hub\Domain\Capability\AlarmClock\Vivistar;
 use Hub\Domain\Capability\AlarmClock\Wonlex;
 use PHPUnit\Framework\TestCase;
 
-/**
- * O `DeviceCapabilityPresenter` chama o `fromNative` duas vezes, a segunda já sobre a lista
- * pública, e os três handlers têm de dar o mesmo.
- */
+/** O `DeviceCapabilityPresenter` chama o `fromNative` duas vezes, a segunda sobre a lista pública, e o resultado tem de ser igual. */
 final class AlarmClockHandlerIdempotenceTest extends TestCase
 {
     /**

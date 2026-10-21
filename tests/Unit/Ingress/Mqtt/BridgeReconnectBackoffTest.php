@@ -10,10 +10,7 @@ use PHPUnit\Framework\TestCase;
 use Tests\Support\Doubles\IngressFixtures;
 use Tests\Support\Doubles\RecordingHubMqttBridge;
 
-/**
- * O broker aceita um `client_id` duplicado e larga-o logo: um recuo reposto a cada `connect` nunca
- * cresce, e cada `connect` bloqueia a dashboard.
- */
+/** O broker aceita um `client_id` duplicado e larga-o logo: o recuo não se repõe a cada `connect`, que bloqueia a dashboard. */
 final class BridgeReconnectBackoffTest extends TestCase
 {
     public function testAConnectionThatDiesOnArrivalDoesNotReconnectOnEveryTick(): void

@@ -14,10 +14,7 @@ use Tests\Support\Doubles\IngressFixtures;
 use Tests\Support\Doubles\OneShotDownlinkQueue;
 use Tests\Support\Doubles\RecordingHubMqttBridge;
 
-/**
- * O ECG do DBP-6679B, com as tramas e os tempos de chegada de um exame real a 2026-10-16
- * (`ecg-dbp6679b.hex`: milissegundos e trama por linha). O ecrã mostrou 73 bpm.
- */
+/** Tramas e tempos de chegada de um exame real do DBP-6679B (`ecg-dbp6679b.hex`), em que o ecrã mostrou 73 bpm. */
 final class JoyTechEcgTest extends TestCase
 {
     private const GATEWAY = 'bef341903987';
@@ -92,10 +89,7 @@ final class JoyTechEcgTest extends TestCase
         self::assertSame(7504, $shown[0]['data']['sampleCount']);
     }
 
-    /**
-     * Sem o `0x05` na contagem o aparelho não manda nada, e o fim só pára com o `0x06`: a contagem
-     * repete-se de segundo a segundo e o fim de 2 em 2 s, e cada um tem uma resposta.
-     */
+    /** A contagem a cada segundo e o fim a cada 2 s pedem resposta: sem o `0x05` o aparelho não manda nada, e só pára com o `0x06`. */
     public function testTheCountdownAndTheEndAreAnsweredOnce(): void
     {
         $capture = self::capture();

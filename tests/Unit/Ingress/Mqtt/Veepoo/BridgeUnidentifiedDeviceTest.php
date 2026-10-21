@@ -12,10 +12,7 @@ use Tests\Support\Doubles\FakeMqttSubscriber;
 use Tests\Support\Doubles\IngressFixtures;
 use Tests\Support\Doubles\RecordingHubMqttBridge;
 
-/**
- * Uma trama de antes de a pulseira se autenticar, ou de logo depois de a ligação cair, vem sem MAC:
- * não há aparelho a registar.
- */
+/** Uma trama sem MAC, de pulseira por autenticar ou de ligação acabada de cair, não tem aparelho a registar. */
 final class BridgeUnidentifiedDeviceTest extends TestCase
 {
     private const GATEWAY = 'bef341903987';

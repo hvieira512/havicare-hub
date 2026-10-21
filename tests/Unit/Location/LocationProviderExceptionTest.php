@@ -7,10 +7,7 @@ namespace Tests\Unit\Location;
 use Hub\Location\LocationProviderException;
 use PHPUnit\Framework\TestCase;
 
-/**
- * "Não sei onde isto está" é um resultado normal e "não consegui perguntar" é uma avaria, e
- * os dois não podem sair no registo ao mesmo nível.
- */
+/** «Não sei onde está» é resultado normal e «não consegui perguntar» é avaria, e não podem sair no registo ao mesmo nível. */
 final class LocationProviderExceptionTest extends TestCase
 {
     public function testA404IsAResultAndNotAFailure(): void

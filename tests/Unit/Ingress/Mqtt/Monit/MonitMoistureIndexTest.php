@@ -8,10 +8,7 @@ use Hub\Domain\DiaperSensitivity;
 use Hub\Ingress\Mqtt\Monit\MonitNormalizer;
 use PHPUnit\Framework\TestCase;
 
-/**
- * Não se prende a fórmula do índice, que é apresentação: prende-se que ele nunca contradiz o estado
- * ao lado no ecrã, e que as fronteiras das bandas caem nos limiares do estado.
- */
+/** Prende-se que o índice nunca contradiz o estado ao lado e que as bandas caem nos limiares do estado, não a fórmula. */
 final class MonitMoistureIndexTest extends TestCase
 {
     private const DEVICE = [

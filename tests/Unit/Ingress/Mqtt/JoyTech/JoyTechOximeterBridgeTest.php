@@ -30,10 +30,7 @@ final class JoyTechOximeterBridgeTest extends TestCase
         $this->now = (float)strtotime('2026-10-19T13:30:00Z');
     }
 
-    /**
-     * Uma medição sai uma vez, depois de 5 s sem tramas válidas: a mediana dos últimos 5 s, com a
-     * hora da última trama. Os primeiros valores, ainda a estabilizar, não contam.
-     */
+    /** Os primeiros valores ainda estão a estabilizar: sai a mediana dos últimos 5 s, com a hora da última trama. */
     public function testAMeasurementLeavesOnceWithTheMedianOfItsLastFiveSeconds(): void
     {
         $mqtt = new RecordingHubMqttBridge();
