@@ -379,26 +379,6 @@ A dashboard traduz-os; um valor fora da lista aparece como veio.
 
 ## Diagnóstico
 
-Três ferramentas de linha de comandos operam sobre um broker real:
-
-```bash
-# Dispositivos captados por um gateway, com identificação quando possível
-php simulator/ble-scan-probe.php --seconds=120
-
-# Identificação de um dispositivo pela alteração do anúncio ao ser acionado
-php simulator/ble-scan-diff.php --baseline=45 --min-rssi=-70
-
-# Observa um dispositivo até ele anunciar, e descodifica o primeiro frame a sério
-php simulator/w6b-watch.php
-```
-
-A terceira serve uma W6B ainda sem slot de anúncio configurado: ela é visível ao
-gateway mas não traz dados nenhuns, e isso distingue-se mal de um defeito.
-
-A segunda destina-se a dispositivos ainda sem descodificador: regista uma linha
-de base do que já é captado e assinala os endereços novos e os anúncios cujo
-conteúdo se altere.
-
 > **A aplicação MKScannerPro tem de estar encerrada antes de qualquer
 > verificação no broker.** Um gateway MKGW4 suspende a publicação em MQTT
 > enquanto a aplicação lhe estiver ligada.

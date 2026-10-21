@@ -25,18 +25,13 @@
         }
     },
     "scripts": {
-        "server": "php bin/server-hub.php",
         "server:hub": "php bin/server-hub.php",
         "simulate": "php simulator/simulate.php",
-        "command:vivistar": "php simulator/vivistar-command-client.php",
-        "command:wonlex": "php simulator/wonlex-command-client.php",
-        "location:probe": "php simulator/location-beacondb-probe.php",
         "location:radio-map": "php bin/radio-map.php",
         "test:unit": "bin/in-hub tests/run-parallel.sh tests/Unit",
         "test:unit:serial": "bin/in-hub vendor/bin/phpunit --testsuite unit",
         "test:integration": "bin/in-hub tests/run-parallel.sh tests/Integration",
         "test:integration:serial": "bin/in-hub vendor/bin/phpunit --testsuite integration",
-        "test:php": "bin/in-hub vendor/bin/phpunit",
         "test:frontend": "npm test",
         "analyse": "bin/in-hub php -d memory_limit=1G vendor/bin/phpstan analyse --no-progress",
         "style": "bin/in-hub vendor/bin/phpcs src tests simulator bin",
@@ -52,7 +47,6 @@
             "@test:frontend",
             "@test:scenarios"
         ],
-        "lsp:php": "nvim --headless -u ~/.config/nvim/init.lua -l scripts/lsp-diagnostics.lua $(git ls-files '*.php')",
         "hooks": "git rev-parse --is-inside-work-tree > /dev/null 2>&1 && git config core.hooksPath .githooks || true",
         "post-install-cmd": "@hooks",
         "post-update-cmd": "@hooks"
@@ -73,14 +67,20 @@
         "process-timeout": 1800
     },
     "scripts-descriptions": {
-        "test:unit": "Fast suite: no external services (seconds).",
+        "server:hub": "Arranca o hub: ingestão TCP, subscritores MQTT, API e dashboard.",
+        "simulate": "Simula um relógio Vivistar por TCP contra um hub a correr.",
+        "location:radio-map": "Semeia o mapa rádio privado da localização sem GPS.",
+        "test:unit": "Suite unitária, sem serviços externos, repartida por vários processos.",
         "test:unit:serial": "A mesma suite num processo só, para quando o paralelo confunde um diagnóstico.",
-        "test:integration": "MySQL-backed suite, repartida por vários processos; skips without a reachable MySQL.",
+        "test:integration": "Suite contra o MySQL, repartida por vários processos; sem MySQL, os testes saltam.",
         "test:integration:serial": "A mesma suite num processo só, para quando o paralelo confunde um diagnóstico.",
-        "test:php": "Both PHP suites.",
-        "test:frontend": "Node test runner over tests/Frontend.",
-        "test:scenarios": "End-to-end scenarios against docker compose.",
-        "test": "Tudo: estilo, análise, frontend, as duas suites de PHP, o mesmo no 8.4 da produção, e os cenários.",
-        "hooks": "Point git at .githooks so the pre-commit style checks run."
+        "test:frontend": "Testes do frontend com o test runner do node, em tests/Frontend.",
+        "test:scenarios": "Cenários de ponta a ponta contra a pilha do docker compose.",
+        "analyse": "phpstan, no contentor hub.",
+        "style": "phpcs, no contentor hub.",
+        "style:fix": "phpcbf, no contentor hub: corrige o que o phpcs sabe corrigir.",
+        "lint:frontend": "eslint sobre o JavaScript da dashboard e dos testes.",
+        "test": "As sete verificações: phpcs, phpstan, eslint, as suites unitária, de integração e do frontend, e os cenários.",
+        "hooks": "Aponta o git para .githooks, cujo pre-commit corre o phpcs, o phpstan e o eslint."
     }
 }
