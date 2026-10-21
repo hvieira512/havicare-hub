@@ -11,17 +11,21 @@ import { state } from "../../src/Dashboard/dashboard/state.js";
 
 const now = new Date(2026, 9, 1, 10, 52);
 
-function withDetail(detail, run) {
-    const previous = state.selectedDetail;
+const DISPENSER = "861265061009822";
+
+function withDetail(detail, run, modalImei = DISPENSER) {
+    const previous = [state.selectedDetail, state.deviceModal.imei];
     state.selectedDetail = detail;
+    state.deviceModal.imei = modalImei;
     try {
         run();
     } finally {
-        state.selectedDetail = previous;
+        [state.selectedDetail, state.deviceModal.imei] = previous;
     }
 }
 
 const detail = (overrides = {}) => ({
+    device: { imei: DISPENSER },
     effectiveConfigurations: {
         medication_reminders: {
             plans: [
@@ -72,6 +76,12 @@ test("carregar até abaixo da posição não deixa nada por dispensar", () => {
             "Sem doses por dispensar a partir do compartimento 3.",
         );
     });
+});
+
+test("the sentence reads the device the modal shows, not the one selected behind it", () => {
+    withDetail(detail(), () => {
+        assert.equal(loadedCellsRunoutText(6, now), "");
+    }, "351266770073676");
 });
 
 test("sem posição ou sem número escrito, não se diz nada", () => {

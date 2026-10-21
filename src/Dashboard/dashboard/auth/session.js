@@ -213,12 +213,12 @@ const LOGOUT_FAILED_MESSAGE =
     "A sessão pode continuar aberta no Hub: o pedido para a fechar não chegou lá. " +
     "Volte a entrar e a sair quando houver ligação.";
 
-const revokeSession = async () => {
+const revokeSession = async (headers = authHeaders()) => {
     try {
         return (await fetch("/api/auth/logout", {
             method: "POST",
             credentials: "same-origin",
-            headers: authHeaders(),
+            headers,
         })).ok;
     } catch {
         return false;
@@ -341,6 +341,8 @@ const login = async (event) => {
             return;
         }
         if (token.role !== ADMIN_ROLE) {
+            // O login já deixou o cookie de renovação: sem revogar, ficava uma sessão viva.
+            void revokeSession({ Authorization: `Bearer ${token.access_token}` });
             toast("danger", "Esta conta não tem permissões de administrador do Hub.");
             return;
         }

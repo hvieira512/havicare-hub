@@ -6,12 +6,21 @@
 import { runoutAt, runoutLabel } from "../medication-runout.js";
 import { state } from "../../state.js";
 
+/**
+ * O detalhe do aparelho que o modal mostra. O modal só tem a configuração: a telemetria vem do
+ * selecionado, e só serve quando é o mesmo aparelho.
+ */
+function modalDetail() {
+    const detail = state.selectedDetail;
+    return detail?.device?.imei === state.deviceModal.imei ? detail : null;
+}
+
 /** A posição do carrossel na leitura mais recente; a lista não vem garantidamente ordenada. */
-function trayPosition() {
+function trayPosition(detail) {
     let position = null;
     let latest = "";
 
-    for (const entry of state.selectedDetail?.recent?.telemetry || []) {
+    for (const entry of detail?.recent?.telemetry || []) {
         const current = entry?.data?.current;
         const at = String(entry?.occurredAt || "");
         if (entry?.type === "cells_remaining" && Number.isInteger(current) && at >= latest) {
@@ -29,12 +38,13 @@ export function loadedCellsRunoutText(loaded, now = new Date()) {
     const value = written === "" || written === null || written === undefined
         ? Number.NaN
         : Number(written);
-    const position = trayPosition();
+    const detail = modalDetail();
+    const position = trayPosition(detail);
     if (!Number.isFinite(value) || position === null) {
         return "";
     }
 
-    const configurations = state.selectedDetail?.effectiveConfigurations;
+    const configurations = detail.effectiveConfigurations;
     const plans = (configurations?.medication_reminders?.plans || [])
         .filter((plan) => plan?.enabled !== false);
     if (plans.length === 0) {

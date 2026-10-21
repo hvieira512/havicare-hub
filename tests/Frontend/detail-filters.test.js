@@ -184,6 +184,16 @@ describe("alcances", () => {
         assert.equal(state.telemetryPage, 1);
     });
 
+    test("a new range takes the request list back to its first page", () => {
+        state.downlinkPage = 3;
+        state.downlinkCumulative = true;
+
+        applyDetailRange("7d");
+
+        assert.equal(state.downlinkPage, 1);
+        assert.equal(state.downlinkCumulative, false);
+    });
+
     test("a pastilha do alcance diz o nome do botão e não as datas", () => {
         applyDetailRange("7d");
 

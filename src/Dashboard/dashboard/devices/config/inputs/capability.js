@@ -502,16 +502,15 @@ export const INPUTS = {
             stepGoal: readNumber(section, "stepGoal"),
             sleepGoalMinutes: readNumber(section, "sleepGoalMinutes"),
         }),
-        // Sem `defaults`: abre vazio. Não é decisão desta camada qual seria o valor plausível.
     },
     heartRateThresholds: {
         render: heartRateThresholdsInput,
-        read: (section) => ({
-            enabled: readCheckbox(section, "enabled"),
-            maxBpm: readNumber(section, "maxBpm"),
-            minBpm: readNumber(section, "minBpm"),
-        }),
-        // Sem `defaults`: abre vazio. Não é decisão desta camada qual seria o valor plausível.
+        read: (section) => {
+            const maxBpm = readNumber(section, "maxBpm");
+            const minBpm = readNumber(section, "minBpm");
+            if (minBpm > maxBpm) throw new Error("O mínimo não pode passar do máximo");
+            return { enabled: readCheckbox(section, "enabled"), maxBpm, minBpm };
+        },
     },
     sos_contacts: {
         render: sosContactsInput,

@@ -3,6 +3,7 @@ import { rowPayload, when } from "../format.js";
 import { html } from "../html.js";
 import { renderInto } from "../dom.js";
 import {
+    resetActivityPaging,
     resetDetailFiltersDraft,
     setDownlinkPage,
     setTelemetryPage,
@@ -83,12 +84,6 @@ function dateTimeLocal(date) {
     return `${day}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }
 
-/** Mexer num filtro leva a lista ao princípio, e desfaz o que o «Carregar mais» juntou. */
-function restartTelemetryPaging() {
-    state.telemetryPage = 1;
-    state.telemetryCumulative = false;
-}
-
 export function applyDetailRange(range) {
     const preset = DETAIL_RANGES[range];
     if (!preset) return;
@@ -100,7 +95,7 @@ export function applyDetailRange(range) {
         to: "",
     };
     resetDetailFiltersDraft();
-    restartTelemetryPaging();
+    resetActivityPaging();
     onChange();
 }
 
@@ -275,7 +270,7 @@ export function applyDetailFilters() {
         q: state.detailFilters.q,
     };
     resetDetailFiltersDraft();
-    restartTelemetryPaging();
+    resetActivityPaging();
     onChange();
 }
 
@@ -287,7 +282,7 @@ export function applyDetailType() {
         severity: els.detailFilterSeverity.value,
     };
     resetDetailFiltersDraft();
-    restartTelemetryPaging();
+    resetActivityPaging();
     onChange();
 }
 
@@ -295,7 +290,7 @@ export function clearDetailFilters() {
     activeRange = "";
     state.detailFilters = { from: "", to: "", type: "all", severity: "all", q: "" };
     resetDetailFiltersDraft();
-    restartTelemetryPaging();
+    resetActivityPaging();
     if (els.detailSearch) els.detailSearch.value = "";
     onChange();
 }
@@ -318,7 +313,7 @@ function applyDetailSearchNow() {
         q: els.detailSearch.value,
     };
     updateDetailFiltersDraft({ q: els.detailSearch.value });
-    restartTelemetryPaging();
+    resetActivityPaging();
     onChange();
 }
 
@@ -327,7 +322,7 @@ export function removeDetailFilter(key) {
     const cleared = key === "type" || key === "severity" ? "all" : "";
     state.detailFilters = { ...state.detailFilters, [key]: cleared };
     resetDetailFiltersDraft();
-    restartTelemetryPaging();
+    resetActivityPaging();
     if (key === "q" && els.detailSearch) els.detailSearch.value = "";
     onChange();
 }

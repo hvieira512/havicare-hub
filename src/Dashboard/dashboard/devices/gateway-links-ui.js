@@ -3,6 +3,7 @@ import {
     deleteDeviceLink as apiDeleteDeviceLink,
     getDevices as apiGetDevices,
 } from "../api/index.js";
+import { allPages } from "../api/http.js";
 import { esc } from "../format.js";
 import { html, raw } from "../html.js";
 import { state } from "../state.js";
@@ -188,13 +189,7 @@ export async function refreshGatewayOptions(selectedKeys = null) {
 
     setGatewayLinksDisabled(true);
     els.deviceGatewayLinksHelp.textContent = "A carregar gateways...";
-    const response = await apiGetDevices({
-        page: 1,
-        limit: 500,
-        deviceType: "gateway",
-        company,
-        licenseId,
-    });
+    const response = await allPages(apiGetDevices, { deviceType: "gateway", company, licenseId });
     if (generation !== gatewayOptionsGeneration) {
         return;
     }

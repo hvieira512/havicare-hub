@@ -201,6 +201,17 @@ export const formRequest = (url, formData, options = {}) => requestWithAuthRetry
     .then(parseJsonResponse)
     .catch(networkError);
 
+/** Todas as páginas de uma listagem numa só, ou o primeiro erro tal como veio. */
+export async function allPages(fetchPage, params = {}) {
+    const data = [];
+    for (let page = 1; ; page += 1) {
+        const response = await fetchPage({ ...params, page, limit: 200 });
+        if (response?.error) return response;
+        data.push(...(response.data || []));
+        if (page >= Number(response.pagination?.total_pages || 1)) return { data };
+    }
+}
+
 scheduleTokenRefresh();
 
 // Interno ao http.js: os query params entram pelo `requestJson(url, { query })`, e não como

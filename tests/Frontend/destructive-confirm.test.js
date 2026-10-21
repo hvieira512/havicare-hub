@@ -1,5 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { autoEls } from "./support/els.js";
 
 /**
  * O `Swal.fire()` devolve uma promessa, e cancelar não pode chegar à API. A caixa diz também o
@@ -181,4 +182,48 @@ test("cancelar a caixa de desligar não envia o comando ao relógio", async () =
 
     assert.deepEqual(calls, []);
     assert.match(confirmations[0].titleText, /351266770073676/);
+});
+
+test("a device delete the API refuses keeps the modal open and says why", async () => {
+    reset();
+    answer = { isConfirmed: true };
+    const { handleDeleteDeviceBtnClick, initDeviceModal } = await import(
+        "../../src/Dashboard/dashboard/devices/device-modal.js",
+    );
+    const els = autoEls();
+    els.deleteDeviceBtn.dataset.imei = "351266770073676";
+    let hidden = false;
+    initDeviceModal({
+        els,
+        deviceModal: {
+            hide: () => {
+                hidden = true;
+            },
+        },
+    });
+
+    await handleDeleteDeviceBtnClick();
+
+    assert.equal(hidden, false);
+    assert.notEqual(state.deviceModal.errorMessage, "");
+});
+
+test("a model delete the API refuses leaves the model in the catalog", async () => {
+    reset();
+    answer = { isConfirmed: true };
+    const { initSettingsModels } = await import(
+        "../../src/Dashboard/dashboard/settings/models/shell.js",
+    );
+    const { deleteCurrentModel } = await import(
+        "../../src/Dashboard/dashboard/settings/models/detail.js",
+    );
+    initSettingsModels({ els: autoEls(), ui: {} });
+    const model = { id: 92, commercialName: "R03" };
+    state.settingsModal.currentCapabilitiesModel = model;
+    state.settingsModal.modelCatalog = [{ suppliers: [{ models: [model] }] }];
+
+    await deleteCurrentModel();
+
+    assert.deepEqual(state.settingsModal.modelCatalog[0].suppliers[0].models, [model]);
+    assert.equal(state.settingsModal.currentCapabilitiesModel, model);
 });

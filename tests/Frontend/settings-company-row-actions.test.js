@@ -78,3 +78,15 @@ test("a linha de uma empresa junta os três verbos no mesmo menu", async () => {
         ["Nova licença", "Editar empresa", "Eliminar empresa"],
     );
 });
+
+test("a company list that fails to load says so instead of counting zero", async () => {
+    const els = setupDom();
+    globalThis.fetch = async (url) => (String(url).includes("/api/licenses")
+        ? jsonResponse({ data: LICENSES })
+        : Response.json({ error: { code: "internal_error" } }, { status: 500 }));
+
+    await loadSettingsCompanySection();
+
+    assert.doesNotMatch(els.companiesTabSummary.textContent, /0 empresas/);
+    assert.match(els.companyListBody.textContent, /Não foi possível carregar as empresas/);
+});

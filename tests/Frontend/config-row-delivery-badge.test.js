@@ -2,7 +2,10 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import { parseFragment } from "./support/dom.js";
-import { patchConfigurationDeliveryStates } from "../../src/Dashboard/dashboard/devices/config/delivery.js";
+import {
+    configurationDeliveryMeta,
+    patchConfigurationDeliveryStates,
+} from "../../src/Dashboard/dashboard/devices/config/delivery.js";
 
 /**
  * Os interruptores compactos são linhas e não secções, e a pastilha deles também tem de
@@ -48,4 +51,11 @@ test("uma linha não ganha aviso de entrega", () => {
     });
 
     assert.equal(row.querySelector("[role=\"status\"]"), null);
+});
+
+test("a delivery status the dashboard does not know is not shown as a failure", () => {
+    const meta = configurationDeliveryMeta(true, { status: "rolled_back" });
+
+    assert.notEqual(meta.label, "Falhou");
+    assert.notEqual(meta.tone, "danger");
 });

@@ -29,8 +29,7 @@ export function readNumber(section, field) {
         nodes.find((node) => ("checked" in node ? node.checked : false)) ||
         nodes[0] ||
         null;
-    const value = input?.value ?? "";
-    const parsed = parseInt(value, 10);
+    const parsed = Number(input?.value ?? "");
     return Number.isFinite(parsed) ? parsed : 0;
 }
 

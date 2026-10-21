@@ -4,7 +4,7 @@ import {
     syncRadarLayout as apiSyncRadarLayout,
 } from "../api/index.js";
 import { areaTypeStyle } from "../radar-style.js";
-import { esc, when } from "../format.js";
+import { when } from "../format.js";
 import { html } from "../html.js";
 import { apiError, confirmDestructive, toast } from "../dialogs.js";
 import { refreshTooltips } from "../tooltips.js";
@@ -215,12 +215,12 @@ function currentPeople() {
 }
 
 function subtitle(imei, layout) {
-    if (!layout?.room) return esc(imei);
+    if (!layout?.room) return imei;
 
     const width = ((layout.room.x_max_dm - layout.room.x_min_dm) / 10).toFixed(1);
     const height = ((layout.room.y_max_dm - layout.room.y_min_dm) / 10).toFixed(1);
 
-    return `${esc(imei)} · ${width} × ${height} m · sincronizado ${when(layout.fetchedAt)}`;
+    return `${imei} · ${width} × ${height} m · sincronizado ${when(layout.fetchedAt)}`;
 }
 
 /**
@@ -248,7 +248,7 @@ export async function openRadarMap(imei, { editAreas = false } = {}) {
     state.radarMap.imei = imei;
     state.radarMap.layout = null;
 
-    if (els.radarMapSubtitle) els.radarMapSubtitle.textContent = esc(imei);
+    if (els.radarMapSubtitle) els.radarMapSubtitle.textContent = imei;
     renderPeopleCount(currentPeople().length);
 
     // As pastilhas do resumo dizem só o número: o que cada uma é vive na tooltip, e as

@@ -118,6 +118,26 @@ test("heart rate thresholds survive the round trip", () => {
     );
 });
 
+test("heart rate thresholds refuse a minimum above the maximum", () => {
+    const entry = {
+        input: "heartRateThresholds",
+        key: "heart_rate_alert",
+        fields: ["enabled", "maxBpm", "minBpm"],
+    };
+
+    assert.throws(() => roundTrip(entry, { enabled: true, maxBpm: 60, minBpm: 90 }), /mínimo/);
+});
+
+test("a decimal weight keeps its decimals", () => {
+    const entry = {
+        input: "personalInfo",
+        key: "personal_info",
+        fields: ["heightCm", "weightKg", "age", "sex", "stepGoal", "sleepGoalMinutes"],
+    };
+
+    assert.equal(roundTrip(entry, { weightKg: 65.5 }).weightKg, 65.5);
+});
+
 test("personal information survives the round trip", () => {
     const entry = {
         input: "personalInfo",

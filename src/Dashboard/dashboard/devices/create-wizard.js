@@ -5,7 +5,8 @@ import {
     saveDevice as apiSaveDevice,
 } from "../api/index.js";
 import { ensureLicensesLoaded } from "../licenses.js";
-import { toast } from "../dialogs.js";
+import { apiError, toast } from "../dialogs.js";
+import { allPages } from "../api/http.js";
 import { state } from "../state.js";
 import { field } from "../components/form-field.js";
 import { modelPreviewHtml } from "../components/model-image.js";
@@ -17,6 +18,7 @@ import {
     modelDeviceType,
     modelInternalName,
     modelsForSupplierAndType,
+    supplierProtocol,
     suppliersForDeviceType,
 } from "../domain.js";
 import { createWizard } from "./wizard.js";
@@ -184,10 +186,10 @@ function renderArt() {
         return;
     }
     const info = findModelInfo(chosen.supplier, chosen.model, state.deviceTypeSuppliersModels);
-    els.wizardArt.innerHTML = `
+    els.wizardArt.innerHTML = html`
         ${modelPreviewHtml(info, chosen.model)}
         <div class="wizard-art-name fw-semibold text-center">${chosen.supplier} ${chosen.model}</div>
-        <div class="wizard-art-sub text-secondary text-center">${(deviceTypeLabel(answers.type))}</div>`;
+        <div class="wizard-art-sub text-secondary text-center">${deviceTypeLabel(answers.type)}</div>`;
 }
 
 /**
@@ -288,8 +290,18 @@ function renderOwner(owner) {
         ${licensePickerHtml(licenseGroups, owner)}`;
 }
 
+/** Os campos do tipo, corrigidos pelo protocolo do modelo escolhido. */
+function identityFields(answers) {
+    const protocol = supplierProtocol(
+        answers.model?.supplier,
+        state.deviceTypeSuppliersModels,
+        answers.model?.model,
+    );
+    return deviceTypeFields(answers.type, protocol);
+}
+
 function renderIdentity(answers) {
-    const fields = deviceTypeFields(answers.type, answers.model?.protocol);
+    const fields = identityFields(answers);
     const gateways = eligibleGatewayList(answers);
 
     return html`
@@ -502,16 +514,15 @@ function seedFromNotification(source, tree = []) {
 
 /** Os gateways registados, para o assistente poder oferecer os da mesma empresa. */
 async function loadWizardGateways() {
-    const result = await apiGetDevices({ deviceType: "gateway", limit: 500 });
-    state.wizardGateways = result?.error
-        ? []
-        : (result.data || []).map((device) => ({
-                imei: String(device.imei || "").toLowerCase(),
-                model: device.model || "",
-                image: device.image || "",
-                company: device.company || "",
-                licenseId: device.licenseId ?? device.license_id ?? "",
-            }));
+    const result = await allPages(apiGetDevices, { deviceType: "gateway" });
+    if (result.error) toast("error", apiError(result));
+    state.wizardGateways = (result.data || []).map((device) => ({
+        imei: String(device.imei || "").toLowerCase(),
+        model: device.model || "",
+        image: device.image || "",
+        company: device.company || "",
+        licenseId: device.licenseId ?? device.license_id ?? "",
+    }));
 }
 
 /**
@@ -519,7 +530,7 @@ async function loadWizardGateways() {
  * só a autorização falha, o dispositivo já existe: o assistente fecha e avisa o que faltou.
  */
 export async function createDeviceFromWizard(answers) {
-    const fields = deviceTypeFields(answers.type, answers.model?.protocol);
+    const fields = identityFields(answers);
     const identity = String(answers.identity || "").trim();
     const byImei = fields.identity.field === "imei";
 

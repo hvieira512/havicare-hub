@@ -163,3 +163,27 @@ test("um gateway da mesma licença aparece como cartão a escolher", () => {
     assert.notEqual(check, null);
     assert.doesNotMatch(text(els.wizardAsk), /<label/);
 });
+
+test("the supplier and model names reach the picture as text, not markup", () => {
+    state.deviceTypeSuppliersModels = [
+        { supplier: "Evil<b>Co</b>", internal_model: "M<b>1</b>", commercial_name: "M1", device_type: "watch" },
+    ];
+    pick("[data-wizard-type=\"watch\"]");
+    [...root.querySelectorAll("#wizardAsk [data-wizard-model]")][0].click();
+
+    assert.equal(els.wizardArt.querySelector("b"), null);
+    assert.match(text(els.wizardArt), /Evil<b>Co<\/b> M<b>1<\/b>/);
+});
+
+test("a Tuya bracelet asks for its Tuya id and offers no gateways", () => {
+    state.deviceTypeSuppliersModels = [
+        { supplier: "PST", internal_model: "SOS-WIFI", commercial_name: "SOS Wi-Fi", device_type: "bracelet", protocol: "tuya-cloud" },
+    ];
+    state.wizardGateways = [];
+    pick("[data-wizard-type=\"bracelet\"]");
+    pick("[data-wizard-model=\"SOS-WIFI\"]");
+    pick("[data-license-id=\"1001\"]");
+
+    assert.match(text(els.wizardAsk), /ID do dispositivo na Tuya/);
+    assert.equal(root.querySelector("#wizardAsk .gateway-picker-empty"), null);
+});

@@ -51,6 +51,12 @@ export async function loadSettingsCompanySection(companiesPage = 1) {
         apiGetCompanies({ page: companiesPage }),
         ensureLicensesLoaded(),
     ]);
+    if (companyData.error) {
+        els.companiesTabSummary.textContent = "";
+        els.companyListBody.innerHTML =
+            "<div class=\"text-center text-danger small p-4\">Não foi possível carregar as empresas.</div>";
+        return;
+    }
     currentCompanies = companyData.data || [];
     currentLicenses = licenses ?? [];
     state.settingsModal.sectionLoaded.company = true;

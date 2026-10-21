@@ -31,12 +31,15 @@ $loginConstellation = [
     'bracelet' => ['x' => 'calc(100% - 82px)', 'y' => '48%', 'angle' => -9, 'seconds' => 8.8, 'delay' => -5, 'dx' => -17, 'dy' => 3],
     'pill_dispenser' => ['x' => 'calc(100% - 140px)', 'y' => '70%', 'angle' => -6, 'seconds' => 9.6, 'delay' => -7.4, 'dx' => -13, 'dy' => -10],
     'diaper_sensor' => ['x' => '-6px', 'y' => '80%', 'angle' => 8, 'seconds' => 10, 'delay' => -2.6, 'dx' => 15, 'dy' => -9],
+    'scale' => ['x' => '24%', 'y' => '90%', 'angle' => -5, 'seconds' => 9.4, 'delay' => -4.3, 'dx' => 9, 'dy' => -12],
+    'blood_pressure_monitor' => ['x' => '-30px', 'y' => '50%', 'angle' => 7, 'seconds' => 10.2, 'delay' => -5.7, 'dx' => 14, 'dy' => 8],
+    'thermometer' => ['x' => '58%', 'y' => '88%', 'angle' => 10, 'seconds' => 8.6, 'delay' => -0.9, 'dx' => -6, 'dy' => -13],
+    'pulse_oximeter' => ['x' => 'calc(100% - 70px)', 'y' => '26%', 'angle' => -7, 'seconds' => 9.9, 'delay' => -3.8, 'dx' => -15, 'dy' => 9],
 ];
 
-$loginDeviceSpotFallback = ['x' => '-40px', 'y' => '34%', 'angle' => 0, 'seconds' => 9, 'delay' => 0, 'dx' => 14, 'dy' => 0];
 $loginDevices = [];
 foreach (\Hub\Domain\DeviceTypeCatalog::all() as $deviceType => $descriptor) {
-    $loginDevices[] = ($loginConstellation[$deviceType] ?? $loginDeviceSpotFallback)
+    $loginDevices[] = $loginConstellation[$deviceType]
         + ['icon' => (string)$descriptor['icon'], 'label' => (string)$descriptor['label']];
 }
 

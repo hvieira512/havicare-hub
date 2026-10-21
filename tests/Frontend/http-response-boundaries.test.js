@@ -7,6 +7,7 @@ window.setTimeout = () => 0;
 window.clearTimeout = () => {};
 
 const {
+    allPages,
     authHeaders,
     clearDashboardApiToken,
     getDashboardApiToken,
@@ -18,6 +19,29 @@ const jsonResponse = (status, body) => Response.json(body, { status });
 
 beforeEach(() => {
     clearDashboardApiToken();
+});
+
+test("allPages walks every page of a listing", async () => {
+    const asked = [];
+    const fetchPage = async (params) => {
+        asked.push(params.page);
+        return { data: [`row${params.page}`], pagination: { page: params.page, total_pages: 3 } };
+    };
+
+    const result = await allPages(fetchPage, { deviceType: "gateway" });
+
+    assert.deepEqual(result.data, ["row1", "row2", "row3"]);
+    assert.deepEqual(asked, [1, 2, 3]);
+});
+
+test("allPages hands back the first error instead of a short list", async () => {
+    const fetchPage = async (params) => (params.page === 1
+        ? { data: ["row1"], pagination: { page: 1, total_pages: 2 } }
+        : { error: { code: "internal_error" } });
+
+    const result = await allPages(fetchPage);
+
+    assert.equal(result.error.code, "internal_error");
 });
 
 /**

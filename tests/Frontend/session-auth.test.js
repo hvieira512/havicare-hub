@@ -214,3 +214,23 @@ test("sem olho na página, ligar o comportamento não rebenta", () => {
     assert.doesNotThrow(() => initializePasswordVisibility());
     assert.doesNotThrow(() => resetPasswordVisibility());
 });
+
+test("a non-admin login revokes the session cookie it was just given", async () => {
+    installDom();
+    globalThis.Swal ??= { fire: async () => ({}) };
+    const token = { role: "viewer", access_token: "viewer-token", expires_at: future() };
+    const calls = captureFetch((url) => (url === "/api/auth/logout"
+        ? sessionResponse(200, { status: "ok" })
+        : sessionResponse(200, { status: "ok", token })));
+    await initializeDashboardSession(async () => {});
+    calls.length = 0;
+
+    document.getElementById("dashboardLoginUsername").value = "viewer";
+    document.getElementById("dashboardLoginPassword").value = "secret";
+    document.getElementById("dashboardLoginForm").dispatchEvent(new window.Event("submit", { cancelable: true }));
+    await new Promise((resolve) => setImmediate(resolve));
+
+    const logout = calls.find((call) => call.url === "/api/auth/logout");
+    assert.ok(logout, "the refresh cookie stays alive in the browser");
+    assert.equal(logout.options.headers.Authorization, "Bearer viewer-token");
+});

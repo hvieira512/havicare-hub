@@ -13,6 +13,7 @@ import {
 } from "../../state.js";
 import { html } from "../../html.js";
 import { apiError, confirmDestructive, toast } from "../../dialogs.js";
+import { allPages } from "../../api/http.js";
 import { clearInvalid, markInvalid } from "../../validation.js";
 import { modelPreviewHtml } from "../../components/model-image.js";
 import {
@@ -145,8 +146,9 @@ function modelDetailSuppliers() {
 
 async function ensureModelDetailSuppliers() {
     if ((state.modelModalSuppliers || []).length > 0) return;
-    const response = await apiGetSuppliers({ limit: 200 });
-    state.modelModalSuppliers = response?.error ? [] : response.data || [];
+    const response = await allPages(apiGetSuppliers);
+    if (response.error) toast("error", apiError(response));
+    state.modelModalSuppliers = response.data || [];
 }
 
 function renderModelDetailSelect(select, options, selected) {
@@ -301,7 +303,11 @@ async function deleteCurrentModel() {
     );
     if (!isConfirmed) return;
 
-    await apiDeleteModel(model.id);
+    const result = await apiDeleteModel(model.id);
+    if (result.error) {
+        toast("error", apiError(result));
+        return;
+    }
     removeModelFromCatalog(model.id);
     invalidateDeviceTypeSuppliersModels();
     backToModelList();

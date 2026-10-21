@@ -164,7 +164,8 @@ export const state = {
 // de criar uma chave nova que ninguém lê. Os objectos aninhados continuam a mudar.
 Object.seal(state);
 
-function resetActivityPaging() {
+/** Mexer num filtro ou trocar de aparelho leva as duas listas ao princípio, e desfaz o «Carregar mais». */
+export function resetActivityPaging() {
     state.telemetryPage = 1;
     state.telemetryCumulative = false;
     state.downlinkPage = 1;

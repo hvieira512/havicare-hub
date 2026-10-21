@@ -105,7 +105,7 @@ export function configurationDeliveryMeta(isStored, delivery) {
 
     const status = String(delivery?.status || "applied");
     return CONFIGURATION_DELIVERY_META[status] ||
-        CONFIGURATION_DELIVERY_META.failed;
+        { label: "Desconhecido", tone: "secondary", message: "" };
 }
 
 export function renderConfigurationDeliveryNotice(meta, delivery) {

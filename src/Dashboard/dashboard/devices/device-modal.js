@@ -554,7 +554,11 @@ export async function handleDeleteDeviceBtnClick() {
     if (!imei) return;
     const { isConfirmed } = await confirmDestructive(`Apagar o dispositivo ${imei}?`);
     if (!isConfirmed) return;
-    await apiDeleteDevice(imei);
+    const result = await apiDeleteDevice(imei);
+    if (result.error) {
+        setDeviceFormError(apiError(result));
+        return;
+    }
     deviceModal.hide();
     if (state.selectedImei === imei) {
         disconnectDeviceStream();
