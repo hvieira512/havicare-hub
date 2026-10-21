@@ -1,8 +1,6 @@
 import test, { beforeEach } from "node:test";
 import assert from "node:assert/strict";
 
-import "./support/browser-env.js";
-
 const { state } = await import("../../src/Dashboard/dashboard/state.js");
 const {
     initDeviceDetailView,

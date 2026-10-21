@@ -1,7 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import "./support/browser-env.js";
 import { boolValue } from "../../src/Dashboard/dashboard/devices/config/normalizers.js";
 
 /** O que um aparelho manda por «ligado» não é só `true` e `1`. */

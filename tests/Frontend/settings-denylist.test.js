@@ -1,19 +1,13 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import "./support/browser-env.js";
-
 const {
     initSettingsDenylist,
     loadSettingsDenylistSection,
     handleDenylistListClick,
 } = await import("../../src/Dashboard/dashboard/settings/denylist.js");
 
-const jsonResponse = (obj, status = 200) => ({
-    ok: status >= 200 && status < 300,
-    status,
-    text: async () => JSON.stringify(obj),
-});
+const jsonResponse = (obj, status = 200) => Response.json(obj, { status });
 
 const tick = () => new Promise((resolve) => setTimeout(resolve, 0));
 

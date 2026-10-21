@@ -1,9 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-// Tem de vir antes dos módulos do dashboard: o `api/http.js` toca em `window` ao carregar.
-import "./support/browser-env.js";
-
 /**
  * O `Swal.fire()` devolve uma promessa, e cancelar não pode chegar à API. A caixa diz também o
  * que se apaga: «Apagar licença?» não diz qual.
@@ -20,11 +17,7 @@ globalThis.Swal = {
 };
 globalThis.fetch = (url, options) => {
     calls.push({ url, method: options?.method || "GET" });
-    return Promise.resolve({
-        ok: false,
-        status: 500,
-        text: () => Promise.resolve("{\"error\":{\"code\":\"boom\"}}"),
-    });
+    return Promise.resolve(Response.json({ error: { code: "boom" } }, { status: 500 }));
 };
 
 const reset = () => {

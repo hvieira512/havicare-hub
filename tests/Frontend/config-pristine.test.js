@@ -1,7 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import "./support/browser-env.js";
 import { readConfigEntryValue } from "../../src/Dashboard/dashboard/devices/config/index.js";
 
 /** A fotografia de uma lista tem de bater com o que o `select` devolve, ou a linha nasce alterada. */

@@ -1,7 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import "./support/browser-env.js";
 import { stageHeightFor } from "../../src/Dashboard/dashboard/devices/radar-scene.js";
 
 /**

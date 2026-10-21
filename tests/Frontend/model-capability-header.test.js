@@ -1,7 +1,6 @@
 import test, { beforeEach } from "node:test";
 import assert from "node:assert/strict";
-
-import "./support/browser-env.js";
+import { autoEls } from "./support/els.js";
 
 const { state } = await import("../../src/Dashboard/dashboard/state.js");
 const { initSettingsModels } = await import(
@@ -50,13 +49,7 @@ const MODEL = {
 let els;
 
 beforeEach(() => {
-    els = new Proxy({}, {
-        get(target, name) {
-            if (typeof name !== "string") return undefined;
-            if (!(name in target)) target[name] = document.createElement("div");
-            return target[name];
-        },
-    });
+    els = autoEls();
     initSettingsModels({ els, ui: {} });
     state.settingsModal.currentCapabilitiesModel = MODEL;
     state.settingsModal.capabilityCatalog = CATALOG;

@@ -1,8 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-// Tem de vir antes dos módulos do dashboard: o `api/http.js` toca em `window` ao carregar.
-import "./support/browser-env.js";
 import { imeiEmphasis } from "../../src/Dashboard/dashboard/devices/device-card.js";
 
 /** O que se realça é medido contra os vizinhos, e não um número fixo de dígitos. */

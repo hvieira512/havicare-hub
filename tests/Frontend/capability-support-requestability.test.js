@@ -1,7 +1,6 @@
 import test, { beforeEach } from "node:test";
 import assert from "node:assert/strict";
-
-import "./support/browser-env.js";
+import { autoEls } from "./support/els.js";
 
 const { state } = await import("../../src/Dashboard/dashboard/state.js");
 const { initSettingsModels } =
@@ -13,13 +12,7 @@ const { handleCapabilityGroupsChange } =
  * «Pode ser pedida» depende de «o modelo tem»: pedir uma leitura que o modelo não oferece
  * mandaria um comando que nunca tem resposta.
  */
-const els = new Proxy({}, {
-    get(target, name) {
-        if (typeof name !== "string") return undefined;
-        if (!(name in target)) target[name] = document.createElement("div");
-        return target[name];
-    },
-});
+const els = autoEls();
 
 const toggle = (action, feature, checked) => {
     const checkbox = document.createElement("input");

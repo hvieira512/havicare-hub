@@ -1,8 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import "./support/browser-env.js";
-
 /** Os slides para onde se mandou o carrossel: o 0 é a lista. */
 const slides = [];
 
@@ -19,12 +17,7 @@ globalThis.bootstrap = {
     },
 };
 
-globalThis.fetch = () =>
-    Promise.resolve({
-        ok: true,
-        status: 200,
-        text: () => Promise.resolve("{\"data\":[]}"),
-    });
+globalThis.fetch = async () => Response.json({ data: [] });
 
 const { state } = await import("../../src/Dashboard/dashboard/state.js");
 const { initSettingsModels } = await import(

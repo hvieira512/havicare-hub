@@ -2,7 +2,6 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { readFileSync } from "node:fs";
 
-import "./support/browser-env.js";
 import { deviceTypeIcon } from "../../src/Dashboard/dashboard/components/device-type-tiles.js";
 
 /**

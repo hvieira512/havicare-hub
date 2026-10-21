@@ -1,7 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-
-import "./support/browser-env.js";
+import { autoEls } from "./support/els.js";
 
 const { bindDeviceEvents } = await import("../../src/Dashboard/dashboard/wiring/devices.js");
 
@@ -26,9 +25,7 @@ function tabEls() {
     const cache = {};
     for (const element of root.querySelectorAll("[id]")) cache[element.id] = element;
 
-    return new Proxy(cache, {
-        get: (target, id) => (target[id] ??= document.createElement("div")),
-    });
+    return autoEls(undefined, cache);
 }
 
 const click = (button) => button.dispatchEvent(new window.Event("click", { bubbles: true }));

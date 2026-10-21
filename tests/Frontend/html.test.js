@@ -2,9 +2,6 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { globSync, readFileSync } from "node:fs";
 
-// Tem de vir antes dos módulos do dashboard: o nome de uma capacidade vem do catálogo, e
-// esse caminho passa pelo `api/http.js`, que toca em `window` ao carregar.
-import "./support/browser-env.js";
 import { parseFragment } from "./support/dom.js";
 import { html, raw, trusted } from "../../src/Dashboard/dashboard/html.js";
 import { field } from "../../src/Dashboard/dashboard/components/form-field.js";

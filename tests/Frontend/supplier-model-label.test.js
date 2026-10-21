@@ -1,8 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import "./support/browser-env.js";
-
 const { supplierModelLabel, supplierProtocol } = await import("../../src/Dashboard/dashboard/domain.js");
 
 /**

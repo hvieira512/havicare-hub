@@ -1,8 +1,6 @@
 import test, { beforeEach } from "node:test";
 import assert from "node:assert/strict";
 
-import "./support/browser-env.js";
-
 // Sem temporizadores reais: o `http.js` agenda um refresh de token só por ser importado, e
 // um timer de uma hora deixaria o processo de teste pendurado.
 window.setTimeout = () => 0;
@@ -19,13 +17,7 @@ const { state } = await import("../../src/Dashboard/dashboard/state.js");
  * juntam pedidos simultâneos num só, e nunca põem um erro em cache.
  */
 
-/** Uma resposta do `fetch` tal como o `http.js` a lê: o estado e o corpo em texto. */
-const httpResponse = (status, raw) => ({
-    ok: status >= 200 && status < 300,
-    status,
-    text: async () => raw,
-    headers: { get: () => "application/json" },
-});
+const httpResponse = (status, raw) => new Response(raw, { status });
 
 let calls = [];
 let nextResponse = () => httpResponse(200, JSON.stringify({ data: [] }));

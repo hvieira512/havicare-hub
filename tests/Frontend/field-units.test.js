@@ -2,7 +2,6 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 
-import "./support/browser-env.js";
 import { fieldLabel, fieldUnit, fieldValue } from "../../src/Dashboard/dashboard/format.js";
 
 /**

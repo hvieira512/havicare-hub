@@ -1,7 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-
-import "./support/browser-env.js";
+import { autoEls } from "./support/els.js";
 
 const { state } = await import("../../src/Dashboard/dashboard/state.js");
 const { initSettingsModels } = await import(
@@ -27,12 +26,7 @@ const MODEL = {
     image: "",
 };
 
-const jsonResponse = (obj) => ({
-    ok: true,
-    status: 200,
-    text: async () => JSON.stringify(obj),
-    headers: { get: () => "application/json" },
-});
+const jsonResponse = (obj) => Response.json(obj);
 
 // A ficha acaba a mandar o carrossel para o slide dela; aqui só interessa que não rebente.
 class FakeCarousel {
@@ -68,13 +62,7 @@ function setupDom() {
     for (const el of document.querySelectorAll("[id]")) found[el.id] = el;
     // O que a ficha toca e não está na marcação deste teste nasce aqui: o que se prende é o
     // recarregamento, e não quais os elementos que ela pinta pelo caminho.
-    const els = new Proxy(found, {
-        get(target, name) {
-            if (typeof name !== "string") return undefined;
-            if (!(name in target)) target[name] = document.createElement("div");
-            return target[name];
-        },
-    });
+    const els = autoEls(undefined, found);
     initSettingsModels({ els, ui: {} });
     state.modelModalSuppliers = [{ id: 5, name: "Wonlex" }, { id: 9, name: "4P Touch" }];
     state.settingsModal.currentCapabilitiesModel = MODEL;

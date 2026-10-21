@@ -1,8 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import "./support/browser-env.js";
-
 const { activityTable } =
     await import("../../src/Dashboard/dashboard/devices/activity-table.js");
 

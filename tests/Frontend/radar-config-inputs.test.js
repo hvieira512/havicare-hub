@@ -1,7 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import "./support/browser-env.js";
 import { configSection, parseFragment } from "./support/dom.js";
 import {
     defaultConfigPayload,

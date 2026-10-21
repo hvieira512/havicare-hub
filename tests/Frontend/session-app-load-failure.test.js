@@ -1,8 +1,6 @@
 import test, { beforeEach } from "node:test";
 import assert from "node:assert/strict";
 
-import "./support/browser-env.js";
-
 // O `showLogin` avisa por toast, e o toast fala com o SweetAlert, que não existe fora do
 // browser. Um duplo mudo chega: o que se afirma aqui é o ecrã, não o aviso.
 globalThis.Swal = { fire: () => Promise.resolve({}) };

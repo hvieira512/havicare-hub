@@ -1,9 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-// Tem de vir antes dos módulos do dashboard: o `api/http.js` toca em `window` ao carregar.
-import "./support/browser-env.js";
-
 const { telemetryRequestCards, renderRequestCardGroup: buildGroup } = await import(
     "../../src/Dashboard/dashboard/devices/detail.js",
 );

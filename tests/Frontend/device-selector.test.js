@@ -1,7 +1,6 @@
 import test, { beforeEach, describe } from "node:test";
 import assert from "node:assert/strict";
-
-import "./support/browser-env.js";
+import { autoEls } from "./support/els.js";
 
 const { state } = await import("../../src/Dashboard/dashboard/state.js");
 const { cacheElements } = await import("../../src/Dashboard/dashboard/dom.js");
@@ -17,30 +16,14 @@ const hangingFetch = () => new Promise(() => {});
 
 describe("pesquisa", () => {
     /**
-     * O selector desenha-se inteiro e o detalhe sai pelo caminho vazio; cada nome pedido devolve um
-     * elemento a sério.
+     * O selector desenha-se inteiro e o detalhe sai pelo caminho vazio.
      */
-    const els = new Proxy({}, {
-        get(target, name) {
-            if (typeof name !== "string") return undefined;
-            if (!(name in target)) {
-                target[name] = document.createElement(
-                    name.endsWith("Search") || name.endsWith("Limit") ? "input" : "div",
-                );
-            }
-            return target[name];
-        },
-    });
+    const els = autoEls((name) => (name.endsWith("Search") || name.endsWith("Limit") ? "input" : "div"));
 
     const ui = { deviceSelectorModal: { show() {} } };
 
     beforeEach(() => {
-        globalThis.fetch = async () => ({
-            ok: true,
-            status: 200,
-            text: async () => JSON.stringify({ data: [], pagination: { page: 1, total_pages: 1, total: 0, limit: 20 } }),
-            headers: { get: () => "application/json" },
-        });
+        globalThis.fetch = async () => Response.json({ data: [], pagination: { page: 1, total_pages: 1, total: 0, limit: 20 } });
         initDeviceList({ els, ui, onChange: () => {} });
         // Licenças já carregadas: a promessa partilhada pode ter ficado pendurada noutro bloco.
         state.licenses = [{ id: 1 }];

@@ -3,8 +3,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "lint": "eslint src/Dashboard/main.js src/Dashboard/dashboard src/Dashboard/assets/js tests/Frontend --max-warnings 0",
-    "test": "node --test tests/Frontend/*.test.js"
+    "lint": "eslint src/Dashboard/main.js src/Dashboard/dashboard src/Dashboard/assets/js tests/Frontend",
+    "test": "node --import ./tests/Frontend/support/browser-env.js --test tests/Frontend/*.test.js"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",

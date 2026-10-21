@@ -1,7 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import "./support/browser-env.js";
 import { cardContent as uplinkCardContent } from "./support/cards.js";
 
 /** A contagem lê-se do `sampleCount`, que é o que o histórico guarda no lugar das amostras. */

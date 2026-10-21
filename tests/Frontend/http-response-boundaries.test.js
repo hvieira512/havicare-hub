@@ -1,8 +1,6 @@
 import test, { beforeEach } from "node:test";
 import assert from "node:assert/strict";
 
-import "./support/browser-env.js";
-
 // Sem temporizadores reais: o refresh de token agenda com `window.setTimeout`, e um timer de
 // uma hora deixaria o processo de teste pendurado.
 window.setTimeout = () => 0;
@@ -16,13 +14,7 @@ const {
     setDashboardApiToken,
 } = await import("../../src/Dashboard/dashboard/api/http.js");
 
-const response = (status, raw) => ({
-    ok: status >= 200 && status < 300,
-    status,
-    text: async () => raw,
-    headers: { get: () => "application/json" },
-});
-const jsonResponse = (status, body) => response(status, JSON.stringify(body));
+const jsonResponse = (status, body) => Response.json(body, { status });
 
 beforeEach(() => {
     clearDashboardApiToken();
@@ -33,7 +25,7 @@ beforeEach(() => {
  * lê-se como sucesso e a lista vazia fica em cache.
  */
 test("um erro com corpo vazio traz `error`, e não passa por sucesso", async () => {
-    globalThis.fetch = async () => response(500, "");
+    globalThis.fetch = async () => new Response("", { status: 500 });
 
     const result = await requestJson("/api/devices");
 
@@ -42,7 +34,7 @@ test("um erro com corpo vazio traz `error`, e não passa por sucesso", async () 
 });
 
 test("um sucesso com corpo vazio continua a ser sucesso", async () => {
-    globalThis.fetch = async () => response(204, "");
+    globalThis.fetch = async () => new Response(null, { status: 204 });
 
     const result = await requestJson("/api/devices/x", { method: "DELETE" });
 
@@ -55,8 +47,8 @@ test("um 401 que sobrevive ao refresh pede autenticação", async () => {
     setDashboardApiToken({ access_token: "velho", refresh_token: "r1" });
     globalThis.fetch = async (url) =>
         String(url) === "/api/auth/login"
-            ? response(200, JSON.stringify({ token: { access_token: "novo", refresh_token: "r2" } }))
-            : response(401, JSON.stringify({ error: { code: "unauthorized" } }));
+            ? jsonResponse(200, { token: { access_token: "novo", refresh_token: "r2" } })
+            : jsonResponse(401, { error: { code: "unauthorized" } });
 
     let authPrompts = 0;
     const onAuthRequired = () => {

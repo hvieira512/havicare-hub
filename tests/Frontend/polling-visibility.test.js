@@ -1,9 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-// Tem de vir antes dos módulos do dashboard: o `api/http.js` toca em `window` ao carregar.
-import "./support/browser-env.js";
-
 /**
  * Com o separador escondido não se sonda, e ao voltar relê-se de imediato, como no
  * `devices/stream.js`.
@@ -14,7 +11,7 @@ Object.defineProperty(document, "hidden", { configurable: true, get: () => hidde
 const requests = [];
 globalThis.fetch = async (url) => {
     requests.push(String(url));
-    return { ok: true, status: 200, text: async () => "{}" };
+    return Response.json({});
 };
 
 /**

@@ -1,7 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import "./support/browser-env.js";
 import { renderPhoneControl } from "../../src/Dashboard/dashboard/phone.js";
 import { parseFragment } from "./support/dom.js";
 

@@ -1,7 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import "./support/browser-env.js";
 import { parseFragment } from "./support/dom.js";
 import { patchConfigurationDeliveryStates } from "../../src/Dashboard/dashboard/devices/config/delivery.js";
 

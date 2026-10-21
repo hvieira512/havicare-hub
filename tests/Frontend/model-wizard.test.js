@@ -1,7 +1,6 @@
 import test, { beforeEach } from "node:test";
 import assert from "node:assert/strict";
-
-import "./support/browser-env.js";
+import { autoEls } from "./support/els.js";
 
 const { state } = await import("../../src/Dashboard/dashboard/state.js");
 const { initSettingsModels } = await import(
@@ -41,19 +40,10 @@ let els;
 let sent;
 
 /** Os elementos que o assistente escreve, com botão onde o `disabled` tem de contar. */
-function element(name) {
-    return document.createElement(name.endsWith("Btn") ? "button" : "div");
-}
+const tagFor = (name) => (name.endsWith("Btn") ? "button" : "div");
 
 function openWizard() {
-    const cache = {};
-    els = new Proxy(cache, {
-        get(target, name) {
-            if (typeof name !== "string") return undefined;
-            if (!(name in target)) target[name] = element(name);
-            return target[name];
-        },
-    });
+    els = autoEls(tagFor);
     initSettingsModels({ els, ui: {} });
     return openNewModelForm();
 }
@@ -101,7 +91,7 @@ beforeEach(() => {
         const body = String(url).startsWith("/api/models/template")
             ? TEMPLATE
             : { status: "ok" };
-        return { ok: true, status: 200, text: async () => JSON.stringify(body) };
+        return Response.json(body);
     };
 });
 

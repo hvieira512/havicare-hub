@@ -1,8 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import "./support/browser-env.js";
-
 // Sem temporizadores reais: os relógios de inatividade são de minutos e deixariam o processo
 // de teste pendurado.
 window.setTimeout = () => 0;
@@ -74,11 +72,7 @@ const captureFetch = (respond) => {
     return calls;
 };
 
-const sessionResponse = (status, body) => ({
-    ok: status >= 200 && status < 300,
-    status,
-    json: async () => body,
-});
+const sessionResponse = (status, body) => Response.json(body, { status });
 
 test("sem sessão no cookie, o arranque mostra o login", async () => {
     installDom();

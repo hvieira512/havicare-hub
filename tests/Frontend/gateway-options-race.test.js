@@ -1,25 +1,16 @@
 import test, { beforeEach } from "node:test";
 import assert from "node:assert/strict";
 
-import "./support/browser-env.js";
 import { installDeferredFetch } from "./support/deferred-fetch.js";
+import { autoEls } from "./support/els.js";
 
 const { state } = await import("../../src/Dashboard/dashboard/state.js");
 const { initGatewayLinksUi, refreshGatewayOptions } =
     await import("../../src/Dashboard/dashboard/devices/gateway-links-ui.js");
 
-const els = new Proxy({}, {
-    get(target, name) {
-        if (typeof name !== "string") return undefined;
-        if (!(name in target)) {
-            const isField = /Company$|LicenseId$|Imei$/.test(name);
-            target[name] = document.createElement(
-                name.endsWith("Btn") ? "button" : isField ? "input" : "div",
-            );
-        }
-        return target[name];
-    },
-});
+const els = autoEls((name) => (name.endsWith("Btn")
+    ? "button"
+    : /Company$|LicenseId$|Imei$/.test(name) ? "input" : "div"));
 
 const gatewaysOfBothLicenses = {
     data: [

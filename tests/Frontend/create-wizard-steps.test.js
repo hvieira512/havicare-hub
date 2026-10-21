@@ -1,7 +1,6 @@
 import test, { beforeEach } from "node:test";
 import assert from "node:assert/strict";
 
-import "./support/browser-env.js";
 import { parseFragment } from "./support/dom.js";
 
 const { state } = await import("../../src/Dashboard/dashboard/state.js");
@@ -53,12 +52,7 @@ const pick = (selector) => root.querySelector(selector).click();
 
 beforeEach(async () => {
     // Sem pedidos: com o estado já preenchido, o `ensure*` devolve o que lá está.
-    globalThis.fetch = async () => ({
-        ok: true,
-        status: 200,
-        text: async () => JSON.stringify({ data: [], pagination: {} }),
-        headers: { get: () => "application/json" },
-    });
+    globalThis.fetch = async () => Response.json({ data: [], pagination: {} });
     state.deviceTypeSuppliersModels = MODELS;
     state.licenses = LICENSES;
     harness();

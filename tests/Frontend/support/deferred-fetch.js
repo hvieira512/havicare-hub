@@ -23,12 +23,7 @@ export function installDeferredFetch() {
                 throw new Error(`Nenhum pedido pendente para «${match}»`);
             }
             const [entry] = pending.splice(index, 1);
-            entry.resolve({
-                ok: true,
-                status: 200,
-                text: async () => JSON.stringify(body),
-                headers: { get: () => "application/json" },
-            });
+            entry.resolve(Response.json(body));
             await flush();
         },
     };

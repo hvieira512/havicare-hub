@@ -1,25 +1,14 @@
 import test, { beforeEach } from "node:test";
 import assert from "node:assert/strict";
 
-import "./support/browser-env.js";
 import { installDeferredFetch } from "./support/deferred-fetch.js";
+import { autoEls } from "./support/els.js";
 
 const { selectImei, setDeviceListPage, state } = await import("../../src/Dashboard/dashboard/state.js");
 const { initDeviceList, loadDevice, loadSummary, selectDevice } =
     await import("../../src/Dashboard/dashboard/devices/list.js");
 
-/** Cada nome pedido devolve um elemento a sério, para não haver aqui trinta `createElement`. */
-const els = new Proxy({}, {
-    get(target, name) {
-        if (typeof name !== "string") return undefined;
-        if (!(name in target)) {
-            target[name] = document.createElement(
-                name.endsWith("Search") || name.endsWith("Limit") ? "input" : "div",
-            );
-        }
-        return target[name];
-    },
-});
+const els = autoEls((name) => (name.endsWith("Search") || name.endsWith("Limit") ? "input" : "div"));
 
 const detailFor = (imei) => ({
     device: { imei, deviceType: "watch", company: "havicare", licenseId: 1 },

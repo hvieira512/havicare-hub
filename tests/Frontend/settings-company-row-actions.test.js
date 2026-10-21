@@ -1,8 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import "./support/browser-env.js";
-
 const { initSettingsCompanies, loadSettingsCompanySection } = await import(
     "../../src/Dashboard/dashboard/settings/companies.js",
 );
@@ -12,11 +10,7 @@ const { invalidateLicenses } = await import("../../src/Dashboard/dashboard/licen
  * Cada linha da árvore leva os seus verbos num menu e não em ícones soltos: três ícones sem
  * nome por linha não se adivinham, e o primeiro deles abre a cloud dos radares.
  */
-const jsonResponse = (obj) => ({
-    ok: true,
-    status: 200,
-    text: async () => JSON.stringify(obj),
-});
+const jsonResponse = (obj) => Response.json(obj);
 
 const COMPANIES = [{ id: 7, name: "hitcare" }];
 const LICENSES = [{ id: 31, license_id: 1001, company_id: 7, name: "gucc.dev" }];

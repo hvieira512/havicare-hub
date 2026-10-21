@@ -350,9 +350,8 @@ Dois valem por si:
 
   **Quem puser um `import()` novo acrescenta aqui a porta dele**, senão o que
   está por trás deixa de ser verificado sem que nada o diga.
-- **O `no-unused-vars` do eslint** é aviso e não erro, mas o `npm run lint`
-  corre com `--max-warnings 0`: é o que apanha um import que ficou para trás
-  depois de mover código. Quem apanha um import **partido** é o `node --test`,
+- **O `no-unused-vars` do eslint** é erro: é o que apanha um import que ficou
+  para trás depois de mover código. Quem apanha um import **partido** é o `node --test`,
   que falha logo a carregar.
 
 Vários testes em `tests/Unit/Dashboard/` lêem estes ficheiros **como texto** e

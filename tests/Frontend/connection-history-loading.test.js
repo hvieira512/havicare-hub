@@ -1,7 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-
-import "./support/browser-env.js";
+import { autoEls } from "./support/els.js";
 
 const { setSelectedDetail, state } = await import("../../src/Dashboard/dashboard/state.js");
 const { initDeviceDetailView, renderSelection } = await import(
@@ -12,12 +11,7 @@ const { initDeviceDetailView, renderSelection } = await import(
 
 function detailEls() {
     const tags = { telemetryColumnTab: "button", detailFilterType: "select" };
-    return new Proxy({}, {
-        get: (cache, id) => {
-            cache[id] ??= document.createElement(tags[id] || "div");
-            return cache[id];
-        },
-    });
+    return autoEls((name) => tags[name] || "div");
 }
 
 const detail = () => ({

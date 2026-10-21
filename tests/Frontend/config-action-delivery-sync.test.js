@@ -1,7 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import "./support/browser-env.js";
 import { syncDeviceModalCommandStates } from "../../src/Dashboard/dashboard/devices/config/panel.js";
 import { state } from "../../src/Dashboard/dashboard/state.js";
 

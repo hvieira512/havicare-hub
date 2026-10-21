@@ -1,7 +1,6 @@
 import test, { beforeEach } from "node:test";
 import assert from "node:assert/strict";
-
-import "./support/browser-env.js";
+import { autoEls } from "./support/els.js";
 
 const { state } = await import("../../src/Dashboard/dashboard/state.js");
 const { FILTERS_STORAGE_KEY } = await import("../../src/Dashboard/dashboard/storage.js");
@@ -12,13 +11,7 @@ const { handleDeviceFilterClick, initListFilters } =
  * Quem está na lista é só o pai marcado: um clique num filho é «troca o pai pelos irmãos», e
  * marcar o pai apaga os filhos marcados à parte.
  */
-const els = new Proxy({}, {
-    get(target, name) {
-        if (typeof name !== "string") return undefined;
-        if (!(name in target)) target[name] = document.createElement("div");
-        return target[name];
-    },
-});
+const els = autoEls();
 
 let changes;
 

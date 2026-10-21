@@ -1,7 +1,6 @@
 import test, { beforeEach } from "node:test";
 import assert from "node:assert/strict";
 
-import "./support/browser-env.js";
 import { flush, installDeferredFetch } from "./support/deferred-fetch.js";
 import { parseFragment } from "./support/dom.js";
 

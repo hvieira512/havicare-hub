@@ -1,7 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import "./support/browser-env.js";
 import { parseFragment } from "./support/dom.js";
 import { buttonGroup } from "../../src/Dashboard/dashboard/components/button-group.js";
 

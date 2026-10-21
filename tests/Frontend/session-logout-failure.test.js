@@ -1,7 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import "./support/browser-env.js";
 import { flush } from "./support/deferred-fetch.js";
 
 const fired = [];
@@ -72,7 +71,7 @@ test("uma saída que o Hub não chegou a receber diz-se a quem saiu", async () =
 test("um 500 do Hub conta como não ter saído", async () => {
     const { logoutButton } = mount();
     await initializeDashboardSession(async () => {});
-    globalThis.fetch = async () => ({ ok: false, status: 500 });
+    globalThis.fetch = async () => new Response(null, { status: 500 });
 
     logoutButton.click();
     await flush();
@@ -84,7 +83,7 @@ test("um 500 do Hub conta como não ter saído", async () => {
 test("o motivo da saída não se perde quando o pedido falha", async () => {
     mount();
     await initializeDashboardSession(async () => {});
-    globalThis.fetch = async () => ({ ok: false, status: 500 });
+    globalThis.fetch = async () => new Response(null, { status: 500 });
 
     // Uma saída com motivo -- a que o relógio de inatividade dispara é assim.
     window.dispatchEvent(new Event("hub-dashboard-auth-required"));
@@ -98,7 +97,7 @@ test("o motivo da saída não se perde quando o pedido falha", async () => {
 test("quando o Hub recebe a saída, não se avisa nada", async () => {
     const { login, logoutButton } = mount();
     await initializeDashboardSession(async () => {});
-    globalThis.fetch = async () => ({ ok: true, status: 200 });
+    globalThis.fetch = async () => new Response();
 
     logoutButton.click();
     await flush();

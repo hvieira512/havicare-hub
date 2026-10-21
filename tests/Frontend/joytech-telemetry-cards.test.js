@@ -1,7 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import "./support/browser-env.js";
 import { cardContent as uplinkCardContent } from "./support/cards.js";
 
 test("a tensão mostra a arritmia e o grupo de memória, e diz quando veio da memória", () => {

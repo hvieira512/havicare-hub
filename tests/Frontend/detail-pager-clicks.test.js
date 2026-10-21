@@ -1,7 +1,6 @@
 import test, { beforeEach, describe } from "node:test";
 import assert from "node:assert/strict";
-
-import "./support/browser-env.js";
+import { autoEls } from "./support/els.js";
 
 const { state } = await import("../../src/Dashboard/dashboard/state.js");
 const {
@@ -26,13 +25,7 @@ describe("os dois paginadores", () => {
      * Os dois paginadores correm sobre o mesmo algoritmo, cada um com a sua lista, tamanho, página e
      * acção; trocar dois desses valores não se vê num render, e por isso afirma-se o clique.
      */
-    const els = new Proxy({}, {
-        get(target, name) {
-            if (typeof name !== "string") return undefined;
-            if (!(name in target)) target[name] = document.createElement("div");
-            return target[name];
-        },
-    });
+    const els = autoEls();
 
     let drawn;
 

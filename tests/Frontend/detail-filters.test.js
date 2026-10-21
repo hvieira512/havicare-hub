@@ -1,7 +1,6 @@
 import test, { beforeEach, describe } from "node:test";
 import assert from "node:assert/strict";
-
-import "./support/browser-env.js";
+import { autoEls } from "./support/els.js";
 
 const { state, resetDetailFiltersDraft, selectImei, updateDetailFiltersDraft } =
     await import("../../src/Dashboard/dashboard/state.js");
@@ -16,22 +15,9 @@ const {
     syncDetailFilterControls,
 } = await import("../../src/Dashboard/dashboard/devices/detail-filters.js");
 
-// Cada nome pedido devolve um elemento a sério, criado à medida.
-const els = new Proxy({}, {
-    get(target, name) {
-        if (typeof name !== "string") return undefined;
-        if (!(name in target)) {
-            target[name] = document.createElement(
-                name === "detailFilterType" || name === "detailFilterSeverity"
-                    ? "select"
-                    : name.startsWith("detailFilter") || name === "detailSearch"
-                        ? "input"
-                        : "div",
-            );
-        }
-        return target[name];
-    },
-});
+const els = autoEls((name) => (name === "detailFilterType" || name === "detailFilterSeverity"
+    ? "select"
+    : name.startsWith("detailFilter") || name === "detailSearch" ? "input" : "div"));
 
 /** O rascunho é o que está nos campos antes de «Aplicar», e um `""` de propósito conta. */
 describe("rascunho", () => {
