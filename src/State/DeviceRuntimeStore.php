@@ -53,15 +53,12 @@ final class DeviceRuntimeStore
 
         $this->redis->srem($this->key('devices'), $imei);
         $this->redis->zrem($this->onlineDeviceSetKey(), $imei);
-        $this->redis->del([
-            $this->deviceKey($imei),
-            $this->deviceListKey($imei, 'raw'),
-            $this->deviceListKey($imei, 'telemetry'),
-            $this->deviceListKey($imei, 'events'),
-            $this->deviceListKey($imei, 'commands'),
-            $this->commandHashKey($imei),
-            $this->sightingKey($imei),
-        ]);
+        $keys = [$this->deviceKey($imei), $this->commandHashKey($imei), $this->sightingKey($imei)];
+        foreach (['raw', 'telemetry', 'events', 'commands', 'connections'] as $list) {
+            $list = $this->deviceListKey($imei, $list);
+            array_push($keys, $list, "{$list}:latest", "{$list}:seq");
+        }
+        $this->redis->del($keys);
     }
 
     public function updateDeviceAssociation(string $imei, string $company, int $licenseId): void

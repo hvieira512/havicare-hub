@@ -96,6 +96,7 @@ final class DeviceStore implements DeviceStoreContract
     public function deleteDevice(string $imei): void
     {
         $this->runtime->deleteDevice($imei);
+        unset($this->withConnectionHistory[$imei]);
     }
 
     public function updateDeviceAssociation(string $imei, string $company, int $licenseId): void
