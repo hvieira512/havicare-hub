@@ -27,14 +27,14 @@ const hubRestart = {
 const button = (markup, action) =>
     markup.split("<button").find((chunk) => chunk.includes(action)) || "";
 
-test("registar o aparelho tem botão próprio", () => {
+test("registering the device has its own button", () => {
     const markup = notificationRow(notAuthorized);
 
     assert.match(markup, /data-notification-register="7"/);
     assert.match(button(markup, "data-notification-register"), /Registar/);
 });
 
-test("um aviso que não é de um aparelho só se dispensa", () => {
+test("a notice that is not about a device can only be dismissed", () => {
     const markup = notificationRow(hubRestart);
 
     assert.doesNotMatch(markup, /data-notification-block/);
@@ -42,7 +42,7 @@ test("um aviso que não é de um aparelho só se dispensa", () => {
     assert.match(markup, /data-notification-dismiss="8"/);
 });
 
-test("o rodapé leva aos bloqueados, com ou sem notificações", () => {
+test("the footer leads to the blocked list, with or without notifications", () => {
     const empty = notificationsPanel([]);
     const filled = notificationsPanel([notAuthorized]);
 

@@ -19,7 +19,7 @@ const attrsIn = (row, attr) => [...row.querySelectorAll(`[${attr}]`)].map((el) =
  * O lembrete é desenhado com `rows.length` no `id` e no `name`: tirar um do meio faria o
  * seguinte reutilizar um índice vivo e juntar os rádios de duas linhas num grupo.
  */
-test("um lembrete acrescentado depois de remover outro não reutiliza os id", () => {
+test("a reminder added after removing another does not reuse ids", () => {
     const section = configSection(renderConfigInputs, TAKE_PILLS, {}, { limit: 3 });
     while (rowsOf(section).length < 3) {
         const before = rowsOf(section).length;
@@ -58,7 +58,7 @@ const threeReminders = () => configSection(renderConfigInputs, TAKE_PILLS, {
 });
 
 /** O 4P Touch aplica a mesma gravação a todos os lembretes, e nenhum deles tem a sua. */
-test("a gravação de voz é uma só para todos os lembretes", () => {
+test("there is one voice recording for all reminders", () => {
     const section = threeReminders();
 
     assert.equal(section.querySelectorAll("[data-repeat-row=\"takePillsReminder\"]").length, 3);
@@ -66,7 +66,7 @@ test("a gravação de voz é uma só para todos os lembretes", () => {
     assert.equal(section.querySelectorAll("[data-action=\"takePillsRecord\"]").length, 1);
 });
 
-test("nenhum lembrete traz voz dentro nem sinal de a ter", () => {
+test("no reminder carries a voice inside or a sign of having one", () => {
     for (const row of threeReminders().querySelectorAll("[data-repeat-row=\"takePillsReminder\"]")) {
         assert.equal(row.querySelector("[data-takepills-audio-controls]"), null, "voz dentro do lembrete");
         assert.equal(

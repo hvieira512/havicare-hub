@@ -28,7 +28,7 @@ const lowHeartRateEntry = {
     fields: ["switchState", "remindValue", "exerciseSwitchState", "exerciseHRMin", "exerciseHRMax", "exerciseRemindValue"],
 };
 
-test("as horas do sono desenham-se como campo de hora", () => {
+test("sleep times draw as time fields", () => {
     const root = section(sleepEntry, { enabled: true, sleepStartTime: "220000", sleepEndTime: "070000", sleepTarget: 480 });
     const start = root.querySelector("[data-config-field=\"sleepStartTime\"]");
     const end = root.querySelector("[data-config-field=\"sleepEndTime\"]");
@@ -38,7 +38,7 @@ test("as horas do sono desenham-se como campo de hora", () => {
     assert.equal(end.value, "07:00");
 });
 
-test("a hora escolhida volta a sair no HHmmss que o relógio quer", () => {
+test("the chosen time comes back out in the HHmmss the watch wants", () => {
     const root = section(sleepEntry, { enabled: true, sleepStartTime: "220000", sleepEndTime: "070000", sleepTarget: 480 });
     root.querySelector("[data-config-field=\"sleepStartTime\"]").value = "23:30";
 
@@ -46,7 +46,7 @@ test("a hora escolhida volta a sair no HHmmss que o relógio quer", () => {
     assert.equal(readConfigPayload(root).sleepEndTime, "070000");
 });
 
-test("o alerta de temperatura parte de 38,5 e aceita décimas", () => {
+test("the temperature alert starts at 38.5 and accepts decimals", () => {
     const root = section(temperatureEntry);
     const value = root.querySelector("[data-config-field=\"RemindValue\"]");
 
@@ -57,13 +57,13 @@ test("o alerta de temperatura parte de 38,5 e aceita décimas", () => {
     assert.equal(readConfigPayload(root).RemindValue, 37.8);
 });
 
-test("o alerta de frequência cardíaca baixa não parte do limite da alta", () => {
+test("the low heart rate alert does not start from the high limit", () => {
     const root = section(lowHeartRateEntry);
 
     assert.equal(root.querySelector("[data-config-field=\"remindValue\"]").value, "");
 });
 
-test("o alerta de frequência cardíaca baixa não se envia sem limite", () => {
+test("the low heart rate alert is not sent without a limit", () => {
     const root = section(lowHeartRateEntry);
 
     assert.throws(() => readConfigPayload(root), /limite/i);

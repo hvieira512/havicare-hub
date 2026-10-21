@@ -78,7 +78,7 @@ const boundary = {
 
 const areas = { key: "radar_areas", input: "radarAreas", fields: ["items"] };
 
-test("a sensibilidade parte do valor declarado e lê-se como inteiro", () => {
+test("sensitivity starts from the declared value and reads as an integer", () => {
     const root = section(sensitivity);
 
     assert.deepEqual(readConfigPayload(root), { sensitivity: 5 });
@@ -87,7 +87,7 @@ test("a sensibilidade parte do valor declarado e lê-se como inteiro", () => {
     assert.deepEqual(readConfigPayload(root), { sensitivity: 40 });
 });
 
-test("um intervalo de valores lê os dois extremos com os nomes da definição", () => {
+test("a value range reads both ends with the definition's names", () => {
     const root = section(breathRate);
 
     assert.deepEqual(readConfigPayload(root), { minPerMinute: 8, maxPerMinute: 24 });
@@ -95,13 +95,13 @@ test("um intervalo de valores lê os dois extremos com os nomes da definição",
     assert.match(root.textContent, /\/min/);
 });
 
-test("um intervalo com o mínimo acima do máximo não se envia", () => {
+test("a range with the minimum above the maximum is not sent", () => {
     const root = section(breathRate, { minPerMinute: 30, maxPerMinute: 24 });
 
     assert.throws(() => readConfigPayload(root), /mínimo/);
 });
 
-test("o interruptor com valor guarda o valor mesmo desligado", () => {
+test("a switch with a value keeps the value even when off", () => {
     const root = section(weakVitals);
 
     assert.deepEqual(readConfigPayload(root), { enabled: false, afterMinutes: 10 });
@@ -110,7 +110,7 @@ test("o interruptor com valor guarda o valor mesmo desligado", () => {
     assert.deepEqual(readConfigPayload(root), { enabled: true, afterMinutes: 15 });
 });
 
-test("o interruptor fica à esquerda e o valor à direita", () => {
+test("the switch sits left and the value right", () => {
     const root = section(weakVitals);
     const order = [...root.querySelectorAll("[data-config-field]")].map((node) => node.dataset.configField);
 
@@ -118,7 +118,7 @@ test("o interruptor fica à esquerda e o valor à direita", () => {
     assert.equal(root.querySelector(".input-group-text").textContent, "min");
 });
 
-test("o número do alarme de queda mostra a unidade e o passo da definição", () => {
+test("the fall alarm number shows the definition's unit and step", () => {
     const root = parseFragment(renderConfigSection(PROTOCOL, fallAlarm, null));
 
     assert.equal(root.querySelector(".input-group-text")?.textContent.trim(), "s");
@@ -126,7 +126,7 @@ test("o número do alarme de queda mostra a unidade e o passo da definição", (
     assert.equal(field(root, "afterSeconds").value, "60");
 });
 
-test("os cartões de opção leem o valor em texto", () => {
+test("option cards read the value as text", () => {
     const root = section(workingMode);
 
     assert.deepEqual(readConfigPayload(root), { mode: "full_function" });
@@ -135,7 +135,7 @@ test("os cartões de opção leem o valor em texto", () => {
     assert.match(root.textContent, /Segue várias pessoas/);
 });
 
-test("a instalação lê a montagem e a altura", () => {
+test("installation reads the mounting and the height", () => {
     const root = section(installation);
 
     assert.deepEqual(readConfigPayload(root), { mounting: "ceiling", heightCm: 280 });
@@ -145,7 +145,7 @@ test("a instalação lê a montagem e a altura", () => {
     assert.match(root.textContent, /Alturas recomendadas/);
 });
 
-test("os limites de deteção partem dos de fábrica do teto e aceitam décimas", () => {
+test("detection limits start from the ceiling factory values and accept decimals", () => {
     const root = section(boundary);
 
     assert.deepEqual(readConfigPayload(root), { leftM: 3, rightM: 3, frontM: 2, backM: 2 });
@@ -153,7 +153,7 @@ test("os limites de deteção partem dos de fábrica do teto e aceitam décimas"
     assert.equal(readConfigPayload(root).frontM, 2.7);
 });
 
-test("mudar a montagem para parede põe os limites de fábrica da parede", async () => {
+test("switching the mounting to wall sets the wall factory limits", async () => {
     const { applyFactoryBoundary } = await import("../../src/Dashboard/dashboard/devices/config/inputs/radar.js");
     const pane = parseFragment(`<div data-config-pane>${renderConfigSection(PROTOCOL, boundary, null)}</div>`).firstElementChild;
 
@@ -162,7 +162,7 @@ test("mudar a montagem para parede põe os limites de fábrica da parede", async
     assert.deepEqual(readConfigPayload(pane.querySelector("[data-config-section]")), { leftM: 3, rightM: 3, frontM: 4, backM: 0 });
 });
 
-test("as áreas não se editam no cartão e voltam tal como vieram", () => {
+test("areas are not edited in the card and read back unchanged", () => {
     const items = [
         { key: 0, type: 5, name: "Cama de monitorização", xMinDm: -4, yMinDm: -6, xMaxDm: 6, yMaxDm: 13 },
         { key: 1, type: 4, name: "Porta", xMinDm: 17, yMinDm: 15, xMaxDm: 20, yMaxDm: 18 },
@@ -174,7 +174,7 @@ test("as áreas não se editam no cartão e voltam tal como vieram", () => {
     assert.ok(root.querySelector("[data-action=\"openRadarAreas\"]"));
 });
 
-test("os campos novos do radar desenham-se em cartão, com os campos por baixo", () => {
+test("the radar's new fields draw as a card with the fields below", () => {
     for (const entry of [sensitivity, breathRate, weakVitals, workingMode, installation, boundary, areas]) {
         const root = parseFragment(renderConfigSection(PROTOCOL, entry, null));
 

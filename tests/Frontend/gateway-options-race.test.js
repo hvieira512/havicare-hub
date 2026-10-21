@@ -29,7 +29,7 @@ beforeEach(() => {
 });
 
 /** Os gateways de uma licença anterior, marcados e gravados, ligariam o sensor a outro cliente. */
-test("a resposta atrasada não desenha os gateways da licença anterior", async () => {
+test("a late reply does not draw the previous licence's gateways", async () => {
     const fetches = installDeferredFetch();
 
     els.deviceLicenseId.value = "1";

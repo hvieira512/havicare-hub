@@ -18,11 +18,11 @@ const NIGHT = {
     ],
 };
 
-test("a noite mostra quanto se dormiu, e não um texto fixo", () => {
+test("the night shows how long was slept, not fixed text", () => {
     assert.equal(uplinkCardContent("sleep", NIGHT).value, "6h 39m");
 });
 
-test("os detalhes dizem o tempo de cada fase, que é o que a noite tem de próprio", () => {
+test("the details give each stage's time, which is what the night card adds", () => {
     const details = uplinkCardContent("sleep", NIGHT).details;
 
     assert.match(details, /Profundo: 9 min/);
@@ -31,7 +31,7 @@ test("os detalhes dizem o tempo de cada fase, que é o que a noite tem de própr
     assert.match(details, /3 troços/);
 });
 
-test("sem instantes de confiança a noite continua a dizer as durações", () => {
+test("without trusted timestamps the night still shows the durations", () => {
     // `timingValid: false` tira as fronteiras e deixa os troços de pé -- é o contrato.
     const card = uplinkCardContent("sleep", {
         totalDurationMinutes: 120,
@@ -43,13 +43,13 @@ test("sem instantes de confiança a noite continua a dizer as durações", () =>
     assert.doesNotMatch(card.details, /Invalid Date|NaN|undefined/);
 });
 
-test("as estrelas dizem de quantas são: um 3 sozinho não se sabe ler", () => {
+test("stars say out of how many: a lone 3 cannot be read", () => {
     const card = uplinkCardContent("sleep_quality", { qualityStars: 3, efficiencyScore: 4 });
 
     assert.equal(card.value, "3 de 5 estrelas");
 });
 
-test("as pontuações aparecem em português, e não com o nome do campo", () => {
+test("scores show in Portuguese, not with the field name", () => {
     const details = uplinkCardContent("sleep_quality", {
         qualityStars: 3,
         deepSleepScore: 0,
@@ -63,7 +63,7 @@ test("as pontuações aparecem em português, e não com o nome do campo", () =>
     assert.match(details, /Despertares: 0/);
 });
 
-test("os lípidos no sangue não mostram o nome do campo em inglês", () => {
+test("blood lipids do not show the English field name", () => {
     const details = uplinkCardContent("blood_lipids", {
         totalCholesterolMmolPerL: 4.3,
         triglyceridesMmolPerL: 1.03,
@@ -76,7 +76,7 @@ test("os lípidos no sangue não mostram o nome do campo em inglês", () => {
     assert.match(details, /HDL: 1.05 mmol\/L/);
 });
 
-test("a razão de um pedido falhado diz-se em português", () => {
+test("a failed request's reason is said in Portuguese", () => {
     assert.equal(commandError("no_response"), "O aparelho não respondeu");
     assert.equal(commandError("not_worn"), "A pulseira não estava ao pulso");
     assert.equal(commandError("response_timeout"), "Sem resposta dentro do prazo");

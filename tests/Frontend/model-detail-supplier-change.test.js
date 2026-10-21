@@ -74,7 +74,7 @@ function recordReads(responses) {
     return urls;
 }
 
-test("trocar o fornecedor volta a carregar a ficha, com o template novo", async () => {
+test("changing the supplier reloads the sheet with the new template", async () => {
     const els = setupDom();
     renderModelDetailInfo(MODEL);
     const urls = recordReads({
@@ -90,7 +90,7 @@ test("trocar o fornecedor volta a carregar a ficha, com o template novo", async 
     );
 });
 
-test("gravar sem trocar o fornecedor não recarrega a ficha", async () => {
+test("saving without changing the supplier does not reload the sheet", async () => {
     const els = setupDom();
     renderModelDetailInfo(MODEL);
     els.modelDetailCommercialName.value = "MF91 Pro";
@@ -107,7 +107,7 @@ function pick(els, name = "images.jpeg") {
     return file;
 }
 
-test("escolher uma imagem na ficha do modelo deixa o Guardar à vista", async () => {
+test("choosing an image on the model sheet shows Guardar", async () => {
     globalThis.fetch = async () => jsonResponse({ data: [], pagination: { total: 0 } });
     const els = setupDom();
     renderModelDetailInfo(MODEL);
@@ -120,7 +120,7 @@ test("escolher uma imagem na ficha do modelo deixa o Guardar à vista", async ()
     assert.match(els.modelDetailImage.innerHTML, /<img/);
 });
 
-test("gravar a ficha envia a imagem escolhida", async () => {
+test("saving the sheet sends the chosen image", async () => {
     const calls = [];
     globalThis.fetch = async (url, options = {}) => {
         calls.push({ url, method: options.method || "GET", body: options.body });

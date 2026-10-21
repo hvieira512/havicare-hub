@@ -19,7 +19,6 @@ function unitKeys() {
     return new Set([...block.slice(0, block.indexOf("};")).matchAll(/(\w+):/g)].map((m) => m[1]));
 }
 
-/** Cada etiqueta declarada, chave e texto. */
 function labelEntries() {
     return [...source.matchAll(/^\s+(\w+): "([^"]+)",$/gm)]
         .map((m) => [m[1], m[2]])
@@ -30,7 +29,7 @@ function labelEntries() {
 const UNIT_SUFFIX =
     /(Seconds|Minutes|Hours|Meters|Km|Kg|Percent|Celsius|Dbm|MmHg|Milliseconds|Hz|Bpm|Mg|Kcal|TimeS)$/;
 
-test("nenhum campo declara a unidade nas duas convenções", () => {
+test("no field declares its unit in both conventions", () => {
     const units = unitKeys();
     const doubled = labelEntries()
         .filter(([key, label]) => units.has(key) && /\([^)]+\)\s*$/.test(label))
@@ -39,7 +38,7 @@ test("nenhum campo declara a unidade nas duas convenções", () => {
     assert.deepEqual(doubled, []);
 });
 
-test("um campo cuja chave traz a unidade diz a unidade", () => {
+test("a field whose key carries the unit shows the unit", () => {
     const units = unitKeys();
     const silent = labelEntries()
         .filter(([key]) => UNIT_SUFFIX.test(key))
@@ -50,7 +49,7 @@ test("um campo cuja chave traz a unidade diz a unidade", () => {
 });
 
 /** Os campos de configuração guardam a unidade na etiqueta, que é de onde o painel a tira. */
-test("os campos de configuração mantêm a unidade entre parênteses", () => {
+test("configuration fields keep the unit in parentheses", () => {
     assert.equal(fieldUnit("intervalTime"), "s");
     assert.equal(fieldUnit("sleepTarget"), "min");
 });

@@ -11,14 +11,14 @@ beforeEach((context) => {
     context.mock.method(console, "error", (...args) => seen.push(args));
 });
 
-test("um erro por apanhar é reportado", () => {
+test("an uncaught error is reported", () => {
     window.dispatchEvent(Object.assign(new Event("error"), { error: new Error("rebentou") }));
 
     assert.equal(seen.at(-1)[0], "[hub] uncaught");
     assert.equal(seen.at(-1)[1].message, "rebentou");
 });
 
-test("uma promessa rejeitada é reportada", () => {
+test("a rejected promise is reported", () => {
     window.dispatchEvent(Object.assign(new Event("unhandledrejection"), { reason: "sem catch" }));
 
     assert.equal(seen.at(-1)[0], "[hub] unhandledrejection");

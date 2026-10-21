@@ -29,7 +29,7 @@ beforeEach(() => {
     };
 });
 
-test("reler o registo do dispositivo não apaga o histórico que só o stream traz", () => {
+test("rereading the device record does not erase the history only the stream brings", () => {
     setSelectedDetail({ device: { imei: "111" }, model: { deviceType: "watch" } });
     state.selectedDetail.recent = { telemetry: [{ id: 1 }], events: [], commands: [] };
 
@@ -40,19 +40,19 @@ test("reler o registo do dispositivo não apaga o histórico que só o stream tr
     assert.equal(state.selectedDetail.device.online, true);
 });
 
-test("escolher um dispositivo começa sem histórico, à espera do stream", () => {
+test("selecting a device starts without history, waiting for the stream", () => {
     setSelectedDetail({ device: { imei: "111" } });
 
     assert.equal(state.selectedDetail.recent, null);
 });
 
-test("uma releitura sem nada escolhido antes fica com o histórico vazio", () => {
+test("a reread with nothing selected before keeps an empty history", () => {
     refreshSelectedDetail({ device: { imei: "222" } });
 
     assert.equal(state.selectedDetail.recent, null);
 });
 
-test("trocar a pré-visualização revoga o object URL anterior", () => {
+test("replacing the preview revokes the previous object URL", () => {
     const revoked = [];
     const original = URL.revokeObjectURL;
     URL.revokeObjectURL = (url) => revoked.push(url);
@@ -79,7 +79,7 @@ test("trocar a pré-visualização revoga o object URL anterior", () => {
     }
 });
 
-test("mudar um filtro volta a listagem à primeira página", () => {
+test("changing a filter takes the list back to page one", () => {
     state.deviceListPage = 4;
 
     changeDeviceFilter("deviceType", ["watch"]);
@@ -88,7 +88,7 @@ test("mudar um filtro volta a listagem à primeira página", () => {
     assert.equal(state.deviceListPage, 1);
 });
 
-test("mudar um filtro não mexe nos outros", () => {
+test("changing one filter leaves the others alone", () => {
     changeDeviceFilter("supplier", ["acme"]);
     changeDeviceFilter("online", true);
 
@@ -96,7 +96,7 @@ test("mudar um filtro não mexe nos outros", () => {
     assert.equal(state.deviceFilters.online, true);
 });
 
-test("o rascunho é cópia do que está aplicado, e não a mesma referência", () => {
+test("the draft is a copy of what is applied, not the same reference", () => {
     state.detailFilters = { from: "2026-01-01", to: "", type: "all", q: "" };
 
     resetDetailFiltersDraft();
@@ -108,7 +108,7 @@ test("o rascunho é cópia do que está aplicado, e não a mesma referência", (
 
 // O selo não impede escrever num campo que já existe: só apanha a gralha que criaria uma
 // chave nova e calada. Os objectos aninhados ficam de fora, e são mexidos em todo o lado.
-test("o estado selado atira numa chave que não existe e deixa passar as aninhadas", () => {
+test("the sealed state throws on a missing key and lets nested ones through", () => {
     assert.throws(() => {
         state.selectedDetial = "gralha";
     }, TypeError);

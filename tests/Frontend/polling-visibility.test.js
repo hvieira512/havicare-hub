@@ -77,7 +77,7 @@ const tickAll = async (ticks) => {
     await settle();
 };
 
-test("o separador escondido não sonda as notificações", async () => {
+test("a hidden tab does not poll notifications", async () => {
     goHidden();
     requests.length = 0;
 
@@ -86,7 +86,7 @@ test("o separador escondido não sonda as notificações", async () => {
     assert.deepEqual(requests, [], "com a aba escondida o tique não pede nada");
 });
 
-test("voltar ao separador relê as notificações de imediato", async () => {
+test("returning to the tab reloads notifications at once", async () => {
     goHidden();
     requests.length = 0;
 
@@ -99,7 +99,7 @@ test("voltar ao separador relê as notificações de imediato", async () => {
     );
 });
 
-test("com o separador à vista o tique das notificações pede", async () => {
+test("with the tab visible the notifications tick requests", async () => {
     goVisible();
     await settle();
     requests.length = 0;
@@ -109,7 +109,7 @@ test("com o separador à vista o tique das notificações pede", async () => {
     assert.ok(requests.some((url) => url.startsWith("/api/notifications")));
 });
 
-test("o separador escondido não relê o dispositivo escolhido", async () => {
+test("a hidden tab does not reload the selected device", async () => {
     goHidden();
     requests.length = 0;
 
@@ -118,7 +118,7 @@ test("o separador escondido não relê o dispositivo escolhido", async () => {
     assert.deepEqual(requests, []);
 });
 
-test("voltar ao separador relê o dispositivo escolhido de imediato", async () => {
+test("returning to the tab reloads the selected device at once", async () => {
     goHidden();
     requests.length = 0;
 
@@ -131,7 +131,7 @@ test("voltar ao separador relê o dispositivo escolhido de imediato", async () =
     );
 });
 
-test("com o separador à vista o tique do dispositivo pede", async () => {
+test("with the tab visible the device tick requests", async () => {
     goVisible();
     await settle();
     requests.length = 0;

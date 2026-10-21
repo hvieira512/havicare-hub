@@ -42,7 +42,7 @@ function menuOf(row) {
     return { toggle, items, actions: items.map((item) => item.dataset.action) };
 }
 
-test("a linha de uma licença junta os três verbos num menu só", async () => {
+test("a licence row gathers its three verbs in one menu", async () => {
     const els = setupDom();
     await loadSettingsCompanySection();
 
@@ -54,7 +54,7 @@ test("a linha de uma licença junta os três verbos num menu só", async () => {
     assert.ok(row.querySelector(".dropdown-divider"), "o apagar não está separado dos outros");
 });
 
-test("o botão do menu de uma licença diz no aria-label de qual é", async () => {
+test("a licence menu button names its licence in aria-label", async () => {
     const els = setupDom();
     await loadSettingsCompanySection();
 
@@ -63,7 +63,7 @@ test("o botão do menu de uma licença diz no aria-label de qual é", async () =
     assert.match(toggle.getAttribute("aria-label"), /gucc\.dev/);
 });
 
-test("a linha de uma empresa junta os três verbos no mesmo menu", async () => {
+test("a company row gathers its three verbs in the same menu", async () => {
     const els = setupDom();
     await loadSettingsCompanySection();
 

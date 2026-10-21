@@ -59,7 +59,7 @@ test("a reading without a timestamp still shows band and strength", () => {
  */
 const secondsAgo = (seconds) => new Date(Date.now() - (seconds * 1000)).toISOString();
 
-test("uma leitura velha deixa de afirmar qualidade", () => {
+test("a stale reading stops claiming a quality", () => {
     const stale = { rssiDbm: -32, at: secondsAgo(28 * 86400) };
 
     assert.equal(signalBand(stale).bars, 0);
@@ -67,21 +67,21 @@ test("uma leitura velha deixa de afirmar qualidade", () => {
     assert.doesNotMatch(signalLabel(stale), /Excelente/);
 });
 
-test("mas continua a dizer quando foi e quanto era", () => {
+test("but still says when it was and what it read", () => {
     const label = signalLabel({ rssiDbm: -32, at: secondsAgo(28 * 86400) });
 
     assert.match(label, /-32 dBm/);
     assert.match(label, /28d/);
 });
 
-test("dentro do limite, a leitura continua a valer", () => {
+test("within the limit, the reading still counts", () => {
     const fresh = { rssiDbm: -32, at: secondsAgo(59) };
 
     assert.equal(signalBand(fresh).label, "Excelente");
     assert.equal(signalBand(fresh).bars, 4);
 });
 
-test("o limite são os 30 s do hub mais os 30 s da sondagem", () => {
+test("the limit is the hub's 30 s plus the 30 s poll", () => {
     assert.equal(signalBand({ rssiDbm: -32, at: secondsAgo(61) }).bars, 0);
 });
 

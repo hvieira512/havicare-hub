@@ -45,7 +45,7 @@ const detail = (overrides = {}) => ({
     },
 });
 
-test("a frase cruza o valor que se está a escrever com a posição do prato", () => {
+test("the sentence combines the value being typed with the tray position", () => {
     withDetail(detail(), () => {
         assert.equal(
             loadedCellsRunoutText(6, now),
@@ -58,14 +58,14 @@ test("a frase cruza o valor que se está a escrever com a posição do prato", (
     });
 });
 
-test("a posição vem da leitura mais recente e não da primeira da lista", () => {
+test("the position comes from the latest reading, not the first in the list", () => {
     withDetail(detail(), () => {
         // Com a posição 2 a frase daria mais um dia; é a leitura das 09:49 que vale.
         assert.equal(loadedCellsRunoutText(5, now), "Com 2 doses por dia, acaba amanhã às 10:50.");
     });
 });
 
-test("carregar até abaixo da posição não deixa nada por dispensar", () => {
+test("loading below the position leaves nothing to dispense", () => {
     withDetail(detail(), () => {
         assert.equal(
             loadedCellsRunoutText(3, now),
@@ -84,7 +84,7 @@ test("the sentence reads the device the modal shows, not the one selected behind
     }, "351266770073676");
 });
 
-test("sem posição ou sem número escrito, não se diz nada", () => {
+test("without a position or a typed number, nothing is said", () => {
     withDetail(detail({ recent: { telemetry: [] } }), () => {
         assert.equal(loadedCellsRunoutText(6, now), "");
     });
@@ -126,7 +126,7 @@ const renderLoadedCells = () => parseFragment(renderDeviceConfigurationRoot({
     online: true,
 }));
 
-test("a linha da data é desenhada por baixo do campo", () => {
+test("the date line is drawn under the field", () => {
     withDetail(detail(), () => {
         const root = renderLoadedCells();
         const line = root.querySelector("[data-loaded-runout]");
@@ -136,7 +136,7 @@ test("a linha da data é desenhada por baixo do campo", () => {
     });
 });
 
-test("escrever no campo reescreve a frase sem redesenhar a linha", () => {
+test("typing in the field rewrites the sentence without redrawing the row", () => {
     withDetail(detail(), () => {
         const root = parseFragment(`
             <section data-config-section data-config-key="loaded_cells">

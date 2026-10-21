@@ -21,10 +21,7 @@ beforeEach(() => {
     state.downlinkPage = 1;
 });
 
-/**
- * Quantas entradas fazem `pages` páginas, ao tamanho em vigor. Calculado e não escrito à mão:
- * o tamanho da página é uma afinação, e não é o que estes testes prendem.
- */
+/** Quantas entradas fazem `pages` páginas: o tamanho da página é afinação, e não o que se prende. */
 function entriesForPages(pageSize, pages, extra = 6) {
     return pageSize * (pages - 1) + extra;
 }
@@ -85,7 +82,7 @@ function downlinkRequest(index) {
     };
 }
 
-test("três páginas dão três botões, e o resumo conta a primeira", () => {
+test("three pages give three buttons, and the summary counts the first", () => {
     const els = telemetryEls();
     initDeviceDetailView({ els });
 
@@ -107,7 +104,7 @@ test("três páginas dão três botões, e o resumo conta a primeira", () => {
     );
 });
 
-test("na última página o resumo conta só o que resta e o seguinte fica travado", () => {
+test("on the last page the summary counts only what remains and next is disabled", () => {
     const els = telemetryEls();
     initDeviceDetailView({ els });
     state.telemetryPage = 3;
@@ -121,7 +118,7 @@ test("na última página o resumo conta só o que resta e o seguinte fica travad
     assert.equal(pagerButton(els.telemetryPagerControls, "telemetryPrev").disabled, false);
 });
 
-test("o paginador dos pedidos leva o seu prefixo nas acções", () => {
+test("the requests pager carries its prefix in the actions", () => {
     const els = downlinkEls();
     initDeviceDetailView({ els });
 

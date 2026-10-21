@@ -10,12 +10,10 @@ import { telemetryCard } from "../../src/Dashboard/dashboard/components/cards/sh
 import { compactDetails } from "../../src/Dashboard/dashboard/components/cards/shared.js";
 import { state } from "../../src/Dashboard/dashboard/state.js";
 
-/* ---------- a template tag ---------- */
-
 /** O que se afirma é a marcação, e o `html` devolve um fragmento: comparar texto com texto. */
 const markup = (value) => String(value);
 
-test("cada interpolação sai escapada, sem ninguém se lembrar do esc()", () => {
+test("every interpolation is escaped without anyone calling esc()", () => {
     assert.equal(
         markup(html`<p>${"<script>alert(1)</script>"}</p>`),
         "<p>&lt;script&gt;alert(1)&lt;/script&gt;</p>",
@@ -26,11 +24,11 @@ test("cada interpolação sai escapada, sem ninguém se lembrar do esc()", () =>
     );
 });
 
-test("o raw() deixa passar um fragmento já construído", () => {
+test("raw() lets an already built fragment through", () => {
     assert.equal(markup(html`<p>${raw("<b>a</b>")}</p>`), "<p><b>a</b></p>");
 });
 
-test("um fragmento aninhado não é escapado duas vezes", () => {
+test("a nested fragment is not escaped twice", () => {
     const inner = html`<b>${"a & b"}</b>`;
 
     assert.equal(markup(inner), "<b>a &amp; b</b>");
@@ -38,12 +36,12 @@ test("um fragmento aninhado não é escapado duas vezes", () => {
 });
 
 /** A regra que o resto do ficheiro protege: um produtor que devolva texto sai escapado sozinho. */
-test("compor dois construtores não precisa de raw(), e texto continua a ser escapado", () => {
+test("composing two builders needs no raw(), and text is still escaped", () => {
     assert.equal(markup(html`<p>${html`<b>x</b>`}</p>`), "<p><b>x</b></p>");
     assert.equal(markup(html`<p>${"<b>x</b>"}</p>`), "<p>&lt;b&gt;x&lt;/b&gt;</p>");
 });
 
-test("uma lista de construtores junta-se sem separador e sem raw()", () => {
+test("a list of builders joins without separator and without raw()", () => {
     const cells = ["a", "b & c"].map((value) => html`<td>${value}</td>`);
 
     assert.equal(markup(html`<tr>${cells}</tr>`), "<tr><td>a</td><td>b &amp; c</td></tr>");
@@ -51,7 +49,7 @@ test("uma lista de construtores junta-se sem separador e sem raw()", () => {
     assert.equal(markup(html`<p>${["<a>", "<b>"]}</p>`), "<p>&lt;a&gt;&lt;b&gt;</p>");
 });
 
-test("o null e o undefined dão texto vazio, como no esc()", () => {
+test("null and undefined give empty text, as in esc()", () => {
     assert.equal(markup(html`<p>${null}${undefined}</p>`), "<p></p>");
     assert.equal(String(raw(null)), "");
     // O zero é um valor e não uma ausência: as contagens dos mosaicos dependem disso.
@@ -59,7 +57,7 @@ test("o null e o undefined dão texto vazio, como no esc()", () => {
 });
 
 /** É uma `String`, por isso `+`, `.join()` e o `innerHTML` continuam a funcionar. */
-test("o fragmento comporta-se como texto em tudo menos no escapamento", () => {
+test("the fragment behaves as text in everything but escaping", () => {
     const fragment = html`<p>${1}</p>`;
 
     assert.ok(fragment instanceof String);
@@ -68,9 +66,7 @@ test("o fragmento comporta-se como texto em tudo menos no escapamento", () => {
     assert.equal(fragment.length, "<p>1</p>".length);
 });
 
-/* ---------- as regressões, pelos renderizadores migrados ---------- */
-
-test("um nome de empresa com marcação sai inerte do cartão da licença", () => {
+test("a company name with markup comes out inert in the licence card", () => {
     const root = parseFragment(
         deviceLicenseBlock({
             company: "<img src=x onerror=alert(1)>",
@@ -86,7 +82,7 @@ test("um nome de empresa com marcação sai inerte do cartão da licença", () =
  * O `personIndex` chega do radar pelo MQTT sem passar por ninguém, o nome da área vem de quem a
  * desenhou na planta, e os `details` são injectados sem escapar.
  */
-test("a pessoa de uma detecção não consegue escrever marcação no cartão", () => {
+test("a detected person cannot write markup into the card", () => {
     const content = uplinkCardContent("zone_entry", {
         zone: "area",
         areaName: "\"><img src=x onerror=alert(1)>",
@@ -107,7 +103,7 @@ test("a pessoa de uma detecção não consegue escrever marcação no cartão", 
     assert.equal(root.querySelector("img"), null);
 });
 
-test("o valor e o título de um cartão saem escapados", () => {
+test("a card's value and title are escaped", () => {
     const root = parseFragment(
         telemetryCard({
             icon: "fa-bell",
@@ -122,7 +118,7 @@ test("o valor e o título de um cartão saem escapados", () => {
 });
 
 /** Quem entrega marcação tem de o dizer: senão sai escapada duas vezes, que se vê no ecrã. */
-test("os detalhes de um cartão saem escapados uma vez e não duas", () => {
+test("a card's details are escaped once, not twice", () => {
     const card = String(telemetryCard({
         icon: "fa-x",
         title: "T",
@@ -133,7 +129,7 @@ test("os detalhes de um cartão saem escapados uma vez e não duas", () => {
     assert.doesNotMatch(card, /&amp;amp;/);
 });
 
-test("um detalhe que chegue em texto cru sai escapado, e não como marcação", () => {
+test("a detail that arrives as raw text is escaped, not rendered as markup", () => {
     const card = String(telemetryCard({
         icon: "fa-x",
         title: "T",
@@ -145,7 +141,7 @@ test("um detalhe que chegue em texto cru sai escapado, e não como marcação", 
 });
 
 /** O `current` e o `total` chegam do aparelho pelo MQTT e vão parar a uma linha de detalhes. */
-test("o compartimento reportado por um dispensador não escreve marcação", () => {
+test("the cell a dispenser reports writes no markup", () => {
     state.selectedDetail = { model: { deviceType: "pill_dispenser" } };
     const content = uplinkCardContent("cells_remaining", {
         remaining: 5,
@@ -165,7 +161,7 @@ test("o compartimento reportado por um dispensador não escreve marcação", () 
 });
 
 /** Dois destinos e duas regras: os detalhes são marcação, o título é texto para um atributo. */
-test("o nível reportado por um dispensador não escreve marcação", () => {
+test("the level a dispenser reports writes no markup", () => {
     state.selectedDetail = { model: { deviceType: "pill_dispenser" } };
     const content = uplinkCardContent("cells_remaining", {
         remaining: 5,
@@ -175,7 +171,7 @@ test("o nível reportado por um dispensador não escreve marcação", () => {
     assert.doesNotMatch(String(content.details), /<img/i);
 });
 
-test("o título de um dispensador não passa pelo escapamento duas vezes", () => {
+test("a dispenser's title is not escaped twice", () => {
     state.selectedDetail = { model: { deviceType: "pill_dispenser" } };
     const content = uplinkCardContent("cells_remaining", {
         remaining: 5,
@@ -195,15 +191,13 @@ test("o título de um dispensador não passa pelo escapamento duas vezes", () =>
     );
 });
 
-/* ---- o campo de formulário não confia em quem o chama ---- */
-
-test("um controlo construído com html passa intacto", () => {
+test("a control built with html passes through intact", () => {
     const rendered = markup(field("Nome", html`<input class="form-control">`));
 
     assert.match(rendered, /<input class="form-control">/);
 });
 
-test("mas um controlo em texto cru sai escapado", () => {
+test("but a control in raw text is escaped", () => {
     const rendered = markup(field("Nome", "<img src=x onerror=alert(1)>"));
 
     assert.doesNotMatch(rendered, /<img/i);

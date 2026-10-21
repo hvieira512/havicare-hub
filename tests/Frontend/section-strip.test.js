@@ -33,7 +33,7 @@ const renderConfigStrip = () => parseFragment(renderDeviceConfigurationRoot({
     ],
 }));
 
-test("a lista de secções do painel de configuração diz o mesmo que a tira", () => {
+test("the settings panel section list says the same as the strip", () => {
     const links = renderConfigStrip().querySelectorAll("[data-config-section-link]");
 
     assert.ok(links.length >= 2);

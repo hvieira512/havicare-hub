@@ -27,7 +27,7 @@ beforeEach(() => {
     state.deviceModal.actionDeliveries = {};
 });
 
-test("abrir as configurações de um radar pede o estado uma vez", async () => {
+test("opening a radar's settings requests its state once", async () => {
     requestRadarStateOnOpen();
     await flush();
     requestRadarStateOnOpen();
@@ -38,7 +38,7 @@ test("abrir as configurações de um radar pede o estado uma vez", async () => {
     assert.equal(requests[0].body.capability, "read_device_state");
 });
 
-test("outro protocolo não pede nada", async () => {
+test("another protocol requests nothing", async () => {
     state.deviceModal.protocol = "four-p-touch";
 
     requestRadarStateOnOpen();

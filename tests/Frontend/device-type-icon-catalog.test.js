@@ -12,7 +12,7 @@ const catalog = JSON.parse(
     readFileSync(new URL("../../config/device-types.json", import.meta.url), "utf8"),
 );
 
-test("todos os tipos do catálogo declaram um ícone", () => {
+test("every catalog type declares an icon", () => {
     const withoutIcon = Object.entries(catalog)
         .filter(([, descriptor]) => typeof descriptor.icon !== "string" || descriptor.icon === "")
         .map(([type]) => type);
@@ -20,7 +20,7 @@ test("todos os tipos do catálogo declaram um ícone", () => {
     assert.deepEqual(withoutIcon, []);
 });
 
-test("o ícone que o mosaico desenha é o que o catálogo declara", () => {
+test("the tile draws the icon the catalog declares", () => {
     for (const [type, descriptor] of Object.entries(catalog)) {
         assert.equal(deviceTypeIcon(type), descriptor.icon, type);
     }
@@ -28,6 +28,6 @@ test("o ícone que o mosaico desenha é o que o catálogo declara", () => {
 
 // Como em todo o resto do `domain.js`: o que não se reconhece cai no tipo por omissão, e não
 // num ícone à parte que ninguém sabe ler.
-test("um tipo que o catálogo não conhece cai no ícone do tipo por omissão", () => {
+test("a type the catalog does not know falls back to the default type icon", () => {
     assert.equal(deviceTypeIcon("maquina-do-cafe"), catalog.watch.icon);
 });

@@ -48,7 +48,7 @@ test("allPages hands back the first error instead of a short list", async () => 
  * Todos os chamadores decidem por `if (result?.error)`: sem `error`, um 500 de corpo vazio
  * lê-se como sucesso e a lista vazia fica em cache.
  */
-test("um erro com corpo vazio traz `error`, e não passa por sucesso", async () => {
+test("an error with an empty body carries `error` and does not pass for success", async () => {
     globalThis.fetch = async () => new Response("", { status: 500 });
 
     const result = await requestJson("/api/devices");
@@ -57,7 +57,7 @@ test("um erro com corpo vazio traz `error`, e não passa por sucesso", async () 
     assert.equal(result._httpStatus, 500);
 });
 
-test("um sucesso com corpo vazio continua a ser sucesso", async () => {
+test("a success with an empty body is still a success", async () => {
     globalThis.fetch = async () => new Response(null, { status: 204 });
 
     const result = await requestJson("/api/devices/x", { method: "DELETE" });
@@ -67,7 +67,7 @@ test("um sucesso com corpo vazio continua a ser sucesso", async () => {
 });
 
 /** Um 401 depois de renovar o token não é um token velho: é a sessão a acabar. */
-test("um 401 que sobrevive ao refresh pede autenticação", async () => {
+test("a 401 that survives the refresh asks for authentication", async () => {
     setDashboardApiToken({ access_token: "velho", refresh_token: "r1" });
     globalThis.fetch = async (url) =>
         String(url) === "/api/auth/login"
@@ -88,7 +88,7 @@ test("um 401 que sobrevive ao refresh pede autenticação", async () => {
 });
 
 /** A dashboard é toda em português, e esta é a mensagem que mais aparece: a rede a cair. */
-test("uma falha de rede fala português, e guarda o texto do browser à parte", async () => {
+test("a network failure speaks Portuguese and keeps the browser's text aside", async () => {
     globalThis.fetch = async () => {
         throw new Error("Failed to fetch");
     };
@@ -101,7 +101,7 @@ test("uma falha de rede fala português, e guarda o texto do browser à parte", 
     assert.equal(result.error.detail, "Failed to fetch");
 });
 
-test("requestJson serializa o query como chave[] e ignora nulos e vazios", async () => {
+test("requestJson serialises the query as key[] and skips nulls and empties", async () => {
     clearDashboardApiToken();
     let calledUrl = "";
     globalThis.fetch = async (url) => {
@@ -118,7 +118,7 @@ test("requestJson serializa o query como chave[] e ignora nulos e vazios", async
     assert.doesNotMatch(calledUrl, /(?:\?|&)e=/);
 });
 
-test("authHeaders traz o Bearer só quando há token", () => {
+test("authHeaders carries the Bearer only when there is a token", () => {
     clearDashboardApiToken();
     assert.deepEqual(authHeaders(), {});
 
@@ -128,7 +128,7 @@ test("authHeaders traz o Bearer só quando há token", () => {
     clearDashboardApiToken();
 });
 
-test("um 401 dispara o refresh e repete o pedido com o token novo", async () => {
+test("a 401 triggers the refresh and repeats the request with the new token", async () => {
     setDashboardApiToken({ access_token: "velho", refresh_token: "r1" });
     const calls = [];
     globalThis.fetch = async (url, options = {}) => {
@@ -156,7 +156,7 @@ test("um 401 dispara o refresh e repete o pedido com o token novo", async () => 
 });
 
 /** Uma renovação no ar ao sair reacenderia o stream com o ecrã de entrada à frente. */
-test("uma renovação que chega depois do logout não repõe o token", async () => {
+test("a refresh that lands after logout does not restore the token", async () => {
     setDashboardApiToken({ access_token: "velho", expires_at: "2099-01-01T00:00:00Z" });
 
     let releaseLogin = () => {};

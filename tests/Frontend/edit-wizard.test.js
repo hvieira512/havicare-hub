@@ -64,7 +64,7 @@ function harness({ company = "hitcare", licenseId = "1001" } = {}) {
     return { root, els, changes, openQuestion, classification };
 }
 
-test("abre no passo do aparelho, com a classificação em etiquetas", () => {
+test("opens on the device step, with the classification as labels", () => {
     // O que se vem alterar é o número de série ou os gateways: a classificação já está
     // feita, e um dispositivo registado não tem perguntas por responder.
     const { root, els, openQuestion, classification } = harness();
@@ -83,7 +83,7 @@ test("abre no passo do aparelho, com a classificação em etiquetas", () => {
     assert.equal(els.deviceNextBtn.classList.contains("d-none"), true);
 });
 
-test("as linhas dizem o que está escolhido", () => {
+test("the rows say what is chosen", () => {
     const { classification } = harness();
 
     assert.deepEqual(
@@ -97,7 +97,7 @@ test("as linhas dizem o que está escolhido", () => {
     );
 });
 
-test("tocar numa linha abre aquela pergunta, e só aquela", () => {
+test("tapping a row opens that question and only that one", () => {
     const { els, openQuestion, classification } = harness();
 
     classification("[data-wizard-reopen=\"model\"]")[0].click();
@@ -117,7 +117,7 @@ test("tocar numa linha abre aquela pergunta, e só aquela", () => {
     assert.equal(els.saveDeviceBtn.classList.contains("d-none"), false);
 });
 
-test("escolher o tipo leva ao modelo, porque o anterior deixou de existir", () => {
+test("choosing the type leads to the model, because the previous one no longer exists", () => {
     const { openQuestion } = harness();
 
     editWizardAnswered("type");
@@ -125,7 +125,7 @@ test("escolher o tipo leva ao modelo, porque o anterior deixou de existir", () =
     assert.deepEqual(openQuestion(), ["model"]);
 });
 
-test("escolher o modelo ou a licença fecha o passo", () => {
+test("choosing the model or the licence closes the step", () => {
     const { els, openQuestion } = harness();
 
     editWizardAnswered("model");
@@ -133,7 +133,7 @@ test("escolher o modelo ou a licença fecha o passo", () => {
     assert.equal(els.deviceStep2.classList.contains("d-none"), false);
 });
 
-test("a árvore abre com a licença actual marcada", () => {
+test("the tree opens with the current licence marked", () => {
     const { root, classification } = harness({ company: "havicare", licenseId: "1" });
 
     classification("[data-wizard-reopen=\"owner\"]")[0].click();
@@ -144,7 +144,7 @@ test("a árvore abre com a licença actual marcada", () => {
     assert.equal(checked[0].dataset.licenseCompany, "havicare");
 });
 
-test("escolher uma licença escreve a empresa e o número, e refaz os gateways", () => {
+test("choosing a licence writes the company and number, and redraws the gateways", () => {
     // São duas colunas na base de dados e uma só escolha no ecrã; e a autorização de um
     // gateway é por empresa e licença, por isso os que estavam marcados eram de outro.
     const { root, els, changes, classification } = harness();
@@ -158,7 +158,7 @@ test("escolher uma licença escreve a empresa e o número, e refaz os gateways",
     assert.equal(els.deviceStep2.classList.contains("d-none"), false);
 });
 
-test("\"Sem licença\" limpa a empresa e não deixa o número anterior", () => {
+test("«Sem licença» clears the company and leaves no previous number", () => {
     const { root, els, classification } = harness();
 
     classification("[data-wizard-reopen=\"owner\"]")[0].click();
@@ -172,7 +172,7 @@ test("\"Sem licença\" limpa a empresa e não deixa o número anterior", () => {
  * Num dispositivo que existe não há passo atrás: este botão serve para sair de uma pergunta
  * aberta por engano.
  */
-test("sair de uma pergunta aberta devolve os campos do aparelho, sem apagar respostas", () => {
+test("leaving an open question brings back the device fields without erasing answers", () => {
     const { els, openQuestion, classification } = harness();
 
     classification("[data-wizard-reopen=\"model\"]")[0].click();
@@ -186,7 +186,7 @@ test("sair de uma pergunta aberta devolve os campos do aparelho, sem apagar resp
     assert.equal(classification().length, 3);
 });
 
-test("enquanto o dispositivo não chegou, as linhas não inventam uma classificação", () => {
+test("until the device has loaded, the rows do not make up a classification", () => {
     // O formulário ainda tem o que lá estava por omissão -- Relógio, o primeiro modelo, sem
     // licença -- e isso é a classificação de outro aparelho.
     const { state } = stateModule;

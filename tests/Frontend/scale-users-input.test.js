@@ -7,7 +7,7 @@ import { handleScaleUserAction } from "../../src/Dashboard/dashboard/devices/con
 import { state } from "../../src/Dashboard/dashboard/state.js";
 import { configSection } from "./support/dom.js";
 
-/** Os utilizadores da balança, como a alternativa A: um cartão por pessoa, e o formulário só a editar. */
+/** Os utilizadores da balança: um cartão por pessoa, e o formulário só a editar. */
 const entry = { input: "scaleUsers", key: "scale_users", fields: ["items"] };
 const yearsAgo = (years) => `${new Date().getFullYear() - years}-01-01`;
 const hugo = { id: "u-0a1b2c3d", name: "Hugo", birthDate: yearsAgo(23), sex: "male", heightCm: 181, athlete: false, weightKg: 96 };
@@ -29,7 +29,7 @@ beforeEach(() => {
     state.selectedDetail = null;
 });
 
-test("cada pessoa é um cartão com o perfil, sem formulário aberto nem identificador à vista", () => {
+test("each person is a card with the profile, no open form and no visible identifier", () => {
     const section = render([hugo, maria]);
 
     assert.match(card(section, "Hugo").textContent, /23 anos · homem · 181 cm · 96 kg/);
@@ -41,7 +41,7 @@ test("cada pessoa é um cartão com o perfil, sem formulário aberto nem identif
     assert.deepEqual(readConfigPayload(section), { items: [hugo, maria] });
 });
 
-test("o estado de cada pessoa sai da operação que lhe diz respeito, e só aparece enquanto não está aplicada", () => {
+test("each person's state comes from their own operation, and shows only until applied", () => {
     state.deviceModal.configurationSync = { entries: { health: { scale_users: { operations: [
         { target: hugo.id, deliveryStatus: "acked", error: "" },
         { target: maria.id, deliveryStatus: "failed", error: "memory_full" },
@@ -53,7 +53,7 @@ test("o estado de cada pessoa sai da operação que lhe diz respeito, e só apar
     assert.match(card(section, "Maria").textContent, /memória cheia/);
 });
 
-test("quem está em linha fica marcado no rádio, sem emblema, quando a balança o aceitou", () => {
+test("the online person is marked in the radio, without a badge, once the scale accepted it", () => {
     state.deviceModal.configurationSync = { entries: { health: { scale_users: { operations: [
         { command: "selectScaleUser", target: hugo.id, deliveryStatus: "acked", error: "" },
     ] } } } };
@@ -63,7 +63,7 @@ test("quem está em linha fica marcado no rádio, sem emblema, quando a balança
     assert.equal(card(section, "Hugo").querySelector("input[type=\"radio\"]").checked, true);
 });
 
-test("pôr em linha mostra o estado enquanto a balança não o aceitou", () => {
+test("setting online shows the state until the scale accepts it", () => {
     state.deviceModal.configurationSync = { entries: { health: { scale_users: { operations: [
         { command: "selectScaleUser", target: hugo.id, deliveryStatus: "waiting", error: "" },
     ] } } } };
@@ -71,7 +71,7 @@ test("pôr em linha mostra o estado enquanto a balança não o aceitou", () => {
     assert.match(card(render([hugo, maria], hugo.id), "Hugo").textContent, /A pôr em linha/);
 });
 
-test("acrescentar abre o formulário, e guardar junta um cartão por enviar e sem identificador", () => {
+test("adding opens the form, and saving appends an unsent card without identifier", () => {
     const section = render([hugo]);
 
     click(section, "scaleUserAdd");
@@ -91,7 +91,7 @@ test("acrescentar abre o formulário, e guardar junta um cartão por enviar e se
     });
 });
 
-test("editar mantém o identificador, e apagar tira a pessoa da lista", () => {
+test("editing keeps the identifier, and deleting removes the person from the list", () => {
     const section = render([hugo, maria]);
 
     click(section, "scaleUserEdit", card(section, "Hugo"));
@@ -105,7 +105,7 @@ test("editar mantém o identificador, e apagar tira a pessoa da lista", () => {
     assert.deepEqual(readConfigPayload(section).items.map((user) => user.name), ["Hugo"]);
 });
 
-test("quem foi guardado só com a idade mostra-a, e editar pede a data de nascimento", () => {
+test("someone saved with only an age shows it, and editing asks for the birth date", () => {
     const section = render([{ id: "u-00000009", name: "Rui", ageYears: 40, sex: "male", heightCm: 175, athlete: false, weightKg: 80 }]);
 
     assert.match(card(section, "Rui").textContent, /40 anos/);
@@ -114,7 +114,7 @@ test("quem foi guardado só com a idade mostra-a, e editar pede a data de nascim
     assert.match(section.querySelector("[data-scale-form-error]").textContent, /data de nascimento/);
 });
 
-test("sem nome não se guarda", () => {
+test("nothing is saved without a name", () => {
     const section = render([]);
 
     click(section, "scaleUserAdd");
@@ -124,7 +124,7 @@ test("sem nome não se guarda", () => {
     assert.deepEqual(readConfigPayload(section), { items: [] });
 });
 
-test("o círculo é um rádio da lista: marcar não envia, e a escolha vai com a lista", () => {
+test("the circle is a list radio: checking does not send, and the choice goes with the list", () => {
     const section = render([hugo, maria], hugo.id);
     const radios = [...section.querySelectorAll("input[type=\"radio\"]")];
 
@@ -137,7 +137,7 @@ test("o círculo é um rádio da lista: marcar não envia, e a escolha vai com a
     assert.equal(readConfigPayload(section).onlineUserId, maria.id);
 });
 
-test("uma pessoa por enviar ainda não pode ficar em linha", () => {
+test("an unsent person cannot be set online yet", () => {
     const section = render([hugo]);
 
     click(section, "scaleUserAdd");
@@ -150,13 +150,13 @@ test("uma pessoa por enviar ainda não pode ficar em linha", () => {
     assert.equal(card(section, "Ana").querySelector("input[type=\"radio\"]").disabled, true);
 });
 
-test("o histórico pede-se noutra entrada: os cartões só gerem a lista", () => {
+test("history is requested in another entry: the cards only manage the list", () => {
     const section = render([hugo, maria], hugo.id);
 
     assert.doesNotMatch(section.textContent, /histórico/i);
 });
 
-test("ler o histórico escolhe o utilizador pelo nome, e sem ninguém registado não há o que enviar", () => {
+test("reading history picks the user by name, and with nobody registered there is nothing to send", () => {
     const history = { input: "scaleUserChoice", key: "read_scale_history", fields: ["id"] };
     state.deviceModal.configurations = { scale_users: { items: [hugo, maria] } };
     const section = configSection(renderConfigInputs, history, {});

@@ -86,7 +86,7 @@ beforeEach(() => {
     };
 });
 
-test("abre no primeiro passo, a perguntar o tipo", async () => {
+test("opens on the first step, asking for the type", async () => {
     await openWizard();
 
     assert.deepEqual(stepNow(), { count: "1 de 3", now: "Tipo" });
@@ -95,7 +95,7 @@ test("abre no primeiro passo, a perguntar o tipo", async () => {
     assert.equal(els.modelWizardBackBtn.classList.contains("d-none"), true);
 });
 
-test("escolher o tipo avança para o fornecedor, e só mostra os desse tipo", async () => {
+test("choosing the type moves to the supplier and shows only that type's suppliers", async () => {
     await openWizard();
     clickIn(els.modelWizardAsk, "[data-model-type=\"watch\"]");
 
@@ -108,7 +108,7 @@ test("escolher o tipo avança para o fornecedor, e só mostra os desse tipo", as
     );
 });
 
-test("escolher o fornecedor avança para as informações, com o rodapé do último passo", async () => {
+test("choosing the supplier moves to the details, with the last step's footer", async () => {
     await openWizard();
     clickIn(els.modelWizardAsk, "[data-model-type=\"watch\"]");
     clickIn(els.modelWizardAsk, "[data-model-supplier=\"4P Touch\"]");
@@ -120,7 +120,7 @@ test("escolher o fornecedor avança para as informações, com o rodapé do últ
     assert.equal(els.modelWizardSaveBtn.disabled, true);
 });
 
-test("o último passo diz quantas capacidades o modelo herda", async () => {
+test("the last step says how many capabilities the model inherits", async () => {
     await openWizard();
     clickIn(els.modelWizardAsk, "[data-model-type=\"watch\"]");
     clickIn(els.modelWizardAsk, "[data-model-supplier=\"4P Touch\"]");
@@ -132,7 +132,7 @@ test("o último passo diz quantas capacidades o modelo herda", async () => {
     );
 });
 
-test("com os dois nomes escritos, guarda o tipo, o fornecedor e as capacidades do template", async () => {
+test("with both names typed, saves the type, the supplier and the template capabilities", async () => {
     await openWizard();
     clickIn(els.modelWizardAsk, "[data-model-type=\"watch\"]");
     clickIn(els.modelWizardAsk, "[data-model-supplier=\"4P Touch\"]");
@@ -153,7 +153,7 @@ test("com os dois nomes escritos, guarda o tipo, o fornecedor e as capacidades d
     assert.deepEqual(body.getAll("capabilities[]"), ["heart_rate", "battery", "sos"]);
 });
 
-test("voltar ao tipo e trocá-lo esquece o fornecedor que já não serve", async () => {
+test("going back and changing the type forgets the supplier that no longer fits", async () => {
     await openWizard();
     clickIn(els.modelWizardAsk, "[data-model-type=\"watch\"]");
     clickIn(els.modelWizardAsk, "[data-model-supplier=\"4P Touch\"]");

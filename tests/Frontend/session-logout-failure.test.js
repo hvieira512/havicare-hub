@@ -38,7 +38,7 @@ const visible = (el) => !el.hidden && !el.classList.contains("d-none");
 const warnings = () => fired.filter((options) => options.icon === "warning");
 
 /** Esperar pela resposta deixaria os dados de doentes no ecrã, e o `fetch` não tem prazo. */
-test("sai-se do ecrã antes de esperar pelo Hub, e não depois", async () => {
+test("the screen is left before waiting for the Hub, not after", async () => {
     const { login, logoutButton } = mount();
     await initializeDashboardSession(async () => {});
     // Um pedido que nunca responde é a rede caída: o ecrã não pode ficar à espera dele.
@@ -50,7 +50,7 @@ test("sai-se do ecrã antes de esperar pelo Hub, e não depois", async () => {
     assert.equal(visible(login), true);
 });
 
-test("uma saída que o Hub não chegou a receber diz-se a quem saiu", async () => {
+test("a logout the Hub never received is told to the user", async () => {
     const { login, logoutButton } = mount();
     await initializeDashboardSession(async () => {});
     globalThis.fetch = async () => {
@@ -68,7 +68,7 @@ test("uma saída que o Hub não chegou a receber diz-se a quem saiu", async () =
     );
 });
 
-test("um 500 do Hub conta como não ter saído", async () => {
+test("a 500 from the Hub counts as not logged out", async () => {
     const { logoutButton } = mount();
     await initializeDashboardSession(async () => {});
     globalThis.fetch = async () => new Response(null, { status: 500 });
@@ -80,7 +80,7 @@ test("um 500 do Hub conta como não ter saído", async () => {
 });
 
 /** O porquê da saída e o aviso da sessão são dois factos, e não se substituem um ao outro. */
-test("o motivo da saída não se perde quando o pedido falha", async () => {
+test("the logout reason is not lost when the request fails", async () => {
     mount();
     await initializeDashboardSession(async () => {});
     globalThis.fetch = async () => new Response(null, { status: 500 });
@@ -89,12 +89,12 @@ test("o motivo da saída não se perde quando o pedido falha", async () => {
     window.dispatchEvent(new Event("hub-dashboard-auth-required"));
     await flush();
 
-    const ditos = warnings().map((options) => options.titleText).join(" | ");
-    assert.match(ditos, /expirou|inatividade/i, "o motivo tem de continuar a ser dito");
-    assert.match(ditos, /pode continuar aberta/i, "e o aviso da sessão também");
+    const shown = warnings().map((options) => options.titleText).join(" | ");
+    assert.match(shown, /expirou|inatividade/i, "o motivo tem de continuar a ser dito");
+    assert.match(shown, /pode continuar aberta/i, "e o aviso da sessão também");
 });
 
-test("quando o Hub recebe a saída, não se avisa nada", async () => {
+test("when the Hub receives the logout, nothing is announced", async () => {
     const { login, logoutButton } = mount();
     await initializeDashboardSession(async () => {});
     globalThis.fetch = async () => new Response();

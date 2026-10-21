@@ -11,7 +11,7 @@ const settle = (src, event) => {
     tags[tags.length - 1].dispatchEvent(new window.Event(event));
 };
 
-test("duas chamadas ao mesmo script partilham uma carga só", async () => {
+test("two calls for the same script share one load", async () => {
     const src = "/assets/vendor/uma-vez/lib.js";
 
     const first = loadScript(src);
@@ -24,7 +24,7 @@ test("duas chamadas ao mesmo script partilham uma carga só", async () => {
     await first;
 });
 
-test("um erro liberta a cache e a chamada seguinte tenta de novo", async () => {
+test("an error frees the cache and the next call tries again", async () => {
     const src = "/assets/vendor/falha/lib.js";
 
     const first = loadScript(src);
@@ -38,7 +38,7 @@ test("um erro liberta a cache e a chamada seguinte tenta de novo", async () => {
     await retry;
 });
 
-test("scripts diferentes carregam-se em separado", async () => {
+test("different scripts load separately", async () => {
     const one = "/assets/vendor/a/a.js";
     const other = "/assets/vendor/b/b.js";
 

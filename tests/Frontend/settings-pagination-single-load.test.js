@@ -18,7 +18,7 @@ function mountPager(prefix) {
 }
 
 /** O ouvinte está no contentor e o clique num número borbulha até ele: resolve-se uma vez. */
-test("um clique no paginador das definições pede uma página só", () => {
+test("a click on the settings pager requests a single page", () => {
     const { root, controls } = mountPager("settingsApiUsersPagination");
     const pagination = { page: 1, total_pages: 4, total: 40, limit: 10 };
     state.settingsModal.apiUsersPagination = pagination;
@@ -54,7 +54,7 @@ function setUpNav() {
     return element;
 }
 
-test("uma contagem conhecida aparece", () => {
+test("a known count shows", () => {
     const badge = setUpNav();
 
     setSettingsNavCount("Denylist", 3);
@@ -63,7 +63,7 @@ test("uma contagem conhecida aparece", () => {
     assert.equal(badge.classList.contains("d-none"), false);
 });
 
-test("a zero, a pastilha esconde-se", () => {
+test("at zero, the badge hides", () => {
     const badge = setUpNav();
 
     setSettingsNavCount("Denylist", 0);
@@ -71,7 +71,7 @@ test("a zero, a pastilha esconde-se", () => {
     assert.equal(badge.classList.contains("d-none"), true);
 });
 
-test("desconhecida, esconde-se também", () => {
+test("unknown, it hides too", () => {
     const badge = setUpNav();
 
     setSettingsNavCount("Denylist", null);

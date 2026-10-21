@@ -23,7 +23,7 @@ function setupDom() {
     return els;
 }
 
-test("a tab lista os bloqueados com um botão de desbloquear por linha", async () => {
+test("the tab lists blocked devices with an unblock button per row", async () => {
     const els = setupDom();
     globalThis.fetch = async () => jsonResponse({
         data: [{
@@ -44,7 +44,7 @@ test("a tab lista os bloqueados com um botão de desbloquear por linha", async (
 });
 
 /** A listagem pagina: contar as linhas recebidas diria vinte a quem tem trinta. */
-test("o número vem do total da API e não das linhas da página", async () => {
+test("the count comes from the API total, not the page rows", async () => {
     const els = setupDom();
     globalThis.fetch = async () => jsonResponse({
         data: [
@@ -59,7 +59,7 @@ test("o número vem do total da API e não das linhas da página", async () => {
     assert.match(els.denylistTabSummary.textContent, /30 aparelhos bloqueados/);
 });
 
-test("desbloquear chama o DELETE da API e tira a linha", async () => {
+test("unblocking calls the API DELETE and removes the row", async () => {
     const els = setupDom();
     const calls = [];
     globalThis.fetch = async (url, options = {}) => {

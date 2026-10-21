@@ -10,29 +10,29 @@ import { telemetryCard } from "../../src/Dashboard/dashboard/components/cards/sh
  * cartões dele; aqui está o que só o radar mede.
  */
 
-test("a frequência respiratória mostra a leitura e não um texto fixo", () => {
+test("breath rate shows the reading, not fixed text", () => {
     assert.equal(uplinkCardContent("breath_rate", { breathsPerMinute: 17 }).value, "17 rpm");
     assert.equal(uplinkCardContent("breath_rate", {}).value, "- rpm");
 });
 
-test("a frequência cardíaca do radar usa o cartão do relógio", () => {
+test("the radar heart rate uses the watch card", () => {
     // Mesma chave, mesma forma `{bpm}`: o radar não tem cartão próprio, de propósito.
     assert.equal(uplinkCardContent("heart_rate", { bpm: 69 }).value, "69 bpm");
 });
 
-test("o estado de sono e um cartão com o valor em português", () => {
+test("sleep state is a card with the value in Portuguese", () => {
     const card = uplinkCardContent("sleep_state", { state: "deep_sleep" });
 
     assert.equal(card.value, "Sono profundo");
 });
 
-test("um estado que o mapa não conhece mostra-se como veio, não desaparece", () => {
+test("a state the map does not know shows as it came instead of vanishing", () => {
     // O fabricante pode acrescentar estados numa versão nova do firmware. O hub manda a
     // enumeração à mesma, e mostrar "Rem Sleep" é melhor do que mostrar "-".
     assert.equal(uplinkCardContent("sleep_state", { state: "rem_sleep" }).value, "Rem Sleep");
 });
 
-test("um radar que não vê ninguém está a funcionar", () => {
+test("a radar that sees nobody is working", () => {
     // "Ninguém" e não "Sem leituras": a diferença entre uma divisão vazia e um radar mudo.
     assert.equal(uplinkCardContent("presence", { count: 0, people: [] }).value, "Ninguém");
 });
@@ -49,7 +49,7 @@ const person = (index, posture) => ({
     zPositionCm: 0,
 });
 
-test("a presença mostra a postura de cada pessoa, não uma só do aparelho", () => {
+test("presence shows each person's posture, not one for the device", () => {
     const card = uplinkCardContent("presence", {
         count: 2,
         people: [person(0, "standing"), person(1, "fall_confirmation")],
@@ -67,7 +67,7 @@ test("a presença mostra a postura de cada pessoa, não uma só do aparelho", ()
  * O corte às três primeiras tem contador, para a quarta pessoa não desaparecer sem aviso. As
  * coordenadas e quem não coube ficam na tooltip, que não corta.
  */
-test("a quarta pessoa vira contador em vez de desaparecer", () => {
+test("the fourth person becomes a counter instead of vanishing", () => {
     const card = uplinkCardContent("presence", {
         count: 5,
         people: [
@@ -88,7 +88,7 @@ test("a quarta pessoa vira contador em vez de desaparecer", () => {
     assert.match(card.detailsTitle, /Pessoa 1: Deitado · x 3 dm · y 0 dm · z 0 cm/);
 });
 
-test("uma postura que o firmware invente não escreve atributos", () => {
+test("a posture the firmware makes up writes no attributes", () => {
     const card = uplinkCardContent("presence", {
         count: 1,
         people: [{ personIndex: 0, posture: "\"><script>alert(1)</script>" }],
@@ -99,7 +99,7 @@ test("uma postura que o firmware invente não escreve atributos", () => {
     assert.equal(chip.querySelector("[onerror], script"), null);
 });
 
-test("uma queda diz se foi confirmada e como a pessoa ficou", () => {
+test("a fall says whether it was confirmed and how the person ended up", () => {
     // "Queda" sozinho não distingue uma queda confirmada de uma suspeita, nem de alguém sentado no chão.
     const fall = (data) => uplinkCardContent("fall", data).value;
 
@@ -111,7 +111,7 @@ test("uma queda diz se foi confirmada e como a pessoa ficou", () => {
     assert.equal(uplinkCardContent("fall", { confirmed: true, posture: "lying", personIndex: 1 }).details, "Pessoa 2");
 });
 
-test("uma entrada ou saída diz a zona, e a área pelo nome que lhe deram", () => {
+test("an entry or exit says the zone, and the area by its given name", () => {
     const value = (type, data) => uplinkCardContent(type, data).value;
 
     assert.equal(value("zone_exit", { zone: "room", personIndex: 0 }), "Saiu da divisão");
@@ -120,14 +120,14 @@ test("uma entrada ou saída diz a zona, e a área pelo nome que lhe deram", () =
     assert.equal(value("zone_entry", { zone: "area", personIndex: 0, areaId: 5 }), "Entrou na área");
 });
 
-test("os vitais fora do normal mostram o valor que os levantou", () => {
+test("abnormal vitals show the value that raised them", () => {
     assert.equal(uplinkCardContent("heart_rate_high", { bpm: 172 }).value, "172 bpm");
     assert.equal(uplinkCardContent("heart_rate_low", { bpm: 32 }).value, "32 bpm");
     assert.equal(uplinkCardContent("breath_rate_low", { breathsPerMinute: 6 }).value, "6 rpm");
 });
 
 /** Os quatro estados do `hbstatics` chegam em enumeração, como o `posture` e o `sleep_state`. */
-test("os estados por minuto saem em português a partir da enumeração", () => {
+test("per-minute states show in Portuguese from the enum", () => {
     const details = uplinkCardContent("vitals_minute_stats", {
         realTimeHeartRate: 70,
         realTimeBreathing: 13,
@@ -142,7 +142,7 @@ test("os estados por minuto saem em português a partir da enumeração", () => 
 });
 
 /** O mosaico desenha o `details` que o `uplinkCardContent` devolve, e não só o `value`. */
-test("o mosaico mostra o detalhe em vez de o deitar fora", () => {
+test("the tile shows the detail instead of dropping it", () => {
     const root = parseFragment(
         telemetryCard({ icon: "fa-bed", title: "Presença", value: "2 pessoas", details: "Pessoa 1 · x 3 dm" }),
     );
@@ -150,21 +150,21 @@ test("o mosaico mostra o detalhe em vez de o deitar fora", () => {
     assert.equal(root.querySelector(".telemetry-row-details").textContent, "Pessoa 1 · x 3 dm");
 });
 
-test("o radar em 4G diz a rede e a qualidade do sinal", () => {
+test("a 4G radar shows the network and signal quality", () => {
     const card = uplinkCardContent("connectivity", { interface: "4g", signalQuality: 21 });
 
     assert.match(card.value, /^4G/);
     assert.match(card.details, /Qualidade do sinal: 21/);
 });
 
-test("a inclinação mostra os dois eixos em graus e se veio calibrada de fábrica", () => {
+test("tilt shows both axes in degrees and whether it was factory calibrated", () => {
     const card = uplinkCardContent("tilt", { xDegrees: 1.2, yDegrees: 0.9, zDegrees: 88, factoryCalibrated: true });
 
     assert.equal(card.value, "X 1,2° · Y 0,9°");
     assert.equal(card.details, "Calibrado de fábrica");
 });
 
-test("o firmware do radar mostra também o de comunicação", () => {
+test("the radar firmware also shows the communication firmware", () => {
     const card = uplinkCardContent("firmware_version", { version: "V1.3.2", communicationVersion: "C2.0.1" });
 
     assert.equal(card.value, "V1.3.2");

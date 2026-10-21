@@ -33,7 +33,7 @@ const markupSources = read([
     root("index.php"),
 ]);
 
-test("cada data-action que as definições procuram é escrito por quem desenha", () => {
+test("every data-action the settings look for is written by a renderer", () => {
     const wanted = [...handlerSources.matchAll(JS_SELECTOR)].map(([, action]) => action);
     assert.ok(wanted.length > 0, "nenhum selector encontrado -- a procura partiu-se");
 
@@ -53,7 +53,7 @@ test("cada data-action que as definições procuram é escrito por quem desenha"
  */
 const PHP_ACTION = /data-action="([\w-]+)"/g;
 
-test("cada data-action escrito no modal é procurado por algum handler", () => {
+test("every data-action written in the modal is looked for by some handler", () => {
     const written = [...new Set([...markupSources.matchAll(PHP_ACTION)].map(([, action]) => action))];
     assert.ok(written.length > 0, "nenhum botão encontrado -- a procura partiu-se");
 

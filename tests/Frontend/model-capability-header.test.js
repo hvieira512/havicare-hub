@@ -60,7 +60,7 @@ beforeEach(() => {
     renderCapabilitiesSection();
 });
 
-test("o cabeçalho diz o que são as capacidades do template que não se ligam aqui", () => {
+test("the header explains the template capabilities that are not toggled here", () => {
     assert.equal(
         els.capabilitySubtitle.textContent,
         "4P Touch — 5 capacidades no template: 3 ligam-se aqui e 2 são ações, que só se pedem ao aparelho.",
@@ -68,7 +68,7 @@ test("o cabeçalho diz o que são as capacidades do template que não se ligam a
     assert.equal(els.capabilitySummary.textContent, "3/3 ativos");
 });
 
-test("o que o protocolo suporta sobe uma vez para o cabeçalho da secção", () => {
+test("what the protocol supports moves up once to the section header", () => {
     const header = els.capabilityGroups.querySelector("[data-section-note]");
     assert.ok(header, "a secção não explica o protocolo");
     assert.equal(
