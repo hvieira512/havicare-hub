@@ -20,14 +20,14 @@ const els = autoEls((name) => (name === "detailFilterType" || name === "detailFi
     : name.startsWith("detailFilter") || name === "detailSearch" ? "input" : "div"));
 
 /** O rascunho é o que está nos campos antes de «Aplicar», e um `""` de propósito conta. */
-describe("rascunho", () => {
+describe("draft", () => {
     beforeEach(() => {
         initDetailFilters({ els, onChange: () => {} });
         state.detailFilters = { from: "2026-09-20T08:00", to: "", type: "all", q: "" };
         resetDetailFiltersDraft();
     });
 
-    test("uma data apagada no rascunho não é ressuscitada pelo valor aplicado", () => {
+    test("a date cleared in the draft is not revived by the applied value", () => {
         updateDetailFiltersDraft({ from: "" });
 
         syncDetailFilterControls();
@@ -35,7 +35,7 @@ describe("rascunho", () => {
         assert.equal(els.detailFilterFrom.value, "", "o campo devia ficar vazio");
     });
 
-    test("sem rascunho, os campos mostram o que está aplicado", () => {
+    test("without a draft the fields show what is applied", () => {
         state.detailFiltersDraft = null;
 
         syncDetailFilterControls();
@@ -43,7 +43,7 @@ describe("rascunho", () => {
         assert.equal(els.detailFilterFrom.value, "2026-09-20T08:00");
     });
 
-    test("um rascunho por aplicar sobrepõe-se ao valor aplicado", () => {
+    test("an unapplied draft overrides the applied value", () => {
         updateDetailFiltersDraft({ from: "2026-09-21T09:30" });
 
         syncDetailFilterControls();
@@ -52,7 +52,7 @@ describe("rascunho", () => {
     });
 });
 
-describe("etiquetas", () => {
+describe("labels", () => {
     /**
      * A pesquisa e a pastilha do filtro usam a etiqueta da capacidade, «Bateria», e não o
      * `fieldLabel`, que é o dicionário dos campos do payload.
@@ -79,20 +79,20 @@ describe("etiquetas", () => {
         state.detailFilters = { from: "", to: "", type: "all", q: "" };
     });
 
-    test("procurar pela etiqueta em português encontra a linha", () => {
+    test("searching by the Portuguese label finds the row", () => {
         state.detailFilters = { ...state.detailFilters, q: "bateria" };
 
         assert.equal(filterDetailItems([battery(70)]).length, 1);
     });
 
-    test("procurar pela chave em inglês continua a encontrá-la", () => {
+    test("searching by the English key still finds it", () => {
         // Quem opera o hub conhece as chaves do contrato, e elas não deixam de servir.
         state.detailFilters = { ...state.detailFilters, q: "battery" };
 
         assert.equal(filterDetailItems([battery(70)]).length, 1);
     });
 
-    test("a pastilha do filtro de tipo mostra a etiqueta e não a chave", () => {
+    test("the type filter chip shows the label, not the key", () => {
         const labels = detailFilterChipLabels({
             from: "",
             to: "",
@@ -103,7 +103,7 @@ describe("etiquetas", () => {
         assert.deepEqual(labels, [{ key: "type", label: "Bateria" }]);
     });
 
-    test("o texto procurado aparece na pastilha como foi escrito", () => {
+    test("the searched text appears in the chip as typed", () => {
         const labels = detailFilterChipLabels({
             from: "",
             to: "",
@@ -115,7 +115,7 @@ describe("etiquetas", () => {
     });
 });
 
-describe("alcances", () => {
+describe("ranges", () => {
     /**
      * Ninguém escreve uma data para ver o dia de hoje: os alcances prontos aplicam-se ao toque e
      * o intervalo à mão fica para quem precisa mesmo dele.
@@ -163,21 +163,21 @@ describe("alcances", () => {
         });
     });
 
-    test("o hoje começa à meia-noite de cá e não vinte e quatro horas atrás", () => {
+    test("today starts at local midnight, not twenty-four hours ago", () => {
         applyDetailRange("today");
 
         assert.equal(Date.parse(state.detailFilters.from), startOfToday());
         assert.equal(state.detailFilters.to, "");
     });
 
-    test("sete dias conta sete dias para trás", () => {
+    test("seven days counts seven days back", () => {
         applyDetailRange("7d");
 
         const days = (Date.now() - Date.parse(state.detailFilters.from)) / 86400000;
         assert.ok(Math.abs(days - 7) < 0.01, `foram ${days} dias`);
     });
 
-    test("o alcance aplica-se ao toque, sem passar pelo Aplicar", () => {
+    test("the range applies on tap, without going through Aplicar", () => {
         applyDetailRange("30d");
 
         assert.equal(changes, 1);
@@ -194,7 +194,7 @@ describe("alcances", () => {
         assert.equal(state.downlinkCumulative, false);
     });
 
-    test("a pastilha do alcance diz o nome do botão e não as datas", () => {
+    test("the range chip says the button name, not the dates", () => {
         applyDetailRange("7d");
 
         assert.deepEqual(detailFilterChipLabels(state.detailFilters), [
@@ -203,7 +203,7 @@ describe("alcances", () => {
     });
 
     /** Um intervalo escrito à mão não é nenhum dos alcances, e a pastilha volta às datas. */
-    test("um intervalo à mão continua a mostrar as datas", () => {
+    test("a hand-typed interval still shows the dates", () => {
         const labels = detailFilterChipLabels({
             from: "2026-09-01T00:00",
             to: "2026-09-02T00:00",
@@ -215,7 +215,7 @@ describe("alcances", () => {
         assert.match(labels[0].label, /→/);
     });
 
-    test("limpar os filtros larga o alcance escolhido", () => {
+    test("clearing the filters drops the chosen range", () => {
         applyDetailRange("today");
         clearDetailFilters();
 
@@ -223,7 +223,7 @@ describe("alcances", () => {
     });
 
     /** O «Aplicar» vive dentro das «Datas…», que podem estar fechadas. */
-    test("o tipo aplica-se ao escolher, sem passar pelo Aplicar", () => {
+    test("the type applies when chosen, without going through Aplicar", () => {
         const els = filterEls();
         els.detailFilterType.innerHTML = "<option value=\"all\">Todos</option><option value=\"sleep_state\">Estado do sono</option>";
         initDetailFilters({
@@ -247,7 +247,7 @@ describe("alcances", () => {
  * Filtros herdados do aparelho anterior escondem as leituras do seguinte, e o painel diria
  * «Ainda não há leituras».
  */
-describe("troca de dispositivo", () => {
+describe("device switch", () => {
     const detailWith = (types) => ({
         recent: {
             telemetry: types.map((type, index) => ({
@@ -269,20 +269,20 @@ describe("troca de dispositivo", () => {
         state.detailFiltersDraft = { ...state.detailFilters };
     });
 
-    test("escolher outro dispositivo larga os filtros aplicados ao anterior", () => {
+    test("choosing another device drops the filters applied to the previous one", () => {
         selectImei("bbb222");
 
         assert.deepEqual(state.detailFilters, { from: "", to: "", type: "all", severity: "all", q: "" });
         assert.deepEqual(state.detailFiltersDraft, { from: "", to: "", type: "all", severity: "all", q: "" });
     });
 
-    test("voltar a escolher o mesmo dispositivo não mexe nos filtros", () => {
+    test("choosing the same device again leaves the filters alone", () => {
         selectImei("aaa111");
 
         assert.equal(state.detailFilters.type, "blood_pressure");
     });
 
-    test("o selector de tipo larga as opções que o dispositivo novo não tem", () => {
+    test("the type selector drops the options the new device does not have", () => {
         state.selectedDetail = detailWith(["blood_pressure", "heart_rate"]);
         populateDetailFilterTypes();
         assert.deepEqual(

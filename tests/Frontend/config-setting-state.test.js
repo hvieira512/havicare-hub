@@ -28,7 +28,7 @@ const sectionOf = (entry, row = null, stored = null) =>
         .querySelector("[data-config-section]");
 
 /** O campo já mostra o valor; por baixo do nome só aparece o «era …» de uma edição. */
-test("o valor guardado não se repete por baixo do nome", () => {
+test("the stored value is not repeated under the name", () => {
     const section = sectionOf({
         key: "autoHealth",
         capabilityKey: "auto_health",
@@ -41,13 +41,13 @@ test("o valor guardado não se repete por baixo do nome", () => {
     assert.equal(section.querySelector("[data-config-summary]").textContent.trim(), "era 60 min");
 });
 
-test("uma definição editada mostra o valor que lá estava", () => {
+test("an edited setting shows the value that was there", () => {
     const section = sectionOf(INTERVAL, { intervalTime: 3600 }, true);
 
     assert.match(section.querySelector(".config-when-changed").textContent, /era 3600\s+s/);
 });
 
-test("o «Alterado» sobrepõe-se enquanto a edição estiver por enviar, sem apagar a entrega", () => {
+test("«Alterado» takes over while the edit is unsent, without erasing the delivery", () => {
     const host = document.createElement("div");
     host.innerHTML = `<div data-config-root><div data-config-pane="health"></div></div>`;
     const pane = host.querySelector("[data-config-pane]");
@@ -67,7 +67,7 @@ test("o «Alterado» sobrepõe-se enquanto a edição estiver por enviar, sem ap
     assert.equal(section.dataset.configEdited, "1");
 });
 
-test("e ao ser editada diz que mudou, em vez do código que lá estava", () => {
+test("and once edited it says it changed, instead of the code that was there", () => {
     const section = sectionOf({
         key: "alarmVolume",
         capabilityKey: "alarm_volume",
@@ -81,7 +81,7 @@ test("e ao ser editada diz que mudou, em vez do código que lá estava", () => {
 });
 
 /** Um intervalo tem dois números: o que lá estava diz-se inteiro, e não só o mínimo. */
-test("um intervalo editado mostra os dois extremos que lá estavam", () => {
+test("an edited interval shows both ends that were there", () => {
     const range = {
         key: "heart_rate_alert",
         capabilityKey: "heart_rate_alert",

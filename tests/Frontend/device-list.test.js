@@ -8,9 +8,7 @@ import {
 
 /**
  * Os filtros persistem entre sessões: o vazio tem de dizer que é deles, senão lê-se como «esse
- * aparelho não existe».
- *
- * O `online` é booleano, como o `changeDeviceFilter` o guarda: `null` é não filtrar.
+ * aparelho não existe». No `online`, `null` é não filtrar.
  */
 const filters = (overrides = {}) => ({
     deviceType: [],
@@ -21,28 +19,28 @@ const filters = (overrides = {}) => ({
     ...overrides,
 });
 
-test("sem filtros nem procura, diz que não há nada registado", () => {
+test("with no filters and no search it says nothing is registered", () => {
     const empty = deviceListEmptyState(filters(), "");
 
     assert.match(empty.message, /Não há dispositivos registados/);
     assert.equal(empty.canClear, false);
 });
 
-test("com procura e sem filtros, nomeia o que se procurou", () => {
+test("with a search and no filters it names what was searched", () => {
     const empty = deviceListEmptyState(filters(), "351266770073676");
 
     assert.match(empty.message, /351266770073676/);
     assert.equal(empty.canClear, false);
 });
 
-test("com filtros, diz quais são e oferece limpá-los", () => {
+test("with filters it says which and offers to clear them", () => {
     const empty = deviceListEmptyState(filters({ online: true }), "");
 
     assert.match(empty.message, /ligados/);
     assert.equal(empty.canClear, true);
 });
 
-test("com procura e filtros, diz as duas coisas", () => {
+test("with a search and filters it says both", () => {
     const empty = deviceListEmptyState(
         filters({ online: false, license: [1001] }),
         "351266770073676",
@@ -54,7 +52,7 @@ test("com procura e filtros, diz as duas coisas", () => {
     assert.equal(empty.canClear, true);
 });
 
-test("cada grupo de filtro aparece uma vez só", () => {
+test("each filter group appears only once", () => {
     const empty = deviceListEmptyState(
         filters({ supplier: [3], model: ["Y6M"], deviceType: ["watch"] }),
         "",
@@ -71,34 +69,34 @@ test("cada grupo de filtro aparece uma vez só", () => {
 
 const totals = { total: 49, online: 26 };
 
-test("sem filtros diz o tamanho da frota", () => {
+test("without filters it says the fleet size", () => {
     assert.equal(
         deviceSelectorSummary(totals, { total: 49 }, false),
         "49 dispositivos · 26 ligados",
     );
 });
 
-test("com filtros diz quantos ficam de quantos há", () => {
+test("with filters it says how many remain out of how many", () => {
     assert.equal(
         deviceSelectorSummary(totals, { total: 4 }, true),
         "4 de 49 dispositivos",
     );
 });
 
-test("um só dispositivo não leva plural", () => {
+test("a single device takes no plural", () => {
     assert.equal(
         deviceSelectorSummary({ total: 1, online: 1 }, { total: 1 }, false),
         "1 dispositivo · 1 ligado",
     );
 });
 
-test("filtrar até nenhum diz zero, e não fica em branco", () => {
+test("filtering down to none says zero instead of staying blank", () => {
     assert.equal(
         deviceSelectorSummary(totals, { total: 0 }, true),
         "0 de 49 dispositivos",
     );
 });
 
-test("sem frota não há nada para contar", () => {
+test("without a fleet there is nothing to count", () => {
     assert.equal(deviceSelectorSummary({ total: 0, online: 0 }, { total: 0 }, false), "");
 });

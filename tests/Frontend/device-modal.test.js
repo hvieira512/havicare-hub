@@ -33,7 +33,7 @@ beforeEach(() => {
     state.capabilityCatalogByType.watch = [];
 });
 
-test("a resposta atrasada de um dispositivo não pinta o modal de outro", async () => {
+test("a late device response does not paint another device's modal", async () => {
     const fetches = installDeferredFetch();
 
     const first = editDevice("aaa111", "wonlex", "D41");
@@ -53,7 +53,7 @@ test("a resposta atrasada de um dispositivo não pinta o modal de outro", async 
  * Com o detalhe recusado o formulário fica com os valores de arranque, e o `saveDevice` lê só o
  * DOM: «Guardar» escreveria isso por cima do registo real.
  */
-test("o modal cujo detalhe o servidor recusou não se deixa gravar", async () => {
+test("the modal whose detail the server refused cannot be saved", async () => {
     globalThis.fetch = async () => errorResponse();
 
     await editDevice("aaa111", "wonlex", "D41");
@@ -82,14 +82,14 @@ test("o modal cujo detalhe o servidor recusou não se deixa gravar", async () =>
  * O `editDevice` substitui o `state.deviceModal` inteiro, e o `panel.js` escreve sem guarda no
  * `actionDeliveries`.
  */
-test("a forma em branco traz todas as chaves do estado inicial", () => {
+test("the blank shape carries every key of the initial state", () => {
     assert.deepEqual(
         Object.keys(blankDeviceModal()).sort(),
         Object.keys(state.deviceModal).sort(),
     );
 });
 
-test("cada chamada traz mapas próprios, e não os do estado a correr", () => {
+test("each call brings its own maps, not the running state's", () => {
     const first = blankDeviceModal();
     const second = blankDeviceModal();
 

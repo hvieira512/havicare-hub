@@ -9,7 +9,7 @@ const { telemetryActivityRow } =
  * Há mais para ver quando o renderizador declara um `detailsTitle` (a linha é um resumo) ou
  * quando os detalhes têm mais do que um campo, que na linha vão cortados.
  */
-test("uma linha que já diz tudo não abre", () => {
+test("a row that already says everything does not open", () => {
     const row = telemetryActivityRow({
         type: "battery",
         data: { percent: 0, chargingState: "absent" },
@@ -20,7 +20,7 @@ test("uma linha que já diz tudo não abre", () => {
     assert.equal(row.expanded, "", "e não devia haver nada por trás deles");
 });
 
-test("uma linha sem detalhes não abre", () => {
+test("a row without details does not open", () => {
     const row = telemetryActivityRow({
         type: "battery",
         data: { percent: 80 },
@@ -30,7 +30,7 @@ test("uma linha sem detalhes não abre", () => {
     assert.equal(row.expanded, "");
 });
 
-test("uma linha com mais do que um campo abre e arruma-os", () => {
+test("a row with more than one field opens and lays them out", () => {
     const row = telemetryActivityRow({
         type: "motion",
         data: { magnitudeMg: 120, xMg: 10, yMg: 20, zMg: 30 },
@@ -41,7 +41,7 @@ test("uma linha com mais do que um campo abre e arruma-os", () => {
     assert.match(row.expanded, /20/);
 });
 
-test("uma linha cujo resumo esconde alguma coisa abre", () => {
+test("a row whose summary hides something opens", () => {
     const row = telemetryActivityRow({
         type: "presence",
         data: {
@@ -58,7 +58,7 @@ test("uma linha cujo resumo esconde alguma coisa abre", () => {
 });
 
 /** A gaveta escapa o que recebe, `<br>` incluído. */
-test("a gaveta não recebe marcação", () => {
+test("the drawer receives no markup", () => {
     const row = telemetryActivityRow({
         type: "motion",
         data: { magnitudeMg: 120, xMg: 10, yMg: 20, zMg: 30 },
@@ -74,7 +74,7 @@ test("a gaveta não recebe marcação", () => {
  * O `seq` do Redis é contado por lista: uma leitura e um alarme podem ter ambos `seq=7`, e com
  * a mesma chave abrir a gaveta de um abriria a do outro.
  */
-test("uma leitura e um alarme com o mesmo seq não partilham a chave", () => {
+test("a reading and an alarm with the same seq do not share a key", () => {
     state.selectedImei = "aaa111";
 
     const reading = telemetryActivityRow({
@@ -93,7 +93,7 @@ test("uma leitura e um alarme com o mesmo seq não partilham a chave", () => {
     assert.notEqual(reading.key, alarm.key);
 });
 
-test("a mesma mensagem dá sempre a mesma chave", () => {
+test("the same message always gives the same key", () => {
     state.selectedImei = "aaa111";
     const payload = () => ({
         type: "heart_rate",

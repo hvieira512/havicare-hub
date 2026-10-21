@@ -40,7 +40,7 @@ const { renderConfigSection } = await import(
 );
 const { state } = await import("../../src/Dashboard/dashboard/state.js");
 
-test("cancelar a confirmação não chega a chamar a API", async () => {
+test("cancelling the confirmation never calls the API", async () => {
     reset();
     answer = { isConfirmed: false, dismiss: "cancel" };
 
@@ -49,7 +49,7 @@ test("cancelar a confirmação não chega a chamar a API", async () => {
     assert.deepEqual(calls, []);
 });
 
-test("confirmar apaga, e apaga o que se pediu", async () => {
+test("confirming deletes, and deletes what was asked", async () => {
     reset();
     answer = { isConfirmed: true };
 
@@ -58,7 +58,7 @@ test("confirmar apaga, e apaga o que se pediu", async () => {
     assert.deepEqual(calls, [{ url: "/api/users/7", method: "DELETE" }]);
 });
 
-test("a caixa de apagar um utilizador diz qual é", async () => {
+test("the delete-user box says which user", async () => {
     reset();
     answer = { isConfirmed: false, dismiss: "cancel" };
 
@@ -67,7 +67,7 @@ test("a caixa de apagar um utilizador diz qual é", async () => {
     assert.match(confirmations[0].titleText, /hitcare/);
 });
 
-test("a caixa de apagar uma licença diz o número, o nome e o que fica para trás", () => {
+test("the delete-licence box says the number, the name and what is left behind", () => {
     const prompt = licenseDeletePrompt({ license_id: 1001, name: "gucc.dev" }, 12);
 
     assert.match(prompt.title, /1001/);
@@ -75,13 +75,13 @@ test("a caixa de apagar uma licença diz o número, o nome e o que fica para tr�
     assert.match(prompt.text, /12 dispositivos/);
 });
 
-test("uma licença sem dispositivos di-lo em vez de contar zero", () => {
+test("a licence without devices says so instead of counting zero", () => {
     const prompt = licenseDeletePrompt({ license_id: 1001, name: "gucc.dev" }, 0);
 
     assert.doesNotMatch(prompt.text, /0 dispositivos/);
 });
 
-test("a caixa de apagar uma empresa diz o nome e as licenças que leva com ela", () => {
+test("the delete-company box says the name and the licences it takes along", () => {
     const prompt = companyDeletePrompt({ name: "Hitecosystem" }, 3, 41);
 
     assert.match(prompt.title, /Hitecosystem/);
@@ -106,7 +106,7 @@ const sectionFor = ({ key, label, confirm = "" }) => {
     return section;
 };
 
-test("os comandos que não se desfazem têm caixa, e os inofensivos não", () => {
+test("irreversible commands get a box, harmless ones do not", () => {
     const imei = "351266770073676";
     const powerOff = sectionFor({
         key: "power_off",
@@ -123,10 +123,7 @@ test("os comandos que não se desfazem têm caixa, e os inofensivos não", () =>
     assert.equal(dangerousCommandPrompt(findDevice, imei), null);
 });
 
-/**
- * A caixa da reposição de fábrica diz que repõe de fábrica, e não o texto de um reinício.
- */
-test("a caixa da reposição de fábrica não promete um reinício", () => {
+test("the factory reset box does not promise a restart", () => {
     const section = sectionFor({
         key: "reset_device",
         label: "Reposição de fábrica",
@@ -139,7 +136,7 @@ test("a caixa da reposição de fábrica não promete um reinício", () => {
     assert.doesNotMatch(prompt.text, /arranca/);
 });
 
-test("o cartão leva consigo a frase que a definição declarou", () => {
+test("the card carries the sentence the setting declared", () => {
     const html = renderConfigSection("wonlex-json", {
         key: "factoryResetCommand",
         capabilityKey: "reset_device",
@@ -154,7 +151,7 @@ test("o cartão leva consigo a frase que a definição declarou", () => {
     assert.match(html, /data-config-label="Reposição de fábrica"/);
 });
 
-test("uma definição sem frase não leva atributo de confirmação", () => {
+test("a setting without a sentence gets no confirmation attribute", () => {
     const html = renderConfigSection("wonlex-json", {
         key: "findDeviceCommand",
         capabilityKey: "find_device",
@@ -167,7 +164,7 @@ test("uma definição sem frase não leva atributo de confirmação", () => {
     assert.doesNotMatch(html, /data-config-confirm/);
 });
 
-test("cancelar a caixa de desligar não envia o comando ao relógio", async () => {
+test("cancelling the power-off box does not send the command to the watch", async () => {
     reset();
     answer = { isConfirmed: false, dismiss: "cancel" };
     state.deviceModal.imei = "351266770073676";

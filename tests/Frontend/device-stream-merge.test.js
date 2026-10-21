@@ -33,7 +33,7 @@ const emit = async (source, type, data) => {
     await harness.settle();
 };
 
-test("o instantâneo substitui o histórico", async () => {
+test("the snapshot replaces the history", async () => {
     const source = await open("111");
 
     await emit(source, "snapshot", {
@@ -49,7 +49,7 @@ test("o instantâneo substitui o histórico", async () => {
     );
 });
 
-test("uma actualização junta-se à frente em vez de substituir", async () => {
+test("an update is prepended instead of replacing", async () => {
     const source = await open("222");
     await emit(source, "snapshot", { telemetry: [row(2), row(1)], events: [], commands: [], limit: 100 });
 
@@ -62,7 +62,7 @@ test("uma actualização junta-se à frente em vez de substituir", async () => {
     );
 });
 
-test("a lista não cresce para além do limite do servidor", async () => {
+test("the list does not grow beyond the server limit", async () => {
     const source = await open("333");
     await emit(source, "snapshot", { telemetry: [row(3), row(2), row(1)], events: [], commands: [], limit: 4 });
 
@@ -75,7 +75,7 @@ test("a lista não cresce para além do limite do servidor", async () => {
     );
 });
 
-test("uma actualização vazia não apaga o que já lá estava", async () => {
+test("an empty update does not erase what was already there", async () => {
     const source = await open("444");
     await emit(source, "snapshot", { telemetry: [row(1)], events: [], commands: [], limit: 100 });
 
@@ -84,7 +84,7 @@ test("uma actualização vazia não apaga o que já lá estava", async () => {
     assert.deepEqual(state.selectedDetail.recent.telemetry.map((entry) => entry.seq), [1]);
 });
 
-test("os comandos vêm sempre por inteiro e substituem", async () => {
+test("commands always come whole and replace", async () => {
     const source = await open("555");
     await emit(source, "snapshot", {
         telemetry: [],
@@ -104,7 +104,7 @@ test("os comandos vêm sempre por inteiro e substituem", async () => {
     assert.deepEqual(state.selectedDetail.recent.commands, [{ id: "a", status: "sent" }]);
 });
 
-test("religar volta a receber um instantâneo, e ele manda", async () => {
+test("reconnecting receives a snapshot again, and it wins", async () => {
     const source = await open("666");
     await emit(source, "snapshot", { telemetry: [row(9), row(8)], events: [], commands: [], limit: 100 });
 
@@ -119,7 +119,7 @@ test("religar volta a receber um instantâneo, e ele manda", async () => {
     );
 });
 
-test("as ligações juntam-se como os eventos, na sua própria lista", async () => {
+test("connections merge like events, in their own list", async () => {
     const source = await open("333");
     await emit(source, "snapshot", {
         telemetry: [],
@@ -143,7 +143,7 @@ test("as ligações juntam-se como os eventos, na sua própria lista", async () 
     );
 });
 
-test("a última de cada tipo vem do servidor e substitui a anterior", async () => {
+test("the latest of each type comes from the server and replaces the previous one", async () => {
     const source = await open("777");
     await emit(source, "snapshot", { telemetry: [], latestTelemetry: [row(1)], events: [], commands: [], limit: 100 });
 

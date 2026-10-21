@@ -17,17 +17,17 @@ const capability = (flags) => ({
     ...flags,
 });
 
-test("uma acção aparece no catálogo", () => {
+test("an action appears in the catalog", () => {
     assert.equal(showsInCatalog(capability({ isRequestable: true })), true);
 });
 
-test("telemetria, configuração e evento continuam a aparecer", () => {
+test("telemetry, configuration and event still appear", () => {
     assert.equal(showsInCatalog(capability({ isTelemetry: true })), true);
     assert.equal(showsInCatalog(capability({ isConfigurable: true })), true);
     assert.equal(showsInCatalog(capability({ isEvent: true })), true);
 });
 
-test("uma capacidade sem marca nenhuma continua de fora", () => {
+test("a capability with no flag stays out", () => {
     assert.equal(showsInCatalog(capability({})), false);
 });
 
@@ -35,7 +35,7 @@ test("uma capacidade sem marca nenhuma continua de fora", () => {
  * «Solicitável» diz que se pode pedir uma leitura, e uma acção não devolve leitura nenhuma:
  * mandar desligar o relógio não é o mesmo gesto que pedir-lhe a frequência cardíaca.
  */
-test("uma acção diz Ação e uma medição a pedido diz Solicitável", () => {
+test("an action says Ação and an on-demand measurement says Solicitável", () => {
     assert.deepEqual(capabilityFacts(capability({ isRequestable: true })), ["Ação"]);
     assert.deepEqual(
         capabilityFacts(capability({ isTelemetry: true, isRequestable: true })),

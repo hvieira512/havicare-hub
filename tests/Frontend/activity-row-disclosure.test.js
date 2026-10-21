@@ -78,7 +78,7 @@ beforeEach(() => {
     state.selectedImei = "414D74184CBF";
 });
 
-test("só abre quem tem mais do que mostra", () => {
+test("only a row with more than it shows opens", () => {
     const view = els();
     initDeviceDetailView({ els: view });
 
@@ -92,7 +92,7 @@ test("só abre quem tem mais do que mostra", () => {
     assert.ok(expandable[0].getAttribute("aria-controls"));
 });
 
-test("a gaveta traz o texto inteiro, que na linha estava cortado", () => {
+test("the drawer holds the full text the row cut short", () => {
     const view = els();
     initDeviceDetailView({ els: view });
 
@@ -105,7 +105,7 @@ test("a gaveta traz o texto inteiro, que na linha estava cortado", () => {
     assert.match(panel.textContent, /Respiração ativa/, "e traz o fim da frase, que a linha não mostra");
 });
 
-test("carregar abre, e voltar a carregar fecha", () => {
+test("clicking opens, and clicking again closes", () => {
     const view = els();
     initDeviceDetailView({ els: view });
     renderTelemetryList([minuteStats(0)]);
@@ -122,7 +122,7 @@ test("carregar abre, e voltar a carregar fecha", () => {
     assert.equal(panel.classList.contains("d-none"), true);
 });
 
-test("um clique fora de uma linha abrível não é assunto nosso", () => {
+test("a click outside an openable row is ignored", () => {
     const view = els();
     initDeviceDetailView({ els: view });
     renderTelemetryList([heartRate(0)]);
@@ -133,7 +133,7 @@ test("um clique fora de uma linha abrível não é assunto nosso", () => {
     );
 });
 
-test("a linha aberta continua aberta quando chega um evento novo", () => {
+test("an open row stays open when a new event arrives", () => {
     const view = els();
     initDeviceDetailView({ els: view });
     renderTelemetryList([minuteStats(0), heartRate(1)]);
@@ -152,7 +152,7 @@ test("a linha aberta continua aberta quando chega um evento novo", () => {
     assert.equal(panel.classList.contains("d-none"), false);
 });
 
-test("a chave leva o IMEI: mudar de aparelho não abre a linha do mesmo número de ordem", () => {
+test("the key carries the IMEI: switching device does not open the row with the same sequence number", () => {
     const view = els();
     initDeviceDetailView({ els: view });
     renderTelemetryList([minuteStats(0)]);

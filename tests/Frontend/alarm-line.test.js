@@ -28,7 +28,7 @@ const rowsOf = (section, kind) =>
 
 const textOf = (row, slot) => row.querySelector(`[data-alarm-line-${slot}]`)?.textContent.trim() ?? "";
 
-test("o título é o nome, senão o tipo, senão a hora", () => {
+test("the title is the name, else the type, else the time", () => {
     const titleOf = (desired, meta) => textOf(
         rowsOf(configSection(renderConfigInputs, ALARM, desired, meta), "alarm_clock")[0],
         "title",
@@ -39,7 +39,7 @@ test("o título é o nome, senão o tipo, senão a hora", () => {
     assert.equal(titleOf({ items: [{ time: "08:40" }] }, {}), "08:40");
 });
 
-test("a recorrência aparece em palavras no subtítulo", () => {
+test("the recurrence appears in words in the subtitle", () => {
     const subtitleOf = (item) => textOf(
         rowsOf(configSection(renderConfigInputs, ALARM, { items: [item] }), "alarm_clock")[0],
         "subtitle",
@@ -52,7 +52,7 @@ test("a recorrência aparece em palavras no subtítulo", () => {
     );
 });
 
-test("a linha fechada mostra o que se acabou de escrever, e não o que lá estava", () => {
+test("the closed row shows what was just typed, not what was there", () => {
     const section = configSection(renderConfigInputs, ALARM, { items: [{ time: "08:40", label: "Antigo" }] }, WONLEX_META);
     const [row] = rowsOf(section, "alarm_clock");
 
@@ -65,7 +65,7 @@ test("a linha fechada mostra o que se acabou de escrever, e não o que lá estav
 });
 
 /** A escuta que refaz a linha fechada é do módulo, e não de quem desenha o campo. */
-test("escrever num campo aberto refaz a linha fechada, sem ninguém chamar nada", () => {
+test("typing in an open field rebuilds the closed row without anyone calling anything", () => {
     const section = configSection(renderConfigInputs, ALARM, { items: [{ time: "08:40", label: "Antigo" }] }, WONLEX_META);
     document.body.appendChild(section);
 
@@ -78,7 +78,7 @@ test("escrever num campo aberto refaz a linha fechada, sem ninguém chamar nada"
     section.remove();
 });
 
-test("o acrescentar diz quantas entradas já lá estão", () => {
+test("the add button says how many entries are already there", () => {
     const section = configSection(renderConfigInputs, ALARM, { items: [{ time: "08:40" }] });
     const button = section.querySelector("[data-action=\"addRepeatRow\"][data-repeat-kind=\"alarm_clock\"]");
 
@@ -89,7 +89,7 @@ test("o acrescentar diz quantas entradas já lá estão", () => {
     assert.equal(button.textContent.replace(/\s+/g, " ").trim(), "Acrescentar alarme (2 de 3)");
 });
 
-test("só a entrada em que se mexe fica aberta", () => {
+test("only the entry being edited stays open", () => {
     const section = configSection(renderConfigInputs, ALARM, { items: [{ time: "08:40" }] });
     section.querySelector("details").open = true;
 
@@ -104,7 +104,7 @@ test("só a entrada em que se mexe fica aberta", () => {
  * A verificação que importa: redesenhar a linha não pode fazer desaparecer um campo que o
  * fornecedor já configurava.
  */
-test("nenhuma das cinco formas perdeu um campo", () => {
+test("none of the five shapes lost a field", () => {
     const cases = [
         ["4P Touch", configSection(renderConfigInputs, ALARM, { items: [{ time: "08:40" }] }), [
             "[data-alarm-clock-field=\"time\"]",

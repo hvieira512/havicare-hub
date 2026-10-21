@@ -26,7 +26,7 @@ function connectionSection(els) {
     return section;
 }
 
-test("enquanto o histórico não chega, a secção das ligações não diz «sem registo»", () => {
+test("while the history has not arrived, the connections section does not say «sem registo»", () => {
     const els = detailEls();
     const section = connectionSection(els);
     initDeviceDetailView({ els });
@@ -45,7 +45,7 @@ test("enquanto o histórico não chega, a secção das ligações não diz «sem
     assert.equal(section.classList.contains("d-none"), false);
 });
 
-test("a faixa lê as ligações da lista própria", () => {
+test("the band reads the connections from their own list", () => {
     const els = detailEls();
     const section = connectionSection(els);
     initDeviceDetailView({ els });
@@ -67,7 +67,7 @@ test("a faixa lê as ligações da lista própria", () => {
     assert.equal(els.connectionHistory.querySelectorAll(".connection-band-gap").length, 1);
 });
 
-test("um aparelho calado desde antes de haver histórico mostra a quebra desde a última vez que falou", () => {
+test("a device silent since before the history shows the gap since it last spoke", () => {
     const els = detailEls();
     const section = connectionSection(els);
     initDeviceDetailView({ els });
@@ -82,7 +82,7 @@ test("um aparelho calado desde antes de haver histórico mostra a quebra desde a
     assert.match(els.connectionHistory.textContent, /0 %/);
 });
 
-test("um aparelho desligado cujo último registo é «ligado» acaba a faixa em quebra desde que se calou", () => {
+test("an offline device whose last record is «connected» ends the band in a gap since it went silent", () => {
     const els = detailEls();
     connectionSection(els);
     initDeviceDetailView({ els });

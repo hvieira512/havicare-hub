@@ -64,13 +64,13 @@ beforeEach(() => {
                     count: 6,
                     licenses: [{ licenseId: 1, count: 4 }, { licenseId: 2, count: 2 }],
                 },
-                { company: "outra", count: 3, licenses: [{ licenseId: 9, count: 3 }] },
+                { company: "other", count: 3, licenses: [{ licenseId: 9, count: 3 }] },
             ],
         },
     };
 });
 
-test("marcar e desmarcar um tipo põe e tira o valor da lista", async () => {
+test("ticking and unticking a type adds and removes the value from the list", async () => {
     await filterClick("deviceType", "watch");
     assert.deepEqual(state.deviceFilters.deviceType, ["watch"]);
 
@@ -81,14 +81,14 @@ test("marcar e desmarcar um tipo põe e tira o valor da lista", async () => {
     assert.deepEqual(state.deviceFilters.deviceType, ["radar"]);
 });
 
-test("cada clique guarda os filtros e volta a pedir a lista", async () => {
+test("each click saves the filters and requests the list again", async () => {
     await filterClick("supplier", "veepoo");
 
     assert.deepEqual(storedFilters().supplier, ["veepoo"]);
     assert.equal(changes, 1);
 });
 
-test("marcar o fornecedor absorve os modelos dele já marcados", async () => {
+test("ticking the supplier absorbs its models already ticked", async () => {
     state.deviceFilters.model = ["VL17", "R60"];
 
     await filterClick("supplier", "veepoo");
@@ -98,7 +98,7 @@ test("marcar o fornecedor absorve os modelos dele já marcados", async () => {
     assert.deepEqual(state.deviceFilters.model, ["R60"]);
 });
 
-test("desmarcar o fornecedor não devolve os modelos que ele absorveu", async () => {
+test("unticking the supplier does not bring back the models it absorbed", async () => {
     state.deviceFilters.model = ["VL17"];
 
     await filterClick("supplier", "veepoo");
@@ -108,7 +108,7 @@ test("desmarcar o fornecedor não devolve os modelos que ele absorveu", async ()
     assert.deepEqual(state.deviceFilters.model, []);
 });
 
-test("clicar num modelo coberto pelo fornecedor troca o fornecedor pelos irmãos", async () => {
+test("clicking a model covered by the supplier swaps the supplier for the siblings", async () => {
     state.deviceFilters.supplier = ["veepoo"];
 
     await filterClick("model", "VL17");
@@ -117,7 +117,7 @@ test("clicar num modelo coberto pelo fornecedor troca o fornecedor pelos irmãos
     assert.deepEqual(state.deviceFilters.model, ["MF91"]);
 });
 
-test("a troca pelos irmãos não mexe nos outros fornecedores marcados", async () => {
+test("the swap for siblings leaves the other ticked suppliers alone", async () => {
     state.deviceFilters.supplier = ["veepoo", "qinglanst"];
 
     await filterClick("model", "VL17");
@@ -127,7 +127,7 @@ test("a troca pelos irmãos não mexe nos outros fornecedores marcados", async (
 });
 
 /** Um fornecedor de um só modelo não tem irmãos: o filtro fica vazio, que quer dizer tudo. */
-test("desmarcar o último modelo de um fornecedor limpa os dois filtros", async () => {
+test("unticking a supplier's last model clears both filters", async () => {
     state.deviceFilters.supplier = ["qinglanst"];
 
     await filterClick("model", "R60");
@@ -136,7 +136,7 @@ test("desmarcar o último modelo de um fornecedor limpa os dois filtros", async 
     assert.deepEqual(state.deviceFilters.model, []);
 });
 
-test("marcar os modelos de um fornecedor um a um não marca o fornecedor", async () => {
+test("ticking a supplier's models one by one does not tick the supplier", async () => {
     await filterClick("model", "VL17");
     await filterClick("model", "MF91");
 
@@ -147,15 +147,15 @@ test("marcar os modelos de um fornecedor um a um não marca o fornecedor", async
     assert.deepEqual(state.deviceFilters.model, ["MF91"]);
 });
 
-test("marcar a empresa apaga as licenças dela marcadas à parte", async () => {
-    state.deviceFilters.license = ["hitcare:1", "outra:9"];
+test("ticking the company erases its licences ticked separately", async () => {
+    state.deviceFilters.license = ["hitcare:1", "other:9"];
 
     await filterClick("license", "hitcare");
 
-    assert.deepEqual(state.deviceFilters.license, ["outra:9", "hitcare"]);
+    assert.deepEqual(state.deviceFilters.license, ["other:9", "hitcare"]);
 });
 
-test("desmarcar a empresa não devolve as licenças que ela apagou", async () => {
+test("unticking the company does not bring back the licences it erased", async () => {
     state.deviceFilters.license = ["hitcare:1"];
 
     await filterClick("license", "hitcare");
@@ -164,7 +164,7 @@ test("desmarcar a empresa não devolve as licenças que ela apagou", async () =>
     assert.deepEqual(state.deviceFilters.license, []);
 });
 
-test("clicar numa licença de uma empresa inteira troca a empresa pelas irmãs", async () => {
+test("clicking a licence of a whole company swaps the company for the siblings", async () => {
     state.deviceFilters.license = ["hitcare"];
 
     await filterClick("license", "hitcare:1");
@@ -172,15 +172,15 @@ test("clicar numa licença de uma empresa inteira troca a empresa pelas irmãs",
     assert.deepEqual(state.deviceFilters.license, ["hitcare:2"]);
 });
 
-test("desmarcar a última licença de uma empresa limpa o filtro", async () => {
-    state.deviceFilters.license = ["outra"];
+test("unticking a company's last licence clears the filter", async () => {
+    state.deviceFilters.license = ["other"];
 
-    await filterClick("license", "outra:9");
+    await filterClick("license", "other:9");
 
     assert.deepEqual(state.deviceFilters.license, []);
 });
 
-test("com a empresa por marcar, a licença é só mais um valor", async () => {
+test("with the company unticked, the licence is just another value", async () => {
     await filterClick("license", "hitcare:1");
     assert.deepEqual(state.deviceFilters.license, ["hitcare:1"]);
 
@@ -189,7 +189,7 @@ test("com a empresa por marcar, a licença é só mais um valor", async () => {
 });
 
 /** O «sem licença» é folha e não empresa: marcar uma empresa não lhe toca. */
-test("o «sem licença» marca-se e desmarca-se sozinho", async () => {
+test("«sem licença» ticks and unticks on its own", async () => {
     await filterClick("license", "none");
     await filterClick("license", "hitcare");
 
@@ -203,7 +203,7 @@ test("o «sem licença» marca-se e desmarca-se sozinho", async () => {
  * As contagens chegam com a listagem, e o painel já responde a cliques antes disso -- um
  * filtro reposto do armazenamento desenha-se sem árvore nenhuma.
  */
-test("sem contagens carregadas, o clique acrescenta o valor e mais nada", async () => {
+test("without counts loaded, the click adds the value and nothing else", async () => {
     state.summary.deviceFilterCounts = { deviceType: [], license: { companies: [], none: 0 } };
     state.deviceFilters.supplier = ["veepoo"];
 
@@ -213,7 +213,7 @@ test("sem contagens carregadas, o clique acrescenta o valor e mais nada", async 
     assert.deepEqual(state.deviceFilters.supplier, ["veepoo"]);
 });
 
-test("uma chave que não é filtro não mexe no estado", async () => {
+test("a key that is not a filter leaves the state alone", async () => {
     await filterClick("naoExiste", "x");
 
     assert.deepEqual(state.deviceFilters.deviceType, []);

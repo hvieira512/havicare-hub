@@ -53,7 +53,7 @@ const render = (catalog) => parseFragment(renderDeviceConfigurationRoot({
     capabilityCatalog: capabilityCatalog(catalog),
 }));
 
-test("os interruptores seguidos passam a linhas de um só cartão", () => {
+test("consecutive switches become rows of one card", () => {
     const root = render(CATALOG);
     const groups = root.querySelectorAll("[data-config-group]");
 
@@ -61,14 +61,14 @@ test("os interruptores seguidos passam a linhas de um só cartão", () => {
     assert.equal(groups[0].querySelectorAll("[data-config-row]").length, 3);
 });
 
-test("o envio é um só, no rodapé da secção, e não um por definição", () => {
+test("there is one send, in the section footer, not one per setting", () => {
     const root = render(CATALOG);
 
     assert.equal(root.querySelectorAll("[data-action=\"saveConfigPane\"]").length, 1);
     assert.equal(root.querySelectorAll("[data-action=\"saveConfig\"]").length, 0);
 });
 
-test("o que não é interruptor continua a ser cartão", () => {
+test("what is not a switch stays a card", () => {
     const root = render(CATALOG);
     const cards = [...root.querySelectorAll("[data-config-section]")]
         .map((s) => s.dataset.configKey);
@@ -77,7 +77,7 @@ test("o que não é interruptor continua a ser cartão", () => {
 });
 
 /** Uma acção dispara e uma definição guarda-se: não se misturam no mesmo grupo. */
-test("uma acção transitória não entra no grupo", () => {
+test("a transient action does not join the group", () => {
     const root = render([
         ...CATALOG.slice(0, 2),
         { ...toggle("find_device", "Encontrar dispositivo", 50), transient: true, category: "health" },
@@ -88,7 +88,7 @@ test("uma acção transitória não entra no grupo", () => {
 });
 
 /** Um interruptor sozinho também é uma linha, para a lista não ter dois desenhos. */
-test("um interruptor sozinho não volta a ser cartão", () => {
+test("a lone switch does not become a card again", () => {
     const root = render([toggle("blood_oxygen_alert", "Alerta de oxigénio no sangue", 10)]);
 
     assert.equal(root.querySelectorAll("[data-config-group] [data-config-row]").length, 1);
@@ -110,7 +110,7 @@ const toggleGroup = (rows) => parseFragment(`
             </div>`).join("")}
     </section>`).querySelector("[data-config-group]");
 
-test("desligar um interruptor envia esse e não o vizinho", () => {
+test("turning one switch off sends that one, not its neighbour", () => {
     const group = toggleGroup([
         { key: "early_dispense", on: true, stored: true },
         { key: "child_lock", on: false, stored: true },
@@ -121,7 +121,7 @@ test("desligar um interruptor envia esse e não o vizinho", () => {
     });
 });
 
-test("com os dois alterados, cada um leva o seu valor", () => {
+test("with both changed, each carries its own value", () => {
     const group = toggleGroup([
         { key: "early_dispense", on: false, stored: true },
         { key: "child_lock", on: true, stored: false },
@@ -133,7 +133,7 @@ test("com os dois alterados, cada um leva o seu valor", () => {
     });
 });
 
-test("sem alterações não se envia nada", () => {
+test("without changes nothing is sent", () => {
     const group = toggleGroup([
         { key: "early_dispense", on: true, stored: true },
         { key: "child_lock", on: true, stored: true },

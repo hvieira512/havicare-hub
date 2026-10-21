@@ -6,10 +6,10 @@ import { readConfigEntryValue } from "../../src/Dashboard/dashboard/devices/conf
 /** A fotografia de uma lista tem de bater com o que o `select` devolve, ou a linha nasce alterada. */
 const zone = { key: "time_zone", input: "select", fields: ["timeZone"] };
 
-test("um fuso com nome fica como texto", () => {
+test("a named time zone stays as text", () => {
     assert.deepEqual(readConfigEntryValue(zone, { timeZone: "Europe/Lisbon" }), { timeZone: "Europe/Lisbon" });
 });
 
-test("um desvio numérico continua número", () => {
+test("a numeric offset stays a number", () => {
     assert.deepEqual(readConfigEntryValue(zone, { timeZone: 100 }), { timeZone: 100 });
 });

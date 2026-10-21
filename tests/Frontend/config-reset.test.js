@@ -19,7 +19,7 @@ function radioPane(pristine) {
         </section>`);
 }
 
-test("o Repor não reescreve o valor das opções de um grupo de rádios", () => {
+test("reset does not rewrite the value of a radio group's options", () => {
     const root = radioPane(JSON.stringify({ mode: "2" }));
 
     resetConfigPane(root);
@@ -27,7 +27,7 @@ test("o Repor não reescreve o valor das opções de um grupo de rádios", () =>
     assert.deepEqual([...root.querySelectorAll("input")].map((input) => input.value), ["1", "2", "3"]);
 });
 
-test("o Repor devolve a marca à opção que estava guardada", () => {
+test("reset puts the tick back on the stored option", () => {
     const root = radioPane(JSON.stringify({ mode: "3" }));
     root.querySelector("input[value=\"1\"]").checked = true;
 
@@ -55,7 +55,7 @@ function resetAfterEditing(entry, desired, meta = {}) {
     return { drawn, restored: fields() };
 }
 
-test("o Repor devolve as horas da janela de oxigénio", () => {
+test("reset restores the hours of the oxygen window", () => {
     const { drawn, restored } = resetAfterEditing(
         { key: "blood_oxygen_window", input: "windowToggle", fields: ["enabled", "range"] },
         { enabled: true, range: "22:00-08:00" },
@@ -64,7 +64,7 @@ test("o Repor devolve as horas da janela de oxigénio", () => {
     assert.deepEqual(restored, drawn);
 });
 
-test("o Repor devolve as horas do sono da Wonlex", () => {
+test("reset restores the Wonlex sleep hours", () => {
     const { drawn, restored } = resetAfterEditing(
         {
             key: "wonlexSleepIntervalOrSwitch",

@@ -5,7 +5,7 @@ import { boolValue } from "../../src/Dashboard/dashboard/devices/config/normaliz
 
 /** O que um aparelho manda por «ligado» não é só `true` e `1`. */
 
-test("os valores canónicos decidem, venham como booleano, número ou texto", () => {
+test("the canonical values decide, whether boolean, number or text", () => {
     for (const on of [true, 1, "1"]) {
         assert.equal(boolValue(on, false), true, JSON.stringify(on));
     }
@@ -14,7 +14,7 @@ test("os valores canónicos decidem, venham como booleano, número ou texto", ()
     }
 });
 
-test("as palavras que os aparelhos mandam também decidem", () => {
+test("the words the devices send also decide", () => {
     for (const on of ["true", "yes", "on", "TRUE", " on "]) {
         assert.equal(boolValue(on, false), true, JSON.stringify(on));
     }
@@ -24,12 +24,12 @@ test("as palavras que os aparelhos mandam também decidem", () => {
 });
 
 /** Um número diferente de zero é ligado: há aparelhos que mandam o nível em vez do bit. */
-test("um número qualquer diferente de zero é ligado", () => {
+test("any non-zero number is on", () => {
     assert.equal(boolValue(2, false), true);
     assert.equal(boolValue(-1, false), true);
 });
 
-test("o que não decide nada fica no valor por omissão", () => {
+test("what decides nothing falls back to the default", () => {
     for (const unknown of [undefined, null, "", "talvez", {}]) {
         assert.equal(boolValue(unknown, true), true, JSON.stringify(unknown));
         assert.equal(boolValue(unknown, false), false, JSON.stringify(unknown));

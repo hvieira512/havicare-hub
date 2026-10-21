@@ -25,7 +25,7 @@ test("4P Touch medication UI escapes values and respects the reminder limit", ()
 });
 
 /** A máscara `0111110` tem o domingo na posição 0: são segunda a sexta. */
-test("4P Touch custom-frequency reminder marca os dias da máscara, e não a máscara", () => {
+test("4P Touch custom-frequency reminder ticks the days of the mask, not the mask", () => {
     const html = takePillsReminderGroup(
         { time: "09:30", enabled: true, frequency: 3, custom: "0111110" },
         0,

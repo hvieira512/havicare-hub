@@ -13,7 +13,7 @@ const ITEMS = [
     { value: "radar", label: "Radar" },
 ];
 
-test("o item escolhido destaca-se dos outros", () => {
+test("the chosen item stands out from the others", () => {
     const root = parseFragment(buttonGroup(ITEMS, "radar", "pickType"));
     const [watch, radar] = root.querySelectorAll("button");
 
@@ -23,7 +23,7 @@ test("o item escolhido destaca-se dos outros", () => {
     assert.equal(radar.dataset.value, "radar");
 });
 
-test("uma lista vazia diz que não há opções, em vez de não desenhar nada", () => {
+test("an empty list says there are no options instead of drawing nothing", () => {
     const root = parseFragment(buttonGroup([], "", "pickType"));
 
     assert.equal(root.querySelectorAll("button").length, 0);

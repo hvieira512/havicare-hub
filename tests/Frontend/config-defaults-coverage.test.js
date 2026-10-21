@@ -45,7 +45,7 @@ const inputsWithDefaults = () =>
         .filter(([, descriptor]) => typeof descriptor.defaults === "function")
         .map(([input]) => input);
 
-test("o valor por omissão de cada tipo de campo lê-se de volta como ele é", () => {
+test("each field type's default reads back as it is", () => {
     for (const input of inputsWithDefaults()) {
         if (input in READ_DIFFERS) continue;
 
@@ -58,7 +58,7 @@ test("o valor por omissão de cada tipo de campo lê-se de volta como ele é", (
 });
 
 /** Uma divergência só vale enquanto for verdade: quando deixar de ser, sai da lista. */
-test("os que divergem divergem mesmo, e os outros estão todos cobertos", () => {
+test("the ones that diverge really diverge, and all the others are covered", () => {
     for (const [input, { kind, why }] of Object.entries(READ_DIFFERS)) {
         const entry = entryFor(input);
         const defaults = defaultConfigPayload(entry, "");

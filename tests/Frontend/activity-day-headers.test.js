@@ -23,7 +23,7 @@ function render(rows) {
     return root;
 }
 
-test("cada dia leva um cabeçalho, e as linhas do mesmo dia ficam debaixo dele", () => {
+test("each day gets a header, and the rows of that day sit under it", () => {
     const root = render([
         row("2026-09-29T15:04:00Z", "Bateria"),
         row("2026-09-29T14:54:00Z", "Atividade"),
@@ -35,7 +35,7 @@ test("cada dia leva um cabeçalho, e as linhas do mesmo dia ficam debaixo dele",
     assert.equal(root.querySelectorAll("tbody tr:not([data-day-header]):not(.telemetry-row-panel)").length, 3);
 });
 
-test("o cabeçalho conta as linhas daquele dia", () => {
+test("the header counts the rows of that day", () => {
     const root = render([
         row("2026-09-29T15:04:00Z", "Bateria"),
         row("2026-09-29T14:54:00Z", "Atividade"),
@@ -49,12 +49,12 @@ test("o cabeçalho conta as linhas daquele dia", () => {
     assert.match(second, /1$/, `o segundo dia tem uma linha: ${second}`);
 });
 
-test("o dia de hoje diz «Hoje» e o de ontem diz «Ontem»", () => {
-    const hoje = new Date();
-    const ontem = new Date(hoje.getTime() - 86400000);
+test("today reads «Hoje» and yesterday reads «Ontem»", () => {
+    const today = new Date();
+    const yesterday = new Date(today.getTime() - 86400000);
     const root = render([
-        row(hoje.toISOString(), "Bateria"),
-        row(ontem.toISOString(), "Atividade"),
+        row(today.toISOString(), "Bateria"),
+        row(yesterday.toISOString(), "Atividade"),
     ]);
 
     const headers = [...root.querySelectorAll("[data-day-header]")]
@@ -64,7 +64,7 @@ test("o dia de hoje diz «Hoje» e o de ontem diz «Ontem»", () => {
     assert.match(headers[1], /^Ontem/i, headers[1]);
 });
 
-test("uma linha sem data não inventa cabeçalho nenhum", () => {
+test("a row without a date invents no header", () => {
     const root = render([{ icon: "fa-question", name: "Sem data", time: "-" }]);
 
     assert.equal(root.querySelectorAll("[data-day-header]").length, 0);

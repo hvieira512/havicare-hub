@@ -29,7 +29,7 @@ function click(container, action) {
 
 const listedOutages = (container) => container.querySelectorAll("[data-connection-outage]").length;
 
-test("uma quebra vai do desligar ao ligar seguinte, e a última sem regresso dura até agora", () => {
+test("a gap runs from a disconnect to the next connect, and the last one without return lasts until now", () => {
     const history = connectionOutages(
         [connected(100), disconnected(80), connected(60), disconnected(20)],
         { now: NOW },
@@ -46,7 +46,7 @@ test("uma quebra vai do desligar ao ligar seguinte, e a última sem regresso dur
     assert.equal(history.uptime, 60 / 100);
 });
 
-test("um desligar repetido não abre segunda quebra, e a ordem de chegada não conta", () => {
+test("a repeated disconnect opens no second gap, and arrival order does not matter", () => {
     const history = connectionOutages(
         [connected(30), disconnected(50), connected(100), disconnected(40)],
         { now: NOW },
@@ -58,7 +58,7 @@ test("um desligar repetido não abre segunda quebra, e a ordem de chegada não c
     );
 });
 
-test("a lista das quebras começa fechada e abre na seta do título", () => {
+test("the gap list starts closed and opens on the title arrow", () => {
     const container = document.createElement("div");
     renderConnectionHistory(container, flappingEvents(3), { now: NOW });
 
@@ -69,7 +69,7 @@ test("a lista das quebras começa fechada e abre na seta do título", () => {
     assert.equal(listedOutages(container), 0);
 });
 
-test("as quebras paginam no desktop e acumulam no «Carregar mais» do telemóvel", () => {
+test("gaps paginate on desktop and accumulate under «Carregar mais» on the phone", () => {
     const container = document.createElement("div");
     renderConnectionHistory(container, flappingEvents(12), { now: NOW });
     click(container, "connectionToggle");
@@ -82,7 +82,7 @@ test("as quebras paginam no desktop e acumulam no «Carregar mais» do telemóve
     assert.equal(container.querySelector("[data-action=\"connectionMore\"]"), null);
 });
 
-test("sem quebras não há nada para abrir", () => {
+test("without gaps there is nothing to open", () => {
     const container = document.createElement("div");
     renderConnectionHistory(container, [connected(90)], { now: NOW });
 
@@ -90,7 +90,7 @@ test("sem quebras não há nada para abrir", () => {
     assert.match(container.textContent, /100\s?%/);
 });
 
-test("sem eventos de ligação a secção diz que não há registo", () => {
+test("without connection events the section says there is no record", () => {
     const container = document.createElement("div");
     renderConnectionHistory(container, [], { now: NOW });
 
@@ -98,7 +98,7 @@ test("sem eventos de ligação a secção diz que não há registo", () => {
     assert.match(container.textContent, /Sem registo de ligações/);
 });
 
-test("uma quebra de segundos numa semana não se lê como 100 %", () => {
+test("a gap of seconds in a week does not read as 100 %", () => {
     const container = document.createElement("div");
     const week = 7 * 24 * 60;
     renderConnectionHistory(
@@ -110,7 +110,7 @@ test("uma quebra de segundos numa semana não se lê como 100 %", () => {
     assert.match(container.textContent, /99,9\s?%/);
 });
 
-test("um aparelho que nunca reporta ligações, como o radar, não mostra a secção", () => {
+test("a device that never reports connections, like the radar, does not show the section", () => {
     const section = document.createElement("section");
     const container = document.createElement("div");
     section.appendChild(container);
@@ -123,7 +123,7 @@ test("um aparelho que nunca reporta ligações, como o radar, não mostra a sec�
     assert.match(container.textContent, /Sem registo de ligações/);
 });
 
-test("cada troço da faixa diz o estado e quando começou e acabou", () => {
+test("each stretch of the band says its state and when it started and ended", () => {
     const container = document.createElement("div");
     renderConnectionHistory(container, [connected(100), disconnected(80), connected(60)], { now: NOW });
 

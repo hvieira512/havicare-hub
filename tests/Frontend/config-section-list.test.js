@@ -59,14 +59,14 @@ const render = () => {
 
 const links = (root) => [...root.querySelectorAll("[data-config-section-link]")];
 
-test("cada linha diz a etiqueta e quantas definições tem", () => {
+test("each row shows the label and how many settings it has", () => {
     const health = links(render())[0];
 
     assert.match(health.textContent, /Saúde/);
     assert.equal(health.querySelector("[data-config-section-total]").textContent.trim(), "2");
 });
 
-test("cada secção tem o seu painel, e só o da secção activa está aberto", () => {
+test("each section has its panel, and only the active one is open", () => {
     const root = render();
     const panes = [...root.querySelectorAll("[data-config-pane]")];
 
@@ -74,7 +74,7 @@ test("cada secção tem o seu painel, e só o da secção activa está aberto", 
     assert.deepEqual(panes.map((pane) => pane.classList.contains("active")), [true, false, false]);
 });
 
-test("a secção com uma definição alterada di-lo na sua linha, e as outras calam-se", () => {
+test("the section with an edited setting says so in its row, and the others stay quiet", () => {
     const root = render();
     initDeviceConfigPanel({ els: {} });
 
@@ -87,7 +87,7 @@ test("a secção com uma definição alterada di-lo na sua linha, e as outras ca
     assert.doesNotMatch(contacts.textContent, /alterada/);
 });
 
-test("trocar de secção não perde o que está escrito e por enviar", () => {
+test("switching section keeps what is typed and unsent", () => {
     const root = render();
     const field = root.querySelector("[data-config-section][data-config-key=\"heart_rate\"] [data-config-field]");
     field.value = "30";
@@ -100,7 +100,7 @@ test("trocar de secção não perde o que está escrito e por enviar", () => {
     assert.equal(field.value, "30");
 });
 
-test("o separador conta as alterações por enviar de todas as secções", () => {
+test("the tab counts the unsent changes of every section", () => {
     const root = render();
     const badge = document.createElement("span");
     badge.className = "d-none";
@@ -120,7 +120,7 @@ test("o separador conta as alterações por enviar de todas as secções", () =>
 const click = (target) => handleDeviceConfigClick({ target, preventDefault() {} });
 
 /** No telemóvel a lista e as definições não cabem juntas: escolher uma secção troca uma pela outra. */
-test("escolher uma secção abre-a, e o voltar regressa à lista sem perder o escrito", () => {
+test("choosing a section opens it, and back returns to the list keeping what was typed", () => {
     state.deviceModal = blankDeviceModal();
     const root = render();
     const configRoot = root.querySelector("[data-config-root]");
@@ -137,7 +137,7 @@ test("escolher uma secção abre-a, e o voltar regressa à lista sem perder o es
     assert.equal(field.value, "3");
 });
 
-test("um redesenho mantém aberta a secção que estava aberta", () => {
+test("a redraw keeps the open section open", () => {
     const html = renderDeviceConfigurationRoot({
         protocol: "veepoo-ble",
         catalog: [entry("heart_rate", "health", "interval")],

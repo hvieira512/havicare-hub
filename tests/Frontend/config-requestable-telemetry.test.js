@@ -20,7 +20,7 @@ test.afterEach(() => {
     state.protocols = [];
 });
 
-test("uma capacidade de telemetria pedível aparece em Sistema", () => {
+test("a requestable telemetry capability appears under Sistema", () => {
     const root = render({
         protocol: "zayata-m228",
         catalog: [{
@@ -52,7 +52,7 @@ test("uma capacidade de telemetria pedível aparece em Sistema", () => {
     );
 });
 
-test("uma capacidade de telemetria que não se pede continua fora do painel", () => {
+test("a telemetry capability that cannot be requested stays out of the panel", () => {
     const root = render({
         protocol: "zayata-m228",
         catalog: [{

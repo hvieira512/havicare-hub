@@ -20,20 +20,20 @@ const device = {
     online: true,
 };
 
-test("o cartão emite a acção que o ouvinte delegado procura", () => {
+test("the card emits the action the delegated listener looks for", () => {
     const markup = deviceCard(device, false);
 
     assert.match(markup, new RegExp(`data-action="${DEVICE_CARD_ACTION}"`));
     assert.match(markup, /data-imei="861265061009822"/);
 });
 
-test("o cartão escolhido marca-se para o leitor de ecrã e para o olho", () => {
+test("the chosen card is marked for screen readers and for the eye", () => {
     assert.match(deviceCard(device, true), /aria-current="true"/);
 
     assert.ok(!deviceCard(device, false).includes("aria-current"));
 });
 
-test("um campo do dispositivo com marcação sai inerte", () => {
+test("a device field with markup comes out inert", () => {
     const hostile = {
         ...device,
         model: "<img src=x onerror=alert(1)>",
@@ -48,7 +48,7 @@ test("um campo do dispositivo com marcação sai inerte", () => {
 });
 
 /** A pastilha diz se está a falar agora; a linha por baixo diz desde quando. */
-test("o cartão diz quando o aparelho falou pela última vez", () => {
+test("the card says when the device last spoke", () => {
     const markup = deviceCard(
         { ...device, online: false, lastSeenAt: new Date(Date.now() - 3 * 3600 * 1000).toISOString() },
         false,
@@ -58,7 +58,7 @@ test("o cartão diz quando o aparelho falou pela última vez", () => {
     assert.match(markup, /há 3h/);
 });
 
-test("um aparelho que nunca falou di-lo, em vez de uma data que não existe", () => {
+test("a device that never spoke says so instead of a date that does not exist", () => {
     const markup = deviceCard({ ...device, online: false, lastSeenAt: null }, false);
 
     assert.match(markup, /sem registo/i);

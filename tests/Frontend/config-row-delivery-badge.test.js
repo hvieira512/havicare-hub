@@ -12,7 +12,7 @@ import {
  * acompanhar a entrega — senão o cartão diz «A aguardar» até alguém reabrir o modal.
  */
 
-const confirmado = {
+const confirmed = {
     entries: {
         settings_system: {
             key_tone: { status: "confirmed", operations: [] },
@@ -20,31 +20,31 @@ const confirmado = {
     },
 };
 
-const bloco = (attr) => parseFragment(`
+const block = (attr) => parseFragment(`
     <div ${attr} data-config-key="key_tone" data-capability-key="key_tone" data-config-stored="1">
         <span class="config-when-clean"><span class="state-badge badge-warning">A aguardar</span></span>
         <span class="config-when-changed"><span class="state-badge badge-warning">Alterado</span></span>
     </div>`);
 
-test("a pastilha de uma linha acompanha a entrega, como a de uma secção", () => {
-    const row = bloco("data-config-row");
+test("a row's badge follows the delivery, like a section's", () => {
+    const row = block("data-config-row");
 
-    patchConfigurationDeliveryStates(row, confirmado);
+    patchConfigurationDeliveryStates(row, confirmed);
 
     assert.match(row.querySelector(".config-when-clean").textContent, /Aplicado/);
 });
 
-test("a de uma secção continua a acompanhar", () => {
-    const section = bloco("data-config-section");
+test("a section's badge still follows it", () => {
+    const section = block("data-config-section");
 
-    patchConfigurationDeliveryStates(section, confirmado);
+    patchConfigurationDeliveryStates(section, confirmed);
 
     assert.match(section.querySelector(".config-when-clean").textContent, /Aplicado/);
 });
 
 /** A linha é compacta de propósito: não leva o aviso de entrega que a secção leva. */
-test("uma linha não ganha aviso de entrega", () => {
-    const row = bloco("data-config-row");
+test("a row gets no delivery notice", () => {
+    const row = block("data-config-row");
 
     patchConfigurationDeliveryStates(row, {
         entries: { settings_system: { key_tone: { status: "failed", error: "recusado", operations: [] } } },

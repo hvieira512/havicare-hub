@@ -22,7 +22,7 @@ const ACTION = {
 const render = (uiState) =>
     renderConfigSection("veepoo-ble", ACTION, null, {}, false, uiState);
 
-test("o cartão não mostra caixa de sucesso: quem conta isso é a pastilha", () => {
+test("the card shows no success box: the badge tells that", () => {
     const html = render({
         phase: "sent",
         feedback: { tone: "success", message: "Pedido enviado ao dispositivo." },
@@ -32,7 +32,7 @@ test("o cartão não mostra caixa de sucesso: quem conta isso é a pastilha", ()
     assert.ok(!/alert-success/.test(html), "não devia haver caixa verde nenhuma");
 });
 
-test("uma falha continua a ser dita, que é o que a pastilha não consegue", () => {
+test("a failure is still said, which the badge cannot do", () => {
     const html = render({
         phase: "idle",
         feedback: { tone: "danger", message: "Falha ao enviar configuração" },
@@ -42,6 +42,6 @@ test("uma falha continua a ser dita, que é o que a pastilha não consegue", () 
     assert.ok(/alert-danger/.test(html));
 });
 
-test("sem mensagem nenhuma, não há caixa", () => {
+test("without any message there is no box", () => {
     assert.ok(!/alert-dismissible/.test(render(null)));
 });

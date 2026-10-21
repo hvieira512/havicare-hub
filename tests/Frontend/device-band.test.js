@@ -37,7 +37,7 @@ function select(els, detail) {
     renderSelection();
 }
 
-test("a banda diz o IMEI, o estado, o modelo e a licença do dispositivo escolhido", () => {
+test("the band says the IMEI, status, model and licence of the chosen device", () => {
     const els = detailEls();
 
     select(els, { device, model, capabilities: {} });
@@ -48,7 +48,7 @@ test("a banda diz o IMEI, o estado, o modelo e a licença do dispositivo escolhi
     assert.equal(els.deviceBand.classList.contains("d-none"), false);
 });
 
-test("desligado e sem licença, a banda continua a dizer o que sabe", () => {
+test("offline and without a licence, the band still says what it knows", () => {
     const els = detailEls();
 
     select(els, {
@@ -61,7 +61,7 @@ test("desligado e sem licença, a banda continua a dizer o que sabe", () => {
     assert.equal(els.deviceBandDot.getAttribute("aria-label"), "Desligado");
 });
 
-test("sem dispositivo escolhido, a banda e os separadores saem", () => {
+test("with no device chosen, the band and the tabs go away", () => {
     const els = detailEls();
     initDeviceDetailView({ els });
     state.selectedDetail = null;

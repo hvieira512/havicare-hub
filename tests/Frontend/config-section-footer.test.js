@@ -62,7 +62,7 @@ const pane = (root) => root.querySelector("[data-config-pane=\"health\"]");
 const fieldOf = (root, key) =>
     root.querySelector(`[data-config-section][data-config-key="${key}"] [data-config-field]`);
 
-test("uma definição deixa de ter o seu próprio botão de enviar", () => {
+test("a setting no longer has its own send button", () => {
     const root = render();
 
     assert.equal(
@@ -71,7 +71,7 @@ test("uma definição deixa de ter o seu próprio botão de enviar", () => {
     );
 });
 
-test("uma acção mantém o botão, que é o único sítio onde ela acontece", () => {
+test("an action keeps its button, the only place it happens", () => {
     const root = render();
 
     assert.equal(
@@ -80,7 +80,7 @@ test("uma acção mantém o botão, que é o único sítio onde ela acontece", (
     );
 });
 
-test("a secção tem um rodapé só, com repor e enviar", () => {
+test("the section has one footer, with reset and send", () => {
     const footers = pane(render()).querySelectorAll(".config-section-footer");
 
     assert.equal(footers.length, 1);
@@ -88,7 +88,7 @@ test("a secção tem um rodapé só, com repor e enviar", () => {
     assert.ok(footers[0].querySelector("[data-action=\"saveConfigPane\"]"));
 });
 
-test("o rodapé diz quantas alterações estão por enviar, e só acende com elas", () => {
+test("the footer says how many changes are unsent, and only lights up with them", () => {
     const root = render();
     const send = pane(root).querySelector("[data-action=\"saveConfigPane\"]");
 
@@ -103,14 +103,14 @@ test("o rodapé diz quantas alterações estão por enviar, e só acende com ela
     assert.match(pane(root).querySelector("[data-config-pane-status]").textContent, /1 alteração por enviar/);
 });
 
-test("o envio da secção leva só o que mudou", () => {
+test("the section's send carries only what changed", () => {
     const root = render();
     fieldOf(root, "step_goal").value = "12000";
 
     assert.deepEqual(changedConfigEntries(pane(root)), { step_goal: { steps: 12000 } });
 });
 
-test("repor devolve os campos ao valor que lá estava", () => {
+test("reset returns the fields to the value they had", () => {
     const root = render();
     fieldOf(root, "heart_rate").value = "30";
     fieldOf(root, "step_goal").value = "12000";

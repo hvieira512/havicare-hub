@@ -23,7 +23,7 @@ test.afterEach(() => {
     state.protocols = [];
 });
 
-test("as capacidades agrupadas colapsam as chaves nativas numa entrada só", () => {
+test("grouped capabilities collapse the native keys into one entry", () => {
     state.protocols = [{
         protocol: "wonlex-json",
         dashboard: { groupedCapabilities: { phonebook: { label: "Contactos", limit: 10 } } },
@@ -64,7 +64,7 @@ test("as capacidades agrupadas colapsam as chaves nativas numa entrada só", () 
     );
 });
 
-test("as secções saem pela ordem do catálogo de secções, e não pela do catálogo", () => {
+test("sections come out in the order of the section catalog, not the catalog", () => {
     const entry = (key, section) => ({
         key,
         capabilityKey: key,
@@ -97,7 +97,7 @@ test("as secções saem pela ordem do catálogo de secções, e não pela do cat
     );
 });
 
-test("quem não é configurável nem pedível cai, e o pedível entra sem estado guardado", () => {
+test("what is neither configurable nor requestable drops out, and the requestable enters with no stored state", () => {
     const entry = (key) => ({
         key,
         capabilityKey: key,
@@ -133,7 +133,7 @@ test("quem não é configurável nem pedível cai, e o pedível entra sem estado
     );
 });
 
-test("o alarm_clock traz rótulo, espécie e secção próprios, seja qual for o catálogo", () => {
+test("alarm_clock brings its own label, kind and section, whatever the catalog", () => {
     const root = render({
         protocol: "veepoo-ble",
         catalog: [{

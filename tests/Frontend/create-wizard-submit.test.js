@@ -57,7 +57,7 @@ beforeEach(() => {
     initCreateWizard({ els, wizardModal });
 });
 
-test("criar sem gateways fecha o assistente e não devolve erro", async () => {
+test("creating without gateways closes the wizard and returns no error", async () => {
     respondWith((url) => (url.startsWith("/api/devices?") || url === "/api/devices"
         ? emptyListing()
         : jsonResponse(200, { status: "ok" })));
@@ -69,7 +69,7 @@ test("criar sem gateways fecha o assistente e não devolve erro", async () => {
 });
 
 /** O dispositivo ficou criado: oferecer «Criar» outra vez só daria 409. */
-test("um gateway que falhe a autorizar não deixa o assistente aberto", async () => {
+test("a gateway that fails to authorize does not leave the wizard open", async () => {
     respondWith((url) => {
         if (url.includes("/links")) return jsonResponse(500, { error: { code: "gateway_gone" } });
         if (url.startsWith("/api/devices?") || url === "/api/devices") return emptyListing();
@@ -82,7 +82,7 @@ test("um gateway que falhe a autorizar não deixa o assistente aberto", async ()
     assert.equal(hidden, 1, "o dispositivo existe, por isso o assistente fecha-se");
 });
 
-test("o gateway que ficou por autorizar é dito, e nomeado", async () => {
+test("the gateway left unauthorized is reported, by name", async () => {
     respondWith((url) => {
         if (url.includes("/links")) return jsonResponse(500, { error: { code: "gateway_gone" } });
         if (url.startsWith("/api/devices?") || url === "/api/devices") return emptyListing();
@@ -98,7 +98,7 @@ test("o gateway que ficou por autorizar é dito, e nomeado", async () => {
 });
 
 /** Uma criação recusada é outra coisa: não há nada feito, e o assistente fica para se corrigir. */
-test("se a criação falhar, o assistente fica aberto com o erro", async () => {
+test("if creation fails the wizard stays open with the error", async () => {
     respondWith(() => jsonResponse(409, { error: { code: "conflict" } }));
 
     const error = await createDeviceFromWizard(answersFor([]));

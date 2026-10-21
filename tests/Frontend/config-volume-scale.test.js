@@ -24,7 +24,7 @@ const entry = {
 
 const render = (desired) => parseFragment(CONFIG_INPUTS.volumeScale.render(entry, desired));
 
-test("desenha um botão por opção, com o rótulo à vista", () => {
+test("draws one button per option, with the label visible", () => {
     const root = render({ volume: 1 });
 
     assert.deepEqual(
@@ -33,7 +33,7 @@ test("desenha um botão por opção, com o rótulo à vista", () => {
     );
 });
 
-test("a opção escolhida é a que fica marcada", () => {
+test("the chosen option is the marked one", () => {
     const root = render({ volume: 2 });
     const checked = [...root.querySelectorAll("input[type=radio]")].filter((el) => el.checked);
 
@@ -41,20 +41,20 @@ test("a opção escolhida é a que fica marcada", () => {
     assert.equal(checked[0].getAttribute("value"), "2");
 });
 
-test("sem valor escolhido parte do que a definição declara", () => {
+test("without a chosen value it starts from what the setting declares", () => {
     const root = render({});
     const checked = [...root.querySelectorAll("input[type=radio]")].filter((el) => el.checked);
 
     assert.equal(checked[0].getAttribute("value"), "0");
 });
 
-test("o valor volta como número, que é o que a TAG leva", () => {
+test("the value comes back as a number, which is what the TAG carries", () => {
     const root = render({ volume: 3 });
 
     assert.deepEqual(CONFIG_INPUTS.volumeScale.read(root), { volume: 3 });
 });
 
-test("os botões do mesmo cartão não se misturam com os de outro", () => {
+test("the buttons of one card do not mix with another card's", () => {
     const first = render({ volume: 0 });
     const second = render({ volume: 0 });
     const groupName = (root) => root.querySelector("input[type=radio]").getAttribute("name");

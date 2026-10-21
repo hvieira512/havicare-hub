@@ -4,9 +4,7 @@ import test from "node:test";
 import { parseFragment } from "./support/dom.js";
 import { renderConfigSection } from "../../src/Dashboard/dashboard/devices/config/index.js";
 
-/** Uma acção sem parâmetros tem um verbo e o estado do último pedido, e nada para editar. */
-// O `command` entra porque as vinte e uma acções do catálogo o têm: sem ele o cartão toma-a
-// por uma definição que o hub aplica sozinho, e o botão diz «Guardar» em vez de «Enviar».
+// Sem `command` o cartão toma a acção por uma definição que o hub aplica sozinho.
 const FIND_DEVICE = {
     key: "findDeviceCommand",
     capabilityKey: "find_device",
@@ -19,7 +17,7 @@ const FIND_DEVICE = {
 
 const sectionOf = (entry) => parseFragment(renderConfigSection("wonlex-json", entry, null));
 
-test("a acção não repete o título dentro de um alerta", () => {
+test("the action does not repeat the title inside an alert", () => {
     const section = sectionOf(FIND_DEVICE);
 
     assert.equal(section.querySelectorAll(".alert").length, 0);
@@ -29,14 +27,14 @@ test("a acção não repete o título dentro de um alerta", () => {
     assert.equal(section.querySelectorAll("textarea").length, 0);
 });
 
-test("uma acção sem campos não tem botão de repor", () => {
+test("an action without fields has no reset button", () => {
     const section = sectionOf(FIND_DEVICE);
 
     assert.equal(section.querySelectorAll("button[type=\"reset\"]").length, 0);
 });
 
 /** «Reposição de fábrica» num botão não diz o que o clique faz: manda o verbo declarado. */
-test("um rótulo que é um nome leva o verbo declarado na definição", () => {
+test("a label that is a name takes the verb declared in the setting", () => {
     const section = sectionOf({
         key: "factoryResetCommand",
         capabilityKey: "reset_device",
@@ -53,7 +51,7 @@ test("um rótulo que é um nome leva o verbo declarado na definição", () => {
     assert.match(section.querySelector(".fw-semibold").textContent, /Reposição de fábrica/);
 });
 
-test("sem verbo declarado, o botão diz Enviar e não repete o título", () => {
+test("without a declared verb the button says Enviar and does not repeat the title", () => {
     const button = sectionOf(FIND_DEVICE).querySelector("[data-action=\"saveConfig\"]");
 
     assert.equal(button.textContent.trim(), "Enviar");

@@ -23,32 +23,32 @@ const ACTION = {
 
 const root = (entry) => parseFragment(renderConfigSection("veepoo-ble", entry, null)).firstElementChild;
 const buttons = (el) => [...el.querySelectorAll("[data-action=\"saveConfig\"]")]
-    .map((b) => ({ texto: b.textContent.trim(), valor: b.dataset.actionValue }));
+    .map((b) => ({ text: b.textContent.trim(), value: b.dataset.actionValue }));
 
-test("os dois verbos aparecem como botões", () => {
+test("both verbs appear as buttons", () => {
     const actionButtons = buttons(root(ACTION));
 
     assert.deepEqual(actionButtons, [
-        { texto: "Fazer vibrar", valor: "on" },
-        { texto: "Parar", valor: "off" },
+        { text: "Fazer vibrar", value: "on" },
+        { text: "Parar", value: "off" },
     ]);
 });
 
-test("não há interruptor a fingir que a acção tem estado guardado", () => {
+test("there is no switch pretending the action has a stored state", () => {
     assert.equal(root(ACTION).querySelector("input[type=\"checkbox\"]"), null);
 });
 
-test("sem verbos declarados, o cartão não muda", () => {
+test("without declared verbs the card does not change", () => {
     const withoutVerbs = { ...ACTION };
     delete withoutVerbs.actions;
     const el = root(withoutVerbs);
 
     assert.ok(el.querySelector("input[type=\"checkbox\"]"), "devia continuar a ter o interruptor");
-    assert.deepEqual(buttons(el).map((b) => b.valor), [undefined]);
+    assert.deepEqual(buttons(el).map((b) => b.value), [undefined]);
 });
 
 /** Um botão «Parar» não tem formulário: o valor que envia está no próprio botão. */
-test("cada verbo envia o seu valor", () => {
+test("each verb sends its own value", () => {
     const section = parseFragment(
         "<section data-config-section data-config-action-field=\"enabled\"></section>",
     ).firstElementChild;
@@ -57,7 +57,7 @@ test("cada verbo envia o seu valor", () => {
     assert.deepEqual(configActionPayload(section, "off"), { enabled: false });
 });
 
-test("sem verbo, o valor vem do formulário como sempre", () => {
+test("without a verb the value comes from the form as always", () => {
     const section = parseFragment("<section data-config-section></section>").firstElementChild;
 
     assert.equal(configActionPayload(section, ""), null);

@@ -30,7 +30,7 @@ const openStream = async (imei, chunks) => {
 
 const frame = (name, data) => `event: ${name}\ndata: ${JSON.stringify(data)}\n\n`;
 
-test("um frame partido entre dois chunks chega inteiro", async () => {
+test("a frame split across two chunks arrives whole", async () => {
     const snapshot = frame("snapshot", {
         telemetry: [row(3), row(2), row(1)],
         events: [],
@@ -49,7 +49,7 @@ test("um frame partido entre dois chunks chega inteiro", async () => {
     );
 });
 
-test("dois frames no mesmo chunk são ambos entregues", async () => {
+test("two frames in the same chunk are both delivered", async () => {
     const snapshot = frame("snapshot", {
         telemetry: [row(1)],
         events: [],
@@ -72,7 +72,7 @@ test("dois frames no mesmo chunk são ambos entregues", async () => {
     );
 });
 
-test("as linhas de keep-alive não contam como frames", async () => {
+test("keep-alive lines do not count as frames", async () => {
     const snapshot = frame("snapshot", {
         telemetry: [row(1)],
         events: [],
@@ -87,7 +87,7 @@ test("as linhas de keep-alive não contam como frames", async () => {
     assert.deepEqual(state.selectedDetail.recent.telemetry, [row(1)]);
 });
 
-test("um frame malformado é saltado e não derruba os seguintes", async () => {
+test("a malformed frame is skipped and does not take down the next ones", async () => {
     const snapshot = frame("snapshot", { telemetry: [row(1)], events: [], commands: [], limit: 100 });
     // Um `data:` com JSON inválido -- o que um byte perdido no fio produz.
     const garbage = "event: update\ndata: {isto nao e json\n\n";

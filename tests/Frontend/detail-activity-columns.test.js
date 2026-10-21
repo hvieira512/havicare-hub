@@ -34,7 +34,7 @@ const downlinkRequest = {
 
 const hidden = (element) => element.classList.contains("d-none");
 
-test("sem pedidos saem a coluna, a régua e o separador dos pedidos", () => {
+test("without requests the request column, ruler and tab go away", () => {
     const els = detailEls();
     initDeviceDetailView({ els });
     state.downlinkPage = 1;
@@ -46,7 +46,7 @@ test("sem pedidos saem a coluna, a régua e o separador dos pedidos", () => {
     assert.equal(hidden(els.deviceTabRequests), true);
 });
 
-test("com pedidos voltam os três", () => {
+test("with requests all three come back", () => {
     const els = detailEls();
     initDeviceDetailView({ els });
     state.downlinkPage = 1;

@@ -13,12 +13,12 @@ const WITHOUT_MASTER = { input: "alarm_clock", key: "alarm_clock", fields: ["ite
 
 const masterOf = (section) => section.querySelector("[data-alarm-clock-field=\"masterEnabled\"]");
 
-test("quem declara o interruptor mestre desenha-o", () => {
+test("a protocol that declares the master switch draws it", () => {
     assert.ok(masterOf(configSection(renderConfigInputs, WITH_MASTER, {}, {})), "a Vivistar tem-no");
     assert.equal(masterOf(configSection(renderConfigInputs, WITHOUT_MASTER, {}, {})), null, "os outros não");
 });
 
-test("o interruptor mestre vai no payload com o estado que está no ecrã", () => {
+test("the master switch goes in the payload with the state on screen", () => {
     const on = configSection(renderConfigInputs, WITH_MASTER, { masterEnabled: true }, {});
     assert.equal(readConfigPayload(on).masterEnabled, true);
 
@@ -28,7 +28,7 @@ test("o interruptor mestre vai no payload com o estado que está no ecrã", () =
 });
 
 /** Sem o campo declarado o payload não o inventa: o aparelho não o conhece. */
-test("quem não o declara não o manda", () => {
+test("a protocol that does not declare it does not send it", () => {
     const payload = readConfigPayload(configSection(renderConfigInputs, WITHOUT_MASTER, {}, {}));
 
     assert.ok(!("masterEnabled" in payload), `veio na mesma: ${JSON.stringify(payload)}`);

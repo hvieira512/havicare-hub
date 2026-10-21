@@ -29,7 +29,7 @@ function trail(badges, currentKey = "") {
     return parseFragment(wizardTrailHtml({ questions: TRAIL_QUESTIONS, badges, currentKey }));
 }
 
-test("uma resposta na trilha é um botão que volta àquela pergunta", () => {
+test("an answer in the trail is a button back to that question", () => {
     // Cada badge volta à sua pergunta, sem refazer as que vêm depois.
     const root = trail([{ key: "type", label: "Tipo", value: "Relógio" }], "model");
 
@@ -40,7 +40,7 @@ test("uma resposta na trilha é um botão que volta àquela pergunta", () => {
     assert.match(answered.textContent, /Relógio/);
 });
 
-test("as perguntas por responder ficam na trilha, e a activa distingue-se", () => {
+test("unanswered questions stay in the trail, and the active one stands out", () => {
     // Todas as perguntas aparecem: só as respondidas deixariam a linha vazia ao abrir.
     const root = trail([], "type");
 
@@ -55,7 +55,7 @@ test("as perguntas por responder ficam na trilha, e a activa distingue-se", () =
     assert.equal(root.querySelectorAll("[data-wizard-reopen]").length, 0);
 });
 
-test("o passo em que se está não é botão, mesmo já respondido", () => {
+test("the current step is not a button, even when answered", () => {
     // Voltar a um passo dado abre lá a pergunta outra vez: o valor está marcado na grelha
     // por baixo, e a migalha diz onde se está em vez de oferecer um salto para o mesmo sítio.
     const root = trail([{ key: "type", label: "Tipo", value: "Relógio" }], "type");
@@ -64,7 +64,7 @@ test("o passo em que se está não é botão, mesmo já respondido", () => {
     assert.equal(root.querySelector(".wizard-badge-now").textContent.trim(), "Tipo");
 });
 
-test("a barra tem um traço por passo, e os já feitos preenchidos", () => {
+test("the bar has one segment per step, with the done ones filled", () => {
     const root = parseFragment(wizardProgressHtml(3, 5));
 
     const bars = [...root.querySelectorAll(".wizard-progress > *")];
@@ -78,7 +78,7 @@ test("a barra tem um traço por passo, e os já feitos preenchidos", () => {
     assert.equal(root.firstElementChild.getAttribute("aria-valuemax"), "5");
 });
 
-test("o card escolhido fica marcado, e é o único", () => {
+test("the chosen card is marked, and it is the only one", () => {
     const root = parseFragment(
         cardGrid("Escolha", [
             { attrs: html`data-x="a"`, label: "A", selected: false },
@@ -91,7 +91,7 @@ test("o card escolhido fica marcado, e é o único", () => {
     assert.equal(cards[1].getAttribute("aria-pressed"), "true");
 });
 
-test("os tipos de dispositivo saem todos, com o número de modelos de cada um", () => {
+test("every device type comes out, with its model count", () => {
     const root = parseFragment(
         deviceTypeCardsHtml({
             attrsFor: (value) => html`data-type="${value}"`,
@@ -114,7 +114,7 @@ test("os tipos de dispositivo saem todos, com o número de modelos de cada um", 
     );
 });
 
-test("sem contagem não sai subtítulo nenhum: no modal de edição não há nada para contar", () => {
+test("without a count there is no subtitle: the edit modal has nothing to count", () => {
     const root = parseFragment(
         deviceTypeCardsHtml({ attrsFor: (value) => html`data-type="${value}"`, selected: "watch" }),
     );
@@ -122,7 +122,7 @@ test("sem contagem não sai subtítulo nenhum: no modal de edição não há nad
     assert.equal(root.querySelector(".wizard-card-sub"), null);
 });
 
-test("o card do modelo leva fotografia, o nome comercial e o modelo interno", () => {
+test("the model card carries the photo, the commercial name and the internal model", () => {
     const models = [
         { supplier: "4P Touch", internalModel: "Y6S", commercialName: "R03", image: "/img/r03.png" },
         // Comercial igual ao interno: escrevê-lo duas vezes não acrescenta nada.
@@ -142,7 +142,7 @@ test("o card do modelo leva fotografia, o nome comercial e o modelo interno", ()
     assert.equal(second.classList.contains("selected"), true);
 });
 
-test("o fornecedor escolhido é o que está marcado, e a contagem é opcional", () => {
+test("the chosen supplier is the marked one, and the count is optional", () => {
     const root = parseFragment(
         supplierCardsHtml({
             suppliers: ["4P Touch", "Wonlex"],
@@ -162,7 +162,7 @@ test("o fornecedor escolhido é o que está marcado, e a contagem é opcional", 
  * O radar publica em `radar/{licenseId}/{uid}` e a notificação traz a licença de um radar por
  * registar; a escolha é o par empresa+licença, e o número sozinho pode não chegar.
  */
-test("a licença da notificação ganha a empresa a que pertence", () => {
+test("the notification's licence gets the company it belongs to", () => {
     const tree = [
         { company: "havicare", licenses: [{ licenseId: "1", name: "hc.dev" }] },
         { company: "hitcare", licenses: [{ licenseId: "1001", name: "gucc.dev" }, { licenseId: "2103", name: "" }] },
@@ -172,7 +172,7 @@ test("a licença da notificação ganha a empresa a que pertence", () => {
     assert.deepEqual(ownerFromLicense("1001", tree), { company: "hitcare", licenseId: "1001" });
 });
 
-test("uma licença que não existe na árvore não pré-seleciona nada", () => {
+test("a licence missing from the tree preselects nothing", () => {
     const tree = [{ company: "hitcare", licenses: [{ licenseId: "1001", name: "gucc.dev" }] }];
 
     // A 2051 existe no broker e não na base de dados: ninguém a criou ainda.
@@ -181,10 +181,10 @@ test("uma licença que não existe na árvore não pré-seleciona nada", () => {
     assert.equal(ownerFromLicense(null, tree), null);
 });
 
-test("o mesmo número em duas empresas fica por escolher", () => {
+test("the same number in two companies stays unchosen", () => {
     const tree = [
         { company: "havicare", licenses: [{ licenseId: "22", name: "hc.simplificado" }] },
-        { company: "hitcare", licenses: [{ licenseId: "22", name: "outra" }] },
+        { company: "hitcare", licenses: [{ licenseId: "22", name: "other" }] },
     ];
 
     // Escolher mal aqui põe o dispositivo na empresa errada sem ninguém reparar.
@@ -192,7 +192,7 @@ test("o mesmo número em duas empresas fica por escolher", () => {
 });
 
 /** Com dois clientes no mesmo número de licença, só a empresa desempata. */
-test("a empresa da notificação desempata o número repetido", () => {
+test("the notification's company breaks the tie on a repeated number", () => {
     const tree = [
         { company: "havicare", licenses: [{ licenseId: "1001", name: "hc" }] },
         { company: "hitcare", licenses: [{ licenseId: "1001", name: "gucc.dev" }] },

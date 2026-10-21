@@ -35,28 +35,28 @@ const sendEnabled = (el) => {
     return !el.querySelector("[data-action=\"saveConfig\"]").disabled;
 };
 
-test("sem alterações e sem falha, não há nada para enviar", () => {
+test("with no changes and no failure there is nothing to send", () => {
     assert.equal(sendEnabled(section()), false);
 });
 
-test("com o valor alterado, envia-se", () => {
+test("with the value changed, it is sent", () => {
     assert.equal(sendEnabled(section({ value: 2 })), true);
 });
 
-test("uma entrega falhada pode ser repetida sem se mexer no valor", () => {
+test("a failed delivery can be retried without touching the value", () => {
     assert.equal(sendEnabled(section({ delivery: "failed" })), true);
 });
 
-test("uma definição nunca enviada continua a poder sair do ecrã", () => {
+test("a setting never sent can still be sent from the screen", () => {
     assert.equal(sendEnabled(section({ stored: "0" })), true);
 });
 
-test("uma acção sem parâmetros pode ser enviada", () => {
+test("an action without parameters can be sent", () => {
     assert.equal(sendEnabled(actionSection("action")), true);
 });
 
 /** O «Encontrar dispositivo» da Veepoo é um interruptor mas é uma acção: manda ser transiente. */
-test("uma acção com campos continua a poder ser enviada sem os mexer", () => {
+test("an action with fields can still be sent without touching them", () => {
     const root = actionSection(
         "toggle",
         "<input type=\"checkbox\" data-config-field=\"enabled\" checked>",

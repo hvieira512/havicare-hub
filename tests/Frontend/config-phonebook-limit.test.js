@@ -18,7 +18,7 @@ const PHONEBOOK = {
 const render = () => parseFragment(renderConfigSection("four-p-touch", PHONEBOOK, { contacts: [] }, {}, false, null, true))
     .querySelector("[data-config-section]");
 
-test("o contador acompanha as linhas acrescentadas", () => {
+test("the counter follows the added rows", () => {
     const section = render();
 
     appendRepeatRow(section, "contacts");

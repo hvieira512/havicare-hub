@@ -19,14 +19,14 @@ const LOCATION_INTERVAL = {
 
 const sectionOf = (entry) => parseFragment(renderConfigSection("wonlex-json", entry, null));
 
-test("uma definição de campo estreito desenha o campo e mais nada", () => {
+test("a narrow-field setting draws the field and nothing else", () => {
     const section = sectionOf(LOCATION_INTERVAL);
 
     assert.ok(section.querySelector("input[type=\"number\"]"), "a definição devia desenhar o campo");
     assert.equal(section.querySelectorAll("button").length, 0);
 });
 
-test("a unidade que o rótulo carregava fica ao lado do controlo", () => {
+test("the unit the label carried sits beside the control", () => {
     const section = sectionOf({
         key: "wonlexHeartRateInterval",
         capabilityKey: "heart_rate_measurement_interval",
@@ -38,14 +38,14 @@ test("a unidade que o rótulo carregava fica ao lado do controlo", () => {
     assert.match(section.textContent, /\bmin\b/);
 });
 
-test("o campo continua a ter nome para quem não o vê", () => {
+test("the field still has a name for screen readers", () => {
     const input = sectionOf(LOCATION_INTERVAL).querySelector("input[type=\"number\"]");
 
     assert.equal(input.getAttribute("aria-label"), "Intervalo de localização");
 });
 
 /** O tom de pele da Veepoo vai de 1 a 6, e o aparelho recusa o zero. */
-test("o valor por omissão respeita o mínimo que a definição declara", () => {
+test("the default respects the minimum the setting declares", () => {
     const skinTone = {
         key: "skin_tone",
         label: "Tom de pele",
