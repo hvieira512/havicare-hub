@@ -68,7 +68,6 @@ require_once __DIR__ . '/components/modal.php';
     </div>
 
     <script type="application/json" id="hub-device-types"><?= \Hub\Domain\DeviceTypeCatalog::asJson() ?></script>
-    <script type="application/json" id="hub-amcharts-license"><?= json_encode($amchartsLicense ?? '') ?></script>
     <script src="/assets/vendor/bootstrap/bootstrap.bundle.min.js"></script>
     <script src="/assets/vendor/sweetalert2/sweetalert2.all.min.js"></script>
     <script type="module" src="<?= $asset('main.js') ?>"></script>

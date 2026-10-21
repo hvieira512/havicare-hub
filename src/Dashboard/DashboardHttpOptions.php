@@ -13,7 +13,6 @@ final class DashboardHttpOptions
         public readonly int $apiRefreshTokenTtlSeconds = 2592000,
         public readonly int $maxOpenStreams = 200,
         public readonly int $maxOpenStreamsPerUser = 5,
-        public readonly string $amchartsLicense = '',
     ) {
     }
 
@@ -26,7 +25,6 @@ final class DashboardHttpOptions
             apiRefreshTokenTtlSeconds: (int)$dashboard['api_refresh_token_ttl_seconds'],
             maxOpenStreams: (int)$dashboard['max_open_streams'],
             maxOpenStreamsPerUser: (int)$dashboard['max_open_streams_per_user'],
-            amchartsLicense: (string)($dashboard['amcharts_license'] ?? ''),
         );
     }
 }

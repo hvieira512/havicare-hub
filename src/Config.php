@@ -96,9 +96,6 @@ class Config
                 'api_token_ttl_seconds' => (int)(getenv('DASHBOARD_API_TOKEN_TTL_SECONDS') ?: 3600),
                 'api_refresh_token_ttl_seconds' => (int)(getenv('DASHBOARD_API_REFRESH_TOKEN_TTL_SECONDS') ?: 2592000),
                 'history_limit' => (int)(getenv('DASHBOARD_HISTORY_LIMIT') ?: 100),
-                // A licença do amCharts, que desenha os sinais vitais de um radar sem o logótipo dela. É a
-                // chave do gucc, e não vive no repositório.
-                'amcharts_license' => (string)(getenv('AMCHARTS_LICENSE') ?: ''),
                 // Vazio mantém a política aberta, segura enquanto a autenticação for `Bearer` em cabeçalho
                 // e não cookie.
                 'cors_allowed_origins' => array_values(array_filter(array_map(

@@ -836,10 +836,17 @@
     height: 36px;
 }
 
-/* O chão de um gráfico de sinal vital; daí para cima cresce com o cartão. A tela monta-se no
-   `shown.bs.modal` porque o amCharts mede o contentor uma vez -- ver `resizeVitals`. */
+/* O chão de um gráfico de sinal vital; daí para cima cresce com o cartão, e o SVG estica-se a ele. */
 .radar-vital-chart {
+    position: relative;
     min-height: 6rem;
+}
+
+.radar-vital-sparkline {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
 }
 
 /* O editor das áreas: ver `devices/radar-area-editor.js`. A cor do tipo vem na borda esquerda. */
