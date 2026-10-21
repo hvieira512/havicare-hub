@@ -836,17 +836,99 @@
     height: 36px;
 }
 
-/* O chão de um gráfico de sinal vital; daí para cima cresce com o cartão, e o SVG estica-se a ele. */
+/* O chão de um gráfico de sinal vital; daí para cima cresce com o cartão. Ver `radar-vitals.js`. */
 .radar-vital-chart {
     position: relative;
     min-height: 6rem;
 }
 
-.radar-vital-sparkline {
+/* Seis pixéis em baixo, para o canto do cartão não cortar o rótulo mais baixo do eixo. */
+.radar-vital-frame {
+    position: absolute;
+    inset: 4px 0 6px;
+    display: flex;
+    color: var(--radar-vital-color);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+/* Os rótulos empilham-se na mesma célula: a coluna fica com a largura do mais largo. */
+.radar-vital-axis {
+    display: grid;
+    grid-template: 100% / auto;
+    font-size: 11px;
+}
+
+.radar-vital-axis span {
+    position: relative;
+    grid-area: 1 / 1;
+    align-self: start;
+    padding: 3px 5px;
+    text-align: right;
+    opacity: 0.65;
+    transform: translateY(-50%);
+}
+
+.radar-vital-plot {
+    position: relative;
+    flex: 1;
+    min-width: 0;
+}
+
+.radar-vital-plot svg {
     position: absolute;
     inset: 0;
     width: 100%;
     height: 100%;
+    overflow: visible;
+}
+
+.radar-vital-fill {
+    fill: var(--radar-vital-color);
+    fill-opacity: 0.2;
+}
+
+.radar-vital-line {
+    fill: none;
+    stroke: var(--radar-vital-color);
+    stroke-width: 1;
+    vector-effect: non-scaling-stroke;
+}
+
+.radar-vital-tooltip {
+    --radar-vital-tooltip-bg: color-mix(in srgb, var(--radar-vital-color) 90%, transparent);
+    position: absolute;
+    z-index: 1;
+    padding: 9px 10px 8px;
+    border: 1px solid rgb(255 255 255 / 90%);
+    border-radius: 4px;
+    background: var(--radar-vital-tooltip-bg);
+    color: #fff;
+    font-size: 14px;
+    line-height: 16px;
+    white-space: nowrap;
+    pointer-events: none;
+    transform: translate(-50%, calc(-100% - 4px));
+}
+
+.radar-vital-tooltip::after {
+    content: "";
+    position: absolute;
+    top: 100%;
+    left: calc(50% + var(--radar-vital-pointer, 0px) - 4px);
+    border: 4px solid transparent;
+    border-top-color: var(--radar-vital-tooltip-bg);
+    border-bottom: 0;
+}
+
+.radar-vital-tooltip-below {
+    transform: translate(-50%, 4px);
+}
+
+.radar-vital-tooltip-below::after {
+    top: auto;
+    bottom: 100%;
+    border-top: 0;
+    border-bottom: 4px solid var(--radar-vital-tooltip-bg);
 }
 
 /* O editor das áreas: ver `devices/radar-area-editor.js`. A cor do tipo vem na borda esquerda. */
