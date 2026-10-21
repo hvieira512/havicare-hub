@@ -49,7 +49,6 @@ final class ApiError
         'unauthorized' => 401,
         'forbidden' => 403,
         'association_not_found' => 404,
-        'capability_not_found' => 404,
         'company_not_found' => 404,
         'denylist_not_found' => 404,
         'license_not_found' => 404,
@@ -214,11 +213,6 @@ final class ApiError
     public static function licenseNotFound(): self
     {
         return new self('license_not_found', 'License not found');
-    }
-
-    public static function capabilityNotFound(): self
-    {
-        return new self('capability_not_found', 'Capability not found');
     }
 
     public static function notificationNotFound(): self

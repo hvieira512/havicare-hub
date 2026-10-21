@@ -532,7 +532,7 @@ mais curta de escrever.
 | **400** | `invalid_request`, `invalid_config`, `invalid_link`, `unsupported_feature`, `unknown_protocol`, `device_already_associated`, `invalid_association`, `invalid_role`, `invalid_license`, `feature_not_requestable`, `unsupported_capability`, `invalid_requestable_capability`, `upload_failed`, `image_too_large`, `image_dimensions_too_large`, `gd_missing`, `gd_jpeg_missing`, `invalid_image`, `image_save_failed`, `device_is_not_a_radar`, `license_has_no_radar_credentials` |
 | **401** | `invalid_credentials`, `invalid_refresh_token`, `unauthorized` |
 | **403** | `forbidden` |
-| **404** | `association_not_found`, `capability_not_found`, `company_not_found`, `denylist_not_found`, `license_not_found`, `model_not_found`, `not_found`, `notification_not_found`, `protocol_not_found`, `supplier_not_found`, `user_not_found` |
+| **404** | `association_not_found`, `company_not_found`, `denylist_not_found`, `license_not_found`, `model_not_found`, `not_found`, `notification_not_found`, `protocol_not_found`, `supplier_not_found`, `user_not_found` |
 | **409** | `device_exists`, `model_exists`, `user_exists`, `duplicate` |
 | **422** | `incomplete_owner` — um dispositivo tem empresa e licença, ou nenhuma; o `fields` diz a que falta · `invalid_radar_areas` — as áreas de um radar partem uma regra; o `fields` diz qual, por área (`items[i]`): `door_off_wall`, `outside_room`, `second_monitoring_bed`, ou `too_many_areas` na lista |
 | **429** | `too_many_attempts` |

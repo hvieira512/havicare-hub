@@ -34,7 +34,6 @@ final class ApiErrorTest extends TestCase
             'companyNotFound' => [fn(): ApiError => ApiError::companyNotFound(), 'company_not_found', 'Company not found', 404],
             'denylistNotFound' => [fn(): ApiError => ApiError::denylistNotFound(), 'denylist_not_found', 'Denylist entry not found', 404],
             'licenseNotFound' => [fn(): ApiError => ApiError::licenseNotFound(), 'license_not_found', 'License not found', 404],
-            'capabilityNotFound' => [fn(): ApiError => ApiError::capabilityNotFound(), 'capability_not_found', 'Capability not found', 404],
             'notificationNotFound' => [fn(): ApiError => ApiError::notificationNotFound(), 'notification_not_found', 'Notification not found', 404],
             'supplierNotFound' => [fn(): ApiError => ApiError::supplierNotFound(), 'supplier_not_found', 'Supplier does not exist', 404],
             'protocolNotFound' => [fn(): ApiError => ApiError::protocolNotFound(), 'protocol_not_found', 'Unsupported protocol', 404],
