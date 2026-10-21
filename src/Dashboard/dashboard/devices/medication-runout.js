@@ -1,6 +1,6 @@
 /**
- * Quando é que a medicação carregada acaba: percorrem-se os alarmes do plano a partir de
- * agora. Dividir a capacidade do prato pelas doses só bate certo com o carrossel no zero.
+ * Quando acaba a medicação carregada: percorrem-se os alarmes do plano a partir de agora.
+ * Dividir a capacidade do prato pelas doses só bate certo com o carrossel no zero.
  */
 
 import { medicationPlanTimes } from "./medication-plan.js";
@@ -11,7 +11,7 @@ const MONTHS = [
     "jul.", "ago.", "set.", "out.", "nov.", "dez.",
 ];
 
-/** Dias a procurar antes de desistir: vinte e oito compartimentos a uma dose por dia dão 28. */
+/** Dias a procurar antes de desistir, com folga para planos semanais esparsos. */
 const SEARCH_DAYS = 400;
 
 /** `AAAA-MM-DD` na meia-noite local; `new Date(texto)` leria em UTC e trocava o dia. */
@@ -76,7 +76,7 @@ export function runoutAt({ doses, plans, period, now = new Date() }) {
     return null;
 }
 
-/** A data em palavras, relativa quando está perto: é assim que se fala dela. */
+/** A data em palavras, relativa quando está perto. */
 export function runoutLabel(when, now = new Date()) {
     if (!(when instanceof Date) || Number.isNaN(when.getTime())) {
         return "";

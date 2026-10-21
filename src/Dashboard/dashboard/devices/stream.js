@@ -23,20 +23,15 @@ let reconnectTimer = null;
 let reconnectAttempt = 0;
 let connectGeneration = 0;
 
-// O `fetch` não religa sozinho. O tecto evita que um servidor em baixo leve um pedido por
-// segundo por cada dashboard aberta.
+// O tecto evita que um servidor em baixo leve um pedido por segundo de cada dashboard aberta.
 const RECONNECT_BASE_MS = 1000;
 const RECONNECT_MAX_MS = 30000;
 
-/** Se já há stream aberto ou a abrir para este dispositivo. */
 export function isDeviceStreamFor(imei) {
     return imei !== "" && imei === currentImei && abortController !== null;
 }
 
-/**
- * Um separador em segundo plano não drena o stream e deixa o servidor a encher buffer. Ao
- * voltar religa-se do zero, e o `snapshot` fecha o buraco no histórico.
- */
+/** Em segundo plano o stream fecha; ao voltar religa-se, e o `snapshot` fecha o buraco. */
 function handleVisibilityChange() {
     if (!currentImei) {
         return;
@@ -72,16 +67,12 @@ export function connectDeviceStream(imei) {
         return;
     }
 
-    // Abrir o stream é assíncrono, e no meio pode trocar-se de dispositivo: só serve quem
-    // ainda for a tentativa actual.
+    // No meio de abrir pode trocar-se de dispositivo: só serve a tentativa actual.
     connectGeneration += 1;
     void openStream(imei, connectGeneration);
 }
 
-/**
- * Por `fetch` e não `EventSource`: leva a credencial no cabeçalho e distingue o 401, o 404 e o
- * `503 too_many_streams`, ao preço de cortar os frames à mão.
- */
+/** Por `fetch` e não `EventSource`: leva a credencial no cabeçalho e distingue os estados HTTP. */
 async function openStream(imei, generation) {
     const url = `/api/devices/${encodeURIComponent(imei)}/stream`;
     const controller = new AbortController();
@@ -92,8 +83,7 @@ async function openStream(imei, generation) {
             headers: { ...authHeaders(), Accept: "text/event-stream" },
             signal: controller.signal,
         });
-        // Trocou-se de dispositivo enquanto isto viajava: o corpo desta resposta tem de ser
-        // largado, ou fica um stream a servir para ninguém do outro lado.
+        // Trocou-se de dispositivo entretanto: larga-se o corpo, senão fica a servir ninguém.
         if (generation !== connectGeneration || currentImei !== imei) {
             controller.abort();
             return;
@@ -110,7 +100,7 @@ async function openStream(imei, generation) {
 
         await readFrames(response.body, generation, imei);
     } catch {
-        // Um `abort()` nosso não é falha: foi o `closeDeviceStream` a fechar de propósito.
+        // Um `abort()` nosso não é falha.
         if (controller.signal.aborted) {
             return;
         }
@@ -121,10 +111,7 @@ async function openStream(imei, generation) {
     }
 }
 
-/**
- * Corta o corpo em frames SSE e guarda o pedaço incompleto para o chunk seguinte: com o
- * `snapshot` de cem entradas, um frame partido entre chunks é o caso normal.
- */
+/** Corta o corpo em frames SSE e guarda o pedaço incompleto para o chunk seguinte. */
 async function readFrames(body, generation, imei) {
     const reader = body.getReader();
     const decoder = new TextDecoder();
@@ -183,10 +170,7 @@ function closeDeviceStream() {
     }
 }
 
-/**
- * Volta a ligar com o atraso a crescer, e só com dispositivo escolhido. Sem credencial não
- * se tenta -- o `hub-dashboard-api-token-updated` liga quando ela chegar.
- */
+/** Religa com o atraso a crescer; sem credencial liga o `hub-dashboard-api-token-updated`. */
 function scheduleReconnect() {
     if (!currentImei || reconnectTimer !== null) {
         return;
@@ -208,10 +192,7 @@ function scheduleReconnect() {
     }, delay);
 }
 
-/**
- * A espera acumulada só se apaga quando o stream **entrega**, e não quando abre: um servidor
- * que aceita e fecha logo também devolve 200.
- */
+/** A espera só se apaga quando o stream entrega: um servidor que aceita e fecha também dá 200. */
 function markStreamServed() {
     reconnectAttempt = 0;
 }
@@ -228,15 +209,14 @@ function handleTokenUpdated() {
         return;
     }
 
-    // Credencial nova é uma razão nova para tentar: a espera acumulada pelas falhas
-    // anteriores não se aplica a esta.
+    // Credencial nova é uma razão nova para tentar.
     reconnectAttempt = 0;
     connectDeviceStream(currentImei);
 }
 
 /**
  * O `snapshot` substitui; as actualizações empilham-se à frente, aparadas ao limite do
- * servidor. Os comandos vêm sempre por inteiro, porque mudam de estado.
+ * servidor. Os comandos vêm por inteiro, porque mudam de estado.
  */
 function mergeRecent(previous, data, isSnapshot) {
     const limit = Number(data.limit) > 0 ? Number(data.limit) : 100;
@@ -254,13 +234,12 @@ function mergeRecent(previous, data, isSnapshot) {
 }
 
 function handleStreamUpdate(event) {
-    // Uma entrega é a prova de que a ligação serve, e é ela que apaga a espera acumulada.
     markStreamServed();
     let data;
     try {
         data = JSON.parse(event.data);
     } catch {
-        // Um frame partido no fio salta-se; não derruba o stream nem se perde o resto do corpo.
+        // Um frame partido salta-se, sem derrubar o stream.
         return;
     }
     if (!state.selectedDetail) return;

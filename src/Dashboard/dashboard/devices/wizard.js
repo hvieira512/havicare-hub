@@ -1,7 +1,4 @@
-/**
- * O motor do assistente: a pergunta activa é a primeira sem resposta. O `clears` declara o que
- * cada resposta invalida, que é a única coisa que não se deriva.
- */
+/** O motor do assistente: a pergunta activa é a primeira sem resposta, e o `clears` o que cada uma invalida. */
 
 export function createWizard({ questions, steps }) {
     let answers = {};
@@ -20,7 +17,6 @@ export function createWizard({ questions, steps }) {
         return !question.optional && !isAnswered(question);
     }
 
-    /** Um passo está completo quando nenhuma das suas perguntas o trava. */
     function isStepComplete(number) {
         return !inStep(number).some(blocks);
     }
@@ -30,7 +26,7 @@ export function createWizard({ questions, steps }) {
         return inStep(step).find((question) => !isAnswered(question)) ?? null;
     }
 
-    /** As respondidas de todos os passos, na ordem das perguntas: a ordem da trilha. */
+    /** As respondidas de todos os passos, na ordem da trilha. */
     function answered() {
         return questions.filter(isAnswered);
     }
@@ -56,7 +52,7 @@ export function createWizard({ questions, steps }) {
         canGoBack: () => step > 1,
         isLastStep: () => step === steps.length,
 
-        /** Tudo o que é preciso respondido: é o que habilita o botão de criar. */
+        /** Habilita o botão de criar. */
         isComplete: () => !questions.some(blocks),
 
         advance() {
@@ -71,10 +67,7 @@ export function createWizard({ questions, steps }) {
 
         answer: applyAnswer,
 
-        /**
-         * Avança só se não sobrar nenhuma aberta, e não por o passo estar completo: uma
-         * opcional não trava o passo mas continua a ser feita.
-         */
+        /** Avança só se não sobrar nenhuma aberta: uma opcional não trava, mas pergunta-se. */
         answerAndAdvance(key, value) {
             applyAnswer(key, value);
             if (current() === null && isStepComplete(step) && step < steps.length) {
@@ -83,10 +76,7 @@ export function createWizard({ questions, steps }) {
             return answers;
         },
 
-        /**
-         * Voltar a uma pergunta já respondida: apaga-a e o que dela dependia, e recua o
-         * passo se a pergunta pertencer a um anterior.
-         */
+        /** Apaga a resposta e o que dela dependia, e recua o passo se a pergunta for de um anterior. */
         reopen(key) {
             const question = questions.find((q) => q.key === key);
             delete answers[key];
@@ -103,7 +93,6 @@ export function createWizard({ questions, steps }) {
             return answers;
         },
 
-        /** As badges de todas as respostas, na ordem das perguntas. */
         badges() {
             return answered().flatMap((question) =>
                 question.badges(answers).map((badge) => ({ ...badge, key: question.key })),

@@ -8,15 +8,9 @@ import {
 import { deviceTypeIcon } from "../components/device-type-tiles.js";
 import { modelPreviewHtml } from "../components/model-image.js";
 
-/**
- * Tipo, modelo e licença, partilhados pelo assistente de adicionar e pelo modal de editar. Só
- * HTML, sem estado nem ouvintes, para os dois modais terem fluxos diferentes.
- */
+/** Tipo, modelo e licença do assistente de adicionar e do modal de editar: só HTML, sem estado. */
 
-/**
- * As licenças agrupadas pela empresa que as detém. A `/api/licenses` já vem ordenada por
- * empresa e traz o nome em cada linha: agrupar é só partir a lista onde o nome muda.
- */
+/** As licenças por empresa: a `/api/licenses` vem ordenada por empresa, e parte-se onde o nome muda. */
 export function licenseTree(licenses) {
     const groups = new Map();
     for (const license of licenses) {
@@ -37,7 +31,7 @@ function licenseKey(company, licenseId) {
 
 /**
  * O dono de uma notificação, confirmado na árvore. Sem empresa procura só o número, e um
- * número repetido em duas empresas devolve null: fica por escolher em vez de mal escolhido.
+ * número que exista em duas empresas devolve null: fica por escolher.
  */
 export function ownerFromLicense(licenseId, tree = [], company = "") {
     const wanted = String(licenseId ?? "");
@@ -55,10 +49,7 @@ export function ownerFromLicense(licenseId, tree = [], company = "") {
     return matches.length === 1 ? matches[0] : null;
 }
 
-/**
- * A árvore por onde se escolhe o dono de um dispositivo. A empresa é só o cabeçalho do
- * grupo: escolhe-se uma licença, e a empresa vem dela. Escolha única, daí o `radiogroup`.
- */
+/** A árvore do dono: escolhe-se uma licença, e a empresa, que é só o cabeçalho, vem dela. */
 export function licensePickerHtml(tree, selected = null) {
     const chosen = selected
         ? licenseKey(selected.company, selected.licenseId)
@@ -115,7 +106,7 @@ function licenseRow({ company, licenseId, label, selected, nested = false }) {
         </button>`;
 }
 
-/** A licença escolhida, por palavras: é o que a badge da trilha mostra. */
+/** A licença escolhida, como a badge da trilha a mostra. */
 export function licenseBadgeValue(owner, tree = []) {
     const licenseId = String(owner?.licenseId ?? "0");
     if (licenseId === "0") return "Sem licença";
@@ -126,18 +117,13 @@ export function licenseBadgeValue(owner, tree = []) {
     return match?.name ? `${match.name} (${licenseId})` : licenseId;
 }
 
-/* ---------- a migalha e a barra ---------- */
-
 const WIZARD_BADGE = "wizard-badge d-inline-flex align-items-center gap-1 text-start rounded-3";
 
 // Cinco nomes numa linha não cabem num telemóvel: fora do passo actual, a migalha só existe
 // a partir de `md`. Abaixo disso quem diz onde se está são a barra e o contador.
 const ONLY_ON_WIDE = "d-none d-md-inline-flex";
 
-/**
- * A migalha: um nome por passo. O já respondido é um botão com a escolha ao lado, o passo
- * em que se está fica a negrito, e os que faltam esbatidos e sem serem clicáveis.
- */
+/** A migalha: o passo respondido é um botão com a escolha, e os que faltam não se clicam. */
 export function wizardTrailHtml({ questions, badges = [], currentKey = "" }) {
     const answered = new Map(badges.map((badge) => [badge.key, badge]));
 
@@ -166,10 +152,7 @@ export function wizardTrailHtml({ questions, badges = [], currentKey = "" }) {
     return html`${parts}`;
 }
 
-/**
- * A classificação de um aparelho que já existe, em pastilhas ligadas: o nome do campo por
- * cima do valor. Em linha onde cabem e empilhadas onde não cabem, com a seta a acompanhar.
- */
+/** A classificação de um aparelho que já existe, em pastilhas: o nome do campo por cima do valor. */
 export function classificationTrailHtml({ questions, values, openKey = "", known = true }) {
     const parts = questions
         .map((question, index) => {
@@ -191,7 +174,6 @@ export function classificationTrailHtml({ questions, values, openKey = "", known
     return html`${parts}`;
 }
 
-/** A barra: um traço por passo, os já feitos a navy e os que faltam em cinzento claro. */
 export function wizardProgressHtml(step, total) {
     const bars = Array.from(
         { length: total },
@@ -202,8 +184,6 @@ export function wizardProgressHtml(step, total) {
     return html`<div class="wizard-progress d-flex gap-1" role="progressbar" aria-label="Progresso"
         aria-valuemin="1" aria-valuemax="${total}" aria-valuenow="${step}">${bars}</div>`;
 }
-
-/* ---------- o tipo e o modelo ---------- */
 
 /** Grelha de escolhas em cards; o `visual` é um ícone para o tipo e a fotografia para o modelo. */
 export function cardGrid(label, cards) {
@@ -223,10 +203,7 @@ export function cardGrid(label, cards) {
         </div>`;
 }
 
-/**
- * Os tipos de dispositivo em cards. O `attrsFor` e o `countFor` são de quem chama porque é
- * aí que diferem: o assistente conta os modelos de cada tipo, o modal de edição não conta.
- */
+/** O `attrsFor` e o `countFor` são de quem chama: só o assistente conta os modelos. */
 export function deviceTypeCardsHtml({ attrsFor, selected = "", countFor = null }) {
     return cardGrid(
         "Tipo de dispositivo",
@@ -245,10 +222,7 @@ export function deviceTypeCardsHtml({ attrsFor, selected = "", countFor = null }
     );
 }
 
-/**
- * Os modelos em cards. O nome comercial é o título e o modelo interno o subtítulo: é o
- * comercial que se reconhece da caixa, e o interno que aparece nos tópicos e na base.
- */
+/** O nome comercial é o título, que é o da caixa; o interno, o dos tópicos, é o subtítulo. */
 export function modelCardsHtml({ models, attrsFor, selected = "" }) {
     return cardGrid(
         "Modelo",
@@ -266,7 +240,6 @@ export function modelCardsHtml({ models, attrsFor, selected = "" }) {
     );
 }
 
-/** Os fornecedores em cards, como o tipo e o modelo, mas sem ícone. */
 export function supplierCardsHtml({ suppliers, attrsFor, selected = "", countFor = null }) {
     return cardGrid(
         "Fornecedor",

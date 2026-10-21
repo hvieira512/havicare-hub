@@ -16,10 +16,7 @@ import {
     normalizeDeviceType,
 } from "../domain.js";
 
-/**
- * O painel de filtros da listagem, desenho e comportamento. Quem volta a pedir a lista entra
- * pelo `onChange` do arranque, e não por um import do `list.js`, para não haver ciclos.
- */
+/** O painel de filtros da listagem; quem volta a pedir a lista entra pelo `onChange`. */
 
 let els;
 let onChange = () => {};
@@ -31,10 +28,7 @@ export function initListFilters(context) {
 
 const repeatMarkup = (count, markup) => Array.from({ length: count }, () => markup).join("");
 
-/**
- * As colunas de filtro sem afirmarem nada, na espera e na falha: «não há licenças» seria
- * afirmar uma ausência que ninguém mediu.
- */
+/** Na espera e na falha as colunas não afirmam nada: «não há licenças» ninguém o mediu. */
 export function renderDeviceFilterSkeleton() {
     els.deviceTypeFilter.innerHTML = `
         <div class="placeholder-wave device-type-grid d-grid gap-2">
@@ -77,10 +71,7 @@ export function renderDeviceFilterControls() {
     renderApplyDeviceFiltersButton();
 }
 
-/**
- * Os tipos, a aceitar vários. Vêm do catálogo e não das contagens, para que um tipo sem
- * dispositivos apareça apagado -- saber que a frota não tem pulseiras é informação.
- */
+/** Os tipos vêm do catálogo e não das contagens: um tipo sem dispositivos aparece apagado. */
 function renderDeviceTypeFilter() {
     const counts = new Map(
         (state.summary.deviceFilterCounts?.deviceType || []).map((option) => [
@@ -125,10 +116,7 @@ function filterOptionMarkup({
         </button>`;
 }
 
-/**
- * A árvore de fornecedores e modelos, com o desenho da das licenças, mas os dois níveis são
- * filtros distintos, `supplier` e `model`.
- */
+/** Desenhada como a das licenças, mas os dois níveis são filtros distintos. */
 function renderDeviceSupplierFilter() {
     const tree = state.summary.deviceFilterCounts?.supplierModels || { suppliers: [] };
     const selectedSuppliers = state.deviceFilters.supplier;
@@ -180,10 +168,7 @@ function renderDeviceSupplierFilter() {
         : "<div class=\"small text-secondary px-1 py-2\">Não há fornecedores para mostrar.</div>";
 }
 
-/**
- * Marcar a empresa marca-a toda; marcar algumas licenças deixa-a no traço do meio. O «sem
- * licença» vem primeiro, para não ficar atrás de uma lista que cresce.
- */
+/** Marcar algumas licenças deixa a empresa no traço do meio; o «sem licença» vem primeiro. */
 function renderDeviceLicenseFilter() {
     const tree = state.summary.deviceFilterCounts?.license || { companies: [], none: 0 };
     const selected = state.deviceFilters.license;
@@ -248,15 +233,11 @@ function renderDeviceLicenseFilter() {
         : "<div class=\"small text-secondary px-1 py-2\">Não há licenças para mostrar.</div>";
 }
 
-/**
- * Os contadores ao lado de cada título. O do topo conta os grupos com filtro aplicado e
- * não os valores marcados: diz quantas coisas estão a estreitar a lista.
- */
+/** O contador do topo conta os grupos com filtro aplicado, e não os valores marcados. */
 function renderDeviceFilterCounters() {
     const perGroup = {
         deviceType: state.deviceFilters.deviceType.length,
-        // Dois filtros num só grupo no ecrã: a pastilha conta os dois, senão marcar um
-        // modelo estreitava a lista sem que nada o dissesse.
+        // Dois filtros num só grupo no ecrã: a pastilha conta os dois.
         supplier:
             state.deviceFilters.supplier.length + state.deviceFilters.model.length,
         license: state.deviceFilters.license.length,
@@ -283,10 +264,7 @@ function renderDeviceFilterCounters() {
     els.clearDeviceFiltersBtn.classList.toggle("d-none", activeGroups === 0);
 }
 
-/**
- * O rodapé do painel. No telemóvel o painel cobre a lista, e este número é o que substitui
- * o vê-la: sem ele, filtra-se às cegas até fechar.
- */
+/** No telemóvel o painel cobre a lista, e o número do rodapé substitui vê-la. */
 function renderApplyDeviceFiltersButton() {
     const total = state.summary.devicePagination?.total ?? 0;
     els.applyDeviceFiltersBtn.textContent = total === 0
@@ -294,10 +272,7 @@ function renderApplyDeviceFiltersButton() {
         : `Ver ${total} dispositivo${total === 1 ? "" : "s"}`;
 }
 
-/**
- * O que cada filtro aplicado diz na sua pastilha. O grupo e o valor vão numa chave só, e o
- * valor de uma licença já leva dois pontos -- quem a parte, parte no primeiro.
- */
+/** O grupo e o valor vão numa chave só, e o valor de uma licença leva dois pontos: parte-se no primeiro. */
 export function deviceFilterChipLabels(filters) {
     const labels = [];
 
@@ -332,7 +307,6 @@ function licenseChipLabel(value) {
         : licenseDisplayLabel(value.slice(separator + 1), state.licenses || []);
 }
 
-/** As pastilhas do que está aplicado, por cima da lista e fora do painel. */
 export function renderDeviceActiveFilters() {
     const labels = deviceFilterChipLabels(state.deviceFilters);
 
@@ -355,21 +329,19 @@ export async function handleDeviceFilterChipRemove(event) {
         return;
     }
     if (!(key in state.deviceFilters)) return;
-    // O valor está aplicado, e por isso o `toggle` só o pode tirar -- as trocas da árvore
-    // ficam todas do lado de lá da condição.
+    // O valor está aplicado, e por isso o `toggle` só o pode tirar.
     await toggleDeviceFilter(key, value);
 }
 
 /**
- * Nada marcado quer dizer tudo, por isso não há «Todos». Marcar uma empresa absorve as licenças
- * dela; clicar numa licença de uma empresa marcada troca a empresa pelas outras licenças.
+ * Nada marcado quer dizer tudo. Marcar uma empresa absorve as licenças dela; clicar numa
+ * licença de uma empresa marcada troca a empresa pelas outras licenças.
  */
 async function toggleDeviceFilter(key, value) {
     const current = state.deviceFilters[key] || [];
     let next;
 
-    // Um modelo coberto pelo fornecedor marcado não está no filtro `model`: clicá-lo troca o
-    // fornecedor pelos irmãos, como a licença faz com a empresa.
+    // Clicar num modelo coberto pelo fornecedor marcado troca o fornecedor pelos irmãos.
     const supplierOfClickedModel = key === "model" ? supplierOwningModel(value) : null;
     const clickedModelIsCoveredBySupplier =
         supplierOfClickedModel !== null &&

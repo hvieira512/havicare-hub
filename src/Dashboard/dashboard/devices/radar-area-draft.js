@@ -85,7 +85,7 @@ export function areaStatus(area, originals) {
     return FIELDS.some((field) => original[field] !== area[field]) ? "edited" : "applied";
 }
 
-/** Uma área que está no radar fica marcada e sai no envio; uma que só existe no rascunho sai já. */
+/** Uma área do radar fica marcada e sai no envio; uma só do rascunho sai já. */
 export function toggleDelete(areas, key, originals) {
     const area = areas.find((candidate) => candidate.key === key);
     if (!area) return areas;
@@ -124,11 +124,7 @@ export const metres = (dm) => (dm / 10).toLocaleString("pt-PT", { minimumFractio
 
 const overlaps = (a, b) => a.xMinDm < b.xMaxDm && a.xMaxDm > b.xMinDm && a.yMinDm < b.yMaxDm && a.yMaxDm > b.yMinDm;
 
-/**
- * O que o radar não vai fazer como se espera. `hard` é o que está mal; o resto é aviso suave.
- *
- * @returns {Array<{key?: number, hard: boolean, text: string}>}
- */
+/** @returns {Array<{key?: number, hard: boolean, text: string}>} `hard` é o que está mal; o resto é aviso */
 export function areaWarnings(areas, room) {
     const live = areas.filter((area) => !area.deleted);
     const list = [];

@@ -82,7 +82,6 @@ const GATEWAY_THUMB_PLACEHOLDER = `<svg class="gateway-card-thumb-icon text-seco
     <path d="M12 10.5v-7M8.75 6.75 12 3.5l3.25 3.25"></path>
 </svg>`;
 
-/** Exportado para o assistente de adicionar usar a mesma marcação. */
 export function gatewayCardMarkup(gateway, checked, signal = null) {
     const key = normalizeKey(gateway.imei);
     const model = String(gateway.model || "").trim();
@@ -102,10 +101,7 @@ export function gatewayCardMarkup(gateway, checked, signal = null) {
     </label>`;
 }
 
-/**
- * Os sinais vêm das ligações do dispositivo escolhido no detalhe: a editar outro, não se
- * mostra sinal nenhum.
- */
+/** Os sinais vêm das ligações do dispositivo escolhido: a editar outro, não há sinal. */
 function signalsForEditedDevice() {
     const editing = normalizeKey(els.deviceImei?.value);
     const selected = normalizeKey(state.selectedDetail?.device?.imei);
@@ -150,10 +146,7 @@ function renderGatewayOptions(gateways = [], selectedKeys = [], emptyText = "") 
     updateGatewayLinkSelection();
 }
 
-/**
- * A empresa e a licença filtram a resposta, por isso só a última escolha desenha: senão podia
- * ligar-se o sensor a um gateway de outro cliente.
- */
+/** Só a última escolha desenha: senão ligava-se o sensor a um gateway de outro cliente. */
 let gatewayOptionsGeneration = 0;
 
 export async function refreshGatewayOptions(selectedKeys = null) {

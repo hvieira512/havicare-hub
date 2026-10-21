@@ -55,8 +55,7 @@ let els;
 
 function initDeviceDetailView(context) {
     els = context.els;
-    // Tudo o que redesenha entra por aqui e não por um import de volta: os filtros reduzem a
-    // lista e paginam-na, o ecrã é que a desenha, e o grafo de módulos fica sem ciclos.
+    // O que redesenha entra por aqui, e não por um import de volta.
     initDetailFilters({
         els,
         onChange: renderSelection,
@@ -72,15 +71,11 @@ function renderSelection() {
     );
     els.selectedDevicePanel.classList.toggle("d-none", !state.selectedDetail);
     els.deviceDetail.classList.toggle("d-none", !state.selectedDetail);
-    // Sem dispositivo escolhido a coluna da atividade não diz nada que a da esquerda não
-    // diga, e essa tem o botão: desaparece, e a da escolha ocupa a largura toda.
+    // Sem dispositivo escolhido a coluna da atividade sai, e a da escolha ocupa a largura toda.
     els.detailColumn.classList.toggle("d-none", !state.selectedDetail);
     els.deviceColumn.classList.toggle("col-lg-4", !!state.selectedDetail);
-    // Abaixo do `lg` a banda e a régua substituem o cartão da identidade, e sem dispositivo
-    // escolhido não há identidade nenhuma para elas dizerem.
     els.deviceBand.classList.toggle("d-none", !state.selectedDetail);
     els.deviceTabs.classList.toggle("d-none", !state.selectedDetail);
-    // Sem dispositivo escolhido, o cartão dos pedidos não tem mosaico nenhum para mostrar.
     els.requestCardsCard?.classList.toggle("d-none", !state.selectedDetail);
     if (!state.selectedDetail) {
         els.requestGrid.innerHTML = "";
@@ -152,15 +147,11 @@ function renderSelection() {
             reported: reported || silentSince(device, allItems).length > 0,
         },
     );
-    // A planta aberta acompanha o stream: as posições que acabaram de chegar são as mesmas
-    // que o mosaico da presença acabou de desenhar.
+    // A planta aberta acompanha o stream.
     onRadarPresence(device.imei);
 }
 
-/**
- * Um aparelho desligado cujo último registo de ligação não o diz — sem histórico, ou com o
- * desligar perdido — fica em quebra desde a última vez que falou.
- */
+/** Um desligado cujo último registo de ligação não o diz fica em quebra desde que falou. */
 function silentSince(device, allItems) {
     if (!state.selectedDetail?.recent || device.online !== false || !device.lastSeenAt) return [];
 
@@ -191,10 +182,7 @@ const TELEMETRY_REQUEST_SYSTEM_FEATURES = new Set([
     "device_status",
 ]);
 
-/**
- * Capacidades sem mosaico próprio. O resumo diz o estado agora, e os agregados do radar são
- * médias do último minuto -- continuam na lista de eventos, onde a hora lhes dá sentido.
- */
+/** Sem mosaico: os agregados do radar são médias de um minuto, e ficam na lista de eventos. */
 const TELEMETRY_REQUEST_HIDDEN_FEATURES = new Set([
     "diaper_moisture_level",
     "position_minute_stats",
@@ -255,8 +243,7 @@ function renderSelectedDeviceSummary(device, deviceModel, linkedDevices = []) {
         facts.push({ label: "SIM", value: String(device.simNumber) });
     }
     if (linkedDevices.length) {
-        // Uma lista de MACs não diz se esses gateways ouvem o dispositivo agora, que é a
-        // parte útil.
+        // Uma lista de MACs não diz se esses gateways ouvem o dispositivo agora.
         facts.push({
             label: "Dispositivos ligados",
             html: gatewaySignalRows(linkedDevices),
@@ -264,8 +251,7 @@ function renderSelectedDeviceSummary(device, deviceModel, linkedDevices = []) {
         });
     }
 
-    // O render corre a cada mensagem do stream: o `<img>` só se refaz quando a imagem muda,
-    // para não recarregar e piscar.
+    // O render corre a cada mensagem do stream: o `<img>` só se refaz quando a imagem muda.
     const previewKey = image || "__none__";
     if (els.selectedDevicePreview.dataset.previewKey !== previewKey) {
         els.selectedDevicePreview.dataset.previewKey = previewKey;
@@ -274,16 +260,12 @@ function renderSelectedDeviceSummary(device, deviceModel, linkedDevices = []) {
             : "<i class=\"fa-solid fa-microchip fa-xl text-secondary\"></i>";
     }
     els.selectedDeviceTitle.textContent = device.imei;
-    // Corta-se com reticências numa coluna estreita, e por isso o valor inteiro fica no `title`.
     els.selectedDeviceTitle.title = device.imei;
-    // O estado é a primeira coisa que se pergunta sobre um dispositivo, e por isso vem
-    // antes do identificador.
     els.selectedDeviceBadge.innerHTML = onlineBadge(device.online) + (device.lastSeenAt
         ? html`<span class="text-secondary small tabular-nums" title="${when(device.lastSeenAt)}">${ago(device.lastSeenAt)}</span>`
         : "");
     els.selectedDeviceMeta.textContent = `${typeLabel} · ${supplier || "Sem fornecedor"} · ${model || "Sem modelo interno"}`;
-    // A banda do telemóvel diz o mesmo numa linha: o estado primeiro, que é o que se
-    // pergunta, e o fornecedor de fora, que o modelo já o implica.
+    // A banda do telemóvel diz o mesmo numa linha, sem o fornecedor, que o modelo implica.
     els.deviceBandTitle.textContent = device.imei;
     els.deviceBandTitle.title = device.imei;
     if (els.deviceBandThumb.dataset.previewKey !== previewKey) {
@@ -292,8 +274,7 @@ function renderSelectedDeviceSummary(device, deviceModel, linkedDevices = []) {
             ? html`<img src="${image}" class="object-fit-contain" alt="${model || device.imei}">`
             : "<i class=\"fa-solid fa-microchip text-white-50\"></i>";
     }
-    // O estado é a cor da bola e não uma palavra a repeti-la. Quem não vê a cor lê-o no
-    // nome acessível, que é o que ali a bola é.
+    // O estado é a cor da bola; quem não vê a cor lê-o no nome acessível.
     const onlineLabel = device.online ? "Ligado" : "Desligado";
     els.deviceBandDot.classList.toggle("bg-success", !!device.online);
     els.deviceBandDot.classList.toggle("bg-secondary", !device.online);
@@ -332,8 +313,7 @@ function renderTelemetryList(telemetryRows) {
         cumulative: state.telemetryCumulative,
     });
 
-    // Na pastilha do contador cabe o número e mais nada: o título já diz de quê. O separador
-    // tem a sua, porque abaixo do `xl` o cabeçalho da coluna não se vê.
+    // O separador tem pastilha própria porque abaixo do `xl` o cabeçalho da coluna não se vê.
     const telemetryTotal = telemetry.length ? String(telemetry.length) : "";
     els.telemetryCount.textContent = telemetryTotal;
     els.telemetryTabCount.textContent = telemetryTotal;
@@ -348,10 +328,7 @@ function renderTelemetryList(telemetryRows) {
     renderClientPager("telemetry", telemetry.length, totalPages);
 }
 
-/**
- * Os dois painéis paginam no cliente, mas os controlos são os mesmos da listagem servida
- * pela API: saem do mesmo `renderPagination`, com o resumo curto que estas colunas levam.
- */
+/** Os painéis paginam no cliente com os mesmos controlos da listagem, do `renderPagination`. */
 function renderClientPager(prefix, totalRows, totalPages) {
     const root = els[`${prefix}Pager`];
     const summaryEl = els[`${prefix}PagerSummary`];
@@ -400,11 +377,9 @@ export function telemetryActivityRow(payload) {
     const data =
         payload?.data && typeof payload.data === "object" ? payload.data : {};
     const card = uplinkCardContent(type, data);
-    // Os detalhes são os que cada renderizador declara, e não todos os campos do payload.
     // Pelo texto: um `Fragment` vazio é um objecto, e passaria por detalhes que existem.
     const detail = String(card.details ?? "") === "" ? "" : card.details;
-    // O `detailsTitle` existe quando a linha visível é um resumo: a presença mostra as
-    // posturas e guarda para aqui as coordenadas e as pessoas que não couberam.
+    // O `detailsTitle` existe quando a linha visível é um resumo, como na presença.
     const at = payload.occurredAt || payload.recordedAt;
 
     const plainDetail = plainText(detail);
@@ -413,8 +388,7 @@ export function telemetryActivityRow(payload) {
     return {
         icon: card.icon,
         badge: card.iconBadge || "",
-        // O tom tirado da leitura vence o estático, como já acontece com o ícone: uma bateria
-        // quase vazia não se lê no mesmo verde de uma cheia.
+        // O tom tirado da leitura vence o estático: uma bateria quase vazia não é verde.
         tone: SEVERITY_TONE[payload?.severity] || card.tone || cardTone(type),
         name: capabilityLabel(type),
         value: html`${card.rowValue || card.value}`,
@@ -441,8 +415,7 @@ function renderRequestCards(
         (count, group) => count + group.cards.length,
         0,
     );
-    // Do histórico de eventos e não de uma capacidade, para aparecer quando o dispositivo
-    // pediu ajuda. Os modos de toque vêm declarados pelo protocolo.
+    // Do histórico de eventos e não de uma capacidade, para aparecer quando se pediu ajuda.
     const helpCalls = helpCallSummaryCard(
         events,
         protocolHelpCallPressModes(state.selectedDetail?.model?.protocol || ""),
@@ -464,7 +437,7 @@ function renderRequestCards(
                 )
                 .join("")
         : "";
-    // Sem nada para mostrar, como num W812, que não aceita pedidos, a secção não existe.
+    // Sem nada para mostrar, a secção não existe.
     const grid = falls + helpCalls + cards;
     els.requestCardsCard?.classList.toggle("d-none", grid === "");
     if (renderInto(els.requestGrid, grid, disposeTooltips)) refreshTooltips(els.requestGrid);
@@ -494,8 +467,7 @@ function renderRequestCardGroup(
         return joinMarkup(cards, "");
     }
 
-    // O rótulo separa os grupos sem outra caixa, cuja borda e enchimento não deixariam caber
-    // dois mosaicos por linha.
+    // O rótulo separa os grupos sem outra caixa, para caberem dois mosaicos por linha.
     return html`
         <div class="telemetry-card-wide min-w-0">
         <div class="d-flex justify-content-between align-items-center mb-2">
@@ -517,15 +489,11 @@ function renderNcsEventCards(rows = []) {
         .filter(Boolean)
         .sort((left, right) => eventTime(right.latest) - eventTime(left.latest));
 
-    // Sem cartões a secção não aparece, e por isso não há estado vazio para desenhar.
     els.ncsEventSection.classList.toggle("d-none", cards.length === 0);
     renderInto(els.ncsEventGrid, cards.map(renderNcsEventCard).join(""));
 }
 
-/**
- * Mesma forma dos mosaicos de telemetria: o que aconteceu titula, o comando é o valor e a hora
- * fica no detalhe.
- */
+/** O que aconteceu titula, o comando é o valor e a hora fica no detalhe. */
 function renderNcsEventCard({ type, latest }) {
     const content = uplinkCardContent(type, latest.data || {});
     const timestamp = when(latest.occurredAt || latest.recordedAt) || "hora desconhecida";
@@ -553,7 +521,6 @@ function renderDownlinkRequests(commands) {
     els.telemetryColumn?.classList.toggle("pe-xl-3", hasRequests);
 
     // Um separador só não é escolha: a régua sai e quem estava nos pedidos volta aos eventos.
-    // No telemóvel resta a telemetria, e só sai o separador dos pedidos.
     els.activityTabs?.classList.toggle("d-none", !hasRequests);
     els.deviceTabRequests?.classList.toggle("d-none", !hasRequests);
     if (!hasRequests && els.downlinkColumn?.classList.contains("active")) {
@@ -563,8 +530,6 @@ function renderDownlinkRequests(commands) {
         els.deviceTabReadings.click();
     }
 
-    // Paginado como os eventos recebidos: sem páginas, os pedidos antigos ficam atrás de
-    // um scroll interno que ninguém vê.
     const totalPages = Math.max(
         1,
         Math.ceil(commands.length / state.downlinkPageSize),
@@ -587,10 +552,7 @@ function renderDownlinkRequests(commands) {
     renderClientPager("downlink", commands.length, totalPages);
 }
 
-/**
- * A primeira leitura da capacidade pedida desde o instante do pedido: uma mais antiga
- * respondeu a outro, e a última de todas pode ser de agora.
- */
+/** A primeira leitura da capacidade desde o pedido: uma mais antiga respondeu a outro. */
 function commandReply(command) {
     const feature = String(command.feature || "");
     const acked = Date.parse(command.ackedAt || "");
@@ -610,7 +572,7 @@ function commandReply(command) {
     return reply ? uplinkCardContent(feature, reply.data || {}) : null;
 }
 
-/** Quando se pediu, com segundos, e quanto tempo a resposta demorou a chegar. */
+/** Quando se pediu, com segundos, e quanto a resposta demorou. */
 function commandTiming(command) {
     const requested = Date.parse(command.requestedAt || "");
     if (Number.isNaN(requested)) return "";
@@ -636,8 +598,7 @@ function downlinkActivityRow(command) {
             : expectedReplies(command);
     const note = commandError(command.error);
     const reply = commandReply(command);
-    // O valor da resposta vai por baixo do nome: a coluna do valor leva a pastilha do estado,
-    // e o nome é onde há espaço para ele.
+    // O valor da resposta vai por baixo do nome: a coluna do valor leva a pastilha do estado.
     const value = reply ? String(reply.rowValue || reply.value || "") : "";
     const replyDetails = plainText(reply?.detailsTitle || reply?.details || "");
 
@@ -693,8 +654,7 @@ async function requestTelemetryFeature(feature) {
     try {
         const result = await apiRequestFeature(state.selectedImei, feature);
         if (result.error) toast("error", apiError(result));
-        // O comando novo chega pela via do stream (onCommandsUpdated); não se relê o
-        // dispositivo, porque derrubar o stream para um snapshot completo é o custo a evitar.
+        // O comando novo chega pelo stream: reler o dispositivo derrubava-o.
     } finally {
         state.loadingCommands.delete(feature);
         renderSelection();

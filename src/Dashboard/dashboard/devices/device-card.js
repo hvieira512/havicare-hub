@@ -4,10 +4,7 @@ import { onlineBadge } from "../components/state-badge.js";
 import { deviceTypeLabel, normalizeDeviceType } from "../domain.js";
 import { ago } from "../format.js";
 
-/**
- * O cartão, o esqueleto e a acção que emite ficam juntos porque mudam juntos. O ouvinte fica
- * delegado na raiz da lista, que se redesenha a cada resposta.
- */
+/** O cartão, o esqueleto e a acção; o ouvinte fica delegado na raiz da lista. */
 
 export const DEVICE_CARD_ACTION = "select";
 
@@ -15,7 +12,7 @@ export const DEVICE_CARD_ACTION = "select";
 const DEVICE_CARD_FIELD_VALUE = "d-block min-w-0 text-truncate lh-sm";
 const DEVICE_CARD_WHEN = "device-card-when text-secondary tabular-nums lh-sm";
 
-/** Quantas linhas de esqueleto no máximo: a moldura mais alta leva doze cartões. */
+/** A moldura mais alta leva doze cartões. */
 const SKELETON_MAX_ROWS = 12;
 
 function commonPrefixLength(a, b) {
@@ -30,11 +27,7 @@ const MIN_SHARED = 3;
 /** O mínimo que fica a cheio, mesmo entre dois que só diferem no último dígito. */
 const MIN_SUFFIX = 4;
 
-/**
- * Divide um identificador no prefixo que os vizinhos da lista partilham e no resto.
- *
- * @returns {{prefix: string, suffix: string}}
- */
+/** @returns {{prefix: string, suffix: string}} o prefixo que os vizinhos partilham e o resto */
 export function imeiEmphasis(imei, others) {
     const value = String(imei || "");
     const shared = others.reduce(
@@ -53,7 +46,7 @@ export function imeiEmphasis(imei, others) {
 const sharedPrefixHtml = (prefix) =>
     prefix === "" ? "" : html`<span class="text-body-secondary">${prefix}</span>`;
 
-/** A coluna fica vazia quando o aparelho não tem SIM: um traço não diz mais do que nada. */
+/** Sem SIM a coluna fica vazia: um traço não diz mais do que nada. */
 const simNumberHtml = (simNumber) =>
     simNumber
         ? html`<span class="${DEVICE_CARD_FIELD_VALUE} tabular-nums">${simNumber}</span>`
@@ -106,10 +99,7 @@ export function deviceCard(device, selected, siblings = []) {
         </button>`;
 }
 
-/**
- * O cartão a sério com barras no lugar do texto, para a lista não saltar quando os dados
- * chegam. A `placeholder-wave` fica no contentor, para ser uma passagem só.
- */
+/** O cartão com barras no lugar do texto; a `placeholder-wave` no contentor é uma passagem só. */
 export function deviceCardSkeletonList(pageSize) {
     const row = `
         <div class="device-card device-card-skeleton d-grid w-100 text-start pe-none" aria-hidden="true">

@@ -77,15 +77,10 @@ import {
     saveTextStorage,
 } from "../storage.js";
 
-/** O modal de editar um dispositivo: selectores, formulário, gravar e apagar. */
-
 let els;
 let deviceModal;
 
-/**
- * O painel de configurações entra por `import()` na primeira vez que se abre o separador. Mora
- * aqui porque quem precisa dele já importa este módulo: o grafo tardio tem uma porta só.
- */
+/** O painel de configurações entra por `import()` quando se abre o separador: uma porta só. */
 let configPanel = null;
 let loadedPanel = null;
 
@@ -96,19 +91,18 @@ export function loadConfigPanel() {
         import("./config/handlers.js"),
     ])
         .then(([catalog, panel, handlers]) => {
-            // Corre uma vez só: a promessa fica memoizada.
             panel.initDeviceConfigPanel({ els });
             loadedPanel = { catalog, panel, handlers };
             return loadedPanel;
         })
         .catch((error) => {
-            // Uma promessa rejeitada não é nullish: limpa-se para a tentativa seguinte voltar a pedir.
+            // Limpa-se para a tentativa seguinte voltar a pedir.
             configPanel = null;
             throw error;
         }));
 }
 
-/** O painel se já cá estiver, sem o mandar vir. Para quem não tem por onde esperar. */
+/** O painel se já cá estiver, sem o mandar vir. */
 export function configPanelIfLoaded() {
     return loadedPanel;
 }
@@ -118,19 +112,13 @@ export function initDeviceModal(context) {
     deviceModal = context.deviceModal;
 }
 
-/**
- * Todas as licenças e não só as da empresa do dispositivo, porque mudar de cliente é uma das
- * razões para abrir isto. `null` quando o pedido falha, para não parecer que não há licenças.
- */
+/** Todas as licenças, porque mudar de cliente é razão para abrir isto; `null` se o pedido falha. */
 async function loadLicenseGroups() {
     const licenses = await ensureLicensesLoaded();
     return licenses === null ? null : licenseTree(licenses);
 }
 
-/**
- * O fornecedor e o modelo respondem-se no passo 1, que está escondido quando se grava: o
- * aviso deles tem de ser o do formulário, ao lado do botão, e não uma marca no campo.
- */
+/** O passo 1 está escondido ao gravar: o aviso é o do formulário, e não uma marca no campo. */
 function classificationIsMissing(supplier, model) {
     if (supplier && model) return false;
     setDeviceFormError(
@@ -199,8 +187,7 @@ export async function editDevice(imei, supplier, model) {
     renderEditWizard();
     deviceModal.show();
 
-    // Entre abrir e responder pode abrir-se outro aparelho: o que chega atrasado não pinta
-    // configurações nem capacidades por baixo da identidade de quem está no ecrã.
+    // Entre abrir e responder pode abrir-se outro aparelho: o que chega atrasado não pinta.
     const superseded = () => state.deviceModal.imei !== imei;
 
     let licensesLoaded = true;
@@ -262,10 +249,7 @@ export async function editDevice(imei, supplier, model) {
     }
 }
 
-/**
- * A identidade do dispositivo no cabeçalho do modal, sempre à vista -- mesmo com o separador
- * das configurações aberto e a página a rolar.
- */
+/** A identidade no cabeçalho do modal, à vista mesmo com a página a rolar. */
 function renderDeviceModalIdentity(device, deviceModel, deviceType) {
     if (!els.deviceModalIdentity) return;
 
@@ -361,7 +345,7 @@ export function renderDeviceTypeSelector(selectedType = "watch") {
     applyDeviceTypeFields();
 }
 
-/** Os campos do tipo, corrigidos pelo protocolo do modelo quando ele já se conhece. */
+/** Os campos do tipo, corrigidos pelo protocolo do modelo. */
 function applyDeviceTypeFields() {
     const fields = deviceTypeFields(els.deviceForm.dataset.deviceType, state.deviceModal.protocol);
     const byImei = fields.identity.field === "imei";
@@ -439,8 +423,7 @@ export async function saveDevice() {
         setDeviceFormError("O dispositivo não chegou a carregar. Feche e volte a abrir.");
         return;
     }
-    // Guardar com uma pergunta da classificação aberta fecha-a primeiro: a validação abaixo
-    // marca campos que só existem no passo do aparelho.
+    // A validação abaixo marca campos que só existem no passo do aparelho.
     showDeviceFields();
     setDeviceFormError("");
     clearInvalid(els.deviceForm);
@@ -490,7 +473,6 @@ export async function saveDevice() {
         ? selectedGatewayKeys()
         : [];
     if (deviceType !== "watch" && (licenseId === "" || licenseId === "0")) {
-        // A licença também é do passo 1: mesma razão, mesmo sítio para o aviso.
         setDeviceFormError(
             "É necessário selecionar uma licença para este tipo de dispositivo",
         );
@@ -581,7 +563,7 @@ function renderDeviceSimNumberField(value = "") {
     resetPhoneControls(els.deviceSimNumberRoot);
 }
 
-/** O número do SIM no campo, ou vazio se ainda não for um número: só espelha o formulário. */
+/** O número do SIM, ou vazio se ainda não for um número. */
 function deviceSimNumber() {
     try {
         return deviceSimNumberOrThrow();
@@ -590,7 +572,7 @@ function deviceSimNumber() {
     }
 }
 
-/** O mesmo número, mas a gravar: aqui um número inválido tem de parar a gravação. */
+/** O mesmo, a gravar: um número inválido para a gravação. */
 function deviceSimNumberOrThrow() {
     const control =
         els.deviceSimNumberRoot?.querySelector("[data-phone-control]") || null;

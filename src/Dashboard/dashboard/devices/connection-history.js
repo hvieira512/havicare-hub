@@ -3,10 +3,7 @@ import { resolvePaginationPage } from "../pagination.js";
 import { disposeTooltips, refreshTooltips } from "../tooltips.js";
 import { loadMoreButton, pagedRows, paginationControls } from "../components/pagination.js";
 
-/**
- * As ligações do dispositivo escolhido: uma faixa com as quebras a vermelho e, por baixo, a
- * lista delas, fechada até se carregar na seta do título.
- */
+/** As ligações do dispositivo: uma faixa com as quebras e, por baixo, a lista delas. */
 
 const PAGE_SIZE = 5;
 const MINUTE = 60000;
@@ -14,10 +11,7 @@ const MINUTE = 60000;
 /** O que cada contentor mostra e em que página está, para o clique o poder redesenhar. */
 const views = new WeakMap();
 
-/**
- * As quebras entre o primeiro evento e o `end`, da mais recente para a mais antiga. Uma quebra
- * abre no primeiro desligar e fecha no ligar seguinte; sem ele dura até ao `end`.
- */
+/** As quebras, da mais recente para a mais antiga: abre no desligar e fecha no ligar, ou no `end`. */
 export function connectionOutages(events, { now = Date.now(), end = now } = {}) {
     const timeline = events
         .map((event) => ({
@@ -90,8 +84,7 @@ function draw(container) {
     view.outageCount = history.outages.length;
     view.page = Math.min(view.page, totalPages);
 
-    // Isto passa por aqui a cada mensagem do stream: só se redesenha quando muda o que se vê,
-    // e o minuto entra porque a faixa acaba em «agora».
+    // Corre a cada mensagem do stream; o minuto entra porque a faixa acaba em «agora».
     const signature = JSON.stringify([
         history.start,
         history.outages,
@@ -106,8 +99,6 @@ function draw(container) {
     container.dataset.connectionHistory = "";
     disposeTooltips(container);
     container.innerHTML = String(historyHtml(history, view, end === now, totalPages));
-    // Os controlos do paginador saem do componente já como marcação, e entram como no
-    // `renderPagination`.
     const pagination = { page: view.page, total_pages: totalPages };
     const pager = container.querySelector("[data-connection-pager]");
     if (pager) pager.innerHTML = paginationControls({ pagination, actionPrefix: "connection" });
@@ -148,7 +139,6 @@ function historyHtml(history, view, endsNow, totalPages) {
         ${view.expanded && history.outages.length ? outageList(history, view, totalPages) : ""}`;
 }
 
-/** A faixa por troços, do mais antigo ao mais recente: ligado entre as quebras, e as quebras. */
 function bandSegments(history) {
     const segments = [];
     let cursor = history.start;

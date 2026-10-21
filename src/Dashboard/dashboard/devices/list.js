@@ -35,10 +35,7 @@ import {
 } from "./detail.js";
 import { connectDeviceStream, disconnectDeviceStream, isDeviceStreamFor } from "./stream.js";
 
-/**
- * A coluna da esquerda: a lista, a paginação, a busca e o modal de escolher dispositivo.
- * Escolher uma linha é o que liga esta coluna à da direita, e daqui chama-se o `detail.js`.
- */
+/** A coluna da esquerda: a lista, a paginação, a busca e o modal de escolher dispositivo. */
 let els;
 let ui;
 let deviceSearchTimer = null;
@@ -46,16 +43,11 @@ let deviceSearchTimer = null;
 export function initDeviceList(context) {
     els = context.els;
     ui = context.ui;
-    // Quem volta a pedir a lista entra por aqui e não por um import de volta: os filtros
-    // mexem no estado, a lista é que a vai buscar, e o grafo de módulos fica sem ciclos.
     initListFilters({ els, onChange: loadSummary });
     initDeviceDetailView(context);
 }
 
-/**
- * Enquanto o pedido corre, a lista fica marcada como ocupada: em filtro, pesquisa ou
- * página, o conteúdo antigo continua no ecrã e nada mais diria que está a mudar.
- */
+/** Enquanto o pedido corre a lista fica marcada como ocupada: o conteúdo antigo continua lá. */
 async function loadSummary() {
     els.deviceList?.setAttribute("aria-busy", "true");
     try {
@@ -65,10 +57,7 @@ async function loadSummary() {
     }
 }
 
-/**
- * Só a última listagem pedida escreve a lista e o paginador: a paginação e os filtros pedem sem
- * esperar, e as respostas podem chegar trocadas.
- */
+/** Só a última listagem pedida escreve: as respostas podem chegar trocadas. */
 let summaryGeneration = 0;
 
 async function fetchSummary() {
@@ -194,7 +183,6 @@ export function restoreSelectedDevice(storedImei) {
     void openDeviceSelector();
 }
 
-/** O esqueleto da lista e dos filtros, para a lista não saltar quando os dados chegam. */
 function renderDeviceSelectorSkeleton() {
     els.deviceList.innerHTML = deviceCardSkeletonList(state.deviceListPageSize);
     renderDeviceFilterSkeleton();
@@ -212,8 +200,7 @@ function renderDeviceSelector() {
     if (els.deviceListSearch) {
         els.deviceListSearch.value = state.deviceSearchQuery;
     }
-    // Uma falha diz-se uma vez, na lista, que é onde o utilizador está. As colunas que
-    // dependem da mesma resposta ficam em esqueleto em vez de anunciarem vazio.
+    // Uma falha diz-se uma vez, na lista; os filtros ficam em esqueleto em vez de anunciarem vazio.
     if (state.summary.devicesError) renderDeviceFilterSkeleton();
     else renderDeviceFilterControls();
 
@@ -224,10 +211,7 @@ function renderDeviceSelector() {
     renderDevicePagination(state.summary.devicePagination);
 }
 
-/**
- * O corpo da lista: os cartões, ou -- na falta deles -- a distinção entre um filtro sem
- * resultados e uma falha a carregar, que não se podem ler como a mesma coisa.
- */
+/** Os cartões, ou a distinção entre um filtro sem resultados e uma falha a carregar. */
 function deviceListBody(summary) {
     if (summary.devices.length) {
         return summary.devices.map(renderDeviceCard).join("");
@@ -257,17 +241,13 @@ const FILTER_GROUP_LABEL = {
     license: "licença",
 };
 
-/** Há filtro aplicado quando o estado está escolhido ou algum grupo tem escolhas. */
 function hasDeviceFilters(filters) {
     if (!filters) return false;
     if (filters.online === true || filters.online === false) return true;
     return Object.keys(FILTER_GROUP_LABEL).some((key) => (filters[key] || []).length > 0);
 }
 
-/**
- * Os filtros persistem entre sessões, e um esquecido faz um IMEI exacto parecer inexistente:
- * o vazio diz o que o causa e traz o botão que o desfaz.
- */
+/** Um filtro esquecido faz um IMEI exacto parecer inexistente: o vazio diz o que o causa. */
 export function deviceListEmptyState(filters, query) {
     const search = String(query || "").trim();
     // `true` são os ligados, `false` os desligados, e `null` não filtra por estado.
@@ -299,10 +279,7 @@ export function deviceListEmptyState(filters, query) {
     };
 }
 
-/**
- * O contador do cabeçalho: com filtros diz quantos ficam de quantos há, e os ligados só entram
- * quando se vê a frota toda.
- */
+/** Com filtros diz quantos ficam de quantos há; os ligados só entram com a frota toda. */
 export function deviceSelectorSummary(totals, pagination, hasFilters) {
     const { total = 0, online = 0 } = totals || {};
     if (!total) return "";
@@ -383,14 +360,13 @@ async function selectDevice(imei) {
     selectImei(imei);
     saveSelectedDeviceToStorage();
     await loadDevice(imei);
-    // Fecha-se quando a escolha vingou, e não pelo retorno do `loadDevice`, que também é falso
-    // quando outra leitura o ultrapassa. Uma falha tira a selecção e o selector fica aberto.
+    // Fecha-se quando a escolha vingou: o `loadDevice` também devolve falso quando ultrapassado.
     if (state.selectedImei === imei) {
         ui.deviceSelectorModal?.hide();
     }
 }
 
-/** Só a última leitura pedida escreve no ecrã, como o contador do `stream.js`. */
+/** Só a última leitura pedida escreve no ecrã. */
 let deviceLoadGeneration = 0;
 
 async function loadDevice(imei) {
@@ -409,14 +385,12 @@ async function loadDevice(imei) {
         renderSelectionDetail();
         return false;
     }
-    // Aqui porque é o único sítio por onde entra um dispositivo novo; nos redesenhos
-    // seguintes a cache já está quente.
+    // O único sítio por onde entra um dispositivo novo.
     await ensureCapabilityCatalog(detail.model?.deviceType || "watch");
     if (generation !== deviceLoadGeneration) {
         return false;
     }
-    // Recarregar o dispositivo já escolhido não é trocar de aparelho: o stream fica aberto, e o
-    // histórico que ele já entregou também.
+    // Recarregar o dispositivo escolhido não é trocar: o stream e o histórico ficam.
     const changingDevice = !isDeviceStreamFor(imei);
     if (changingDevice) disconnectDeviceStream();
     if (changingDevice) setSelectedDetail(detail);
