@@ -109,7 +109,6 @@ export const fieldLabel = (key) =>
         impedance100KhzOhm: "Impedância a 100 kHz",
         impedanceOhm: "Impedância",
         channel: "Canal",
-        gsmSignal: "Sinal GSM",
         pressType: "Tipo de toque",
         triggerCount: "Total de toques",
         presses: "Toques",
@@ -119,7 +118,7 @@ export const fieldLabel = (key) =>
         magnitudeMg: "Intensidade",
         interface: "Interface",
         communicationVersion: "Firmware de comunicação",
-        networkType: "Rede",
+        radioType: "Rede",
         signalQuality: "Qualidade do sinal",
         signalStrengthDbm: "Intensidade do sinal",
         satelliteCount: "Satélites",
@@ -128,12 +127,8 @@ export const fieldLabel = (key) =>
         percent: "Percentagem",
         affectedChannelCount: "Canais afetados",
         maximumDelta: "Delta máximo",
-        chargingState: "Estado de carga",
-        // Apesar do nome, o `batteryType` do Wonlex diz porque é que a leitura foi enviada.
-        batteryType: "Motivo do envio",
-        batteryPercent: "Bateria",
-        rollFrequency: "Frequência de rotação",
-        workMode: "Modo de trabalho",
+        charging: "A carregar",
+        reportReason: "Motivo do envio",
         glucoseMgDl: "Glicemia",
         summary: "Resumo",
         reportedAt: "Reportado em",
@@ -179,7 +174,6 @@ export const fieldLabel = (key) =>
         breathingStatus: "Estado respiratório",
         heartRateStatus: "Estado da FC",
         vitalSignsStatus: "Estado dos sinais vitais",
-        ack: "ACK",
         settings: "Definições",
         intervalSeconds: "Intervalo (s)",
         // A Wonlex manda o intervalo de localização em segundos, e zero desliga-o.
@@ -240,7 +234,11 @@ export const fieldLabel = (key) =>
         triglyceridesMmolPerL: "Triglicéridos",
         hdlMmolPerL: "HDL",
         ldlMmolPerL: "LDL",
-        milliseconds: "Milissegundos",
+        headingDegrees: "Direção",
+        measuredAt: "Medido em",
+        stressScore: "Stress",
+        cardiacLoad: "Carga cardíaca",
+        met: "MET",
         heartRateBpm: "Frequência cardíaca",
         qtcMilliseconds: "QTc",
         hrvMilliseconds: "VFC",
@@ -256,13 +254,11 @@ export const fieldLabel = (key) =>
         endTime: "Fim",
         segments: "Troços",
         intervals: "Intervalos",
-        timestamp: "Instante",
         version: "Versão",
         type: "Tipo",
         state: "Estado",
         value: "Valor",
         count: "Contagem",
-        score: "Pontuação",
     })[key] || titleize(key);
 
 /** A unidade entre parênteses no rótulo de um campo: de «Intervalo (min)» sai «min». */
@@ -271,22 +267,11 @@ export const fieldUnit = (key) => fieldLabel(key).match(/\(([^)]+)\)\s*$/)?.[1] 
 /** Os valores de enumeração em português, por campo: `low` e `high` mudam de sentido entre campos. */
 const FIELD_VALUE_LABELS = {
     site: { forehead: "Testa", ear: "Ouvido" },
-    // O bit dos relógios e a enumeração do dispensador, que no contrato partilham o campo.
-    chargingState: {
-        0: "Não está a carregar",
-        1: "A carregar",
-        charging: "A carregar",
-        full: "Carregada",
-        normal: "Não está a carregar",
-        low: "Bateria fraca",
-        absent: "Sem bateria",
-    },
-    // Os quatro motivos que o Wonlex declara para enviar uma leitura de bateria.
-    batteryType: {
-        0: "Ao ligar",
-        1: "Ao desligar",
-        2: "Envio periódico",
-        3: "Bateria fraca",
+    reportReason: {
+        power_on: "Ao ligar",
+        power_off: "Ao desligar",
+        periodic: "Envio periódico",
+        low_battery: "Bateria fraca",
     },
     result: {
         on_time: "A horas",
@@ -419,7 +404,6 @@ const FIELD_UNIT = {
     lowCelsius: "°C",
     highCelsius: "°C",
     humidityPercent: "%",
-    batteryPercent: "%",
     wifiSignalDbm: "dBm",
     gsmSignalDbm: "dBm",
     signalStrengthDbm: "dBm",
@@ -442,7 +426,7 @@ const FIELD_UNIT = {
     triglyceridesMmolPerL: "mmol/L",
     hdlMmolPerL: "mmol/L",
     ldlMmolPerL: "mmol/L",
-    milliseconds: "ms",
+    headingDegrees: "°",
     heartRateBpm: "bpm",
     qtcMilliseconds: "ms",
     hrvMilliseconds: "ms",

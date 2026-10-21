@@ -36,7 +36,7 @@ final class BridgeMeasurementTest extends TestCase
                 'temperature',
                 ['bodyCelsius' => 36.2, 'surfaceCelsius' => 33.5],
             ],
-            'stress' => [['sdkType' => 58, 'pressure' => 23], 'stress', ['score' => 23]],
+            'stress' => [['sdkType' => 58, 'pressure' => 23], 'stress', ['stressScore' => 23]],
             'blood pressure' => [
                 ['sdkType' => 18, 'bloodPressureHigh' => 101, 'bloodPressureLow' => 74],
                 'blood_pressure',

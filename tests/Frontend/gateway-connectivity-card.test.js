@@ -26,10 +26,10 @@ test("wired gateways render without a signal reading", () => {
     assert.doesNotMatch(html, /dBm/);
 });
 
-test("MKGW4 cellular connectivity includes the network type", () => {
+test("MKGW4 cellular connectivity includes the radio type", () => {
     const html = connectivityCard({
         interface: "cellular",
-        networkType: "LTE",
+        radioType: "lte",
         signalQuality: 18,
         signalStrengthDbm: -77,
     });

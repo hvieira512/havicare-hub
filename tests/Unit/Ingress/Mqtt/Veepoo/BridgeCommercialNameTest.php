@@ -39,6 +39,19 @@ final class BridgeCommercialNameTest extends TestCase
         }
     }
 
+    public function testTheDailyBlocksCarryItToo(): void
+    {
+        $mqtt = new RecordingHubMqttBridge();
+        $this->bridge($mqtt)->handleReceivedMessage(self::TOPIC, json_encode([
+            'source' => 'veepoo-node',
+            'kind' => 'daily_block',
+            'device' => ['mac' => self::BRACELET],
+            'payload' => [['date' => '2026-09-08-10-05', 'pulseReat' => [72]]],
+        ], JSON_THROW_ON_ERROR));
+
+        self::assertSame('Havicare MF91', $mqtt->telemetry[0]['payload']['device']['commercialName'] ?? null);
+    }
+
     /** Um modelo que o catálogo não conhece não leva a chave, em vez de a levar vazia. */
     public function testAnUnknownModelOmitsTheCommercialName(): void
     {

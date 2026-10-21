@@ -38,7 +38,6 @@ final class VivistarEventDecoder
                 DeviceEventDecoder::event('battery', $nativeType, ['battery' => $payload['battery'] ?? null]),
             ])),
             'AP03' => [
-                DeviceEventDecoder::event('heartbeat', $nativeType, $payload),
                 DeviceEventDecoder::event('battery', $nativeType, ['battery' => $payload['battery'] ?? null]),
                 DeviceEventDecoder::event('activity', $nativeType, ['steps' => $payload['steps'] ?? null]),
             ],

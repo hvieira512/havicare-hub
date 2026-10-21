@@ -12,7 +12,7 @@ const { telemetryActivityRow } =
 test("a row that already says everything does not open", () => {
     const row = telemetryActivityRow({
         type: "battery",
-        data: { percent: 0, chargingState: "absent" },
+        data: { percent: 0, reportReason: "power_off" },
         occurredAt: "2026-09-23T10:00:00Z",
     });
 

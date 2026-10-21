@@ -30,9 +30,9 @@ export function connectivityValue(data) {
         parts.push(CONNECTIVITY_INTERFACE_LABELS[iface] || titleize(iface));
     }
 
-    const networkType = String(data?.networkType || "").trim();
-    if (networkType !== "") {
-        parts.push(networkType);
+    const radioType = String(data?.radioType || "").trim();
+    if (radioType !== "") {
+        parts.push(radioType.toUpperCase());
     }
 
     // Um gateway com fios não reporta RSSI e 0 dBm é leitura legítima: testar contra null.

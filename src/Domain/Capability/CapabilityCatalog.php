@@ -324,7 +324,6 @@ final class CapabilityCatalog
             'rr_interval',
             'battery',
             'activity',
-            'heartbeat',
             'blood_sugar',
             'firmware_version',
             // Não traz valor próprio: o que a resposta enche são as leituras que já existem.

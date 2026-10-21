@@ -106,9 +106,9 @@ function scaleUserName(id) {
 }
 
 const WEIGHING_PHASE = {
-    weight: { idle: "Balança vazia", settling: "A estabilizar", stable: "Peso estável", overload: "Excesso de peso" },
-    impedance: { measuring: "A medir a impedância", measured: "Impedância medida", failed: "Impedância falhou" },
-    heartRate: { measuring: "A medir a FC", measured: "FC medida", failed: "FC falhou" },
+    weightPhase: { idle: "Balança vazia", settling: "A estabilizar", stable: "Peso estável", overload: "Excesso de peso" },
+    impedancePhase: { measuring: "A medir a impedância", measured: "Impedância medida", failed: "Impedância falhou" },
+    heartRatePhase: { measuring: "A medir a FC", measured: "FC medida", failed: "FC falhou" },
 };
 
 export function cardIcon(type) {
@@ -250,14 +250,14 @@ const UPLINK_CARD_RENDERERS = {
         value: fieldValue("fault", data.fault),
     }),
     stress: (data) => ({
-        value: data?.score != null ? `${data.score}` : capabilityLabel("stress"),
+        value: data?.stressScore != null ? `${data.stressScore}` : capabilityLabel("stress"),
     }),
     // Equivalentes metabólicos: 1 é o gasto em repouso, e por isso o número vale por si.
     met: (data) => ({
-        value: data?.value != null ? `${data.value} MET` : capabilityLabel("met"),
+        value: data?.met != null ? `${data.met} MET` : capabilityLabel("met"),
     }),
     cardiac_load: (data) => ({
-        value: data?.value != null ? `${data.value}` : capabilityLabel("cardiac_load"),
+        value: data?.cardiacLoad != null ? `${data.cardiacLoad}` : capabilityLabel("cardiac_load"),
     }),
     sleep_apnea: (data) => ({
         value:
@@ -281,7 +281,7 @@ const UPLINK_CARD_RENDERERS = {
         ]),
     }),
     steps: (data) => ({
-        value: `${data?.count ?? 0} passos`,
+        value: `${data?.steps ?? 0} passos`,
         details: compactDetails(data, ["periodSeconds"]),
     }),
     wear_state: (data) => ({
@@ -303,7 +303,7 @@ const UPLINK_CARD_RENDERERS = {
     weighing_status: (data) => ({
         value: data?.shuttingDown
             ? "A desligar"
-            : [WEIGHING_PHASE.heartRate[data?.heartRate], WEIGHING_PHASE.impedance[data?.impedance], WEIGHING_PHASE.weight[data?.weight]]
+            : [WEIGHING_PHASE.heartRatePhase[data?.heartRatePhase], WEIGHING_PHASE.impedancePhase[data?.impedancePhase], WEIGHING_PHASE.weightPhase[data?.weightPhase]]
                     .find(Boolean) ?? capabilityLabel("weighing_status"),
         details: data?.weightKg ? `${data.weightKg} kg` : "",
     }),
@@ -409,8 +409,8 @@ const UPLINK_CARD_RENDERERS = {
     }),
     hrv: (data) => ({
         value:
-            data?.milliseconds != null
-                ? `${data.milliseconds} ms`
+            data?.hrvMilliseconds != null
+                ? `${data.hrvMilliseconds} ms`
                 : capabilityLabel("hrv"),
     }),
     breath_rate: (data) => ({
@@ -437,10 +437,7 @@ const UPLINK_CARD_RENDERERS = {
 };
 
 // Os dois estados do dispensador que não são carga e que por isso o ícone não desenha.
-const BATTERY_STATE_LABEL = {
-    low: "Bateria fraca",
-    absent: "Sem bateria",
-};
+const BATTERY_LOW_LABEL = "Bateria fraca";
 
 /** `meta` é o que se sabe da leitura fora dela, como quando chegou. */
 export function uplinkCardContent(type, data, meta = {}) {
@@ -511,7 +508,7 @@ function settingSummary(key, value) {
 /** A média dos intervalos R-R: o inverso é a frequência cardíaca, e um lote absurdo salta à vista. */
 function rrIntervalValue(data) {
     const intervals = (data?.intervals || [])
-        .map((entry) => entry?.milliseconds)
+        .map((entry) => entry?.rrIntervalMilliseconds)
         .filter((value) => typeof value === "number");
 
     if (intervals.length === 0) {
@@ -541,23 +538,18 @@ function batteryTone({ percent, lowBattery }) {
     return "success";
 }
 
-/** Os relógios mandam um bit e o dispensador uma enumeração. O `full` já acabou de carregar. */
-const isCharging = (state) => state === 1 || state === "charging";
-
 /** O canto do ícone: o relâmpago a carregar, a tomada na ficha sem carregar, nada fora dela. */
 function batteryBadge(data) {
-    if (isCharging(data.chargingState)) return "fa-bolt";
+    if (data.charging === true) return "fa-bolt";
 
     return data.mainsPowered === true ? "fa-plug" : "";
 }
 
 function batteryDetails(data) {
     // A carga e a corrente estão no ícone; ficam os dois estados que ele não sabe desenhar.
-    if (data.lowBattery === true) return BATTERY_STATE_LABEL.low;
-    const state = BATTERY_STATE_LABEL[data.chargingState] ||
-        (data.chargingState == null ? compactDetails(data, ["batteryType"]) : "");
+    if (data.lowBattery === true) return BATTERY_LOW_LABEL;
 
-    return joinMarkup([state]);
+    return joinMarkup([compactDetails(data, ["reportReason"])]);
 }
 
 export function cardTone(type) {

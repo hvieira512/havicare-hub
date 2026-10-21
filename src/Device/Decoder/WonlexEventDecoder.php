@@ -29,12 +29,7 @@ final class WonlexEventDecoder
             'upHRV' => [DeviceEventDecoder::event('hrv', $nativeType, $payload)],
             'upPPG' => [DeviceEventDecoder::event('ppg', $nativeType, $payload)],
             'upRR' => [DeviceEventDecoder::event('rr_interval', $nativeType, $payload)],
-            'upBattery' => array_values(array_filter([
-                self::lowPower($nativeType, $payload),
-                DeviceEventDecoder::event('battery', $nativeType, $payload),
-            ])),
-            'heartbeat' => array_values(array_filter([
-                DeviceEventDecoder::event('heartbeat', $nativeType, $payload),
+            'upBattery', 'heartbeat' => array_values(array_filter([
                 self::lowPower($nativeType, $payload),
                 DeviceEventDecoder::event('battery', $nativeType, $payload),
             ])),

@@ -50,7 +50,7 @@ final class MeasurementNormalizer
                 ])],
             58 => self::withinRange($payload['pressure'] ?? null, 1, 100) === null
                 ? null
-                : ['stress', ['score' => (int)$payload['pressure']]],
+                : ['stress', ['stressScore' => (int)$payload['pressure']]],
             18, 28 => self::bloodPressureReading($payload),
             32 => self::bodyComposition($payload),
             9 => self::dailyActivity($payload),

@@ -469,18 +469,14 @@ class DeviceHubServer
             return false;
         }
 
-        // O heartbeat sai no MQTT mas não entra no histórico do dashboard: seria um terço dos cem
-        // eventos guardados, a repetir a bateria e os passos que chegam como eventos próprios.
-        if ($type !== 'heartbeat') {
-            // O histórico é um extra: falhar aqui não desfaz o que saiu.
-            try {
-                $this->deviceStore?->append($session->imei, $channel, array_merge(
-                    $event,
-                    ['deviceType' => $session->deviceType, 'licenseId' => $licenseId]
-                ));
-            } catch (\Throwable $e) {
-                Logger::channel('hub')->error("Failed to record {$type} IMEI={$session->imei}: {$e->getMessage()}");
-            }
+        // O histórico é um extra: falhar aqui não desfaz o que saiu.
+        try {
+            $this->deviceStore?->append($session->imei, $channel, array_merge(
+                $event,
+                ['deviceType' => $session->deviceType, 'licenseId' => $licenseId]
+            ));
+        } catch (\Throwable $e) {
+            Logger::channel('hub')->error("Failed to record {$type} IMEI={$session->imei}: {$e->getMessage()}");
         }
 
         $lowBattery = $this->lowBattery->observe($session->imei, $event);

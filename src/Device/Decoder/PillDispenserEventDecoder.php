@@ -303,14 +303,8 @@ final class PillDispenserEventDecoder
         $chargingState = Tlv::u8($tlv, 0x8104);
         $battery = Values::withoutNulls([
             'percent' => Tlv::u8($tlv, 0x8103),
-            'chargingState' => match ($chargingState) {
-                0 => 'normal',
-                1 => 'full',
-                2 => 'low',
-                3 => 'charging',
-                4 => 'absent',
-                default => null,
-            },
+            // O `0x8104` vale normal, cheia, fraca, a carregar ou sem bateria; sem bateria não se carrega nem deixa de carregar.
+            'charging' => $chargingState === null || $chargingState === 4 ? null : $chargingState === 3,
             'mainsPowered' => self::flag($tlv, 0x8109),
             // Sem bateria (4) não é bateria fraca, e sem a TAG não se sabe.
             'lowBattery' => $chargingState === null || $chargingState === 4 ? null : $chargingState === 2,

@@ -34,7 +34,7 @@ final class DailyBlockNormalizer
         'pulseReat' => ['heart_rate', 'bpm'],
         'heartReat' => ['heart_rate', 'bpm'],
         'respirationRate' => ['breath_rate', 'breathsPerMinute'],
-        'HRVData' => ['hrv', 'milliseconds'],
+        'HRVData' => ['hrv', 'hrvMilliseconds'],
     ];
 
     /**
@@ -91,7 +91,7 @@ final class DailyBlockNormalizer
         if (is_array($oxygen)) {
             $counters = [
                 'sleep_apnea' => ['apneaResults' => 'episodes', 'hypoxiaTimes' => 'hypoxiaSeconds'],
-                'cardiac_load' => ['cardiacLoads' => 'value'],
+                'cardiac_load' => ['cardiacLoads' => 'cardiacLoad'],
             ];
             foreach ($counters as $type => $fields) {
                 $data = [];
@@ -109,8 +109,8 @@ final class DailyBlockNormalizer
 
         // O stress vem inteiro e o MET com uma casa decimal implícita: 9 são 0,9 MET.
         $scored = [
-            'stress' => ['pressure', 'score', 1],
-            'met' => ['meiTuo', 'value', 10],
+            'stress' => ['pressure', 'stressScore', 1],
+            'met' => ['meiTuo', 'met', 10],
         ];
         foreach ($scored as $type => [$key, $field, $divisor]) {
             foreach (self::readings($block[$key] ?? null) as $minute => $value) {
@@ -173,15 +173,15 @@ final class DailyBlockNormalizer
      * Os cinquenta intervalos R-R do bloco, que o firmware conta em dezenas de milissegundos; o
      * instante é o do slot onde cada um cai.
      *
-     * @return list<array{timestamp: string, milliseconds: int}>
+     * @return list<array{measuredAt: string, rrIntervalMilliseconds: int}>
      */
     private function rrIntervals(mixed $values, int $start): array
     {
         $out = [];
         foreach (self::readings($values) as $slot => $value) {
             $out[] = [
-                'timestamp' => gmdate('Y-m-d\TH:i:s\Z', $start + ($slot * self::RR_SLOT_SECONDS)),
-                'milliseconds' => $value * 10,
+                'measuredAt' => gmdate('Y-m-d\TH:i:s\Z', $start + ($slot * self::RR_SLOT_SECONDS)),
+                'rrIntervalMilliseconds' => $value * 10,
             ];
         }
 
@@ -334,7 +334,7 @@ final class DailyBlockNormalizer
      * Passos na janela de cinco minutos, onde zero é leitura. Distância, calorias e
      * `amountOfExercise` ficam de fora: são derivados dos passos ou não têm unidade.
      *
-     * @return array{count: int, periodSeconds: int}|null
+     * @return array{steps: int, periodSeconds: int}|null
      */
     private function steps(mixed $step): ?array
     {
@@ -342,7 +342,7 @@ final class DailyBlockNormalizer
             return null;
         }
 
-        return ['count' => $step['stepCount'], 'periodSeconds' => self::BLOCK_SECONDS];
+        return ['steps' => $step['stepCount'], 'periodSeconds' => self::BLOCK_SECONDS];
     }
 
     /**

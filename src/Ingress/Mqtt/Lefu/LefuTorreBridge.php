@@ -249,7 +249,7 @@ final class LefuTorreBridge extends MqttBridgeBase implements DispatchesQueued
             $this->emit($context, 'weighing_status', $nativeType, $status);
         }
         // Com a balança vazia, a impedância cifrada da pessoa anterior já não é de ninguém.
-        if ($frame['status']['weight'] === 'idle') {
+        if ($frame['status']['weightPhase'] === 'idle') {
             unset($this->encodedImpedance[$deviceKey]);
         }
 

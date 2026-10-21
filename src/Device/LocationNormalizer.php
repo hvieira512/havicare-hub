@@ -63,10 +63,9 @@ final class LocationNormalizer
             'coordinateSystem' => self::normalizeCoordinateSystem($payload['coordinateSystem'] ?? $gps['Type'] ?? null),
             'reportKind' => self::normalizeReportKind($payload['reportKind'] ?? null),
             'speedKmh' => FeatureNormalizer::float($payload['speed'] ?? $payload['speedKmh'] ?? $gps['speed'] ?? null),
-            'heading' => FeatureNormalizer::float($payload['direction'] ?? $payload['heading'] ?? $gps['direction'] ?? null),
+            'headingDegrees' => FeatureNormalizer::float($payload['direction'] ?? $payload['heading'] ?? $gps['direction'] ?? null),
             'altitudeMeters' => FeatureNormalizer::float($payload['altitude'] ?? $payload['altitudeMeters'] ?? $gps['height'] ?? null),
             'satelliteCount' => $satelliteCount,
-            'gsmSignal' => FeatureNormalizer::int($payload['gsmSignal'] ?? $gps['GSM'] ?? $firstBaseStation['rxlev'] ?? $firstBaseStation['gsmSignal'] ?? null),
             'mcc' => $mcc ?? FeatureNormalizer::stringOrNull($firstBaseStation['mcc'] ?? null),
             'mnc' => $mnc ?? FeatureNormalizer::stringOrNull($firstBaseStation['mnc'] ?? null),
             'lac' => FeatureNormalizer::stringOrNull($payload['lac'] ?? $gps['lac'] ?? $firstBaseStation['lac'] ?? null),
@@ -172,7 +171,6 @@ final class LocationNormalizer
                 'mnc' => FeatureNormalizer::stringOrNull($station['mnc'] ?? $fallbackMnc),
                 'lac' => FeatureNormalizer::stringOrNull($station['lac'] ?? null),
                 'cellId' => FeatureNormalizer::stringOrNull($station['cellId'] ?? $station['ci'] ?? null),
-                'gsmSignal' => FeatureNormalizer::int($station['gsmSignal'] ?? $station['rxlev'] ?? null),
                 'radioType' => self::normalizeRadioType($station['radioType'] ?? $station['networkType'] ?? $fallbackRadioType),
                 'signalStrengthDbm' => self::normalizeDbm(
                     $station['signalStrengthDbm'] ?? $station['signalDbm'] ?? $station['rssiDbm'] ?? null,
@@ -206,7 +204,6 @@ final class LocationNormalizer
             $entry = array_filter([
                 'ssid' => FeatureNormalizer::stringOrNull($point['ssid'] ?? $point['label'] ?? null),
                 'mac' => self::normalizeMac($point['mac'] ?? $point['bssid'] ?? null),
-                'signal' => FeatureNormalizer::int($point['signal'] ?? $point['rssi'] ?? $point['gsmSignal'] ?? null),
                 'signalStrengthDbm' => self::normalizeDbm(
                     $point['signalStrengthDbm'] ?? $point['signalDbm'] ?? null,
                     $point['signal'] ?? $point['rssi'] ?? null,
@@ -223,12 +220,13 @@ final class LocationNormalizer
         return $normalized;
     }
 
-    private static function normalizeRadioType(mixed $value): ?string
+    /** Público porque a `connectivity` dos gateways usa a mesma enumeração. */
+    public static function normalizeRadioType(mixed $value): ?string
     {
         return match (strtolower(trim((string)$value))) {
             'gsm', '2g', 'gprs', 'edge' => 'gsm',
             'wcdma', 'umts', '3g', 'hspa', 'hspa+' => 'wcdma',
-            'lte', '4g', 'cat-m', 'catm' => 'lte',
+            'lte', '4g', 'cat-m', 'catm', 'cat.m', 'fdd lte', 'tdd lte', 'nb-iot', 'nbiot' => 'lte',
             'cdma' => 'cdma',
             'nr', '5g' => 'nr',
             default => null,

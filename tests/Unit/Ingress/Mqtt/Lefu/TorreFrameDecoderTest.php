@@ -22,7 +22,7 @@ final class TorreFrameDecoderTest extends TestCase
         self::assertSame(400.0, $frame['impedance50KhzOhm']);
         self::assertSame(363.5, $frame['impedance100KhzOhm']);
         self::assertSame(
-            ['weight' => 'stable', 'impedance' => 'measured', 'heartRate' => 'measured', 'displayUnit' => 'kg', 'shuttingDown' => false],
+            ['weightPhase' => 'stable', 'impedancePhase' => 'measured', 'heartRatePhase' => 'measured', 'displayUnit' => 'kg', 'shuttingDown' => false],
             $frame['status'],
         );
     }
@@ -35,7 +35,7 @@ final class TorreFrameDecoderTest extends TestCase
         self::assertSame(97.25, $frame['weightKg']);
         self::assertNull($frame['heartRateBpm']);
         self::assertNull($frame['impedance50KhzOhm']);
-        self::assertSame('failed', $frame['status']['impedance']);
+        self::assertSame('failed', $frame['status']['impedancePhase']);
     }
 
     public function testAFailedHeartRateIsNotAReading(): void
@@ -43,7 +43,7 @@ final class TorreFrameDecoderTest extends TestCase
         $frame = (new TorreFrameDecoder())->decode('fff3', '010de580b225000000327c0f649d0d');
 
         self::assertNull($frame['heartRateBpm']);
-        self::assertSame('failed', $frame['status']['heartRate']);
+        self::assertSame('failed', $frame['status']['heartRatePhase']);
         self::assertSame(396.4, $frame['impedance50KhzOhm']);
     }
 
@@ -53,13 +53,13 @@ final class TorreFrameDecoderTest extends TestCase
 
         $settling = $decoder->decode('fff3', '010d0100992500000000000000 0000');
         self::assertFalse($settling['complete']);
-        self::assertSame('settling', $settling['status']['weight']);
+        self::assertSame('settling', $settling['status']['weightPhase']);
         self::assertSame(96.25, $settling['weightKg']);
 
         // Com a balança vazia acendem os dois bits do peso: ninguém em cima, e não excesso de peso.
         $empty = $decoder->decode('fff3', '010d0d40000000000000000000000000');
         self::assertTrue($empty['status']['shuttingDown']);
-        self::assertSame('idle', $empty['status']['weight']);
+        self::assertSame('idle', $empty['status']['weightPhase']);
     }
 
     public function testTheEncodedImpedanceIsTwoUnsignedLittleEndianWords(): void
