@@ -20,10 +20,7 @@ final class DatabaseWhitelistRepositoryTest extends MysqlDashboardTestCase
         self::assertSame('bea6c3dd8e02', $row['device_id'] ?? null);
     }
 
-    /**
-     * O âmbito por empresa ignora maiúsculas pela colação `utf8mb4_unicode_ci`, sem `LOWER()`,
-     * que impediria o uso do `idx_whitelist_company`.
-     */
+    /** O âmbito por empresa ignora maiúsculas pela colação, sem `LOWER()`. */
     public function testTheCompanyScopeIgnoresLetterCase(): void
     {
         $db = ApiDataAccess::fromDatabase($this->createDashboardDatabase());
@@ -37,10 +34,7 @@ final class DatabaseWhitelistRepositoryTest extends MysqlDashboardTestCase
         }
     }
 
-    /**
-     * A sentinela `0` é «sem licença» em memória e `NULL` na coluna: o filtro converte-a na
-     * mesma fronteira em que a escrita a converte.
-     */
+    /** O filtro de licença `0` encontra os `NULL` da coluna. */
     public function testTheLegacyLicenseFilterFindsDevicesWithoutLicense(): void
     {
         $db = ApiDataAccess::fromDatabase($this->createDashboardDatabase());

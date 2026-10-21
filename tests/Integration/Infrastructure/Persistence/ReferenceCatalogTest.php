@@ -13,10 +13,7 @@ use Tests\Support\MysqlDashboardTestCase;
  */
 final class ReferenceCatalogTest extends MysqlDashboardTestCase
 {
-    /**
-     * A ordem dentro de uma secção é alfabética pela etiqueta, que é o que quem lê tem à frente;
-     * a ordem das secções é uma lista fixa na consulta.
-     */
+    /** Dentro de cada secção as capacidades vêm por ordem alfabética da etiqueta. */
     public function testCapabilitiesComeBackAlphabeticalWithinTheirSection(): void
     {
         $capabilities = new \Hub\Infrastructure\Persistence\Repository\GenericCapabilityRepository(
@@ -81,10 +78,7 @@ final class ReferenceCatalogTest extends MysqlDashboardTestCase
         self::assertContains('gateway_device_links', $pdo->query('SHOW TABLES')->fetchAll(\PDO::FETCH_COLUMN));
     }
 
-    /**
-     * O dispensador tem duas origens que têm de dar no mesmo: o seeder, numa base nova, e a
-     * migração, nas existentes. Isto afirma a primeira.
-     */
+    /** O catálogo do dispensador vem completo numa base nova. */
     public function testThePillDispenserCatalogueIsComplete(): void
     {
         $database = $this->createDashboardDatabase();

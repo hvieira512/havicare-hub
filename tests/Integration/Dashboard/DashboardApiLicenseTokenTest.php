@@ -13,10 +13,7 @@ use Tests\Support\DashboardHttpTestCase;
  */
 final class DashboardApiLicenseTokenTest extends DashboardHttpTestCase
 {
-    /**
-     * O harness semeia uma `otherCare` também com a licença 1001: o âmbito é o par
-     * empresa+licença, e verificar só o `license_id` passaria com o token errado.
-     */
+    /** O token tem o âmbito do par empresa e licença, e não só do número da licença. */
     public function testAdminMintsATokenScopedToTheNamedTenant(): void
     {
         [$server, $db] = $this->makeServerWithDatabase();
@@ -103,10 +100,7 @@ final class DashboardApiLicenseTokenTest extends DashboardHttpTestCase
         self::assertSame(404, $other->getStatusCode(), (string)$other->getBody());
     }
 
-    /**
-     * O token que o `tenant` receberia não lhe daria nada de novo, e é recusado à mesma: o que
-     * fecha a rota é o papel de quem chama.
-     */
+    /** Um `license_client` não emite tokens, nem para o próprio âmbito. */
     public function testALicenseClientCannotMintAtAll(): void
     {
         $server = $this->makeServerWithDatabase()[0];
@@ -122,10 +116,7 @@ final class DashboardApiLicenseTokenTest extends DashboardHttpTestCase
         self::assertSame(403, $response->getStatusCode(), (string)$response->getBody());
     }
 
-    /**
-     * A empresa existir com outra licença é o engano provável, e `license_not_found` diz a quem
-     * integra qual das duas metades falhou.
-     */
+    /** Um inquilino desconhecido recusa-se pela metade que falhou, aqui a licença. */
     public function testAnUnknownTenantIsRefusedByTheHalfThatFailed(): void
     {
         $server = $this->makeServerWithDatabase()[0];

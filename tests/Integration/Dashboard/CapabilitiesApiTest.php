@@ -27,10 +27,7 @@ final class CapabilitiesApiTest extends MysqlDashboardTestCase
         self::assertContains('heart_rate', array_column($response['data'], 'key'));
     }
 
-    /**
-     * O ecrã das capacidades decide pelo `isTelemetry`, que não é coluna: sai de
-     * `section = 'telemetry'` na consulta.
-     */
+    /** O `isTelemetry` sai de `section = 'telemetry'`, e não de uma coluna. */
     public function testTelemetryFlagFollowsTheSection(): void
     {
         $api = $this->makeApi();

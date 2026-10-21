@@ -40,7 +40,7 @@ final class DeviceCapabilityPresenterTest extends MysqlDashboardTestCase
         $storedOnly = $this->presenter->deviceCapabilitiesFromPayloadKey($model, 'wonlex-json', [], 'desired_payload', false);
 
         self::assertNotSame([], $withDefaults['alarms']);
-        self::assertSame([], $storedOnly['alarms'], 'nothing is stored, so nothing is reported as configured');
+        self::assertSame([], $storedOnly['alarms'], 'nada guardado, nada dado como configurado');
     }
 
     public function testACapabilityIsNotServedForAProtocolItsContractRejects(): void
@@ -131,7 +131,7 @@ final class DeviceCapabilityPresenterTest extends MysqlDashboardTestCase
         );
 
         foreach ($requestable as $feature) {
-            self::assertContains($feature, $commands, 'requestable telemetry must have a request command');
+            self::assertContains($feature, $commands, 'a telemetria pedível tem de ter comando de pedido');
         }
     }
 

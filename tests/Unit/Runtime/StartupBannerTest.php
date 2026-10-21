@@ -36,10 +36,7 @@ final class StartupBannerTest extends TestCase
         @unlink($this->logFile);
     }
 
-    /**
-     * Dois hubs com o mesmo identificador de cliente expulsam-se do broker em ciclo, e o
-     * `journalctl` só diz «connection lost».
-     */
+    /** O arranque diz os identificadores MQTT, que dois hubs iguais disputariam no broker. */
     public function testTheBannerNamesTheMqttClientIdentities(): void
     {
         $output = $this->banner(['qinglanst']);
@@ -70,10 +67,7 @@ final class StartupBannerTest extends TestCase
         self::assertStringContainsString('Qinglanst radar ingress: radar/+/+', $output);
     }
 
-    /**
-     * Uma ingestão sem descrição não escreve linha nenhuma, e sobretudo não rebenta: o
-     * `enabledIngresses` é construído à mão e pode trazer uma chave que a tabela não conhece.
-     */
+    /** Uma ingestão sem descrição não escreve linha nenhuma, e não rebenta. */
     public function testAnUnknownIngressIsSkippedWithoutFailing(): void
     {
         $output = $this->banner(['inexistente']);

@@ -168,19 +168,19 @@ final class DatabaseStoreTest extends MysqlDashboardTestCase
         $model = $db->models->find('Vivistar', 'L08 Pro');
         self::assertIsArray($model);
 
-        $ligacoes = $pdo->prepare('
+        $links = $pdo->prepare('
             SELECT COUNT(*) FROM model_capabilities WHERE model_id = ? AND capability_key = ?
         ');
-        $ligacoes->execute([(int)$model['id'], 'heart_rate']);
-        self::assertSame(1, (int)$ligacoes->fetchColumn(), 'o L08 Pro devia ter o heart_rate ligado');
+        $links->execute([(int)$model['id'], 'heart_rate']);
+        self::assertSame(1, (int)$links->fetchColumn(), 'o L08 Pro devia ter o heart_rate ligado');
 
         $pdo->prepare("UPDATE capabilities SET capability_key = ? WHERE device_type = 'watch' AND capability_key = ?")
             ->execute(['pulse_rate', 'heart_rate']);
 
-        $ligacoes->execute([(int)$model['id'], 'pulse_rate']);
-        self::assertSame(1, (int)$ligacoes->fetchColumn(), 'a ligação devia ter seguido o nome novo');
-        $ligacoes->execute([(int)$model['id'], 'heart_rate']);
-        self::assertSame(0, (int)$ligacoes->fetchColumn(), 'e não devia ter ficado nenhuma com o antigo');
+        $links->execute([(int)$model['id'], 'pulse_rate']);
+        self::assertSame(1, (int)$links->fetchColumn(), 'a ligação devia ter seguido o nome novo');
+        $links->execute([(int)$model['id'], 'heart_rate']);
+        self::assertSame(0, (int)$links->fetchColumn(), 'e não devia ter ficado nenhuma com o antigo');
     }
 
     public function testRestartPreservesCustomizedFourPTouchModelCapabilities(): void

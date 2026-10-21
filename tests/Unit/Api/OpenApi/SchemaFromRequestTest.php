@@ -75,10 +75,7 @@ final class SchemaFromRequestTest extends TestCase
         self::assertSame(0, $properties['licenseId']['minimum'], 'PositiveOrZero');
     }
 
-    /**
-     * A string vazia só torna o campo opcional em PHP; documentá-la diria que omitir o campo é
-     * mandá-lo vazio, que é o que o `NotBlank` recusa.
-     */
+    /** A string vazia do construtor não se documenta como valor por omissão. */
     public function testConstructorArtefactsAreNotDocumentedAsDefaults(): void
     {
         $properties = SchemaFromRequest::schema(ApiUserWriteRequest::class)['properties'];

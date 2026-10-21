@@ -28,10 +28,7 @@ final class RedisPrefixTest extends TestCase
         self::assertSame(['prefix' => 'dev:'], HubServices::redisOptions(['prefix' => 'dev:']));
     }
 
-    /**
-     * O prefixo apanha as chaves de todos os stores. Não fala com o Redis: olha para o argumento
-     * que o cliente poria no fio.
-     */
+    /** O prefixo chega às chaves de todos os stores, no argumento que vai para o fio. */
     #[DataProvider('hubKeyspaces')]
     public function testEveryHubKeyspaceGetsThePrefix(string $key): void
     {
@@ -72,10 +69,7 @@ final class RedisPrefixTest extends TestCase
         self::assertNull($client->getOptions()->prefix);
     }
 
-    /**
-     * Quem constrói o cliente tem de lhe dar as opções, senão escreve na raiz da produção. Os
-     * testes ficam de fora de propósito: podem querer o seu próprio espaço de chaves.
-     */
+    /** Cada cliente Redis da aplicação recebe as opções, e com elas o prefixo. */
     public function testEveryClientBuiltByTheApplicationReceivesTheOptions(): void
     {
         $offenders = [];

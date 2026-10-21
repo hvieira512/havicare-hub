@@ -33,10 +33,7 @@ final class LicenseServiceTest extends MysqlDashboardTestCase
         self::assertSame('company_not_found', $result['error']['code'] ?? null);
     }
 
-    /**
-     * A linha de cada licença diz se a cloud dos radares já está ligada, e a listagem é o
-     * único sítio de onde isso pode vir sem uma chamada por linha.
-     */
+    /** Cada licença da listagem diz se a cloud dos radares está ligada. */
     public function testTheListingSaysWhichLicensesHaveRadarCloudCredentials(): void
     {
         $db = ApiDataAccess::fromDatabase($this->createDashboardDatabase());
@@ -59,10 +56,7 @@ final class LicenseServiceTest extends MysqlDashboardTestCase
         self::assertSame(0, (int)$configured[2104]);
     }
 
-    /**
-     * Quantos aparelhos usam a licença tem de vir com a listagem: contado do lado do ecrã, daria
-     * zero a quem não passou pela lista de dispositivos.
-     */
+    /** Cada licença da listagem traz quantos aparelhos a usam. */
     public function testTheListingCountsTheDevicesOnEachLicense(): void
     {
         $db = ApiDataAccess::fromDatabase($this->createDashboardDatabase());

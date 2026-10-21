@@ -48,10 +48,7 @@ final class SystemdWatchdogTest extends TestCase
         ]));
     }
 
-    /**
-     * O intervalo é metade do que o systemd pede, que é a convenção: dá margem para um ping
-     * se perder sem o serviço ser declarado morto.
-     */
+    /** O ping sai a metade do intervalo que o systemd pede, para um perdido não matar o serviço. */
     public function testThePingIntervalIsHalfOfWhatSystemdAsksFor(): void
     {
         $watchdog = SystemdWatchdog::fromEnvironment([
@@ -89,10 +86,7 @@ final class SystemdWatchdogTest extends TestCase
         }
     }
 
-    /**
-     * Um loop que não gira não manda ping, e é isso que faz o systemd reiniciar um processo
-     * pendurado.
-     */
+    /** Um loop parado não manda ping, e é isso que leva o systemd a reiniciá-lo. */
     public function testAStalledLoopSendsNothing(): void
     {
         $watchdog = SystemdWatchdog::fromEnvironment([

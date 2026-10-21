@@ -117,10 +117,7 @@ final class CollectionPresenterTest extends TestCase
         self::assertSame(2, $this->present(['username' => 'care'])['pagination']['total']);
     }
 
-    /**
-     * Um conjunto fechado oferece-se inteiro mesmo que os dados só tenham um dos valores, senão
-     * o filtro ficava inalcançável.
-     */
+    /** Um conjunto fechado oferece todos os valores, mesmo os que os dados ainda não têm. */
     public function testAClosedSetOffersEveryValueAndCountsWhatIsThere(): void
     {
         $options = [];
@@ -142,10 +139,7 @@ final class CollectionPresenterTest extends TestCase
         self::assertSame(['hitcare'], $this->names($this->present(['enabled' => '0'])));
     }
 
-    /**
-     * Cada faceta conta-se sem o seu próprio filtro, para quem escolheu um papel continuar a ver
-     * o outro; as contagens dos outros filtros estreitam-se.
-     */
+    /** Cada faceta conta-se sem o próprio filtro, mas com os outros. */
     public function testASelectFacetIgnoresItsOwnFilterButRespectsTheOthers(): void
     {
         $optionsFor = static function (array $result, string $field): array {

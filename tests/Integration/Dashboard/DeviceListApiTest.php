@@ -28,10 +28,7 @@ final class DeviceListApiTest extends MysqlDashboardTestCase
         self::assertSame('9300000011', $api->show('864293000000111', null, '')['device']['deviceId'] ?? null);
     }
 
-    /**
-     * Igualdade e não semelhança: escolher «L08» não traz o «L08 Pro Max». A correspondência
-     * parcial é da procura por texto livre.
-     */
+    /** O filtro de modelo compara o nome inteiro: «L08» não traz o «L08 Pro». */
     public function testListModelFilterMatchesTheWholeNameAndNotAPrefix(): void
     {
         [$api] = $this->makeApi();
@@ -53,10 +50,7 @@ final class DeviceListApiTest extends MysqlDashboardTestCase
         self::assertSame(1, $onlyRadar['pagination']['total'] ?? null);
     }
 
-    /**
-     * Pares, e não duas listas cruzadas: {alfa, beta} com {1001, 2002} não traz a alfa com a
-     * 2002. Só divergem quando duas empresas partilham números.
-     */
+    /** O filtro de licença compara pares empresa e licença, e não as duas listas cruzadas. */
     public function testLicenseFilterMatchesCompanyAndLicensePairsAndNotTheirCrossProduct(): void
     {
         [$api, $db] = $this->makeApi();
@@ -76,10 +70,7 @@ final class DeviceListApiTest extends MysqlDashboardTestCase
         self::assertSame(2, $wholeCompany['pagination']['total'] ?? null);
     }
 
-    /**
-     * O estado é presença em runtime e entra na mesma cláusula que os outros filtros: filtrá-lo
-     * depois de paginar daria uma página de dez a devolver um.
-     */
+    /** O filtro de presença entra antes da paginação, e o total sai certo. */
     public function testListFiltersByOnlineStateWithoutBreakingTheTotal(): void
     {
         [$api, $db, $store] = $this->makeApi();
@@ -98,10 +89,7 @@ final class DeviceListApiTest extends MysqlDashboardTestCase
         );
     }
 
-    /**
-     * A relação entre fornecedores e modelos vem do servidor: o mesmo nome de modelo pode
-     * existir em dois fornecedores.
-     */
+    /** Os modelos agrupam-se pelo fornecedor: o mesmo nome pode existir em dois. */
     public function testListGroupsModelsUnderTheSupplierTheyBelongTo(): void
     {
         [$api, $db] = $this->makeApi();

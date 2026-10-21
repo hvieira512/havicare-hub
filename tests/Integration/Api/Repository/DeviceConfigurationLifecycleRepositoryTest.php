@@ -237,10 +237,7 @@ final class DeviceConfigurationLifecycleRepositoryTest extends MysqlDashboardTes
         self::assertSame('retry_exhausted', $current['operations'][0]['error_code']);
     }
 
-    /**
-     * O histórico guarda a marca da gravação e não o base64; o estado corrente mantém o áudio,
-     * que é a base de fusão de uma alteração parcial.
-     */
+    /** O histórico guarda a marca da gravação; o estado corrente guarda o áudio. */
     public function testTheHistoryKeepsTheMarkerAndTheCurrentStateKeepsTheAudio(): void
     {
         $database = $this->createDashboardDatabase();
@@ -403,10 +400,7 @@ final class DeviceConfigurationLifecycleRepositoryTest extends MysqlDashboardTes
         );
     }
 
-    /**
-     * Um 4P Touch que não fala o comando novo recebe a lista no formato antigo: esses comandos são
-     * operações da mesma alteração, e a confirmação do relógio fecha-a.
-     */
+    /** A lista no formato antigo é operação da alteração, e a confirmação do relógio fecha-a. */
     public function testTheLegacyPhonebookClosesTheChangeItReplaces(): void
     {
         $imei = '637507597567372';

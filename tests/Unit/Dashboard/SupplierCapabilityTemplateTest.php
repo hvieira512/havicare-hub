@@ -18,10 +18,7 @@ final class SupplierCapabilityTemplateTest extends TestCase
         self::assertSame(['help_call', 'reset'], $actual);
     }
 
-    /**
-     * Nenhum relógio 4P mostrou o alarme de frequência cardíaca, e o protocolo não diz como se liga: o
-     * modelo não o anuncia, mas um disparo real continua a ser acontecimento.
-     */
+    /** O alarme cardíaco da 4P não se anuncia no modelo, mas um disparo real é acontecimento. */
     public function testTheUnconfirmedHeartRateAlarmIsNotAnnouncedButStaysAnEvent(): void
     {
         self::assertNotContains('heart_rate_abnormal', SupplierCapabilityTemplate::keysForModel('4P Touch', 'Y6L', 'watch'));

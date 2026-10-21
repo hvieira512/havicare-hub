@@ -63,11 +63,10 @@ final class ApiError
         'user_exists' => 409,
         // O nome de empresa repetido, que o `TenancyPaths` documenta como 409.
         'duplicate' => 409,
-        // 429 e não 503: aqui a culpa é de quem pede, e o cliente tem de saber que foi o seu
-        // ritmo que o travou -- não uma falta de lugar no servidor.
+        // 429: foi o ritmo de quem pede que o travou.
         'too_many_attempts' => 429,
         'server_error' => 500,
-        // 503 e não 429: o pedido é legítimo, o que falta é lugar no processo.
+        // 503: o pedido é legítimo, o que falta é lugar no processo.
         'too_many_streams' => 503,
     ];
 
@@ -88,8 +87,7 @@ final class ApiError
     }
 
     /**
-     * Sem chamador em produção de propósito: existe para o teste confrontar este mapa com os
-     * construtores que o alimentam.
+     * O teste confronta estes códigos com os construtores.
      *
      * @return list<string>
      */

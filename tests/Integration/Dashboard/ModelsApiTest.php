@@ -196,10 +196,7 @@ final class ModelsApiTest extends MysqlDashboardTestCase
         self::assertSame('http://localhost:8081/model-images/example.jpg', $model['image'] ?? null);
     }
 
-    /**
-     * A lista de fornecedores por tipo sai dos modelos catalogados: apagar o último relógio de
-     * um fornecedor tira-o da lista de relógios.
-     */
+    /** Apagar o último modelo de um tipo tira o fornecedor da lista desse tipo. */
     public function testFiltersStopListingASupplierWhenItsLastModelOfThatTypeIsDeleted(): void
     {
         [$api, $db] = $this->makeApi();
@@ -341,10 +338,7 @@ final class ModelsApiTest extends MysqlDashboardTestCase
         self::assertSame($expected, $actual);
     }
 
-    /**
-     * A chave única já o recusa na base, mas a excepção do PDO subiria até ao kernel como 500
-     * para uma recusa previsível.
-     */
+    /** O par fornecedor e modelo repetido é 409, e não um 500 da chave única. */
     public function testCreateRejectsADuplicateSupplierAndInternalModel(): void
     {
         [$api, $db] = $this->makeApi();

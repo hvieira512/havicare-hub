@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Hub\Api\Http;
 
-/** O descritor da listagem de bloqueios. */
 final class DenylistColumns
 {
     public static function definition(): CollectionColumns

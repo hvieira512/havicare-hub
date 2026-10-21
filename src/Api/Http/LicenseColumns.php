@@ -6,12 +6,10 @@ namespace Hub\Api\Http;
 
 use Hub\Api\Request\LicenseWriteRequest;
 
-/** O descritor da listagem de licenças. */
 final class LicenseColumns
 {
     /**
-     * @param list<string> $companyIds As empresas todas, e não só as que já têm licenças:
-     *     um conjunto tirado das linhas deixava inalcançável a empresa ainda sem nenhuma.
+     * @param list<string> $companyIds As empresas todas, também as que ainda não têm licenças.
      */
     public static function definition(array $companyIds): CollectionColumns
     {

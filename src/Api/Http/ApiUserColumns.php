@@ -7,7 +7,6 @@ namespace Hub\Api\Http;
 use Hub\Api\Auth\ApiAuthContext;
 use Hub\Api\Request\ApiUserWriteRequest;
 
-/** O descritor da listagem de utilizadores da API. */
 final class ApiUserColumns
 {
     public static function definition(): CollectionColumns

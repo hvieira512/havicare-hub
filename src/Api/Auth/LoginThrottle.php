@@ -50,8 +50,7 @@ final class LoginThrottle
 
         $used = (int)$this->redis->incr($key);
         if ($used === 1) {
-            // Só na primeira: reescrever o prazo a cada tentativa deixava a janela a andar
-            // para a frente e nunca a fechar.
+            // Só na primeira, para a janela fechar no prazo e não andar com cada tentativa.
             $this->redis->expire($key, $windowSeconds * 2);
         }
 

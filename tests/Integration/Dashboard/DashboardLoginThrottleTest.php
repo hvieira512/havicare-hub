@@ -16,10 +16,7 @@ use Tests\Support\Doubles\InMemoryRedisClient;
  */
 final class DashboardLoginThrottleTest extends DashboardHttpTestCase
 {
-    /**
-     * A tentativa recusada leva a password certa: o teto verifica-se antes do `password_verify`,
-     * senão o custo que existe para travar já estaria pago.
-     */
+    /** O teto verifica-se antes do `password_verify`, mesmo com a password certa. */
     public function testAnAddressThatKeepsGuessingIsRefusedBeforeTheHashIsChecked(): void
     {
         $server = $this->serverWithThrottle(maxPerAddress: 2);
@@ -79,10 +76,7 @@ final class DashboardLoginThrottleTest extends DashboardHttpTestCase
         );
     }
 
-    /**
-     * O `refresh_token` não chama `password_verify`; travá-lo puniria o cliente que renova em
-     * vez de voltar a autenticar.
-     */
+    /** Renovar com o `refresh_token` não chama o `password_verify`, e não tem teto. */
     public function testRenewingWithARefreshTokenIsNotThrottled(): void
     {
         $server = $this->serverWithThrottle(maxPerAddress: 1, maxPerUsername: 1, maxGlobal: 1);

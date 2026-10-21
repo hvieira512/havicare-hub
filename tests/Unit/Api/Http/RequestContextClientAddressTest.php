@@ -34,10 +34,7 @@ final class RequestContextClientAddressTest extends TestCase
         self::assertSame('203.0.113.9', RequestContext::clientAddress($request));
     }
 
-    /**
-     * O nginx **acrescenta** o endereço da ligação ao `X-Forwarded-For` que o cliente mandou, e
-     * por isso só o último é de confiança: o primeiro forja-se.
-     */
+    /** Do `X-Forwarded-For` só o último endereço é de confiança: o proxy acrescenta-o. */
     public function testTakesTheLastEntrySoAClientCannotForgeItsAddress(): void
     {
         $request = new ServerRequest('GET', '/api/auth/login', [

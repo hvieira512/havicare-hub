@@ -40,10 +40,7 @@ final class ApiWriteValidationTest extends DashboardHttpTestCase
         ];
     }
 
-    /**
-     * O `username` não tem código próprio, mas tem a mensagem que um cliente mostra a quem
-     * preenche o formulário.
-     */
+    /** O `username` em falta responde com a sua mensagem, que se mostra a quem preenche. */
     public function testASingleMissingFieldAnswersExactlyWhatItAlwaysDid(): void
     {
         [$server, $token] = $this->serverAndAdminToken();
@@ -111,10 +108,7 @@ final class ApiWriteValidationTest extends DashboardHttpTestCase
         self::assertNotContains('null', $names, 'nenhuma empresa chamada `null` foi criada pelo caminho');
     }
 
-    /**
-     * O repositório devolve o id da linha que já existe em vez de zero, e por isso o conflito
-     * tem de ser detectado por outra via que não um `$id <= 0`.
-     */
+    /** Criar uma empresa que já existe é 409. */
     public function testCreatingACompanyThatAlreadyExistsIsAConflict(): void
     {
         [$server, $token] = $this->serverAndAdminToken();
@@ -136,10 +130,7 @@ final class ApiWriteValidationTest extends DashboardHttpTestCase
         }
     }
 
-    /**
-     * Renomear para um nome que já é de outra empresa é 409: o `companies.name` é `UNIQUE`, e a
-     * excepção do PDO sairia como `server_error`.
-     */
+    /** Renomear para o nome de outra empresa é 409, e não um `server_error`. */
     public function testRenamingACompanyOntoAnotherIsAConflictAndNotACrash(): void
     {
         [$server, $db] = $this->makeServerWithDatabase();
@@ -229,10 +220,7 @@ final class ApiWriteValidationTest extends DashboardHttpTestCase
         self::assertArrayHasKey('licenseRefId', $result['body']['error']['fields'] ?? []);
     }
 
-    /**
-     * A rota de escrita mais usada da API: os outros testes de dispositivos chamam os serviços
-     * directamente e não passam por esta validação.
-     */
+    /** Criar um dispositivo pela rota exige o IMEI, o fornecedor e o modelo. */
     public function testCreatingADeviceRequiresItsIdentityFields(): void
     {
         [$server, $token] = $this->serverAndAdminToken();

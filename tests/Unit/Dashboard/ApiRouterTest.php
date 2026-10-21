@@ -41,10 +41,7 @@ final class ApiRouterTest extends TestCase
         self::assertNull($router->match('DELETE', '/api/suppliers/abc'));
     }
 
-    /**
-     * O HTTP exige que um recurso que aceita GET aceite HEAD, e por isso um HEAD casa a rota GET
-     * equivalente em vez de dar 404.
-     */
+    /** Um HEAD sem rota própria casa a GET equivalente, em vez de dar 404. */
     public function testHeadFallsBackToTheGetRoute(): void
     {
         $router = new ApiRouter([

@@ -49,10 +49,7 @@ final class ApiRequestLoggerTest extends TestCase
         parent::tearDown();
     }
 
-    /**
-     * A dashboard serve o JS e o CSS inteiros a cada carregamento, e registá-los encheria o canal
-     * `api` sem nada em troca.
-     */
+    /** Só o `/api/` entra no canal `api`; os estáticos encheriam-no. */
     public function testOnlyApiPathsReachTheApiChannel(): void
     {
         $logger = new ApiRequestLogger();

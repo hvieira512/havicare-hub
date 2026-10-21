@@ -162,8 +162,8 @@ class RadarCredentialsService
     }
 
     /**
-     * Vazio é "fica como está" e não "apaga": o ecrã nunca recebeu o segredo, logo também não
-     * o pode reenviar, e corrigir uma gralha no endereço deixava a licença sem autenticar.
+     * Vazio é "fica como está" e não "apaga": o ecrã nunca recebe o segredo, logo não o pode
+     * reenviar.
      */
     private function kept(mixed $submitted, string $stored): string
     {

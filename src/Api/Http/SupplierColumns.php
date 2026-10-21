@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Hub\Api\Http;
 
-/** O descritor da listagem de fornecedores. */
 final class SupplierColumns
 {
     public static function definition(): CollectionColumns

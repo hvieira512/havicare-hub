@@ -16,8 +16,7 @@ class ApiUserService
     private const DEFAULT_COLLECTION_LIMIT = 20;
 
     /**
-     * Os campos cuja recusa tem código próprio na API. A validação por constraints quer
-     * devolver `invalid_request` para tudo, e isso apagava o `invalid_role`.
+     * Os campos cuja recusa tem código próprio, em vez do `invalid_request` das constraints.
      *
      * @var array<string, string>
      */

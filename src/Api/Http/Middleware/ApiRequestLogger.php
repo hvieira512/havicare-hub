@@ -153,7 +153,7 @@ final class ApiRequestLogger
             : $this->cappedLogBody($encoded);
     }
 
-    // O corte vem sempre depois da rasura: cortar o texto cru deixava credenciais por rasurar.
+    // O corte vem depois da rasura, para nenhuma credencial escapar cortada a meio.
     private function cappedLogBody(string $value): string
     {
         $size = strlen($value);

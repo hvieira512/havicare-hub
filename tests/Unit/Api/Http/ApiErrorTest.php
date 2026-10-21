@@ -84,10 +84,7 @@ final class ApiErrorTest extends TestCase
         self::assertSame($status, (new JsonResponder())->result($error->toArray())->getStatusCode());
     }
 
-    /**
-     * O `codes()` declara cada rota na especificação: um construtor fora do mapa não se pode
-     * declarar, e um código sem construtor promete um estado que ninguém envia.
-     */
+    /** Cada código declarado tem construtor, e cada construtor um código declarado. */
     public function testTheDeclaredCodesAreExactlyTheOnesTheConstructorsProduce(): void
     {
         $fromConstructors = array_unique(array_map(
@@ -110,10 +107,7 @@ final class ApiErrorTest extends TestCase
         self::assertSame(201, $json->result(['status' => 'ok'], 201)->getStatusCode());
     }
 
-    /**
-     * O `result()` é leniente de propósito e responde 400 a um engano; quem não perdoa é o
-     * `declaredStatus()`, que rebenta a montar a especificação.
-     */
+    /** O `result()` responde 400 a um código desconhecido; o `declaredStatus()` recusa-o. */
     public function testAnUndeclaredCodeIsFourHundredInsteadOfInferredFromItsShape(): void
     {
         $json = new JsonResponder();

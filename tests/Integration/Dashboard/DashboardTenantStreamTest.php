@@ -17,10 +17,7 @@ use Tests\Support\DashboardHttpTestCase;
  */
 final class DashboardTenantStreamTest extends DashboardHttpTestCase
 {
-    /**
-     * O arnês tem uma `otherCare/1001` com o mesmo número da `hitcare/1001`: com a licença
-     * sozinha como chave, este inquilino receberia dados de outro cliente.
-     */
+    /** Um inquilino só recebe o seu par empresa e licença, e não o mesmo número noutra empresa. */
     public function testATenantOnlyReceivesItsOwnCompanyAndLicence(): void
     {
         [$server, , , $messages] = $this->makeServerWithDatabase();
@@ -63,10 +60,7 @@ final class DashboardTenantStreamTest extends DashboardHttpTestCase
         $response->getBody()->close();
     }
 
-    /**
-     * O envelope do frame traz o que no MQTT vive no tópico, e o `payload` fica idêntico ao do
-     * fio para quem já desserializa o MQTT.
-     */
+    /** O frame traz o que no MQTT vem no tópico, e o `payload` igual ao do fio. */
     public function testTheFrameCarriesTheTopicMetadataAndAnUntouchedPayload(): void
     {
         [$server, , , $messages] = $this->makeServerWithDatabase();
@@ -124,10 +118,7 @@ final class DashboardTenantStreamTest extends DashboardHttpTestCase
         $response->getBody()->close();
     }
 
-    /**
-     * O `raw` é o canal de depuração e é 98% dos bytes publicados. Uma mangueira de inquilino
-     * é o pior sítio para o servir, e por isso não está entre os canais servidos.
-     */
+    /** O canal `raw`, de depuração, não sai no stream de inquilino. */
     public function testRawIsNotAChannelThisStreamServes(): void
     {
         [$server] = $this->makeServerWithDatabase();
@@ -191,10 +182,7 @@ final class DashboardTenantStreamTest extends DashboardHttpTestCase
         $first->getBody()->close();
     }
 
-    /**
-     * Um administrador abre o stream de um inquilino nomeando-o: o fanout é indexado por âmbito,
-     * sem wildcard, e nomear a empresa e a licença dá-lhe o âmbito de um cliente.
-     */
+    /** Um administrador abre o stream de um inquilino nomeando a empresa e a licença. */
     public function testAnAdminOpensTheStreamOfANamedTenant(): void
     {
         [$server, , , $messages] = $this->makeServerWithDatabase();

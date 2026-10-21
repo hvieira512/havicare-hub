@@ -39,10 +39,7 @@ final class MigrationTest extends MysqlDashboardTestCase
         );
     }
 
-    /**
-     * A migração é de mentira de propósito: com as reais, o teste afirmaria o conteúdo do plano
-     * e não o comportamento do motor.
-     */
+    /** Uma migração corre uma vez, e é o registo que o decide. */
     public function testAMigrationRunsOnceAndTheLedgerDecides(): void
     {
         $pdo = $this->createDashboardDatabase()->pdo();

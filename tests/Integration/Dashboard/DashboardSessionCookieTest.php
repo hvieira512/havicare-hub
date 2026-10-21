@@ -59,10 +59,7 @@ final class DashboardSessionCookieTest extends DashboardHttpTestCase
         self::assertSame(200, $whoami->getStatusCode(), (string)$whoami->getBody());
     }
 
-    /**
-     * Sem cookie e sem credenciais não há sessão para restaurar, e a resposta é a mesma de
-     * sempre: 400, porque o pedido não traz com que autenticar. O cookie inválido é que é 401.
-     */
+    /** Sem cookie e sem credenciais a resposta é 400; o cookie inválido é que é 401. */
     public function testRestoringWithoutCookieIsRejected(): void
     {
         $server = $this->makeServer();
@@ -82,10 +79,7 @@ final class DashboardSessionCookieTest extends DashboardHttpTestCase
         self::assertSame(401, $staleCookie->getStatusCode(), (string)$staleCookie->getBody());
     }
 
-    /**
-     * A renovação é de uso único e o cookie pode ficar morto: ignorar o corpo por haver cookie
-     * trancaria a entrada a quem sabe a senha.
-     */
+    /** As credenciais no corpo ganham a um cookie morto. */
     public function testCredentialsInTheBodyWinOverAStaleCookie(): void
     {
         $server = $this->makeServer();
@@ -123,10 +117,7 @@ final class DashboardSessionCookieTest extends DashboardHttpTestCase
         self::assertStringContainsString('Max-Age=0', $staleCookie->getHeaderLine('Set-Cookie'));
     }
 
-    /**
-     * Um token de acesso vivo daria uma hora de API a quem ficasse com ele, e o cookie por
-     * apagar reabriria a sessão no separador seguinte.
-     */
+    /** Sair apaga o cookie e revoga os dois tokens. */
     public function testLogoutClearsTheCookieAndRevokesBothTokens(): void
     {
         $server = $this->makeServer();

@@ -20,7 +20,6 @@ final class ReconnectingPdo extends PDO
     /** @param \Closure(): PDO $connect Cria uma ligação nova, já configurada. */
     public function __construct(private \Closure $connect)
     {
-        // Sem parent::__construct de propósito: ver o docblock da classe.
     }
 
     private function inner(): PDO

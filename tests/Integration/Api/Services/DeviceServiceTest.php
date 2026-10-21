@@ -119,10 +119,7 @@ final class DeviceServiceTest extends MysqlDashboardTestCase
         );
     }
 
-    /**
-     * O Redis é uma projecção do inventário e escreve-se primeiro: pela ordem contrária, uma
-     * falha deixaria uma linha de inventário que a dashboard nunca conhece.
-     */
+    /** O Redis escreve-se antes do inventário, para uma falha não deixar inventário sem projecção. */
     public function testCreateWritesTheProjectionBeforeTheInventory(): void
     {
         $supplierId = $this->db->suppliers->create('Vivistar');

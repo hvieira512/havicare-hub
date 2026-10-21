@@ -87,10 +87,7 @@ final class MaintenanceSchedulerTest extends TestCase
         self::assertCount(2, $this->hubServer->submitted);
     }
 
-    /**
-     * Ao fim de três tentativas o comando falha em vez de ser repetido para sempre: um
-     * aparelho que nunca responde não pode ocupar a fila até ao fim do tempo de resposta.
-     */
+    /** Ao fim de três tentativas o comando falha, em vez de se repetir para sempre. */
     public function testAfterTheLastAttemptTheCommandIsNoLongerRetried(): void
     {
         $this->recordWaitingCommand();
@@ -106,10 +103,7 @@ final class MaintenanceSchedulerTest extends TestCase
         self::assertSame('retry_exhausted', $this->command()['error']);
     }
 
-    /**
-     * O contexto volta com a repetição: nos protocolos de gateway os bytes em fila são só o
-     * nome da operação, e sem o valor ao lado o gateway executa-a com os campos por preencher.
-     */
+    /** A repetição leva o contexto que o gateway precisa para executar a operação. */
     public function testTheRetryCarriesTheContextTheGatewayNeedsToExecuteIt(): void
     {
         $this->store->recordCommand(self::IMEI, 'cmd-1', [

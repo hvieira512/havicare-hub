@@ -136,8 +136,7 @@ final class ApiKernel
     {
         $auth = new AuthController($this->services->auth, $this->json);
         $devices = new DeviceController($this->services->devices, $this->json);
-        // Construído uma vez, como os restantes: os tetos de ligações abertas são estado deste
-        // controlador, e um por pedido não contava nada.
+        // Uma instância só: os tetos de ligações abertas são estado deste controlador.
         $stream = new StreamController(
             $this->messages,
             $this->json,

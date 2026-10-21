@@ -27,10 +27,7 @@ final class HubConfigurationValidatorTest extends TestCase
         ]);
     }
 
-    /**
-     * O prefixo vazio é o da produção e o do `.env.example`: uma instância de desenvolvimento que
-     * arranque assim escreve nas chaves da produção sem se queixar.
-     */
+    /** Uma instância de desenvolvimento sem prefixo do Redis escreveria nas chaves da produção. */
     public function testRejectsDevelopmentInstanceWithoutRedisPrefix(): void
     {
         $this->expectException(\InvalidArgumentException::class);
@@ -73,10 +70,7 @@ final class HubConfigurationValidatorTest extends TestCase
         );
     }
 
-    /**
-     * O `bin/server-hub.php` passa `__DIR__ . '/..'`, cujo `basename` é `..`: sem resolver os
-     * segmentos, o guarda calava-se na única chamada que interessa.
-     */
+    /** O `..` que o `bin/server-hub.php` passa resolve-se antes de se ler o nome da pasta. */
     public function testResolvesTheParentSegmentThatTheEntryPointPasses(): void
     {
         $this->expectException(\InvalidArgumentException::class);

@@ -68,10 +68,7 @@ final class ModelImageNamingTest extends TestCase
         self::assertFileDoesNotExist($path);
     }
 
-    /**
-     * Cada nome recusado tem um isco no caminho que atingiria: sem ele, um `delete` que apagasse
-     * tudo também não deixava rasto.
-     */
+    /** Cada nome recusado tem um isco no caminho, para um `delete` a mais deixar rasto. */
     public function testDeleteIgnoresAnythingThatIsNotOneOfOurNames(): void
     {
         $store = new ModelImageStore();

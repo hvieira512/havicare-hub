@@ -132,8 +132,8 @@ final class DashboardStoreUpdatesTest extends MysqlDashboardTestCase
         $store->markLatestCommand(self::DEVICE, 'test', ['status' => 'delivered']);
         $store->markCommandReply(self::DEVICE, 'test', null, '', true);
 
-        self::assertSame(1, $before, 'recording a command should announce once');
-        self::assertSame(4, $count(), 'every lifecycle transition should announce');
+        self::assertSame(1, $before, 'gravar um comando anuncia uma vez');
+        self::assertSame(4, $count(), 'cada transição do ciclo de vida anuncia');
     }
 
     public function testSweepsAnnounceToEveryListenerSinceTheyNameNoDevice(): void

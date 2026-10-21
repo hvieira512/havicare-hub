@@ -61,10 +61,10 @@ final class CorsMiddlewareTest extends TestCase
     public static function downstreamResponses(): array
     {
         return [
-            'uma leitura da API' => [200, '/api/devices'],
-            'um erro da API' => [500, '/api/devices'],
-            'um recurso estático' => [200, '/assets/app.js'],
-            'uma página que não existe' => [404, '/nao-existe'],
+            'an API read' => [200, '/api/devices'],
+            'an API error' => [500, '/api/devices'],
+            'a static asset' => [200, '/assets/app.js'],
+            'a missing page' => [404, '/nao-existe'],
         ];
     }
 
