@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Integration\Dashboard;
 
+use Tests\Support\ConfigurationFixtures;
 use Tests\Support\DevicesApiFixture;
 use Tests\Support\MysqlDashboardTestCase;
 
@@ -145,14 +146,16 @@ final class DeviceConfigurationApiTest extends MysqlDashboardTestCase
 
         self::assertIsArray($model);
         $db->modelCapabilities->replaceForModelId((int)$model['id'], ['fall_detection', 'call_whitelist']);
-        $db->deviceConfigurations->saveDesired(
+        ConfigurationFixtures::desired(
+            $db,
             '861265061009822',
             'fallDetection',
             'vivistar-iw',
             'BP76',
             ['enabled' => false]
         );
-        $db->deviceConfigurations->saveDesired(
+        ConfigurationFixtures::desired(
+            $db,
             '861265061009822',
             'call_whitelist',
             'vivistar-iw',
@@ -201,7 +204,8 @@ final class DeviceConfigurationApiTest extends MysqlDashboardTestCase
         self::assertIsArray($model);
         $db->modelCapabilities->replaceForModelId((int)$model['id'], ['medication_reminders']);
         $store->registerDevice('868017032159118', '4P Touch', 'D46', 'watch', 1001, '', '', 'hitcare');
-        $db->deviceConfigurations->saveDesired(
+        ConfigurationFixtures::desired(
+            $db,
             '868017032159118',
             'takePills',
             'four-p-touch',

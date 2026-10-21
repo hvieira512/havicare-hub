@@ -52,7 +52,7 @@ final class DeviceFeatureRequestService
         $feature = trim((string)($payload['feature'] ?? ''));
         $capability = trim((string)($payload['capability'] ?? ''));
         if ($feature === '' && $capability !== '') {
-            return $this->requestCapabilityAction($imei, $payload, $auth, $requestId);
+            return $this->requestCapabilityAction($imei, $capability, $payload, $auth, $requestId);
         }
         if ($feature === '') {
             Logger::channel('api')->warning('API telemetry request rejected', [
@@ -120,23 +120,13 @@ final class DeviceFeatureRequestService
      * @param array<string, mixed> $payload
      * @return array<string, mixed>
      */
-    private function requestCapabilityAction(string $imei, array $payload, ?ApiAuthContext $auth = null, string $requestId = ''): array
-    {
-        $capability = trim((string)($payload['capability'] ?? ''));
-        if (!$this->directory->canAccessDevice($imei, $auth)) {
-            Logger::channel('api')->warning('API capability request rejected', [
-                'request_id' => $requestId,
-                'imei' => $imei,
-                'capability' => $capability,
-                'error_code' => 'not_found',
-            ]);
-            return ApiError::deviceNotFound()->toArray();
-        }
-
-        if ($capability === '') {
-            return ApiError::invalidRequest('capability is required')->toArray();
-        }
-
+    private function requestCapabilityAction(
+        string $imei,
+        string $capability,
+        array $payload,
+        ?ApiAuthContext $auth,
+        string $requestId,
+    ): array {
         // A reposição de fábrica devolve o aparelho ao servidor do fornecedor: só o hub a pede.
         if ($capability === 'reset_device' && $auth !== null && !$auth->isAdmin()) {
             Logger::channel('api')->warning('API capability request rejected', [

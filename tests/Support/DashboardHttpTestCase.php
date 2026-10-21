@@ -104,7 +104,7 @@ abstract class DashboardHttpTestCase extends MysqlDashboardTestCase
         $db->whitelist->register('861265061009822', 'Vivistar', 'L08 Pro', 'watch', 1001, '', '', 'hitcare');
         $db->whitelist->register('861265061009833', 'Vivistar', 'L08 Pro', 'watch', 2002, '', '', 'otherCare');
         $db->whitelist->register('861265061009844', 'Vivistar', 'L08 Pro', 'watch', 0, '', '', 'null');
-        $store = new DeviceStore($redis, prefix: 'test:dashboard:http');
+        $store = new DeviceStore($redis);
         $store->setDataAccess($db);
         $store->registerDevice('861265061009822', 'Vivistar', 'L08 Pro', 'watch', 1001, '', '', 'hitcare');
         $store->registerDevice('861265061009833', 'Vivistar', 'L08 Pro', 'watch', 2002, '', '', 'otherCare');
@@ -117,7 +117,7 @@ abstract class DashboardHttpTestCase extends MysqlDashboardTestCase
 
         $dashboard = new DashboardHttpServer(
             $store,
-            new ApiTokenStore($redis, 'test:api-tokens'),
+            new ApiTokenStore($redis),
             new Whitelist($db->whitelist),
             $hub,
             $db,

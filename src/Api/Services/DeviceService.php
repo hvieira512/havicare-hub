@@ -203,7 +203,7 @@ class DeviceService
             'supplier', 'model', 'deviceType', 'protocol', 'transport', 'lastConnectionId',
         ]));
         // Uma vez só: cada chamada volta a resolver o dispositivo e a lê-lo do Redis.
-        $configurations = $this->configurationFor($imei, $protocol, $configRows);
+        $configurations = $this->configurationQueries->current($imei, $protocol, $configRows);
         $lifecycle = $this->lifecyclePresenter->present(
             $imei,
             $modelRow,
@@ -322,35 +322,6 @@ class DeviceService
     public function commandStatus(string $id, ?ApiAuthContext $auth = null): array
     {
         return $this->featureRequests->commandStatus($id, $auth);
-    }
-
-    /**
-     * @param list<array<string, mixed>>|null $configRows As linhas já lidas pelo chamador, para
-     *   não repetir a consulta. O detalhe passa-as; os chamadores diretos deixam-nas a `null`.
-     * @return array<string, mixed>
-     */
-    public function configuration(string $imei, ?ApiAuthContext $auth = null, ?array $configRows = null): array
-    {
-        if (!$this->directory->canAccessDevice($imei, $auth)) {
-            return ApiError::deviceNotFound()->toArray();
-        }
-
-        $device = $this->directory->deviceSnapshot($imei);
-        $metadata = $this->whitelist->getMetadata($imei);
-        $protocol = (string)($device['protocol'] ?? $this->directory->protocolForModel((string)($device['supplier'] ?? $metadata?->supplier ?? ''), (string)($device['model'] ?? $metadata?->model ?? '')));
-
-        return $this->configurationFor($imei, $protocol, $configRows);
-    }
-
-    /**
-     * Para quem já resolveu o dispositivo, sem a segunda ida à base do `configuration()` público.
-     *
-     * @param array<int, array<string, mixed>>|null $configRows
-     * @return array<string, mixed>
-     */
-    private function configurationFor(string $imei, string $protocol, ?array $configRows): array
-    {
-        return $this->configurationQueries->current($imei, $protocol, $configRows);
     }
 
     /**

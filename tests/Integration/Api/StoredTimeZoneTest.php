@@ -6,6 +6,7 @@ namespace Tests\Integration\Api;
 
 use Hub\Infrastructure\Persistence\Repository\ApiDataAccess;
 use Hub\State\DeviceConfigurationProjection;
+use Tests\Support\ConfigurationFixtures;
 use Tests\Support\MysqlDashboardTestCase;
 
 /**
@@ -36,7 +37,8 @@ final class StoredTimeZoneTest extends MysqlDashboardTestCase
     public function testTheDesiredZoneStillCounts(): void
     {
         $db = ApiDataAccess::fromDatabase($this->createDashboardDatabase());
-        $db->deviceConfigurations->saveDesired(
+        ConfigurationFixtures::desired(
+            $db,
             self::IMEI,
             'time_zone',
             'zayata-m228',

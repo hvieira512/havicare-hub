@@ -26,7 +26,7 @@ trait DevicesApiFixture
         $db = ApiDataAccess::fromDatabase($this->createDashboardDatabase());
         $db->whitelist->register('861265061009822', 'Vivistar', 'L08 Pro');
         $db->whitelist->register('868017032159118', '4P Touch', 'D46', 'watch', 0, '', '1703215911');
-        $store = new DeviceStore(new InMemoryRedisClient(), prefix: 'test:dashboard:devices-api');
+        $store = new DeviceStore(new InMemoryRedisClient());
         $store->setDataAccess($db);
         $store->registerDevice('861265061009822', 'Vivistar', 'L08 Pro');
         $whitelist = new Whitelist($db->whitelist);

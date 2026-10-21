@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace Tests\Integration\Api\Repository;
 
+use Hub\Infrastructure\Persistence\Repository\ApiDataAccess;
 use Hub\Infrastructure\Persistence\Repository\DeviceConfigurationRepository;
 use PDO;
+use Tests\Support\ConfigurationFixtures;
 use Tests\Support\MysqlDashboardTestCase;
 
 final class DeviceConfigurationRepositoryTest extends MysqlDashboardTestCase
@@ -18,23 +20,6 @@ final class DeviceConfigurationRepositoryTest extends MysqlDashboardTestCase
         parent::setUp();
         $this->pdo = $this->createDashboardDatabase()->pdo();
         $this->repository = new DeviceConfigurationRepository($this->pdo);
-    }
-
-    public function testSaveDesiredCanonicalizesVivistarAliases(): void
-    {
-        $this->repository->saveDesired(
-            '861265061009822',
-            'fallDetection',
-            'vivistar-iw',
-            'BP76',
-            ['enabled' => false]
-        );
-
-        $rows = $this->repository->allForImei('861265061009822');
-
-        self::assertCount(1, $rows);
-        self::assertSame('fall_detection', $rows[0]['config_key'] ?? null);
-        self::assertSame(['enabled' => false], $rows[0]['desired_payload'] ?? null);
     }
 
     public function testSaveReportedCanonicalizesVivistarAliases(): void
@@ -57,7 +42,14 @@ final class DeviceConfigurationRepositoryTest extends MysqlDashboardTestCase
     public function testSaveReportedUpsertsOntoAnExistingDesiredRow(): void
     {
         $imei = '861265061009822';
-        $this->repository->saveDesired($imei, 'fallDetection', 'vivistar-iw', 'BP76', ['enabled' => false]);
+        ConfigurationFixtures::desired(
+            ApiDataAccess::fromPdo($this->pdo),
+            $imei,
+            'fallDetection',
+            'vivistar-iw',
+            'BP76',
+            ['enabled' => false],
+        );
         $this->repository->saveReported($imei, 'fallDetection', 'vivistar-iw', 'BP76', ['enabled' => true]);
 
         $rows = $this->repository->allForImei($imei);
@@ -70,7 +62,7 @@ final class DeviceConfigurationRepositoryTest extends MysqlDashboardTestCase
 
     public function testGenericAlarmClockKeyUsesProtocolNativeIdentity(): void
     {
-        $this->repository->saveDesired(
+        $this->repository->saveReported(
             '861265061009822',
             'alarm_clock',
             'vivistar-iw',
@@ -83,23 +75,6 @@ final class DeviceConfigurationRepositoryTest extends MysqlDashboardTestCase
         self::assertCount(1, $rows);
         self::assertSame('alarm_clock', $rows[0]['config_key'] ?? null);
         self::assertSame('reminders', $rows[0]['native_key'] ?? null);
-    }
-
-    public function testSaveDesiredCanonicalizesFourPTouchContactSlots(): void
-    {
-        $this->repository->saveDesired(
-            '868017032159118',
-            'sosContacts',
-            'four-p-touch',
-            'SOS',
-            ['numbers' => ['123456789', '', '']]
-        );
-
-        $rows = $this->repository->allForImei('868017032159118');
-
-        self::assertCount(1, $rows);
-        self::assertSame('sos_contacts', $rows[0]['config_key'] ?? null);
-        self::assertSame('sosContacts', $rows[0]['native_key'] ?? null);
     }
 
     public function testAllForImeiIgnoresOlderDuplicateNativeSlot(): void

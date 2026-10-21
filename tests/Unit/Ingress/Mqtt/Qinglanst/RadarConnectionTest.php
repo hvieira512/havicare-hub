@@ -16,7 +16,7 @@ use Tests\Support\Doubles\RecordingHubMqttBridge;
 final class RadarConnectionTest extends TestCase
 {
     private const RADAR = '594B3CB31A87';
-    private const PREFIX = 'test:dashboard:radar';
+    private const PREFIX = 'hub:dashboard';
 
     private InMemoryRedisClient $redis;
     private DeviceStore $store;
@@ -26,7 +26,7 @@ final class RadarConnectionTest extends TestCase
     protected function setUp(): void
     {
         $this->redis = new InMemoryRedisClient();
-        $this->store = new DeviceStore($this->redis, prefix: self::PREFIX);
+        $this->store = new DeviceStore($this->redis);
         $this->mqtt = new RecordingHubMqttBridge();
         $this->bridge = new QinglanstBridge(
             new FakeMqttSubscriber(),

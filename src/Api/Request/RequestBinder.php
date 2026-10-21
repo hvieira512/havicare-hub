@@ -16,9 +16,9 @@ final class RequestBinder
 {
     private ValidatorInterface $validator;
 
-    public function __construct(?ValidatorInterface $validator = null)
+    public function __construct()
     {
-        $this->validator = $validator ?? Validation::createValidatorBuilder()
+        $this->validator = Validation::createValidatorBuilder()
             ->enableAttributeMapping()
             ->getValidator();
     }

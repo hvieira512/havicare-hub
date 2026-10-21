@@ -26,10 +26,9 @@ class RadarCredentialsService
 
     public function __construct(
         private ApiDataAccess $db,
-        ?RequestBinder $binder = null,
         private ?RadarLayoutSync $sync = null,
     ) {
-        $this->binder = $binder ?? new RequestBinder();
+        $this->binder = new RequestBinder();
     }
 
     /**
@@ -107,11 +106,11 @@ class RadarCredentialsService
 
         $stored = $this->db->radarCredentials->findByLicenseRefId($licenseRefId);
         $credentials = [
-            'base_url' => $this->orStored($payload['baseUrl'] ?? null, $stored['base_url'] ?? ''),
-            'username' => $this->orStored($payload['username'] ?? null, $stored['username'] ?? ''),
-            'password' => $this->orStored($payload['password'] ?? null, $stored['password'] ?? ''),
-            'app_id' => $this->orStored($payload['appId'] ?? null, $stored['app_id'] ?? ''),
-            'app_secret' => $this->orStored($payload['appSecret'] ?? null, $stored['app_secret'] ?? ''),
+            'base_url' => $this->kept($payload['baseUrl'] ?? null, $stored['base_url'] ?? ''),
+            'username' => $this->kept($payload['username'] ?? null, $stored['username'] ?? ''),
+            'password' => $this->kept($payload['password'] ?? null, $stored['password'] ?? ''),
+            'app_id' => $this->kept($payload['appId'] ?? null, $stored['app_id'] ?? ''),
+            'app_secret' => $this->kept($payload['appSecret'] ?? null, $stored['app_secret'] ?? ''),
         ];
 
         $radars = $this->licenseRadars($license);
@@ -151,13 +150,6 @@ class RadarCredentialsService
         }, $radars);
     }
 
-    private function orStored(mixed $typed, string $stored): string
-    {
-        $typed = is_string($typed) ? trim($typed) : '';
-
-        return $typed !== '' ? $typed : $stored;
-    }
-
     /** @return array<string, mixed> */
     public function delete(int $licenseRefId): array
     {
@@ -173,9 +165,9 @@ class RadarCredentialsService
      * Vazio é "fica como está" e não "apaga": o ecrã nunca recebeu o segredo, logo também não
      * o pode reenviar, e corrigir uma gralha no endereço deixava a licença sem autenticar.
      */
-    private function kept(?string $submitted, string $stored): string
+    private function kept(mixed $submitted, string $stored): string
     {
-        $submitted = trim($submitted ?? '');
+        $submitted = is_string($submitted) ? trim($submitted) : '';
 
         return $submitted === '' ? $stored : $submitted;
     }

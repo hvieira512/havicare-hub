@@ -19,13 +19,13 @@ use Tests\Support\Doubles\RecordingHubMqttBridge;
  */
 final class GatewaySilentAcrossRestartTest extends TestCase
 {
-    private const PREFIX = 'test:dashboard:gwrestart';
+    private const PREFIX = 'hub:dashboard';
     private const GATEWAY = 'd48c49f7909c';
 
     public function testAGatewaySilentSinceBeforeTheRestartIsAnnouncedDisconnected(): void
     {
         $redis = new InMemoryRedisClient();
-        $store = new DeviceStore($redis, prefix: self::PREFIX);
+        $store = new DeviceStore($redis);
         $store->deviceSeen(self::GATEWAY, [
             'supplier' => 'MOKO', 'model' => 'MKGW3', 'deviceType' => 'gateway', 'licenseId' => 1001,
             'company' => 'hitcare', 'protocol' => 'moko-mkgw3', 'transport' => 'mqtt', 'online' => '1',
@@ -44,7 +44,7 @@ final class GatewaySilentAcrossRestartTest extends TestCase
     public function testAGatewayThatStillTalksIsNotExpired(): void
     {
         $redis = new InMemoryRedisClient();
-        $store = new DeviceStore($redis, prefix: self::PREFIX);
+        $store = new DeviceStore($redis);
         $store->deviceSeen(self::GATEWAY, ['deviceType' => 'gateway', 'online' => '1']);
         $mqtt = new RecordingHubMqttBridge();
 

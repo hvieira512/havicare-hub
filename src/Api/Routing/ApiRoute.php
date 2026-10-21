@@ -80,12 +80,6 @@ final class ApiRoute
         return $parameters;
     }
 
-    /** @return callable */
-    public function handler(): callable
-    {
-        return $this->handler;
-    }
-
     /**
      * @param array<string, string> $parameters
      */

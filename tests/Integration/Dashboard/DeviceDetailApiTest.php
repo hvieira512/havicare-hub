@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Integration\Dashboard;
 
+use Tests\Support\ConfigurationFixtures;
 use Tests\Support\DevicesApiFixture;
 use Tests\Support\MysqlDashboardTestCase;
 
@@ -112,7 +113,8 @@ final class DeviceDetailApiTest extends MysqlDashboardTestCase
         self::assertIsArray($model);
         $store->registerDevice('861728087060467', '4P Touch', 'D46', 'watch', 1001, '', '', 'hitcare');
         $db->modelCapabilities->replaceForModelId((int)$model['id'], ['sos_contacts']);
-        $db->deviceConfigurations->saveDesired(
+        ConfigurationFixtures::desired(
+            $db,
             '861728087060467',
             'sosContacts',
             'four-p-touch',
@@ -149,14 +151,16 @@ final class DeviceDetailApiTest extends MysqlDashboardTestCase
         self::assertIsArray($model);
         $store->registerDevice('637507597567372', '4P Touch', 'D46', 'watch', 1001, '', '', 'hitcare');
         $db->modelCapabilities->replaceForModelId((int)$model['id'], ['call_whitelist']);
-        $db->deviceConfigurations->saveDesired(
+        ConfigurationFixtures::desired(
+            $db,
             '637507597567372',
             'whitelistGroup1',
             'four-p-touch',
             'WHITELIST1',
             ['numbers' => ['111', '222', '333', '444', '555']]
         );
-        $db->deviceConfigurations->saveDesired(
+        ConfigurationFixtures::desired(
+            $db,
             '637507597567372',
             'whitelistGroup2',
             'four-p-touch',
@@ -184,7 +188,8 @@ final class DeviceDetailApiTest extends MysqlDashboardTestCase
         self::assertIsArray($model);
         $store->registerDevice('637507597567372', '4P Touch', 'D46', 'watch', 1001, '', '', 'hitcare');
         $db->modelCapabilities->replaceForModelId((int)$model['id'], ['call_whitelist']);
-        $db->deviceConfigurations->saveDesired(
+        ConfigurationFixtures::desired(
+            $db,
             '637507597567372',
             'call_whitelist',
             'four-p-touch',
@@ -240,14 +245,16 @@ final class DeviceDetailApiTest extends MysqlDashboardTestCase
             'sosSwitch' => true,
             'areaCode' => '351',
         ]];
-        $db->deviceConfigurations->saveDesired(
+        ConfigurationFixtures::desired(
+            $db,
             $imei,
             'familyNumber',
             'wonlex-json',
             'familyNumber',
             ['contacts' => $contacts]
         );
-        $db->deviceConfigurations->saveDesired(
+        ConfigurationFixtures::desired(
+            $db,
             $imei,
             'alarmClock',
             'wonlex-json',
@@ -259,7 +266,8 @@ final class DeviceDetailApiTest extends MysqlDashboardTestCase
                 'enabled' => true,
             ]]]
         );
-        $db->deviceConfigurations->saveDesired(
+        ConfigurationFixtures::desired(
+            $db,
             $imei,
             'SOSNumber',
             'wonlex-json',
@@ -271,7 +279,8 @@ final class DeviceDetailApiTest extends MysqlDashboardTestCase
                 'publicPhone' => '+351210000000',
             ]]]
         );
-        $db->deviceConfigurations->saveDesired(
+        ConfigurationFixtures::desired(
+            $db,
             $imei,
             'wonlexCallInLimitSwitch',
             'wonlex-json',
@@ -329,13 +338,14 @@ final class DeviceDetailApiTest extends MysqlDashboardTestCase
         $model = $db->models->find('Wonlex', 'HW20PRO');
         self::assertIsArray($model);
         $db->modelCapabilities->replaceForModelId((int)$model['id'], ['fall_detection']);
-        $db->deviceConfigurations->saveDesired(
+        ConfigurationFixtures::desired(
+            $db,
             $imei,
             'wonlexFallWarnSwitch',
             'wonlex-json',
             'deviceConfig',
             ['switchState' => true],
-            'acked'
+            'acked',
         );
 
         $response = $api->show($imei);
@@ -421,14 +431,16 @@ final class DeviceDetailApiTest extends MysqlDashboardTestCase
             'location_reporting_interval',
             'fall_detection',
         ]);
-        $db->deviceConfigurations->saveDesired(
+        ConfigurationFixtures::desired(
+            $db,
             '861728087060467',
             'uploadInterval',
             'four-p-touch',
             'UPLOAD',
             ['intervalSeconds' => 300]
         );
-        $db->deviceConfigurations->saveDesired(
+        ConfigurationFixtures::desired(
+            $db,
             '861728087060467',
             'fallDownAlert',
             'four-p-touch',
@@ -457,7 +469,8 @@ final class DeviceDetailApiTest extends MysqlDashboardTestCase
         self::assertIsArray($model);
         $store->registerDevice('868017032159118', '4P Touch', 'D46', 'watch', 1001, '', '', 'hitcare');
         $db->modelCapabilities->replaceForModelId((int)$model['id'], ['medication_reminders']);
-        $db->deviceConfigurations->saveDesired(
+        ConfigurationFixtures::desired(
+            $db,
             '868017032159118',
             'takePills',
             'four-p-touch',
@@ -495,7 +508,8 @@ final class DeviceDetailApiTest extends MysqlDashboardTestCase
         self::assertIsArray($model);
         $store->registerDevice('861265061009822', 'Vivistar', 'L08 Pro', 'watch', 1001, '', '', 'hitcare');
         $db->modelCapabilities->replaceForModelId((int)$model['id'], ['alarm_clock']);
-        $db->deviceConfigurations->saveDesired(
+        ConfigurationFixtures::desired(
+            $db,
             '861265061009822',
             'reminders',
             'vivistar-iw',
@@ -546,7 +560,8 @@ final class DeviceDetailApiTest extends MysqlDashboardTestCase
         self::assertIsArray($model);
         $store->registerDevice('868017032159118', '4P Touch', 'D46', 'watch', 1001, '', '', 'hitcare');
         $db->modelCapabilities->replaceForModelId((int)$model['id'], ['alarm_clock']);
-        $db->deviceConfigurations->saveDesired(
+        ConfigurationFixtures::desired(
+            $db,
             '868017032159118',
             'alarmClock',
             'four-p-touch',
@@ -597,7 +612,8 @@ final class DeviceDetailApiTest extends MysqlDashboardTestCase
         self::assertIsArray($model);
         $store->registerDevice('861265061009822', 'Vivistar', 'L08 Pro', 'watch', 0, '', '', 'hitcare');
         $db->modelCapabilities->replaceForModelId((int)$model['id'], ['alarm_clock']);
-        $db->deviceConfigurations->saveDesired(
+        ConfigurationFixtures::desired(
+            $db,
             '861265061009822',
             'reminders',
             'vivistar-iw',
@@ -649,14 +665,14 @@ final class DeviceDetailApiTest extends MysqlDashboardTestCase
 
         self::assertIsArray($model);
         $db->modelCapabilities->replaceForModelId((int)$model['id'], ['auto_vitals_interval']);
-        $db->deviceConfigurations->saveDesired(
+        ConfigurationFixtures::desired(
+            $db,
             '861265061009822',
             'autoHealthMeasurement',
             'vivistar-iw',
             'BP86',
             ['enabled' => true, 'intervalMinutes' => 30],
             'acked',
-            'cmd-health'
         );
         $db->deviceConfigurations->saveReported(
             '861265061009822',

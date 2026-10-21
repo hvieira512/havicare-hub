@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Hub\Runtime;
 
-use Hub\Bootstrap;
+use Dotenv\Dotenv;
 use Hub\Config;
 use Hub\Configuration\HubConfigurationValidator;
 use Hub\Infrastructure\Persistence\DashboardDatabase;
@@ -18,7 +18,7 @@ final class CliBootstrap
      */
     public static function config(string $projectRoot, bool $validate = false): array
     {
-        Bootstrap::loadEnv($projectRoot);
+        Dotenv::createUnsafeImmutable($projectRoot)->safeLoad();
         $config = Config::load()->all();
 
         if ($validate) {

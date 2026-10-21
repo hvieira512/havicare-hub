@@ -10,12 +10,12 @@ use Predis\ClientInterface;
 
 final class DeviceRuntimeStore
 {
+    private const PREFIX = 'hub:dashboard';
+
     public function __construct(
         private ClientInterface $redis,
         private int $limit = 100,
-        private string $prefix = 'hub:dashboard',
     ) {
-        $this->prefix = trim($this->prefix, ':');
         $this->limit = max(1, $this->limit);
     }
 
@@ -263,7 +263,7 @@ final class DeviceRuntimeStore
 
     private function key(string $suffix): string
     {
-        return "{$this->prefix}:{$suffix}";
+        return self::PREFIX . ':' . $suffix;
     }
 
     private function deviceKey(string $imei): string

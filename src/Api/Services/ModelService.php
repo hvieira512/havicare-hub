@@ -260,12 +260,6 @@ class ModelService
         if (is_array($imagePath)) {
             return $imagePath;
         }
-        $supplier = $this->db->suppliers->findById($supplierId);
-        $previousImagePath = null;
-        if (is_string($imagePath) && is_array($supplier)) {
-            $existing = $this->db->models->find((string)$supplier['name'], $internalModel);
-            $previousImagePath = is_array($existing) ? (string)($existing['image_path'] ?? '') : null;
-        }
         $this->db->models->add($supplierId, $internalModel, $commercialName, $deviceType, $imagePath);
         $supplier = $this->db->suppliers->findById($supplierId);
         $stored = is_array($supplier) ? $this->db->models->find((string)$supplier['name'], $internalModel) : null;
@@ -278,10 +272,6 @@ class ModelService
                 );
             }
         }
-        if (is_string($imagePath) && $previousImagePath !== null && $previousImagePath !== $imagePath) {
-            $this->images->delete($previousImagePath);
-        }
-
         return ['status' => 'ok'];
     }
 
@@ -340,7 +330,6 @@ class ModelService
 
         return ['status' => 'ok'];
     }
-
 
     /**
      * @param array<string, mixed> $decoded
@@ -412,18 +401,13 @@ class ModelService
             }
         }
 
-        $capabilityIds = $this->capabilityIdsForDeviceTypeAndKeys($deviceType, $enabledCapabilities);
-        $requestableCapabilityIds = $hasRequestableCapabilitiesSelection
-            ? $this->capabilityIdsForDeviceTypeAndKeys($deviceType, $requestableCapabilities)
-            : null;
-
         return [
             'supplier_id' => $supplierId,
             'internal_model' => $internalModel,
             'commercial_name' => $commercialName,
             'device_type' => $deviceType,
-            'enabled_capabilities' => $capabilityIds,
-            'requestable_capabilities' => $requestableCapabilityIds,
+            'enabled_capabilities' => $enabledCapabilities,
+            'requestable_capabilities' => $hasRequestableCapabilitiesSelection ? $requestableCapabilities : null,
         ];
     }
 
@@ -474,25 +458,6 @@ class ModelService
         }
 
         return array_keys($normalized);
-    }
-
-
-    /**
-     * @param list<string> $keys
-     * @return list<int>
-     */
-    private function capabilityIdsForDeviceTypeAndKeys(string $deviceType, array $keys): array
-    {
-        $ids = [];
-        foreach ($keys as $key) {
-            $id = $this->db->genericCapabilities->findIdByDeviceTypeAndKey($deviceType, (string)$key);
-            if ($id === null) {
-                continue;
-            }
-            $ids[$id] = $id;
-        }
-
-        return array_values($ids);
     }
 
     /**

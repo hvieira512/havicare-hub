@@ -22,10 +22,9 @@ final class DeviceAssociationService
         private DeviceRegistry $store,
         private Whitelist $whitelist,
         private ApiDataAccess $db,
-        private ?DeviceHubServer $hub = null,
-        ?RequestBinder $binder = null,
+        private DeviceHubServer $hub,
     ) {
-        $this->binder = $binder ?? new RequestBinder();
+        $this->binder = new RequestBinder();
     }
 
     /**
@@ -129,6 +128,6 @@ final class DeviceAssociationService
             return;
         }
 
-        $this->hub?->clearRetainedStatus($existing->company, $existing->licenseId, $existing->deviceType, $imei);
+        $this->hub->clearRetainedStatus($existing->company, $existing->licenseId, $existing->deviceType, $imei);
     }
 }

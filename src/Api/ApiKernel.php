@@ -84,10 +84,6 @@ final class ApiKernel
             return $this->json->result(ApiError::unauthorized()->toArray());
         }
 
-        if ($routePattern !== null) {
-            $request = $request->withAttribute(RequestContext::ATTR_ROUTE_PATTERN, $routePattern);
-        }
-
         $fail = fn(\Throwable $e): Response => $this->unhandled($e, $requestId, $method, $path, $routePattern, $logContext, $authContext);
 
         try {
@@ -207,7 +203,6 @@ final class ApiKernel
             $request = $request->withAttribute(RequestContext::ATTR_AUTH, $authContext);
         }
         $route = $match['route'];
-        $request = $request->withAttribute(RequestContext::ATTR_ROUTE_PATTERN, $route->pattern());
 
         $bodyMode = $route->body();
         if ($bodyMode !== null) {

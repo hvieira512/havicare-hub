@@ -57,7 +57,7 @@ final class BridgeProximityTest extends TestCase
     private function bridge(): array
     {
         $mqtt = new RecordingHubMqttBridge();
-        $store = new DeviceStore(new InMemoryRedisClient(), prefix: 'test:dashboard:proximity');
+        $store = new DeviceStore(new InMemoryRedisClient());
 
         $bridge = new MokoBridge(
             new FakeMqttSubscriber(),
@@ -196,7 +196,7 @@ final class BridgeProximityTest extends TestCase
             $mqtt,
             IngressFixtures::links(),
             new ArrayObservationStateStore(),
-            deviceStore: new DeviceStore(new InMemoryRedisClient(), prefix: 'test:dashboard:maint'),
+            deviceStore: new DeviceStore(new InMemoryRedisClient()),
             clock: fn(): float => $this->now,
             options: new MokoGatewayOptions(
                 proximityTracker: new ProximityTracker(windowSeconds: 5, maxSamples: 10, stalenessSeconds: 2),

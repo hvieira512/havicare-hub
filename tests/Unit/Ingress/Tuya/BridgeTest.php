@@ -17,7 +17,7 @@ final class BridgeTest extends TestCase
     private const BUTTON = 'bf7cbe84a6199e98168qvb';
     private const ACCESS_ID = 'test-access-id';
     private const ACCESS_SECRET = '0123456789abcdef0123456789abcdef';
-    private const PREFIX = 'test:dashboard:tuya';
+    private const PREFIX = 'hub:dashboard';
 
     private InMemoryRedisClient $redis;
     private DeviceStore $store;
@@ -27,7 +27,7 @@ final class BridgeTest extends TestCase
     protected function setUp(): void
     {
         $this->redis = new InMemoryRedisClient();
-        $this->store = new DeviceStore($this->redis, prefix: self::PREFIX);
+        $this->store = new DeviceStore($this->redis);
         $this->mqtt = new RecordingHubMqttBridge();
         $this->bridge = $this->bridge(IngressFixtures::whitelist([
             self::BUTTON => IngressFixtures::device('PST', 'CF103W', 'bracelet'),

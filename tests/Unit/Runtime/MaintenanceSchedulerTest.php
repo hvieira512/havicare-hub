@@ -38,7 +38,7 @@ final class MaintenanceSchedulerTest extends TestCase
         $this->timers = [];
         $this->redis = new InMemoryRedisClient();
         $this->mqtt = new RecordingHubMqttBridge();
-        $this->store = new DeviceStore($this->redis, prefix: 'test:dashboard');
+        $this->store = new DeviceStore($this->redis);
         $this->store->registerDevice(self::IMEI, 'Vivistar', 'VIVISTAR-CARE');
         $this->hubServer = $this->recordingHubServer();
 
@@ -199,7 +199,7 @@ final class MaintenanceSchedulerTest extends TestCase
 
     private function rewindLastSeen(string $imei): void
     {
-        $this->redis->zadd('test:dashboard:online-devices-by-last-seen', [$imei => time() - self::IDLE_TIMEOUT - 1]);
+        $this->redis->zadd('hub:dashboard:online-devices-by-last-seen', [$imei => time() - self::IDLE_TIMEOUT - 1]);
     }
 
     /** Corre uma passagem completa de manutenção. */

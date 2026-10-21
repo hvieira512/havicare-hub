@@ -30,14 +30,12 @@ final class DeviceStore implements DeviceStoreContract
     public function __construct(
         ClientInterface $redis,
         private int $limit = 100,
-        private string $prefix = 'hub:dashboard',
-        ?DeviceUpdateNotifier $updates = null,
     ) {
-        $this->updates = $updates ?? new DeviceUpdateNotifier();
-        $this->runtime = new DeviceRuntimeStore($redis, $this->limit, $this->prefix);
+        $this->updates = new DeviceUpdateNotifier();
+        $this->runtime = new DeviceRuntimeStore($redis, $this->limit);
         $this->projection = new DeviceConfigurationProjection();
-        $this->events = new DeviceEventStore($redis, $this->limit, $this->prefix, $this->projection);
-        $this->commands = new DeviceCommandStore($redis, $this->runtime, $this->limit, $this->prefix, $this->projection);
+        $this->events = new DeviceEventStore($redis, $this->limit, $this->projection);
+        $this->commands = new DeviceCommandStore($redis, $this->runtime, $this->limit, $this->projection);
     }
 
     /**

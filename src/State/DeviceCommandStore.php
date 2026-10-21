@@ -10,6 +10,8 @@ use Predis\ClientInterface;
 
 final class DeviceCommandStore
 {
+    private const PREFIX = 'hub:dashboard';
+
     /** Os estados de que um comando não sai. */
     private const FINISHED = ['acked', 'failed', 'dropped', 'superseded'];
 
@@ -20,10 +22,8 @@ final class DeviceCommandStore
         private ClientInterface $redis,
         private DeviceRuntimeStore $runtime,
         private int $limit = 100,
-        private string $prefix = 'hub:dashboard',
         private ?DeviceConfigurationProjection $projection = null,
     ) {
-        $this->prefix = trim($this->prefix, ':');
         $this->limit = max(1, $this->limit);
     }
 
@@ -517,7 +517,7 @@ final class DeviceCommandStore
 
     private function key(string $suffix): string
     {
-        return "{$this->prefix}:{$suffix}";
+        return self::PREFIX . ':' . $suffix;
     }
 
     private function deviceListKey(string $imei, string $list): string

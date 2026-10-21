@@ -14,9 +14,10 @@ use Predis\ClientInterface;
  */
 final class LoginThrottle
 {
+    private const PREFIX = 'hub:login-throttle';
+
     public function __construct(
         private ClientInterface $redis,
-        private string $prefix = 'hub:login-throttle',
         private int $maxPerAddress = 20,
         private int $windowPerAddressSeconds = 60,
         private int $maxPerUsername = 10,
@@ -24,7 +25,6 @@ final class LoginThrottle
         private int $maxGlobal = 15,
         private int $windowGlobalSeconds = 10,
     ) {
-        $this->prefix = trim($this->prefix, ':');
     }
 
     /**
@@ -46,7 +46,7 @@ final class LoginThrottle
     private function count(string $bucket, string $subject, int $windowSeconds): int
     {
         $window = intdiv(time(), max(1, $windowSeconds));
-        $key = $this->prefix . ':' . $bucket . ':' . $subject . ':' . $window;
+        $key = self::PREFIX . ':' . $bucket . ':' . $subject . ':' . $window;
 
         $used = (int)$this->redis->incr($key);
         if ($used === 1) {

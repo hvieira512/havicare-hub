@@ -40,14 +40,6 @@ final class DenylistRepository
         return $stmt->rowCount() > 0;
     }
 
-    public function exists(string $identity): bool
-    {
-        $stmt = $this->pdo->prepare('SELECT 1 FROM denylist WHERE identity = ? LIMIT 1');
-        $stmt->execute([$identity]);
-
-        return $stmt->fetchColumn() !== false;
-    }
-
     /** @return array<int, array<string, mixed>> */
     public function all(): array
     {

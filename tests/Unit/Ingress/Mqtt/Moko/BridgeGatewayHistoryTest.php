@@ -26,7 +26,7 @@ final class BridgeGatewayHistoryTest extends TestCase
     private function bridge(): array
     {
         $mqtt = new RecordingHubMqttBridge();
-        $store = new DeviceStore(new InMemoryRedisClient(), prefix: 'test:dashboard:gwhistory');
+        $store = new DeviceStore(new InMemoryRedisClient());
 
         $bridge = new MokoBridge(
             new FakeMqttSubscriber(),

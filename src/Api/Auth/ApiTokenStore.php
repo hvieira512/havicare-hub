@@ -8,14 +8,14 @@ use Predis\ClientInterface;
 
 final class ApiTokenStore
 {
+    private const PREFIX = 'hub:api-tokens';
+
     private const TOKEN_TYPE_ACCESS = 'access';
     private const TOKEN_TYPE_REFRESH = 'refresh';
 
     public function __construct(
         private ClientInterface $redis,
-        private string $prefix = 'hub:api-tokens',
     ) {
-        $this->prefix = trim($this->prefix, ':');
     }
 
     /** @return array<string, mixed> */
@@ -132,11 +132,6 @@ final class ApiTokenStore
         return $this->contextFromPayload($payload);
     }
 
-    public function validate(string $token): bool
-    {
-        return $this->context($token) instanceof ApiAuthContext;
-    }
-
     /** @return array{string, array<string, mixed>} */
     private function issueStoredToken(
         string $username,
@@ -220,6 +215,6 @@ final class ApiTokenStore
 
     private function key(string $token): string
     {
-        return "{$this->prefix}:{$token}";
+        return self::PREFIX . ':' . $token;
     }
 }

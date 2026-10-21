@@ -66,7 +66,7 @@ final class ApiRouterTest extends TestCase
 
         $match = $router->match('HEAD', '/api/thing');
         self::assertNotNull($match);
-        self::assertSame('head', ($match['route']->handler())([], null));
+        self::assertSame('head', $match['route']->invoke([], new \GuzzleHttp\Psr7\ServerRequest('HEAD', '/api/thing')));
     }
 
     /** O fallback é só de HEAD para GET: um POST em falta continua sem rota. */

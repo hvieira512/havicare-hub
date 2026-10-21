@@ -47,10 +47,8 @@ final class StreamController
     /** @param array<string, string> $params */
     public function stream(array $params, ServerRequestInterface $request): Response
     {
-        $auth = RequestContext::auth($request);
-        if ($auth === null) {
-            return $this->json->result(ApiError::unauthorized()->toArray());
-        }
+        // O kernel recusa sem contexto qualquer rota que não seja pública.
+        $auth = RequestContext::auth($request) ?? throw new \LogicException('stream without auth context');
 
         // O teto vem antes de tudo: é a verificação mais barata e é a que protege o processo.
         $user = $auth->username;
