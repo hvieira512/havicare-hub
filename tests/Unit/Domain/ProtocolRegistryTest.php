@@ -19,6 +19,14 @@ final class ProtocolRegistryTest extends TestCase
         self::assertTrue($protocol['supportsConfigCatalog']);
     }
 
+    /** A W6 não tem toque longo: o firmware dá simples, duplo e triplo. */
+    public function testTheBraceletsDeclareTheirPressModes(): void
+    {
+        self::assertSame(['single', 'double', 'long'], ProtocolRegistry::describe('moko-w6b')['helpCallPressModes']);
+        self::assertSame(['single', 'double', 'triple'], ProtocolRegistry::describe('moko-w6')['helpCallPressModes']);
+        self::assertSame([], ProtocolRegistry::describe('four-p-touch')['helpCallPressModes']);
+    }
+
     public function testOnlyProtocolsWithConfigCatalogAreReturnedInTheHelper(): void
     {
         self::assertNotContains('moko-mkgw3', ProtocolRegistry::protocolsWithConfigCatalog());

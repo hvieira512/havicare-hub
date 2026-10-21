@@ -23,7 +23,17 @@ final class NotificationSchemas
                     'protocol' => ['type' => 'string', 'example' => 'vivistar-iw'],
                     'model' => ['type' => 'string', 'example' => 'VL16P'],
                     'ident' => ['type' => 'string', 'example' => ''],
-                    'reason' => ['type' => 'string', 'example' => 'device_not_authorized'],
+                    'reason' => ['oneOf' => [
+                        ['type' => 'string', 'example' => 'device_not_authorized'],
+                        [
+                            'type' => 'object',
+                            'description' => 'hub_unclean_restart: the run that ended abruptly.',
+                            'properties' => [
+                                'pid' => ['type' => 'integer', 'nullable' => true],
+                                'startedAt' => ['type' => 'string', 'format' => 'date-time', 'nullable' => true],
+                            ],
+                        ],
+                    ]],
                     // O dono, quando o protocolo o diz. Vêm os dois ou nenhum.
                     'licenseId' => ['type' => 'integer', 'example' => 1001],
                     'company' => ['type' => ['string', 'null'], 'example' => 'hitcare'],

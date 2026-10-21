@@ -25,27 +25,27 @@ final class CapabilityDefinitionRolesTest extends TestCase
             {
                 return [
                     'telemetry' => [
-                        'measurement' => ['a' => 'A'],
-                        'measurementOnRequest' => ['b' => 'B'],
-                        'sighting' => ['c' => 'C'],
+                        'measurement' => ['a'],
+                        'measurementOnRequest' => ['b'],
+                        'sighting' => ['c'],
                     ],
-                    'health' => ['setting' => ['d' => 'D'], 'hubSetting' => ['e' => 'E']],
-                    'settings_system' => ['action' => ['f' => 'F']],
-                    'alarms' => ['event' => ['g' => 'G']],
+                    'health' => ['setting' => ['d'], 'hubSetting' => ['e']],
+                    'settings_system' => ['action' => ['f']],
+                    'alarms' => ['event' => ['g']],
                 ];
             }
         };
 
         self::assertSame([
-            ['deviceType' => 'watch', 'section' => 'telemetry', 'key' => 'a', 'label' => 'A', 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => false],
-            ['deviceType' => 'watch', 'section' => 'telemetry', 'key' => 'b', 'label' => 'B', 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => true],
+            ['deviceType' => 'watch', 'section' => 'telemetry', 'key' => 'a', 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => false],
+            ['deviceType' => 'watch', 'section' => 'telemetry', 'key' => 'b', 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => true],
             // O avistamento é indistinguível de uma medição no fio: o que o separa é o
             // conceito, e nunca é pedível porque não há a quem pedir.
-            ['deviceType' => 'watch', 'section' => 'telemetry', 'key' => 'c', 'label' => 'C', 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => false],
-            ['deviceType' => 'watch', 'section' => 'health', 'key' => 'd', 'label' => 'D', 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],
-            ['deviceType' => 'watch', 'section' => 'health', 'key' => 'e', 'label' => 'E', 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],
-            ['deviceType' => 'watch', 'section' => 'settings_system', 'key' => 'f', 'label' => 'F', 'isTelemetry' => false, 'isConfigurable' => false, 'isRequestable' => true],
-            ['deviceType' => 'watch', 'section' => 'alarms', 'key' => 'g', 'label' => 'G', 'isTelemetry' => false, 'isConfigurable' => false, 'isRequestable' => false, 'isEvent' => true],
+            ['deviceType' => 'watch', 'section' => 'telemetry', 'key' => 'c', 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => false],
+            ['deviceType' => 'watch', 'section' => 'health', 'key' => 'd', 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],
+            ['deviceType' => 'watch', 'section' => 'health', 'key' => 'e', 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],
+            ['deviceType' => 'watch', 'section' => 'settings_system', 'key' => 'f', 'isTelemetry' => false, 'isConfigurable' => false, 'isRequestable' => true],
+            ['deviceType' => 'watch', 'section' => 'alarms', 'key' => 'g', 'isTelemetry' => false, 'isConfigurable' => false, 'isRequestable' => false, 'isEvent' => true],
         ], $subject::all());
     }
 
@@ -60,7 +60,7 @@ final class CapabilityDefinitionRolesTest extends TestCase
 
             protected static function rows(): array
             {
-                return ['health' => ['measurement' => ['heart_rate' => 'Frequência cardíaca']]];
+                return ['health' => ['measurement' => ['heart_rate']]];
             }
         };
 
@@ -81,7 +81,7 @@ final class CapabilityDefinitionRolesTest extends TestCase
 
             protected static function rows(): array
             {
-                return ['health' => ['settings' => ['step_goal' => 'Meta de passos']]];
+                return ['health' => ['settings' => ['step_goal']]];
             }
         };
 

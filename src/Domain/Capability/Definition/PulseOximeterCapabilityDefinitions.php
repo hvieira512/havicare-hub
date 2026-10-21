@@ -16,9 +16,9 @@ final class PulseOximeterCapabilityDefinitions extends CapabilityDefinitions
         return [
             'telemetry' => [
                 'measurement' => [
-                    'blood_oxygen' => 'Oxigénio no sangue',
+                    'blood_oxygen',
                     // O pulso de cada medição, à parte como no tensiómetro.
-                    'heart_rate' => 'Frequência cardíaca',
+                    'heart_rate',
                 ],
             ],
         ];

@@ -16,7 +16,7 @@ final class ThermometerCapabilityDefinitions extends CapabilityDefinitions
         return [
             'telemetry' => [
                 'measurement' => [
-                    'temperature' => 'Temperatura corporal',
+                    'temperature',
                 ],
             ],
         ];

@@ -235,14 +235,7 @@ final class DashboardDeviceDetailTest extends DashboardHttpTestCase
         );
         self::assertArrayNotHasKey('_nativeKey', $body['capabilities']['reminders']['medication_reminders']);
         self::assertSame(3, $body['capabilities']['reminders']['medication_reminders']['_meta']['limit'] ?? null);
-        self::assertSame(
-            [
-                ['value' => 1, 'label' => 'Uma vez'],
-                ['value' => 2, 'label' => 'Diariamente'],
-                ['value' => 3, 'label' => 'Personalizado'],
-            ],
-            $body['capabilities']['reminders']['medication_reminders']['_meta']['frequency']['options'] ?? null
-        );
+        self::assertArrayNotHasKey('frequency', $body['capabilities']['reminders']['medication_reminders']['_meta']);
     }
 
     public function testDeviceDetailExposesMultipleTakePillsRemindersForFourPTouch(): void

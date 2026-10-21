@@ -9,7 +9,7 @@ use Hub\Domain\Capability\CapabilityCatalog;
 use Hub\Domain\ProtocolRegistry;
 use PHPUnit\Framework\TestCase;
 
-/** A frase de confirmação vive na definição porque o efeito exato da reposição ou do reinício é do aparelho de cada protocolo. */
+/** O que não se desfaz a partir da dashboard sai como destrutivo, e é isso que lhe pede confirmação. */
 final class DestructiveConfirmationTest extends TestCase
 {
     /**
@@ -25,69 +25,22 @@ final class DestructiveConfirmationTest extends TestCase
         'monitor_number',
     ];
 
-    public function testEveryIrreversibleActionDeclaresWhatItDoes(): void
+    public function testEveryIrreversibleActionIsDestructive(): void
     {
-        $missing = [];
+        $normal = [];
 
         foreach (ProtocolRegistry::protocolsWithConfigCatalog() as $protocol) {
             foreach (DeviceConfigurationCatalog::configsForProtocol($protocol) as $entry) {
                 $key = (string)($entry['key'] ?? '');
-                $capability = CapabilityCatalog::mapConfigurationKey($key);
-                if (!in_array($capability, self::IRREVERSIBLE, true)) {
-                    continue;
+                if (
+                    in_array(CapabilityCatalog::mapConfigurationKey($key), self::IRREVERSIBLE, true)
+                    && ($entry['risk'] ?? '') !== 'destructive'
+                ) {
+                    $normal[] = $protocol . '/' . $key;
                 }
-
-                if (trim((string)($entry['confirm'] ?? '')) === '') {
-                    $missing[] = $protocol . '/' . $key;
-                    continue;
-                }
-
-                self::assertSame(
-                    'destructive',
-                    $entry['risk'] ?? '',
-                    $protocol . '/' . $key . ' declara uma confirmação e tem de sair como destrutiva',
-                );
             }
         }
 
-        self::assertSame([], $missing, 'estas acções não dizem o que fazem ao aparelho');
-    }
-
-    public function testTheFactoryResetDoesNotPromiseARestart(): void
-    {
-        $reset = $this->entry('wonlex-json', 'factoryResetCommand');
-
-        self::assertMatchesRegularExpression(
-            '/f[áa]brica/iu',
-            (string)($reset['confirm'] ?? ''),
-            'a confirmação da Wonlex tem de dizer que repõe o aparelho de fábrica',
-        );
-        self::assertDoesNotMatchRegularExpression(
-            '/arranca|reinici/iu',
-            (string)($reset['confirm'] ?? ''),
-            'a reposição de fábrica não se confirma com o texto de um reinício',
-        );
-    }
-
-    public function testTheFourPTouchRestartSaysItRestarts(): void
-    {
-        $fourPTouch = $this->entry('four-p-touch', 'restartCommand');
-
-        self::assertMatchesRegularExpression(
-            '/arranca|reinici/iu',
-            (string)($fourPTouch['confirm'] ?? ''),
-            'o RESET do 4P Touch é um reinício, e é isso que a caixa tem de dizer',
-        );
-    }
-
-    /**
-     * @return array<string, mixed>
-     */
-    private function entry(string $protocol, string $key): array
-    {
-        $entry = DeviceConfigurationCatalog::configForProtocol($protocol, $key);
-        self::assertNotNull($entry, $protocol . ' devia declarar a configuração ' . $key);
-
-        return $entry;
+        self::assertSame([], $normal, 'estas acções não pedem confirmação');
     }
 }

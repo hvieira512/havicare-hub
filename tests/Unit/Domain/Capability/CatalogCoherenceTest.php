@@ -23,22 +23,6 @@ final class CatalogCoherenceTest extends TestCase
         \Hub\Domain\Capability\Definition\PillDispenserCapabilityDefinitions::class,
     ];
 
-    public function testTheSameKeyCarriesTheSameLabelEverywhere(): void
-    {
-        foreach ($this->byKey('label') as $key => $labels) {
-            self::assertCount(1, $labels, sprintf(
-                'A chave %s tem %d etiquetas: %s',
-                $key,
-                count($labels),
-                implode(' | ', array_map(
-                    static fn (string $label, array $types): string => "\"{$label}\" (" . implode(', ', $types) . ')',
-                    array_keys($labels),
-                    $labels,
-                )),
-            ));
-        }
-    }
-
     public function testTheSameKeyLivesInTheSameSection(): void
     {
         foreach ($this->byKey('section') as $key => $sections) {

@@ -7,18 +7,17 @@ namespace Hub\Domain;
 final class ProtocolRegistry
 {
     /**
-     * Os metadados canónicos de cada protocolo; o que a dashboard precisa vive no
-     * `Api\Http\ProtocolDashboardMeta`.
-     *
-     * O `supplier` é o nome do fornecedor quando não é o `label`, e os `models` os modelos
-     * internos que pedem este protocolo a um fornecedor com vários.
+     * Os metadados canónicos de cada protocolo. O `supplier` é o nome do fornecedor quando não é
+     * o `label`, os `models` os modelos internos que pedem este protocolo a um fornecedor com
+     * vários, e os `helpCallPressModes` os toques que o botão de ajuda distingue.
      *
      * @return array<string, array{
      *     label: string,
      *     deviceType: string,
      *     supportsConfigCatalog: bool,
      *     supplier?: string,
-     *     models?: list<string>
+     *     models?: list<string>,
+     *     helpCallPressModes?: list<string>
      * }>
      */
     public static function all(): array
@@ -86,6 +85,7 @@ final class ProtocolRegistry
                 'models' => ['w6b'],
                 'deviceType' => 'bracelet',
                 'supportsConfigCatalog' => false,
+                'helpCallPressModes' => ['single', 'double', 'long'],
             ],
             'moko-w6' => [
                 'label' => 'MOKO W6',
@@ -93,6 +93,8 @@ final class ProtocolRegistry
                 'models' => ['w6'],
                 'deviceType' => 'bracelet',
                 'supportsConfigCatalog' => false,
+                // O firmware BXP Nordic dá cliques simples, duplos e triplos, sem toque longo.
+                'helpCallPressModes' => ['single', 'double', 'triple'],
             ],
             // A pulseira dorme e só fala com a cloud da Tuya, que a entrega ao hub pelo Pulsar.
             'tuya-cloud' => [
@@ -190,7 +192,7 @@ final class ProtocolRegistry
     }
 
     /**
-     * @return array{protocol: string, label: string, deviceType: string, supportsConfigCatalog: bool}
+     * @return array{protocol: string, label: string, deviceType: string, supportsConfigCatalog: bool, helpCallPressModes: list<string>}
      */
     public static function describe(string $protocol): array
     {
@@ -206,6 +208,7 @@ final class ProtocolRegistry
             'label' => (string)$meta['label'],
             'deviceType' => (string)$meta['deviceType'],
             'supportsConfigCatalog' => (bool)$meta['supportsConfigCatalog'],
+            'helpCallPressModes' => $meta['helpCallPressModes'] ?? [],
         ];
     }
 

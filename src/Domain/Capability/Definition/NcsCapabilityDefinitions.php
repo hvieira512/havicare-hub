@@ -17,8 +17,8 @@ final class NcsCapabilityDefinitions extends CapabilityDefinitions
         return [
             'alarms' => [
                 'event' => [
-                    'help_call' => 'Chamada de ajuda',
-                    'reset' => 'Chamada reposta',
+                    'help_call',
+                    'reset',
                 ],
             ],
         ];

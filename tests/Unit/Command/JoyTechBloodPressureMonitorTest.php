@@ -32,15 +32,6 @@ final class JoyTechBloodPressureMonitorTest extends TestCase
         self::assertSame('readBloodPressureHistory', DeviceCommandCatalog::buildDownlink('joytech-bp-ecg', '748b3483cda4', 'readBloodPressureHistory'));
     }
 
-    /** O HC-6679B só manda a memória com o ecrã MEM aberto, e o botão di-lo. */
-    public function testTheEcgModelAsksForTheMemoryScreenBeforeReading(): void
-    {
-        $help = static fn (string $protocol): string => (string)(array_column(DeviceConfigurationCatalog::configsForProtocol($protocol), 'help', 'key')['read_blood_pressure_history'] ?? '');
-
-        self::assertStringContainsString('Abre a memória no aparelho (MEM) antes de pedir', $help('joytech-bp-ecg'));
-        self::assertStringNotContainsString('MEM', $help('joytech-bp'));
-    }
-
     /** O termómetro é do mesmo fornecedor e tem outro protocolo: só mede, sem ações nem configurações. */
     public function testTheThermometerOnlyMeasuresTemperature(): void
     {

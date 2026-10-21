@@ -35,9 +35,8 @@ final class CapabilityCatalogTest extends TestCase
             self::assertSame($keys, array_values(array_unique($keys)), $deviceType);
 
             foreach ($definitions as $definition) {
-                self::assertArrayHasKey($definition['section'], CapabilityCatalog::sections());
+                self::assertContains($definition['section'], CapabilityCatalog::sections());
                 self::assertNotSame('', trim($definition['key']));
-                self::assertNotSame('', trim($definition['label']));
             }
         }
     }

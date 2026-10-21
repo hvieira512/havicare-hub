@@ -735,7 +735,7 @@ final class DeviceConfigurationCatalogTest extends TestCase
         self::assertIsArray($config);
         self::assertSame('alerts', $config['category'] ?? null);
         self::assertSame(3, $config['limit'] ?? null);
-        self::assertSame([1, 2, 3], array_column($config['options']['frequency'] ?? [], 'value'));
+        self::assertArrayNotHasKey('options', $config);
         self::assertSame('medication_reminders', CapabilityCatalog::mapConfigurationKey('takePills'));
     }
 

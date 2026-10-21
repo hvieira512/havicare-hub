@@ -74,19 +74,16 @@ final class Wonlex implements AlarmClockHandler
     {
         return array_replace_recursive([
             'limit' => 10,
-            'label' => [
-                'supported' => true,
-                'label' => 'Nome do alarme',
-            ],
+            'label' => ['supported' => true],
             'url' => [
                 'supported' => true,
-                'label' => 'Áudio do lembrete',
                 'format' => 'uri',
                 'schemes' => ['http', 'https'],
             ],
             'week' => [
                 'order' => ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'],
             ],
+            // hitcare: as etiquetas ficam porque o hitCare as mostra do `_meta`; saem quando ele traduzir os valores.
             'mode' => [
                 'options' => [
                     ['value' => 'daily', 'label' => 'Todos os dias'],

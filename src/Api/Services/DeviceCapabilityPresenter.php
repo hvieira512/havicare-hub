@@ -76,7 +76,7 @@ final class DeviceCapabilityPresenter
         $matrix = $this->supportedCapabilityMatrix($model, $protocol, $deviceType);
 
         $capabilities = [];
-        foreach (CapabilityCatalog::sections() as $section => $_label) {
+        foreach (CapabilityCatalog::sections() as $section) {
             $capabilities[$section] = [];
         }
         $capabilities['telemetry'] = $this->telemetryCapabilities($model, $protocol, $matrix);
