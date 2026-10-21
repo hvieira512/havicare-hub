@@ -29,7 +29,7 @@ const connect = async (imei) => {
 /** Um corpo de frame vazio: aqui o que interessa é a entrega ter acontecido, não o conteúdo. */
 const frame = () => ({ telemetry: [], events: [], commands: [], limit: 100 });
 
-test("an open stream is not closed", async () => {
+test("connecting opens one stream and keeps it open", async () => {
     reset();
     await connect("111");
 
