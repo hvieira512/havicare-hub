@@ -535,14 +535,17 @@ final class DeviceHubMqttContractTest extends TestCase
     public function testReconnectDoesNotEmitADisconnectForTheSupersededSession(): void
     {
         $mqtt = new ContractRecordingHubMqttBridge();
-        $hub = new DeviceHubServer($this->whitelist, $mqtt);
+        $now = 1_000;
+        $hub = new DeviceHubServer($this->whitelist, $mqtt, clock: static function () use (&$now): int {
+            return $now;
+        });
 
         $first = new ContractFakeConnection(5);
         $hub->onOpen($first);
         $hub->onMessage($first, 'IWAP00865028000000308#');
 
         // A primeira sessão envelhece, e só então o relógio reconecta noutro socket.
-        sleep(2);
+        $now += 2;
         $second = new ContractFakeConnection(6);
         $hub->onOpen($second);
         $hub->onMessage($second, 'IWAP00865028000000308#');
@@ -561,6 +564,24 @@ final class DeviceHubMqttContractTest extends TestCase
         // E o downlink continua a chegar ao relógio vivo -- vai para a ligação nova.
         self::assertTrue($hub->sendDownlink('865028000000308', 'IWBPXY,865028000000308,080835#'));
         self::assertNotEmpty($second->sent, 'a ligação activa recebe o comando');
+    }
+
+    /** Uma ligação cuja sessão já saiu do registo continua a receber o comando. */
+    public function testADownlinkReachesAConnectionWhoseSessionIsGone(): void
+    {
+        $mqtt = new ContractRecordingHubMqttBridge();
+        $hub = new DeviceHubServer($this->whitelist, $mqtt);
+        $watch = new ContractFakeConnection(5);
+        $hub->onOpen($watch);
+        $hub->onMessage($watch, 'IWAP00865028000000308#');
+
+        // Outra ligação com o mesmo `resourceId` abre e fecha, e leva a sessão do relógio.
+        $other = new ContractFakeConnection(5);
+        $hub->onOpen($other);
+        $hub->onClose($other);
+
+        self::assertTrue($hub->sendDownlink('865028000000308', 'IWBP03#'));
+        self::assertSame('IWBP03#', end($watch->sent));
     }
 
     public function testVivistarOnlineDownlinkPublishesCommandMetadata(): void
@@ -880,28 +901,28 @@ final class ContractRecordingHubMqttBridge extends HubMqttBridge
     }
 
     /** @param array<string, mixed> $payload */
-    public function publishRaw(string $imei, array $payload, string $deviceType = 'watch', int $licenseId = 0, string $company = 'null'): void
+    public function publishRaw(string $imei, array $payload, string $deviceType, int $licenseId = 0, string $company = 'null'): void
     {
         $this->raw[] = [$imei, $payload];
         $this->rawTopics[] = $this->deviceTopic($company, $licenseId, $deviceType, $imei, 'raw');
     }
 
     /** @param array<string, mixed> $payload */
-    public function publishStatus(string $imei, array $payload, bool $retain = true, string $deviceType = 'watch', int $licenseId = 0, string $company = 'null'): void
+    public function publishStatus(string $imei, array $payload, bool $retain, string $deviceType, int $licenseId = 0, string $company = 'null'): void
     {
         $this->statuses[] = [$imei, $payload, $retain];
         $this->statusTopics[] = $this->deviceTopic($company, $licenseId, $deviceType, $imei, 'status');
     }
 
     /** @param array<string, mixed> $payload */
-    public function publishEvent(string $imei, array $payload, string $deviceType = 'watch', int $licenseId = 0, string $company = 'null'): void
+    public function publishEvent(string $imei, array $payload, string $deviceType, int $licenseId = 0, string $company = 'null'): void
     {
         $this->events[] = [$imei, $payload];
         $this->eventTopics[] = $this->deviceTopic($company, $licenseId, $deviceType, $imei, 'events');
     }
 
     /** @param array<string, mixed> $payload */
-    public function publishTelemetry(string $imei, array $payload, string $deviceType = 'watch', int $licenseId = 0, string $company = 'null'): void
+    public function publishTelemetry(string $imei, array $payload, string $deviceType, int $licenseId = 0, string $company = 'null'): void
     {
         $this->telemetry[] = [$imei, $payload];
         $this->telemetryTopics[] = $this->deviceTopic($company, $licenseId, $deviceType, $imei, 'telemetry');

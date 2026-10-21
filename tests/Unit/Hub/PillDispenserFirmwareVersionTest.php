@@ -84,7 +84,6 @@ final class PillDispenserFirmwareVersionTest extends TestCase
     {
         return new DeviceSession(
             new PillFakeConnection(),
-            'tcp',
             true,
             'AABBCCDDEEFF',
             'zayata-m228',

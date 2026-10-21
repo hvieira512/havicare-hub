@@ -82,7 +82,7 @@ final class LifecycleEventsTest extends TestCase
     public function testAFailureToPublishDoesNotEscape(): void
     {
         $mqtt = new class extends RecordingHubMqttBridge {
-            public function publishEvent(string $imei, array $payload, string $deviceType = 'watch', int $licenseId = 0, string $company = 'null'): void
+            public function publishEvent(string $imei, array $payload, string $deviceType, int $licenseId = 0, string $company = 'null'): void
             {
                 throw new \RuntimeException('broker unavailable');
             }

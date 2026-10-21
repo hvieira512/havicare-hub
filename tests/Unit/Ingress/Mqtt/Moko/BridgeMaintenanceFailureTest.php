@@ -86,8 +86,8 @@ final class FailingHubMqttBridge extends RecordingHubMqttBridge
     public function publishStatus(
         string $imei,
         array $payload,
-        bool $retain = true,
-        string $deviceType = 'watch',
+        bool $retain,
+        string $deviceType,
         int $licenseId = 0,
         string $company = 'null',
     ): void {

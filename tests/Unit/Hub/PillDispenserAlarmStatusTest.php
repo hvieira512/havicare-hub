@@ -113,7 +113,6 @@ final class PillDispenserAlarmStatusTest extends TestCase
     {
         return new DeviceSession(
             new PillFakeConnection(),
-            'tcp',
             true,
             '869243062262262',
             'zayata-m228',

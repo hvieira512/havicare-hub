@@ -15,7 +15,6 @@ class HubMqttBridge
 
     private const DEFAULT_COMPANY = 'null';
     private const DEFAULT_LICENSE_ID = 0;
-    private const DEFAULT_DEVICE_TYPE = 'watch';
 
     private MqttClient $publisher;
     private string $topicPrefix;
@@ -46,7 +45,7 @@ class HubMqttBridge
     }
 
     /** @param array<string, mixed> $payload */
-    public function publishRaw(string $imei, array $payload, string $deviceType = self::DEFAULT_DEVICE_TYPE, int $licenseId = self::DEFAULT_LICENSE_ID, string $company = self::DEFAULT_COMPANY): void
+    public function publishRaw(string $imei, array $payload, string $deviceType, int $licenseId = self::DEFAULT_LICENSE_ID, string $company = self::DEFAULT_COMPANY): void
     {
         $this->publish(
             $this->topic($this->deviceTopic($company, $licenseId, $deviceType, $imei, 'raw')),
@@ -61,8 +60,8 @@ class HubMqttBridge
     public function publishStatus(
         string $imei,
         array $payload,
-        bool $retain = true,
-        string $deviceType = self::DEFAULT_DEVICE_TYPE,
+        bool $retain,
+        string $deviceType,
         int $licenseId = self::DEFAULT_LICENSE_ID,
         string $company = self::DEFAULT_COMPANY,
     ): void {
@@ -80,7 +79,7 @@ class HubMqttBridge
     }
 
     /** @param array<string, mixed> $payload */
-    public function publishEvent(string $imei, array $payload, string $deviceType = self::DEFAULT_DEVICE_TYPE, int $licenseId = self::DEFAULT_LICENSE_ID, string $company = self::DEFAULT_COMPANY): void
+    public function publishEvent(string $imei, array $payload, string $deviceType, int $licenseId = self::DEFAULT_LICENSE_ID, string $company = self::DEFAULT_COMPANY): void
     {
         $this->publish(
             $this->topic($this->deviceTopic($company, $licenseId, $deviceType, $imei, 'events')),
@@ -94,7 +93,7 @@ class HubMqttBridge
     }
 
     /** @param array<string, mixed> $payload */
-    public function publishTelemetry(string $imei, array $payload, string $deviceType = self::DEFAULT_DEVICE_TYPE, int $licenseId = self::DEFAULT_LICENSE_ID, string $company = self::DEFAULT_COMPANY): void
+    public function publishTelemetry(string $imei, array $payload, string $deviceType, int $licenseId = self::DEFAULT_LICENSE_ID, string $company = self::DEFAULT_COMPANY): void
     {
         $this->publish(
             $this->topic($this->deviceTopic($company, $licenseId, $deviceType, $imei, 'telemetry')),

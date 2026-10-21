@@ -150,7 +150,6 @@ final class FirmwareUpgradeOverTheSessionTest extends TestCase
     {
         return new DeviceSession(
             new PillFakeConnection(),
-            'tcp',
             true,
             self::IMEI,
             'zayata-m228',

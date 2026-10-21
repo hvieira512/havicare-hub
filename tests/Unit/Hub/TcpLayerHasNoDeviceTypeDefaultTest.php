@@ -38,4 +38,19 @@ final class TcpLayerHasNoDeviceTypeDefaultTest extends TestCase
         self::assertNotSame([], $mqtt->telemetry, 'a leitura tem de chegar à telemetria');
         self::assertSame(['pill_dispenser'], array_values(array_unique(array_column($published, 'deviceType'))));
     }
+
+    /** Sem whitelist, o tipo sai do protocolo por que o aparelho fala. */
+    public function testARejectedDispenserIsPublishedUnderItsOwnDeviceType(): void
+    {
+        $mqtt = new RecordingHubMqttBridge();
+        $hub = new DeviceHubServer(IngressFixtures::whitelist(), $mqtt);
+        $connection = new PillFakeConnection();
+
+        $hub->onOpen($connection);
+        $hub->onMessage($connection, (new PillDispenserAdapter())->encodeOutgoing(['packetType' => 0x01, 'serial' => 1, 'mac' => 'AABBCCDDEEFF']));
+
+        $published = [...$mqtt->statuses, ...$mqtt->events];
+        self::assertNotSame([], $published, 'a recusa tem de sair no broker');
+        self::assertSame(['pill_dispenser'], array_values(array_unique(array_column($published, 'deviceType'))));
+    }
 }

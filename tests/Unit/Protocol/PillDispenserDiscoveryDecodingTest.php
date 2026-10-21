@@ -67,7 +67,6 @@ final class PillDispenserDiscoveryDecodingTest extends TestCase
     {
         return new \Hub\Device\DeviceSession(
             new \Tests\Unit\Hub\PillFakeConnection(),
-            'tcp',
             true,
             '869243062262262',
             'zayata-m228',

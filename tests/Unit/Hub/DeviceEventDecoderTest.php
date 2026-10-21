@@ -901,7 +901,6 @@ final class DeviceEventDecoderTest extends TestCase
     {
         return new DeviceSession(
             new DecoderFakeConnection(),
-            'tcp',
             true,
             '8800000015',
             $protocol,
