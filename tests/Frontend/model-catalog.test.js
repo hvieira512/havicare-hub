@@ -1,6 +1,16 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
+/** O carrossel do Bootstrap, reduzido a pôr o `active` no painel pedido. */
+globalThis.bootstrap = {
+    Carousel: {
+        getOrCreateInstance: (element) => ({
+            to: (index) => [...element.querySelectorAll(".carousel-item")]
+                .forEach((item, at) => item.classList.toggle("active", at === index)),
+        }),
+    },
+};
+
 globalThis.fetch = async () => Response.json({ data: [] });
 
 const { state } = await import("../../src/Dashboard/dashboard/state.js");
@@ -171,10 +181,11 @@ const elementWithId = (id) => {
 };
 
 const els = {
-    modelsPanes: (() => {
-        const panes = elementWithId("modelsPanes");
-        panes.innerHTML = "<div hidden></div><div hidden></div><div></div>";
-        return panes;
+    modelsCarousel: (() => {
+        const carousel = elementWithId("modelsCarousel");
+        carousel.innerHTML = "<div class=\"carousel-inner\"><div class=\"carousel-item\"></div>" +
+            "<div class=\"carousel-item\"></div><div class=\"carousel-item active\"></div></div>";
+        return carousel;
     })(),
     modelsBreadcrumb: elementWithId("modelsBreadcrumb"),
     modelsBreadcrumbModels: elementWithId("modelsBreadcrumbModels"),
@@ -187,7 +198,8 @@ const els = {
     modelsListSearch: elementWithId("modelsListSearch"),
 };
 
-const panesShown = () => [...els.modelsPanes.children].map((pane) => !pane.hidden);
+const panesShown = () => [...els.modelsCarousel.querySelectorAll(".carousel-item")]
+    .map((item) => item.classList.contains("active"));
 
 const onTheModelSheet = () => {
     showModelsPane(2);

@@ -44,7 +44,7 @@ const tagFor = (name) => (name.endsWith("Btn") ? "button" : "div");
 
 function openWizard() {
     els = autoEls(tagFor);
-    els.modelsPanes.innerHTML = "<div></div><div hidden></div><div hidden></div>";
+    els.modelsCarousel.innerHTML = "<div class=\"carousel-item\"></div><div class=\"carousel-item active\"></div>";
     initSettingsModels({ els, ui: {} });
     return openNewModelForm();
 }
@@ -73,7 +73,8 @@ const stepNow = () => ({
 
 beforeEach(() => {
     sent = [];
-
+    // O carrossel dos três painéis é do Bootstrap, que não existe fora do browser.
+    globalThis.bootstrap = { Carousel: { getOrCreateInstance: () => ({ to() {} }) } };
     state.settingsModal.modelFilters = FILTERS;
     state.settingsModal.sectionLoaded.modelFilters = true;
     state.settingsModal.modelCatalog = [];

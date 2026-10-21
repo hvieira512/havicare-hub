@@ -28,6 +28,9 @@ const MODEL = {
 
 const jsonResponse = (obj) => Response.json(obj);
 
+// A ficha acaba a mandar o carrossel para o painel dela; aqui só interessa que não rebente.
+globalThis.bootstrap = { Carousel: { getOrCreateInstance: () => ({ to() {} }) } };
+
 function setupDom() {
     document.body.innerHTML = `
         <div id="modelDetailFields">
