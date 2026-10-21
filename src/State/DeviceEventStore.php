@@ -8,13 +8,13 @@ use Predis\ClientInterface;
 
 final class DeviceEventStore
 {
+    private const PREFIX = 'hub:dashboard';
+
     public function __construct(
         private ClientInterface $redis,
         private int $limit = 100,
-        private string $prefix = 'hub:dashboard',
         private ?DeviceConfigurationProjection $projection = null,
     ) {
-        $this->prefix = trim($this->prefix, ':');
         $this->limit = max(1, $this->limit);
     }
 
@@ -113,7 +113,7 @@ final class DeviceEventStore
 
     private function key(string $suffix): string
     {
-        return "{$this->prefix}:{$suffix}";
+        return self::PREFIX . ':' . $suffix;
     }
 
     private function deviceListKey(string $imei, string $list): string

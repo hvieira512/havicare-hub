@@ -6,6 +6,7 @@ namespace Tests\Unit\Domain;
 
 use Hub\Domain\Capability\Medication\MedicationRemindersCapability;
 use Hub\Domain\Capability\Medication\MedicationRemindersHandler;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 /** Os tratadores falsos dizem quem são, para o teste não depender do que cada fornecedor real faz com os dados. */
@@ -28,9 +29,7 @@ final class MedicationRemindersDispatchTest extends TestCase
         ];
     }
 
-    /**
-     * @dataProvider protocols
-     */
+    #[DataProvider('protocols')]
     public function testEachProtocolIsServedByItsOwnHandler(string $protocol, string $expected): void
     {
         $capability = $this->capability();

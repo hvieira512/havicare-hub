@@ -82,7 +82,7 @@ wait_for_dashboard() {
 scenario_api_token() {
   docker compose exec -T hub php -r '
 require "vendor/autoload.php";
-Hub\Bootstrap::loadEnv(getcwd());
+Dotenv\Dotenv::createUnsafeImmutable(getcwd())->safeLoad();
 $config = Hub\Config::load()->all();
 $db = Hub\Infrastructure\Persistence\Repository\ApiDataAccess::fromDatabase(
     new Hub\Infrastructure\Persistence\DashboardDatabase($config["database"])

@@ -6,7 +6,6 @@ namespace Hub\Api;
 
 use Hub\Api\Services\ApiUserService;
 use Hub\Api\Services\AuthService;
-use Hub\Api\Services\CapabilityDiscoveryService;
 use Hub\Api\Services\CapabilityService;
 use Hub\Api\Services\CompanyService;
 use Hub\Api\Services\DashboardNotificationService;
@@ -27,7 +26,6 @@ final class ApiServices
         public readonly DeviceService $devices,
         public readonly ModelService $models,
         public readonly CapabilityService $capabilities,
-        public readonly CapabilityDiscoveryService $capabilityDiscovery,
         public readonly SupplierService $suppliers,
         public readonly ApiUserService $apiUsers,
         public readonly CompanyService $company,

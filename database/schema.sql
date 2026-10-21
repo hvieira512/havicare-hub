@@ -123,7 +123,6 @@ CREATE TABLE IF NOT EXISTS device_configurations (
     current_change_id VARCHAR(64) NOT NULL DEFAULT '',
     confirmation_mode VARCHAR(32) NOT NULL DEFAULT 'execution_ack',
     last_status VARCHAR(32) NOT NULL DEFAULT '',
-    last_error VARCHAR(64) NOT NULL DEFAULT '',
     last_command_id VARCHAR(64) NOT NULL DEFAULT '',
     -- Instantes em `DATETIME NULL`: a ausência é `NULL`, e a API fala ISO.
     desired_updated_at DATETIME NULL DEFAULT NULL,
@@ -164,7 +163,6 @@ CREATE TABLE IF NOT EXISTS device_configuration_operations (
     delivery_status VARCHAR(32) NOT NULL DEFAULT 'created',
     error_code VARCHAR(64) NOT NULL DEFAULT '',
     attempts INT UNSIGNED NOT NULL DEFAULT 0,
-    max_attempts INT UNSIGNED NOT NULL DEFAULT 3,
     created_at DATETIME NOT NULL,
     updated_at DATETIME NOT NULL,
     sent_at DATETIME NULL DEFAULT NULL,
@@ -210,26 +208,19 @@ CREATE TABLE IF NOT EXISTS radar_api_credentials (
     password VARCHAR(255) NOT NULL,
     app_id VARCHAR(96) NOT NULL,
     app_secret VARCHAR(255) NOT NULL,
-    -- O token do fornecedor dura uma hora e a resposta traz o de renovação. Fica na base porque as
-    -- duas instâncias do hub o partilham.
-    access_token VARCHAR(512) NOT NULL DEFAULT '',
-    refresh_token VARCHAR(512) NOT NULL DEFAULT '',
-    token_expires_at DATETIME NULL DEFAULT NULL,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     CONSTRAINT fk_radar_api_credentials_license FOREIGN KEY (license_ref_id)
         REFERENCES licenses(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- A divisão onde um radar está montado, em decímetros relativos a ele; uma linha por radar. O
--- `source_payload` guarda a resposta tal como veio, para a reprocessar se a forma mudar.
+-- A divisão onde um radar está montado, em decímetros relativos a ele; uma linha por radar.
 CREATE TABLE IF NOT EXISTS radar_layouts (
     imei VARCHAR(64) NOT NULL PRIMARY KEY,
     room_x_min_dm SMALLINT NOT NULL,
     room_y_min_dm SMALLINT NOT NULL,
     room_x_max_dm SMALLINT NOT NULL,
     room_y_max_dm SMALLINT NOT NULL,
-    source_payload LONGTEXT NOT NULL,
     fetched_at DATETIME NOT NULL,
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     CONSTRAINT fk_radar_layouts_device FOREIGN KEY (imei)

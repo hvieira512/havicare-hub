@@ -57,40 +57,6 @@ final class DeviceConfigurationRepository
         return $rows;
     }
 
-    /** @param array<string, mixed> $payload */
-    public function saveDesired(
-        string $imei,
-        string $key,
-        string $protocol,
-        string $command,
-        array $payload,
-        string $status = '',
-        string $commandId = ''
-    ): void {
-        $nativeKey = $this->normalizeNativeKey(trim($protocol), trim($key));
-        $key = $this->normalizeConfigKey($nativeKey);
-        $now = gmdate('Y-m-d H:i:s');
-        $encoded = json_encode($payload, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) ?: '{}';
-        if ($this->exists($imei, $key, $nativeKey)) {
-            $stmt = $this->pdo->prepare('
-                UPDATE device_configurations
-                SET protocol = ?, command = ?, desired_payload = ?, last_status = ?, last_command_id = ?, desired_updated_at = ?
-                WHERE imei = ? AND config_key = ? AND native_key = ?
-            ');
-            $stmt->execute([$protocol, $command, $encoded, $status, $commandId, $now, $imei, $key, $nativeKey]);
-            return;
-        }
-
-        $stmt = $this->pdo->prepare('
-            INSERT INTO device_configurations (
-                imei, config_key, native_key, protocol, command, desired_payload, reported_payload,
-                last_status, last_command_id, desired_updated_at
-            )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        ');
-        $stmt->execute([$imei, $key, $nativeKey, $protocol, $command, $encoded, '{}', $status, $commandId, $now]);
-    }
-
     public function markApplyStatus(string $imei, string $key, string $status, string $commandId = ''): void
     {
         $nativeKey = trim($key);
@@ -132,18 +98,6 @@ final class DeviceConfigurationRepository
                 reported_at = VALUES(reported_at)
         ');
         $stmt->execute([$imei, $key, $nativeKey, $protocol, $command, $encoded, $now]);
-    }
-
-    private function exists(string $imei, string $key, string $nativeKey): bool
-    {
-        $stmt = $this->pdo->prepare('
-            SELECT COUNT(*)
-            FROM device_configurations
-            WHERE imei = ? AND config_key = ? AND native_key = ?
-        ');
-        $stmt->execute([$imei, $key, $nativeKey]);
-
-        return (int)$stmt->fetchColumn() > 0;
     }
 
     private function normalizeConfigKey(string $key): string

@@ -38,13 +38,14 @@ final class DeviceWriteRequest
          */
         #[Assert\PositiveOrZero(message: 'licenseId must be zero or a positive integer')]
         #[Example(1001)]
-        public int $licenseId = 0,
+        public ?int $licenseId = null,
         #[Example('+351912345678')]
         public string $simNumber = '',
         #[Example('8800000015')]
         public string $deviceId = '',
+        /** Vai com o `licenseId`: os dois, ou nenhum. */
         #[Example('hitcare')]
-        public string $company = 'null',
+        public ?string $company = null,
     ) {
     }
 }

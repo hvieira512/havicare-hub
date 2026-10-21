@@ -8,7 +8,7 @@ use Hub\Domain\GatewayDeviceLinkLookup;
 use Hub\Registry\Whitelist;
 
 /**
- * O andaime que os testes de ingress partilham: a `Whitelist`, que só lê de um ficheiro, e o
+ * O andaime que os testes de ingress partilham: a `Whitelist` em memória, e o
  * `GatewayDeviceLinkLookup`. Cada teste declara os seus dispositivos.
  */
 final class IngressFixtures
@@ -67,27 +67,9 @@ final class IngressFixtures
      */
     public static function whitelist(array $devices = []): Whitelist
     {
-        return new Whitelist(self::whitelistPath($devices));
+        return new Whitelist(devices: $devices);
     }
 
-    /**
-     * O caminho, para quem constrói a `Whitelist` com base de dados no próprio teste. O ficheiro
-     * sai no fim do processo, porque um teste que estoura não chega ao fim.
-     *
-     * @param array<array-key, array<string, mixed>> $devices indexados pela chave do dispositivo
-     */
-    public static function whitelistPath(array $devices = []): string
-    {
-        $path = tempnam(sys_get_temp_dir(), 'ingress-whitelist-');
-        if ($path === false) {
-            throw new \RuntimeException('could not create the temporary whitelist file');
-        }
-
-        file_put_contents($path, json_encode($devices, JSON_THROW_ON_ERROR));
-        register_shutdown_function(static fn(): bool => @unlink($path));
-
-        return $path;
-    }
 
     public static function links(bool $linked = true): GatewayDeviceLinkLookup
     {

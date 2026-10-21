@@ -95,10 +95,7 @@ final class RequestBinderTest extends TestCase
         self::assertTrue($request->enabled);
     }
 
-    /**
-     * A validação por constraints devolve `invalid_request` para tudo, e os clientes distinguem o
-     * `invalid_role`.
-     */
+    /** Um campo com código próprio, como o `invalid_role`, mantém-no. */
     public function testASingleFieldFailureKeepsItsOwnErrorCode(): void
     {
         $result = $this->binder->bind(
@@ -115,10 +112,7 @@ final class RequestBinderTest extends TestCase
         self::assertSame(['role must be hub_admin or license_client'], $result['error']['fields']['role']);
     }
 
-    /**
-     * O `username` e o `password` não têm código próprio mas têm mensagem, e é essa que a
-     * especificação promete. A genérica não diz a ninguém o que corrigir.
-     */
+    /** Um campo sem código próprio mantém a sua mensagem, que diz o que corrigir. */
     public function testASingleFieldFailureKeepsItsMessageEvenWithoutItsOwnCode(): void
     {
         $result = $this->binder->bind(
@@ -146,10 +140,7 @@ final class RequestBinderTest extends TestCase
         self::assertSame(['company', 'licenseId'], array_keys($result['error']['fields']));
     }
 
-    /**
-     * Com vários campos a falhar não há como dois códigos viajarem numa resposta, e por isso é o
-     * `invalid_request` a cobrir todos.
-     */
+    /** Com vários campos a falhar, o código é o `invalid_request`. */
     public function testSeveralFailuresFallBackToTheGenericCode(): void
     {
         $result = $this->binder->bind(
@@ -165,10 +156,7 @@ final class RequestBinderTest extends TestCase
         self::assertSame(['password', 'role', 'username'], array_keys($result['error']['fields']));
     }
 
-    /**
-     * Num corpo JSON um `"3"` onde se espera um inteiro é um cliente com um erro. A conversão
-     * de strings numéricas existe para o `multipart/form-data`, que não tem tipos, e só lá.
-     */
+    /** Só o `multipart/form-data`, que não tem tipos, converte strings numéricas. */
     public function testNumericStringsAreOnlyCoercedForFormBodies(): void
     {
         $json = $this->binder->bind(

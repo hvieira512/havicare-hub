@@ -12,7 +12,7 @@ use Tests\Support\Doubles\InMemoryRedisClient;
 final class ConnectionHistoryTest extends TestCase
 {
     private const IMEI = '594B3CB31A87';
-    private const PREFIX = 'test:dashboard';
+    private const PREFIX = 'hub:dashboard';
 
     private InMemoryRedisClient $redis;
     private DeviceStore $store;
@@ -20,7 +20,7 @@ final class ConnectionHistoryTest extends TestCase
     protected function setUp(): void
     {
         $this->redis = new InMemoryRedisClient();
-        $this->store = new DeviceStore($this->redis, prefix: self::PREFIX);
+        $this->store = new DeviceStore($this->redis);
     }
 
     /** Os alarmes de um radar enchem os cem eventos em horas, e levariam as ligações com eles. */
@@ -48,7 +48,7 @@ final class ConnectionHistoryTest extends TestCase
         self::assertTrue($this->store->deviceSeen(self::IMEI, ['online' => '1']));
         self::assertFalse($this->store->deviceSeen(self::IMEI, ['online' => '1']));
 
-        $restarted = new DeviceStore($this->redis, prefix: self::PREFIX);
+        $restarted = new DeviceStore($this->redis);
         self::assertFalse($restarted->deviceSeen(self::IMEI, ['online' => '1']));
 
         self::assertTrue($restarted->deviceOffline(self::IMEI));
@@ -62,7 +62,7 @@ final class ConnectionHistoryTest extends TestCase
         $this->store->deviceSeen(self::IMEI, ['online' => '1']);
         self::assertSame([], $this->types('connections'));
 
-        $restarted = new DeviceStore($this->redis, prefix: self::PREFIX);
+        $restarted = new DeviceStore($this->redis);
         $restarted->deviceSeen(self::IMEI, ['online' => '1']);
         $restarted->deviceSeen(self::IMEI, ['online' => '1']);
 

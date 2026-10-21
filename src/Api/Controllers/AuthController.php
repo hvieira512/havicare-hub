@@ -57,7 +57,7 @@ final class AuthController
         );
 
         if (isset($result['error'])) {
-            // Um cookie recusado não volta a servir, e por apagar ficava o `Max-Age` inteiro.
+            // Um cookie recusado não volta a servir: apaga-se já.
             return $usedSession
                 ? SessionCookie::clear($this->json->result($result), $request)
                 : $this->json->result($result);

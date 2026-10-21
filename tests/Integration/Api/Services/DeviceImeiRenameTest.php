@@ -17,7 +17,7 @@ final class DeviceImeiRenameTest extends MysqlDashboardTestCase
     public function testRenamingTheImeiKeepsTheGatewayLinkAndTheRadarLayout(): void
     {
         $db = ApiDataAccess::fromDatabase($this->createDashboardDatabase());
-        $whitelist = new Whitelist(null, $db->whitelist);
+        $whitelist = new Whitelist($db->whitelist);
 
         $gateway = '0000000000000001';
         $radar = '861265061009822';
@@ -26,7 +26,7 @@ final class DeviceImeiRenameTest extends MysqlDashboardTestCase
         $whitelist->register($gateway, 'MOKO', 'MKGW3', 'gateway', 1001, '', $gateway, 'hitcare');
         $whitelist->register($radar, 'Qinglanst', 'HC2', 'radar', 1001, '', $radar, 'hitcare');
         $db->gatewayDeviceLinks->upsert($gateway, $radar);
-        $db->radarLayouts->store($radar, $this->layout(), '{}', '2026-10-02 12:00:00');
+        $db->radarLayouts->store($radar, $this->layout(), '2026-10-02 12:00:00');
 
         $service = new DeviceService(
             $this->createStub(DeviceStoreContract::class),

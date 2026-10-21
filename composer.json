@@ -72,7 +72,7 @@
         "location:radio-map": "Semeia o mapa rádio privado da localização sem GPS.",
         "test:unit": "Suite unitária, sem serviços externos, repartida por vários processos.",
         "test:unit:serial": "A mesma suite num processo só, para quando o paralelo confunde um diagnóstico.",
-        "test:integration": "Suite contra o MySQL, repartida por vários processos; sem MySQL, os testes saltam.",
+        "test:integration": "A suite com MySQL, repartida por vários processos; sem MySQL os testes saltam e a suite chumba.",
         "test:integration:serial": "A mesma suite num processo só, para quando o paralelo confunde um diagnóstico.",
         "test:frontend": "Testes do frontend com o test runner do node, em tests/Frontend.",
         "test:scenarios": "Cenários de ponta a ponta contra a pilha do docker compose.",

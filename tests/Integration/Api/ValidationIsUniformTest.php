@@ -4,11 +4,9 @@ declare(strict_types=1);
 
 namespace Tests\Integration\Api;
 
-use Hub\Api\Services\CapabilityDiscoveryService;
 use Hub\Api\Services\DashboardNotificationService;
 use Hub\Api\Services\DenylistService;
 use Hub\Infrastructure\Persistence\Repository\ApiDataAccess;
-use Hub\Infrastructure\Persistence\Repository\CapabilityDiscoveryRepository;
 use Tests\Support\MysqlDashboardTestCase;
 
 /**
@@ -24,11 +22,6 @@ final class ValidationIsUniformTest extends MysqlDashboardTestCase
         $refusals = [
             'denylist' => (new DenylistService($db))->block([], 'admin'),
             'notifications' => (new DashboardNotificationService($db))->markRead([]),
-            'capability-discovery' => (new CapabilityDiscoveryService(
-                $db,
-                $this->createStub(\Hub\Api\Services\DeviceService::class),
-                new CapabilityDiscoveryRepository(sys_get_temp_dir() . '/capability-discovery-test'),
-            ))->preview([]),
         ];
 
         $without = [];

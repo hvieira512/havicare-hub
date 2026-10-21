@@ -85,7 +85,7 @@ final class RadarLayoutSyncTest extends MysqlDashboardTestCase
     /** O `777` do fabricante diz «não conheço este aparelho», por outra licença ou por ter saído, e a planta guardada continua a valer. */
     public function testACodeThatIsNotSuccessLeavesTheStoredLayoutAlone(): void
     {
-        $this->layouts->store('594B3CCBA56B', $this->storedLayout(), '{}', '2026-09-01 10:00:00');
+        $this->layouts->store('594B3CCBA56B', $this->storedLayout(), '2026-09-01 10:00:00');
 
         $client = $this->clientAnswering([
             '594B3CCBA56B' => ['code' => 777, 'msg' => 'offline'],

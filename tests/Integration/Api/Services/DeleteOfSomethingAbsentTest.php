@@ -24,7 +24,7 @@ final class DeleteOfSomethingAbsentTest extends MysqlDashboardTestCase
         $db = ApiDataAccess::fromDatabase($this->createDashboardDatabase());
         $service = new DeviceService(
             $this->createStub(DeviceStoreContract::class),
-            new Whitelist(null, $db->whitelist),
+            new Whitelist($db->whitelist),
             $this->createStub(DeviceHubServer::class),
             $db,
         );

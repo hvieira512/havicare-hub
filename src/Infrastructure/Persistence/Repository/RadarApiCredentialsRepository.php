@@ -43,10 +43,6 @@ final class RadarApiCredentialsRepository
         return $row === false ? null : TimestampFormatter::normalizeRow($row);
     }
 
-    /**
-     * Guardar credenciais não mexe no token: o que estiver lá deixa de servir de qualquer
-     * maneira, e é o próximo pedido ao fornecedor que trata de o renovar.
-     */
     public function upsert(
         int $licenseRefId,
         string $baseUrl,
@@ -66,24 +62,6 @@ final class RadarApiCredentialsRepository
                 app_secret = VALUES(app_secret)
         ');
         $stmt->execute([$licenseRefId, $baseUrl, $username, $password, $appId, $appSecret]);
-    }
-
-    /**
-     * O caminho da sincronização, separado do do formulário: a renovação do token acontece a
-     * qualquer momento e não pode escrever por cima do que alguém esteja a editar.
-     */
-    public function storeToken(
-        int $licenseRefId,
-        string $accessToken,
-        string $refreshToken,
-        ?string $expiresAt,
-    ): void {
-        $stmt = $this->pdo->prepare('
-            UPDATE radar_api_credentials
-            SET access_token = ?, refresh_token = ?, token_expires_at = ?
-            WHERE license_ref_id = ?
-        ');
-        $stmt->execute([$accessToken, $refreshToken, $expiresAt, $licenseRefId]);
     }
 
     public function delete(int $licenseRefId): void

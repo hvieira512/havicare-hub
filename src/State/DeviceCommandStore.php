@@ -10,6 +10,8 @@ use Predis\ClientInterface;
 
 final class DeviceCommandStore
 {
+    private const PREFIX = 'hub:dashboard';
+
     /** Os estados de que um comando não sai. */
     private const FINISHED = ['acked', 'failed', 'dropped', 'superseded'];
 
@@ -20,10 +22,8 @@ final class DeviceCommandStore
         private ClientInterface $redis,
         private DeviceRuntimeStore $runtime,
         private int $limit = 100,
-        private string $prefix = 'hub:dashboard',
         private ?DeviceConfigurationProjection $projection = null,
     ) {
-        $this->prefix = trim($this->prefix, ':');
         $this->limit = max(1, $this->limit);
     }
 
@@ -138,7 +138,6 @@ final class DeviceCommandStore
                 }
 
                 $attempts = max(1, (int)($command['attempts'] ?? 1));
-                $commandMaxAttempts = max(1, (int)($command['maxAttempts'] ?? $maxAttempts));
                 $commandRetryAfterSeconds = max(1, (int)($command['retryDelaySeconds'] ?? $retryAfterSeconds));
                 $sentAt = strtotime((string)($command['sentAt'] ?? '')) ?: 0;
                 $nextRetryAt = strtotime((string)($command['nextRetryAt'] ?? '')) ?: 0;
@@ -156,7 +155,7 @@ final class DeviceCommandStore
                     continue;
                 }
 
-                if ($commandStatus === 'waiting' && $attempts >= $commandMaxAttempts) {
+                if ($commandStatus === 'waiting' && $attempts >= $maxAttempts) {
                     $this->recordCommand($imei, (string)$command['id'], array_merge($command, [
                         'status' => 'failed',
                         'error' => 'retry_exhausted',
@@ -376,11 +375,13 @@ final class DeviceCommandStore
                 }
                 $startedAt = $this->commandStartedAt($command);
                 if ($startedAt > 0 && $startedAt <= $cutoff) {
+                    // Nunca enviado quer dizer que o dispositivo não nos deve nada: só um
+                    // comando que saiu de facto é que esgotou a espera.
+                    $error = $status === 'waiting' ? 'response_timeout' : 'delivery_failed';
                     $this->recordCommand($imei, (string)$command['id'], array_merge($command, [
-                        // Nunca enviado quer dizer que o dispositivo não nos deve nada: só um
-                        // comando que saiu de facto é que esgotou a espera.
                         'status' => 'failed',
-                        'error' => $status === 'waiting' ? 'response_timeout' : 'delivery_failed',
+                        'error' => $error,
+                        'lastError' => $error,
                     ]));
                 }
             }
@@ -509,7 +510,7 @@ final class DeviceCommandStore
 
     private function key(string $suffix): string
     {
-        return "{$this->prefix}:{$suffix}";
+        return self::PREFIX . ':' . $suffix;
     }
 
     private function deviceListKey(string $imei, string $list): string

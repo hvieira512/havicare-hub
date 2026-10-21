@@ -18,7 +18,7 @@ final class ModelsApiTest extends MysqlDashboardTestCase
         $model = $db->models->find('Vivistar', 'L08 Pro');
 
         self::assertIsArray($model);
-        $response = $api->show((int)$model['id']);
+        $response = $api->show((int)$model['id'], '');
 
         self::assertArrayNotHasKey('enabledCapabilities', $response);
         self::assertArrayNotHasKey('configurationCatalog', $response);
@@ -43,7 +43,7 @@ final class ModelsApiTest extends MysqlDashboardTestCase
             ['blood_pressure']
         );
 
-        $response = $api->show((int)$model['id']);
+        $response = $api->show((int)$model['id'], '');
 
         self::assertTrue($response['capabilities']['telemetry']['heart_rate'] ?? false);
         self::assertContains('heart_rate', $response['requestableCapabilityKeys'] ?? []);
@@ -75,7 +75,7 @@ final class ModelsApiTest extends MysqlDashboardTestCase
             ['heart_rate'],
             $db->modelCapabilities->requestableFeaturesForModelId((int)$model['id'])
         );
-        $updated = $api->show((int)$model['id']);
+        $updated = $api->show((int)$model['id'], '');
         self::assertSame(['heart_rate'], $updated['requestableCapabilities'] ?? null);
     }
 
@@ -107,7 +107,7 @@ final class ModelsApiTest extends MysqlDashboardTestCase
         $model = $db->models->find('4P Touch', 'D46');
 
         self::assertIsArray($model);
-        $response = $api->show((int)$model['id']);
+        $response = $api->show((int)$model['id'], '');
 
         self::assertContains('heart_rate', $response['requestableCapabilityKeys'] ?? []);
         self::assertNotContains('blood_oxygen', $response['requestableCapabilityKeys'] ?? []);
@@ -196,10 +196,7 @@ final class ModelsApiTest extends MysqlDashboardTestCase
         self::assertSame('http://localhost:8081/model-images/example.jpg', $model['image'] ?? null);
     }
 
-    /**
-     * A lista de fornecedores por tipo sai dos modelos catalogados: apagar o último relógio de
-     * um fornecedor tira-o da lista de relógios.
-     */
+    /** Apagar o último modelo de um tipo tira o fornecedor da lista desse tipo. */
     public function testFiltersStopListingASupplierWhenItsLastModelOfThatTypeIsDeleted(): void
     {
         [$api, $db] = $this->makeApi();
@@ -311,7 +308,7 @@ final class ModelsApiTest extends MysqlDashboardTestCase
         sort($actual);
         self::assertSame(['call_whitelist', 'heart_rate', 'working_mode'], $actual);
 
-        $updated = $api->show((int)$model['id']);
+        $updated = $api->show((int)$model['id'], '');
         self::assertTrue($updated['capabilities']['telemetry']['heart_rate'] ?? false);
         self::assertTrue($updated['capabilities']['contacts']['call_whitelist'] ?? false);
         self::assertTrue($updated['capabilities']['settings_system']['working_mode'] ?? false);
@@ -341,10 +338,7 @@ final class ModelsApiTest extends MysqlDashboardTestCase
         self::assertSame($expected, $actual);
     }
 
-    /**
-     * A chave única já o recusa na base, mas a excepção do PDO subiria até ao kernel como 500
-     * para uma recusa previsível.
-     */
+    /** O par fornecedor e modelo repetido é 409, e não um 500 da chave única. */
     public function testCreateRejectsADuplicateSupplierAndInternalModel(): void
     {
         [$api, $db] = $this->makeApi();

@@ -22,21 +22,20 @@ final class RadarLayoutRepository
      *
      * @param array{room: array<string, int>, areas: list<array<string, int|string>>} $layout
      */
-    public function store(string $imei, array $layout, string $sourcePayload, string $fetchedAt): void
+    public function store(string $imei, array $layout, string $fetchedAt): void
     {
         $this->pdo->beginTransaction();
 
         try {
             $stmt = $this->pdo->prepare('
                 INSERT INTO radar_layouts
-                    (imei, room_x_min_dm, room_y_min_dm, room_x_max_dm, room_y_max_dm, source_payload, fetched_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
+                    (imei, room_x_min_dm, room_y_min_dm, room_x_max_dm, room_y_max_dm, fetched_at)
+                VALUES (?, ?, ?, ?, ?, ?)
                 ON DUPLICATE KEY UPDATE
                     room_x_min_dm = VALUES(room_x_min_dm),
                     room_y_min_dm = VALUES(room_y_min_dm),
                     room_x_max_dm = VALUES(room_x_max_dm),
                     room_y_max_dm = VALUES(room_y_max_dm),
-                    source_payload = VALUES(source_payload),
                     fetched_at = VALUES(fetched_at)
             ');
             $stmt->execute([
@@ -45,7 +44,6 @@ final class RadarLayoutRepository
                 $layout['room']['y_min_dm'],
                 $layout['room']['x_max_dm'],
                 $layout['room']['y_max_dm'],
-                $sourcePayload,
                 $fetchedAt,
             ]);
 

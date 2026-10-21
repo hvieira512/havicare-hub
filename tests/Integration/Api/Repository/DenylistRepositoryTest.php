@@ -21,15 +21,13 @@ final class DenylistRepositoryTest extends MysqlDashboardTestCase
         $this->repository = new DenylistRepository($this->pdo);
     }
 
-    public function testAddThenExistsThenRemove(): void
+    public function testAddThenRemove(): void
     {
-        self::assertFalse($this->repository->exists('357000000000001'));
-
         $this->repository->add('357000000000001', 'four-p-touch', 'vizinho', 'admin');
-        self::assertTrue($this->repository->exists('357000000000001'));
+        self::assertSame(['357000000000001'], array_column($this->repository->all(), 'identity'));
 
         self::assertTrue($this->repository->remove('357000000000001'));
-        self::assertFalse($this->repository->exists('357000000000001'));
+        self::assertSame([], $this->repository->all());
         // Remover uma identidade que já não está devolve falso -- é o sinal do 404 no unblock.
         self::assertFalse($this->repository->remove('357000000000001'));
     }

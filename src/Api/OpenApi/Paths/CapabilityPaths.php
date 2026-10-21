@@ -17,7 +17,7 @@ final class CapabilityPaths
     /** @return array<string, mixed> */
     public static function paths(): array
     {
-        return array_merge(self::catalog(), self::discovery());
+        return self::catalog();
     }
 
     /** @return array<string, mixed> */
@@ -48,71 +48,6 @@ final class CapabilityPaths
                     'responses' => Responses::map(
                         ['200' => Responses::json('Capability detail', 'CapabilityItem')],
                         'capability_not_found',
-                    ),
-                ],
-            ],
-        ];
-    }
-
-    /** @return array<string, mixed> */
-    private static function discovery(): array
-    {
-        $runId = Parameters::pathSchema('id', ['type' => 'string']);
-
-        return [
-            '/api/capability-discovery' => [
-                'get' => [
-                    'tags' => ['Discovery'],
-                    'summary' => 'List capability discovery runs',
-                    'parameters' => array_merge(Parameters::pagination(), [
-                        Parameters::stringQuery('id'),
-                        Parameters::query('status', ['type' => 'string', 'example' => 'draft']),
-                        Parameters::query('sort', ['type' => 'string', 'example' => 'createdAt:desc']),
-                    ]),
-                    'responses' => [
-                        '200' => Responses::json('Discovery run list', 'CapabilityDiscoveryListResponse'),
-                    ],
-                ],
-                'post' => [
-                    'tags' => ['Discovery'],
-                    'summary' => 'Generate a capability discovery draft',
-                    'requestBody' => Requests::inline([
-                        'type' => 'object',
-                        'required' => ['imei', 'modelId'],
-                        'properties' => [
-                            'imei' => ['type' => 'string'],
-                            'modelId' => ['type' => 'integer'],
-                        ],
-                    ]),
-                    'responses' => Responses::map(
-                        ['200' => Responses::json('Discovery draft', 'CapabilityDiscoveryRun')],
-                        'invalid_request',
-                        'model_not_found',
-                    ),
-                ],
-            ],
-            '/api/capability-discovery/{id}' => [
-                'get' => [
-                    'tags' => ['Discovery'],
-                    'summary' => 'Get a discovery run',
-                    'parameters' => [$runId],
-                    'responses' => Responses::map(
-                        ['200' => Responses::json('Discovery run', 'CapabilityDiscoveryRun')],
-                        'discovery_not_found',
-                    ),
-                ],
-            ],
-            '/api/capability-discovery/{id}/apply' => [
-                'post' => [
-                    'tags' => ['Discovery'],
-                    'summary' => 'Apply a discovery draft to the model',
-                    'parameters' => [$runId],
-                    // O `invalid_state` é a descoberta guardada sem o id do modelo a que
-                    // pertence: existe, e mesmo assim não há onde a aplicar.
-                    'responses' => Responses::map(
-                        ['200' => Responses::json('Applied discovery run', 'CapabilityDiscoveryRun')],
-                        'invalid_state',
-                        'discovery_not_found',
                     ),
                 ],
             ],

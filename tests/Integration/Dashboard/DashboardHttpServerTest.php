@@ -110,10 +110,7 @@ final class DashboardHttpServerTest extends DashboardHttpTestCase
         }
     }
 
-    /**
-     * O único `h1` vive no painel escuro, que desaparece abaixo dos 992px. Sem outro, quem usa
-     * leitor de ecrã chega a dois campos e um botão sem saber em que página está.
-     */
+    /** Abaixo dos 992px o cartão de login tem o seu `h1`, porque o painel desaparece. */
     public function testTheLoginCardCarriesAHeadingForTheWidthsWithoutThePanel(): void
     {
         $server = (new \ReflectionClass(DashboardHttpServer::class))->newInstanceWithoutConstructor();

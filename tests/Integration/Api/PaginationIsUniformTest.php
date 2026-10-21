@@ -4,11 +4,9 @@ declare(strict_types=1);
 
 namespace Tests\Integration\Api;
 
-use Hub\Api\Services\CapabilityDiscoveryService;
 use Hub\Api\Services\DenylistService;
 use Hub\Api\Services\SupplierService;
 use Hub\Infrastructure\Persistence\Repository\ApiDataAccess;
-use Hub\Infrastructure\Persistence\Repository\CapabilityDiscoveryRepository;
 use Tests\Support\MysqlDashboardTestCase;
 
 /**
@@ -20,21 +18,11 @@ final class PaginationIsUniformTest extends MysqlDashboardTestCase
     public function testEveryGrowingCollectionReturnsTheSameEnvelope(): void
     {
         $db = ApiDataAccess::fromDatabase($this->createDashboardDatabase());
-        $discovery = new CapabilityDiscoveryRepository(
-            sys_get_temp_dir() . '/pagination-uniform-' . bin2hex(random_bytes(4)),
-        );
-        $discovery->save(['id' => 'disc_1', 'status' => 'draft', 'createdAt' => '2026-10-06T10:00:00Z']);
-
         $db->denylist->add('860000000000001', 'tcp', null, 'admin');
 
         $listings = [
             'suppliers' => (new SupplierService($db))->list(''),
             'denylist' => (new DenylistService($db))->list(''),
-            'capability-discovery' => (new CapabilityDiscoveryService(
-                $db,
-                $this->createStub(\Hub\Api\Services\DeviceService::class),
-                $discovery,
-            ))->list(''),
         ];
 
         $envelopes = [];

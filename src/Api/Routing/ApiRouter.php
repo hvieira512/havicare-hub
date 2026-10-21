@@ -24,8 +24,8 @@ final class ApiRouter
             return $found;
         }
 
-        // O HTTP exige que um recurso que aceita GET aceita HEAD. As rotas são todas GET;
-        // um HEAD sem rota própria cai na GET equivalente. O corpo é descartado a jusante.
+        // Um recurso com GET aceita HEAD: sem rota própria, o HEAD cai na GET e o corpo
+        // descarta-se a jusante.
         if ($method === 'HEAD') {
             return $this->matchExact('GET', $path);
         }

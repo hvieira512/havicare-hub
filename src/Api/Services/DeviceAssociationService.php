@@ -6,6 +6,7 @@ namespace Hub\Api\Services;
 
 use Hub\Api\Auth\ApiAuthContext;
 use Hub\Api\Http\ApiError;
+use Hub\Api\Http\DevicePresentation;
 use Hub\Infrastructure\Persistence\Repository\ApiDataAccess;
 use Hub\Api\Request\DeviceAssociationRequest;
 use Hub\Api\Request\RequestBinder;
@@ -22,10 +23,9 @@ final class DeviceAssociationService
         private DeviceRegistry $store,
         private Whitelist $whitelist,
         private ApiDataAccess $db,
-        private ?DeviceHubServer $hub = null,
-        ?RequestBinder $binder = null,
+        private DeviceHubServer $hub,
     ) {
-        $this->binder = $binder ?? new RequestBinder();
+        $this->binder = new RequestBinder();
     }
 
     /**
@@ -66,7 +66,7 @@ final class DeviceAssociationService
 
         $this->writeAssociation($existing, $imei, $company, $licenseId);
 
-        return ['status' => 'ok', 'imei' => $imei, 'association' => ['company' => $company, 'licenseId' => $licenseId]];
+        return ['status' => 'ok', 'imei' => $imei, 'association' => DevicePresentation::owner($company, $licenseId)];
     }
 
     /** @return array<string, mixed> */
@@ -88,7 +88,7 @@ final class DeviceAssociationService
 
         $this->writeAssociation($existing, $imei, 'null', 0);
 
-        return ['status' => 'ok', 'imei' => $imei, 'association' => ['company' => 'null', 'licenseId' => 0]];
+        return ['status' => 'ok', 'imei' => $imei, 'association' => DevicePresentation::owner(null, null)];
     }
 
     /**
@@ -129,6 +129,6 @@ final class DeviceAssociationService
             return;
         }
 
-        $this->hub?->clearRetainedStatus($existing->company, $existing->licenseId, $existing->deviceType, $imei);
+        $this->hub->clearRetainedStatus($existing->company, $existing->licenseId, $existing->deviceType, $imei);
     }
 }

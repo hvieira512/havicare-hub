@@ -15,7 +15,6 @@ use Hub\Log\Logger;
 use Hub\Registry\Whitelist;
 use Hub\Runtime\DashboardServerFactory;
 use Tests\Support\Doubles\InMemoryRedisClient;
-use Tests\Support\Doubles\IngressFixtures;
 
 /**
  * A cadeia HTTP da dashboard montada como em produção, com o registo de API num ficheiro que o
@@ -31,7 +30,6 @@ abstract class DashboardHttpTestCase extends MysqlDashboardTestCase
      */
     private static array $passwordHashes = [];
 
-    protected string $whitelistPath;
     protected string $apiLogPath;
     private string|false $originalLogFile;
     private string|false $originalLogFileApi;
@@ -48,11 +46,6 @@ abstract class DashboardHttpTestCase extends MysqlDashboardTestCase
         putenv('LOG_FILE_API=' . $this->apiLogPath);
         putenv('LOG_LEVEL=info');
         Logger::reset();
-        $this->whitelistPath = IngressFixtures::whitelistPath([
-            '861265061009822' => ['supplier' => 'Vivistar', 'model' => 'L08 Pro', 'licenseId' => '1001', 'company' => 'hitcare'],
-            '861265061009833' => ['supplier' => 'Vivistar', 'model' => 'L08 Pro', 'licenseId' => '2002', 'company' => 'otherCare'],
-            '861265061009844' => ['supplier' => 'Vivistar', 'model' => 'L08 Pro', 'licenseId' => '0', 'company' => 'null'],
-        ]);
     }
 
     protected function tearDown(): void
@@ -111,7 +104,7 @@ abstract class DashboardHttpTestCase extends MysqlDashboardTestCase
         $db->whitelist->register('861265061009822', 'Vivistar', 'L08 Pro', 'watch', 1001, '', '', 'hitcare');
         $db->whitelist->register('861265061009833', 'Vivistar', 'L08 Pro', 'watch', 2002, '', '', 'otherCare');
         $db->whitelist->register('861265061009844', 'Vivistar', 'L08 Pro', 'watch', 0, '', '', 'null');
-        $store = new DeviceStore($redis, prefix: 'test:dashboard:http');
+        $store = new DeviceStore($redis);
         $store->setDataAccess($db);
         $store->registerDevice('861265061009822', 'Vivistar', 'L08 Pro', 'watch', 1001, '', '', 'hitcare');
         $store->registerDevice('861265061009833', 'Vivistar', 'L08 Pro', 'watch', 2002, '', '', 'otherCare');
@@ -124,8 +117,8 @@ abstract class DashboardHttpTestCase extends MysqlDashboardTestCase
 
         $dashboard = new DashboardHttpServer(
             $store,
-            new ApiTokenStore($redis, 'test:api-tokens'),
-            new Whitelist($this->whitelistPath, $db->whitelist),
+            new ApiTokenStore($redis),
+            new Whitelist($db->whitelist),
             $hub,
             $db,
             new DashboardHttpOptions(

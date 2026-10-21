@@ -11,6 +11,7 @@ use Hub\Ingress\Mqtt\MqttBridgeBase;
 use Hub\Ingress\Mqtt\Veepoo\VeepooBridge;
 use Hub\Registry\Denylist;
 use Hub\State\DeviceStoreContract;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Tests\Support\Doubles\ArrayObservationStateStore;
 use Tests\Support\Doubles\FakeMqttSubscriber;
@@ -35,10 +36,8 @@ final class GatewayDenylistTest extends TestCase
         ];
     }
 
-    /**
-     * @dataProvider bridges
-     * @param 'veepoo'|'lefu'|'joytech-bp'|'joytech-thermometer' $bridge
-     */
+    /** @param 'veepoo'|'lefu'|'joytech-bp'|'joytech-thermometer' $bridge */
+    #[DataProvider('bridges')]
     public function testABlockedDeviceProducesNoNotification(string $bridge, string $source, string $model): void
     {
         $store = $this->createMock(DeviceStoreContract::class);
@@ -57,9 +56,9 @@ final class GatewayDenylistTest extends TestCase
     /**
      * O sinal com que o gateway ouve o aparelho é o da ligação entre os dois, como o de um MOKO.
      *
-     * @dataProvider bridges
      * @param 'veepoo'|'lefu'|'joytech-bp'|'joytech-thermometer' $bridge
      */
+    #[DataProvider('bridges')]
     public function testTheSignalTheGatewayReportsIsKeptForTheLink(string $bridge, string $source, string $model): void
     {
         $sightings = [];

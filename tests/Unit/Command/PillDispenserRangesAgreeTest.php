@@ -6,6 +6,7 @@ namespace Tests\Unit\Command;
 
 use Hub\Command\DeviceCommandCatalog;
 use Hub\Command\DeviceConfigurationCatalog;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 /** O validador recusa à entrada da API e o construtor da trama à saída, com os limites escritos nos dois. */
@@ -29,7 +30,7 @@ final class PillDispenserRangesAgreeTest extends TestCase
         yield 'time zone to the east' => ['time_zone', 'timeZone', 'timeZone', 1400, 1401];
     }
 
-    #[\PHPUnit\Framework\Attributes\DataProvider('ranges')]
+    #[DataProvider('ranges')]
     public function testTheEdgeIsAcceptedByBothLevels(
         string $key,
         string $command,
@@ -44,7 +45,7 @@ final class PillDispenserRangesAgreeTest extends TestCase
      * E o construtor da trama também: o painel da dashboard chega-lhe sem passar pelo
      * validador.
      */
-    #[\PHPUnit\Framework\Attributes\DataProvider('ranges')]
+    #[DataProvider('ranges')]
     public function testTheFrameBuilderRefusesWhatIsOutside(
         string $key,
         string $command,

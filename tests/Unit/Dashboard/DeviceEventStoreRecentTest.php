@@ -16,7 +16,7 @@ final class DeviceEventStoreRecentTest extends TestCase
 {
     private function store(): DeviceEventStore
     {
-        return new DeviceEventStore(new InMemoryRedisClient(), limit: 100, prefix: 'test:events');
+        return new DeviceEventStore(new InMemoryRedisClient(), limit: 100);
     }
 
     public function testReturnsOnlyEntriesNewerThanTheCursor(): void
@@ -49,7 +49,7 @@ final class DeviceEventStoreRecentTest extends TestCase
     /** Uma leitura rara não pode sumir do cartão só porque outras encheram a lista. */
     public function testKeepsTheLatestOfEachTypeBeyondTheLimit(): void
     {
-        $store = new DeviceEventStore(new InMemoryRedisClient(), limit: 2, prefix: 'test:events');
+        $store = new DeviceEventStore(new InMemoryRedisClient(), limit: 2);
         $store->append('imei1', 'telemetry', ['type' => 'heart_rate', 'data' => ['bpm' => 78]]);
         foreach ([40, 41, 42] as $percent) {
             $store->append('imei1', 'telemetry', ['type' => 'battery', 'data' => ['percent' => $percent]]);

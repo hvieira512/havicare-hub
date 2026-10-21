@@ -162,18 +162,23 @@ não estão em `src/Infrastructure/Persistence/Migration/` — o que elas fizera
 está descrito abaixo porque explica o esquema de hoje, não porque ainda corra.
 
 O plano em vigor é o `DatabaseMigrationPlan`, uma classe por versão, com o que
-ainda não foi dobrado na linha de base:
-
-| Versão | O que faz |
-|---|---|
-| `whitelist_key_cascades_on_rename` | As chaves que apontam para o `whitelist.imei` passam a acompanhar a renomeação |
-| `capability_sections_include_reminders` | A `capabilities.section` ganha o valor `reminders`, a secção «Lembretes» |
-| `unconfirmed_heart_rate_alarm_is_unlinked` | Tira dos modelos o `heart_rate_abnormal`, que o primeiro deploy ligou antes de se saber que nenhum relógio o manda |
+ainda não foi dobrado na linha de base.
 
 O `DatabaseSchemaGuard` só exige o que estiver no plano, e por isso as linhas que
 sobram na `schema_migrations` não incomodam.
 
 ### O que a linha de base já traz feito
+
+As treze de outubro de 2026 foram dobradas no `schema.sql` e no
+`ReferenceCatalogSeeder`:
+
+| Migração | O que faz |
+|---|---|
+| `whitelist_key_cascades_on_rename` | As chaves que apontam para o `whitelist.imei` acompanham a renomeação |
+| `capability_sections_include_reminders` | A `capabilities.section` ganha o valor `reminders` |
+| `unconfirmed_heart_rate_alarm_is_unlinked` | Tira dos relógios o `heart_rate_abnormal`, que nenhum protocolo anuncia |
+| `2026_10_15_configuration_operation_target` | A operação guarda a quem se refere, o `target` |
+| As sete de catálogo e imagens | A pulseira PST CF103W, as balanças Unique Scales e o gateway BLE, os quatro JoyTech, e o radar Qinglanst como `HC2` |
 
 As oito de 4 de setembro fecharam a auditoria ao esquema:
 

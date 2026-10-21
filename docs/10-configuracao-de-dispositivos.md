@@ -295,21 +295,7 @@ A Wonlex documenta um `dnMedicationPlan`, mas o HW20Pro ignora-o: não responde
 e o lembrete não toca, embora confirme os outros comandos na mesma sessão. Por
 isso a capacidade não existe no protocolo `wonlex-json`.
 
-## 5. Descoberta de capacidades
-
-Um modelo novo chega sem se saber o que suporta. Em vez de o adivinhar, o hub
-tem um fluxo que **pergunta ao aparelho**:
-
-```text
-POST   /api/capability-discovery          cria um rascunho a partir de um dispositivo real
-GET    /api/capability-discovery/{id}     consulta o que se descobriu
-POST   /api/capability-discovery/{id}/apply   aplica ao modelo
-```
-
-O rascunho fica guardado até alguém decidir aplicá-lo. É deliberado: descobrir é
-observar, aplicar é uma decisão de administração.
-
-## 6. Configuração de uma pulseira
+## 5. Configuração de uma pulseira
 
 A pulseira difere do relógio em dois pontos que se notam aqui.
 
@@ -371,7 +357,7 @@ dizerem-se iguais.
 > alterá-los, portanto é limitação do SDK e não do aparelho. Não foi perseguida
 > porque estes lembretes não alteram nenhuma medição.
 
-## 7. Sensibilidade do sensor de fralda
+## 6. Sensibilidade do sensor de fralda
 
 O único caso em que uma configuração **não viaja para o aparelho**. O sensor
 MONIT não aceita comandos; a sensibilidade é aplicada pelo hub, do lado de cá, ao

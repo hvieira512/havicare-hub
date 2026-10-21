@@ -80,7 +80,7 @@ class DeviceService
     }
 
     /** @return array<string, mixed> */
-    public function list(string $query = '', ?ApiAuthContext $auth = null, string $baseUrl = 'http://localhost:8081'): array
+    public function list(string $query, ?ApiAuthContext $auth, string $baseUrl): array
     {
         $params = $this->query->params($query);
         $page = $this->query->page($params);
@@ -126,7 +126,7 @@ class DeviceService
         ));
         $items = array_map(
             fn (array $device): array => $this->presentation->attachImage(
-                $this->directory->overlayRuntimeState($device, $runtimeStates),
+                DevicePresentation::withOwner($this->directory->overlayRuntimeState($device, $runtimeStates)),
                 $this->directory->modelForSupplierAndName(
                     (string)($device['supplier'] ?? ''),
                     (string)($device['model'] ?? '')
@@ -176,7 +176,7 @@ class DeviceService
     }
 
     /** @return array<string, mixed> */
-    public function show(string $imei, ?ApiAuthContext $auth = null, string $baseUrl = 'http://localhost:8081'): array
+    public function show(string $imei, ?ApiAuthContext $auth, string $baseUrl): array
     {
         $device = $this->directory->deviceSnapshot($imei);
         if (!$this->directory->canAccessDevice($imei, $auth, $device)) {
@@ -203,7 +203,7 @@ class DeviceService
             'supplier', 'model', 'deviceType', 'protocol', 'transport', 'lastConnectionId',
         ]));
         // Uma vez só: cada chamada volta a resolver o dispositivo e a lê-lo do Redis.
-        $configurations = $this->configurationFor($imei, $protocol, $configRows);
+        $configurations = $this->configurationQueries->current($imei, $protocol, $configRows);
         $lifecycle = $this->lifecyclePresenter->present(
             $imei,
             $modelRow,
@@ -213,7 +213,7 @@ class DeviceService
         );
 
         return $this->responseCompactor->compact([
-            'device' => $device,
+            'device' => DevicePresentation::withOwner($device),
             'model' => $model,
             'configuration' => [
                 'supported' => count(DeviceConfigurationCatalog::configsForProtocol($protocol)),
@@ -325,35 +325,6 @@ class DeviceService
     }
 
     /**
-     * @param list<array<string, mixed>>|null $configRows As linhas já lidas pelo chamador, para
-     *   não repetir a consulta. O detalhe passa-as; os chamadores diretos deixam-nas a `null`.
-     * @return array<string, mixed>
-     */
-    public function configuration(string $imei, ?ApiAuthContext $auth = null, ?array $configRows = null): array
-    {
-        if (!$this->directory->canAccessDevice($imei, $auth)) {
-            return ApiError::deviceNotFound()->toArray();
-        }
-
-        $device = $this->directory->deviceSnapshot($imei);
-        $metadata = $this->whitelist->getMetadata($imei);
-        $protocol = (string)($device['protocol'] ?? $this->directory->protocolForModel((string)($device['supplier'] ?? $metadata?->supplier ?? ''), (string)($device['model'] ?? $metadata?->model ?? '')));
-
-        return $this->configurationFor($imei, $protocol, $configRows);
-    }
-
-    /**
-     * Para quem já resolveu o dispositivo, sem a segunda ida à base do `configuration()` público.
-     *
-     * @param array<int, array<string, mixed>>|null $configRows
-     * @return array<string, mixed>
-     */
-    private function configurationFor(string $imei, string $protocol, ?array $configRows): array
-    {
-        return $this->configurationQueries->current($imei, $protocol, $configRows);
-    }
-
-    /**
      * @param array<string, mixed> $payload
      * @return array<string, mixed>
      */
@@ -403,7 +374,7 @@ class DeviceService
             'config_keys' => array_keys($payload['configurations']),
         ]);
 
-        $snapshot = $this->show($imei, $auth);
+        $snapshot = $this->show($imei, $auth, '');
 
         return [
             'status' => 'ok',
@@ -440,6 +411,10 @@ class DeviceService
         $simNumber = trim($request->simNumber);
         $deviceId = trim($request->deviceId);
         $company = DeviceMetadata::normalizeCompany($request->company);
+        $ownerError = self::ownerError($company, $licenseId);
+        if ($ownerError !== null) {
+            return $ownerError->toArray();
+        }
         if ($auth !== null && !$auth->canAccessTenant($company, $licenseId)) {
             return ApiError::forbidden()->toArray();
         }
@@ -504,6 +479,10 @@ class DeviceService
         $simNumber = trim($request->simNumber);
         $deviceId = trim($request->deviceId);
         $company = DeviceMetadata::normalizeCompany($request->company);
+        $ownerError = self::ownerError($company, $licenseId);
+        if ($ownerError !== null) {
+            return $audit->reject($ownerError, 'incomplete_owner');
+        }
         if ($newImei === '') {
             return $audit->reject(
                 ApiError::invalidRequest('imei, supplier, and model are required'),
@@ -554,6 +533,18 @@ class DeviceService
         ]);
 
         return ['status' => 'ok', 'imei' => $newImei];
+    }
+
+    private static function ownerError(string $company, int $licenseId): ?ApiError
+    {
+        if ($company === 'null' && $licenseId !== 0) {
+            return ApiError::incompleteOwner('company');
+        }
+        if ($company !== 'null' && $licenseId === 0) {
+            return ApiError::incompleteOwner('licenseId');
+        }
+
+        return null;
     }
 
     /**

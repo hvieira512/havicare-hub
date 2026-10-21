@@ -23,7 +23,6 @@ final class ApiError
         'invalid_request' => 400,
         'invalid_config' => 400,
         'invalid_link' => 400,
-        'invalid_state' => 400,
         'unsupported_feature' => 400,
         'unknown_protocol' => 400,
         'device_already_associated' => 400,
@@ -51,7 +50,6 @@ final class ApiError
         'capability_not_found' => 404,
         'company_not_found' => 404,
         'denylist_not_found' => 404,
-        'discovery_not_found' => 404,
         'license_not_found' => 404,
         'model_not_found' => 404,
         'not_found' => 404,
@@ -60,15 +58,15 @@ final class ApiError
         'supplier_not_found' => 404,
         'user_not_found' => 404,
         'device_exists' => 409,
+        'incomplete_owner' => 422,
         'model_exists' => 409,
         'user_exists' => 409,
         // O nome de empresa repetido, que o `TenancyPaths` documenta como 409.
         'duplicate' => 409,
-        // 429 e não 503: aqui a culpa é de quem pede, e o cliente tem de saber que foi o seu
-        // ritmo que o travou -- não uma falta de lugar no servidor.
+        // 429: foi o ritmo de quem pede que o travou.
         'too_many_attempts' => 429,
         'server_error' => 500,
-        // 503 e não 429: o pedido é legítimo, o que falta é lugar no processo.
+        // 503: o pedido é legítimo, o que falta é lugar no processo.
         'too_many_streams' => 503,
     ];
 
@@ -89,8 +87,7 @@ final class ApiError
     }
 
     /**
-     * Sem chamador em produção de propósito: existe para o teste confrontar este mapa com os
-     * construtores que o alimentam.
+     * O teste confronta estes códigos com os construtores.
      *
      * @return list<string>
      */
@@ -221,11 +218,6 @@ final class ApiError
         return new self('capability_not_found', 'Capability not found');
     }
 
-    public static function discoveryNotFound(): self
-    {
-        return new self('discovery_not_found', 'Discovery run not found');
-    }
-
     public static function notificationNotFound(): self
     {
         return new self('notification_not_found', 'Notification not found');
@@ -341,6 +333,16 @@ final class ApiError
         return new self('invalid_refresh_token', 'Invalid refresh token');
     }
 
+    /** A empresa e a licença vão juntas: `$missing` é a que falta. */
+    public static function incompleteOwner(string $missing): self
+    {
+        return self::withFields(
+            'incomplete_owner',
+            'company and licenseId go together',
+            [$missing => ['company and licenseId go together']],
+        );
+    }
+
     public static function invalidRole(): self
     {
         return new self('invalid_role', 'role must be hub_admin or license_client');
@@ -349,11 +351,6 @@ final class ApiError
     public static function invalidLicense(): self
     {
         return new self('invalid_license', 'A valid company license is required for license clients');
-    }
-
-    public static function discoveryMissingModelId(): self
-    {
-        return new self('invalid_state', 'Discovery run is missing the model id');
     }
 
     public static function featureNotRequestable(): self

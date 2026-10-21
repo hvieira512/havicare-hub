@@ -84,10 +84,6 @@ final class ApiKernel
             return $this->json->result(ApiError::unauthorized()->toArray());
         }
 
-        if ($routePattern !== null) {
-            $request = $request->withAttribute(RequestContext::ATTR_ROUTE_PATTERN, $routePattern);
-        }
-
         $fail = fn(\Throwable $e): Response => $this->unhandled($e, $requestId, $method, $path, $routePattern, $logContext, $authContext);
 
         try {
@@ -140,8 +136,7 @@ final class ApiKernel
     {
         $auth = new AuthController($this->services->auth, $this->json);
         $devices = new DeviceController($this->services->devices, $this->json);
-        // Construído uma vez, como os restantes: os tetos de ligações abertas são estado deste
-        // controlador, e um por pedido não contava nada.
+        // Uma instância só: os tetos de ligações abertas são estado deste controlador.
         $stream = new StreamController(
             $this->messages,
             $this->json,
@@ -157,7 +152,6 @@ final class ApiKernel
             ...((require __DIR__ . '/Routes/DeviceRoutes.php')($devices)),
             ...((require __DIR__ . '/Routes/ModelRoutes.php')($this->services->models)),
             ...((require __DIR__ . '/Routes/CapabilityRoutes.php')($this->services->capabilities)),
-            ...((require __DIR__ . '/Routes/CapabilityDiscoveryRoutes.php')($this->services->capabilityDiscovery)),
             ...((require __DIR__ . '/Routes/SupplierRoutes.php')($this->services->suppliers)),
             ...((require __DIR__ . '/Routes/ApiUserRoutes.php')($this->services->apiUsers)),
             ...((require __DIR__ . '/Routes/CompanyRoutes.php')($this->services->company)),
@@ -208,7 +202,6 @@ final class ApiKernel
             $request = $request->withAttribute(RequestContext::ATTR_AUTH, $authContext);
         }
         $route = $match['route'];
-        $request = $request->withAttribute(RequestContext::ATTR_ROUTE_PATTERN, $route->pattern());
 
         $bodyMode = $route->body();
         if ($bodyMode !== null) {

@@ -69,15 +69,6 @@ final class GenericCapabilityRepository
         return $row === false ? null : $this->enrichRow(TimestampFormatter::normalizeRow($row));
     }
 
-    public function findIdByDeviceTypeAndKey(string $deviceType, string $key): ?int
-    {
-        $stmt = $this->pdo->prepare('SELECT id FROM capabilities WHERE device_type = ? AND capability_key = ?');
-        $stmt->execute([$deviceType, $key]);
-        $value = $stmt->fetchColumn();
-
-        return $value === false ? null : (int)$value;
-    }
-
     /**
      * @param list<array<string, mixed>> $rows
      * @return list<array<string, mixed>>
@@ -137,8 +128,7 @@ final class GenericCapabilityRepository
         }
 
         usort($filtered, static function (array $left, array $right): int {
-            // Do catálogo: uma lista à mão deixava um tipo novo a ordenar como se não
-            // existisse, no topo e sem se perceber porquê.
+            // A ordem dos tipos vem do catálogo, para um tipo novo ordenar no seu lugar.
             $deviceTypeOrder = DeviceTypeCatalog::keys();
             $sectionOrder = ['telemetry', 'health', 'contacts', 'alarms', 'reminders', 'settings_system'];
             $deviceIndex = static function (string $deviceType) use ($deviceTypeOrder): int {

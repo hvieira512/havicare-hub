@@ -73,10 +73,7 @@ final class CatalogueReconciliationTest extends MysqlDashboardTestCase
         ")->fetchColumn());
     }
 
-    /**
-     * A `capabilities` é o catálogo, que ninguém edita fora do código; a `model_capabilities` é
-     * a configuração de quem opera, e não se toca.
-     */
+    /** Reconciliar o catálogo não toca no que cada modelo tem ligado. */
     public function testWhatEachModelHasEnabledIsLeftAlone(): void
     {
         $database = $this->createDashboardDatabase();

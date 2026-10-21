@@ -43,10 +43,7 @@ final class RadarCredentialsServiceTest extends MysqlDashboardTestCase
         $this->licenseRefId = $this->db->licenses->create($companyId, 2103, 'casabrancaresidencial');
     }
 
-    /**
-     * A palavra-passe e o segredo ficam reversíveis, porque servem para fazer login, e a defesa
-     * é não os devolver: quem pergunta só precisa de saber se já lá estão.
-     */
+    /** A palavra-passe e o segredo nunca saem: quem pergunta só sabe se estão preenchidos. */
     public function testNeverGivesTheSecretsBack(): void
     {
         $this->service->save($this->licenseRefId, [
@@ -71,10 +68,7 @@ final class RadarCredentialsServiceTest extends MysqlDashboardTestCase
         self::assertStringNotContainsString('tambem-nao', $encoded);
     }
 
-    /**
-     * O ecrã nunca recebe os segredos e não os pode reenviar: gravar sem eles é «fica como
-     * está», e não «apaga».
-     */
+    /** Gravar sem os segredos é «fica como está», e não «apaga». */
     public function testKeepsTheStoredSecretsWhenTheyAreNotResent(): void
     {
         $this->service->save($this->licenseRefId, [
@@ -99,35 +93,6 @@ final class RadarCredentialsServiceTest extends MysqlDashboardTestCase
         self::assertSame('https://radarconsole.com/prod-api/v2', $stored['base_url']);
         self::assertSame('a-boa', $stored['password']);
         self::assertSame('o-bom', $stored['app_secret']);
-    }
-
-    /**
-     * A sincronização por licença escreve aqui o `access_token` do fabricante por outro caminho:
-     * um token renovado a meio de uma edição não pode reescrever as credenciais.
-     */
-    public function testStoringAFreshTokenLeavesTheCredentialsAlone(): void
-    {
-        $this->service->save($this->licenseRefId, [
-            'baseUrl' => 'https://radarconsole.com/prod-api',
-            'username' => 'casabranca',
-            'password' => 'a-boa',
-            'appId' => 'ql-casabranca',
-            'appSecret' => 'o-bom',
-        ]);
-
-        $this->db->radarCredentials->storeToken(
-            $this->licenseRefId,
-            'token-novo',
-            'refresh-novo',
-            '2026-09-17 16:00:00',
-        );
-
-        $stored = $this->db->radarCredentials->findByLicenseRefId($this->licenseRefId);
-
-        self::assertNotNull($stored);
-        self::assertSame('token-novo', $stored['access_token']);
-        self::assertSame('a-boa', $stored['password']);
-        self::assertSame('https://radarconsole.com/prod-api', $stored['base_url']);
     }
 
     public function testRefusesALicenceThatDoesNotExist(): void
@@ -167,10 +132,7 @@ final class RadarCredentialsServiceTest extends MysqlDashboardTestCase
         self::assertArrayHasKey('password', $result['error']['fields'] ?? []);
     }
 
-    /**
-     * Uma conta de outra licença autentica à mesma e só depois os radares desta respondem `777`:
-     * por isso volta a contagem dos que responderam, e não um «ligou».
-     */
+    /** A verificação conta os radares que respondem, porque outra conta autentica à mesma. */
     public function testTheConnectionCheckCountsTheRadarsThatAnswer(): void
     {
         $this->registerRadars('594B3CCBA56B', '414D74184CBF');
@@ -198,10 +160,7 @@ final class RadarCredentialsServiceTest extends MysqlDashboardTestCase
         self::assertSame('Qinglanst login failed', $result['data']['error']);
     }
 
-    /**
-     * O mesmo número de licença existe em empresas diferentes, e um aparelho aponta para o par
-     * número + empresa: os radares da outra empresa responderiam à pergunta errada.
-     */
+    /** A verificação só experimenta os radares do par empresa e licença. */
     public function testTheConnectionCheckOnlyTriesTheRadarsOfThisCompany(): void
     {
         $this->registerRadars('594B3CCBA56B');
@@ -232,10 +191,7 @@ final class RadarCredentialsServiceTest extends MysqlDashboardTestCase
         self::assertSame(0, $result['data']['radars']);
     }
 
-    /**
-     * O ecrã nunca recebe os segredos e por isso também não os pode reenviar: experimentar
-     * depois de corrigir só o endereço tem de usar os que já lá estão.
-     */
+    /** A verificação usa os segredos guardados quando o pedido não os traz. */
     public function testTheConnectionCheckFallsBackToTheStoredSecrets(): void
     {
         $this->service->save($this->licenseRefId, $this->credentials());

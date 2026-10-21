@@ -4,9 +4,10 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Hub;
 
+use Hub\Device\ConnectionInterface;
 use Hub\Device\DeviceEventDecoder;
 use Hub\Device\DeviceSession;
-use Hub\Device\ConnectionInterface;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 final class DeviceEventDecoderTest extends TestCase
@@ -797,9 +798,9 @@ final class DeviceEventDecoderTest extends TestCase
     /**
      * Cada bit da 4P Touch vira o tipo do evento com o nome que o radar e a pulseira usam para a mesma coisa.
      *
-     * @dataProvider fourPTouchAlarmBits
      * @param array<string, mixed> $expectedValue
      */
+    #[DataProvider('fourPTouchAlarmBits')]
     public function testEachFourPTouchAlarmBitIsTypedByWhatHappened(string $flag, string $expectedFeature, array $expectedValue): void
     {
         $events = (new DeviceEventDecoder())->decode(

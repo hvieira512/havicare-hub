@@ -13,7 +13,6 @@ final class RequestContext
     public const ATTR_BODY = 'apiBody';
     public const ATTR_RAW_BODY = 'apiRawBody';
     public const ATTR_REQUEST_ID = 'apiRequestId';
-    public const ATTR_ROUTE_PATTERN = 'apiRoutePattern';
 
     /** O proxy corre na mesma máquina; nenhum outro endereço pode declarar por quem fala. */
     private const TRUSTED_PROXIES = ['127.0.0.1', '::1'];

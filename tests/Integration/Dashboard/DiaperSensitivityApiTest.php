@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace Tests\Integration\Dashboard;
 
+use Hub\Api\Services\DeviceService;
 use Hub\Infrastructure\Persistence\Repository\ApiDataAccess;
 use Hub\Infrastructure\Persistence\Repository\DiaperSensitivityRepository;
-use Hub\Api\Services\DeviceService;
-use Hub\State\DeviceStore;
 use Hub\Registry\Whitelist;
+use Hub\State\DeviceStore;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\Support\Doubles\InMemoryRedisClient;
-use Tests\Support\Doubles\IngressFixtures;
 use Tests\Support\MysqlDashboardTestCase;
 
 /**
@@ -21,12 +21,10 @@ final class DiaperSensitivityApiTest extends MysqlDashboardTestCase
 {
     private const SENSOR = 'eec5000202f9';
 
-    private string $whitelistPath;
 
     protected function setUp(): void
     {
         parent::setUp();
-        $this->whitelistPath = IngressFixtures::whitelistPath();
     }
 
     /**
@@ -40,12 +38,12 @@ final class DiaperSensitivityApiTest extends MysqlDashboardTestCase
         $database = $this->createDashboardDatabase();
         $pdo = $database->pdo();
         $db = ApiDataAccess::fromDatabase($database);
-        $store = new DeviceStore(new InMemoryRedisClient(), prefix: 'test:dashboard:diaper-sensitivity');
+        $store = new DeviceStore(new InMemoryRedisClient());
         $store->setDataAccess($db);
         $hub = $this->createMock(\Hub\Device\DeviceHubServer::class);
         $hub->method('submitDownlink')->willReturn('sent');
 
-        $api = new DeviceService($store, new Whitelist($this->whitelistPath, $db->whitelist), $hub, $db);
+        $api = new DeviceService($store, new Whitelist($db->whitelist), $hub, $db);
         $created = $api->create([
             'imei' => self::SENSOR, 'supplier' => 'MONIT', 'model' => 'MECS-PRO',
             'licenseId' => '1001', 'company' => 'hitcare',
@@ -69,7 +67,7 @@ final class DiaperSensitivityApiTest extends MysqlDashboardTestCase
     /** @return array<string, mixed> */
     private function sensitivityEntry(DeviceService $api): array
     {
-        $shown = $api->show(self::SENSOR);
+        $shown = $api->show(self::SENSOR, null, '');
 
         return $shown['capabilities']['settings_system']['diaper_sensitivity'] ?? [];
     }
@@ -112,9 +110,9 @@ final class DiaperSensitivityApiTest extends MysqlDashboardTestCase
 
         // `confirmed` e não `waiting_device`: sem operações a linha fica `acked`, e a
         // interface desenha isso como "Aplicado". Não há vocabulário novo.
-        $sync = $api->show(self::SENSOR)['configurationSync']['entries']['settings_system']['diaper_sensitivity'] ?? [];
+        $sync = $api->show(self::SENSOR, null, '')['configurationSync']['entries']['settings_system']['diaper_sensitivity'] ?? [];
         self::assertSame('confirmed', $sync['status'] ?? null);
-        self::assertFalse($sync['hasUnconfirmedChanges'] ?? true, 'nao ha nada a aguardar');
+        self::assertFalse($sync['hasUnconfirmedChanges'] ?? true, 'não há nada a aguardar');
 
         self::assertSame(
             ['pollutionRange' => 3, 'pollutionValue' => 7],
@@ -132,9 +130,7 @@ final class DiaperSensitivityApiTest extends MysqlDashboardTestCase
         self::assertSame('custom', $this->sensitivityEntry($api)['value']['profile'] ?? null);
     }
 
-    /**
-     * @dataProvider invalidPairs
-     */
+    #[DataProvider('invalidPairs')]
     public function testValuesOutsideTheAcceptedRangeAreRejected(int $range, int $value): void
     {
         [$api] = $this->api();

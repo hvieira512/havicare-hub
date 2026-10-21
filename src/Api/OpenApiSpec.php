@@ -15,7 +15,6 @@ use Hub\Api\OpenApi\Schemas\CapabilitySchemas;
 use Hub\Api\OpenApi\Schemas\CatalogSchemas;
 use Hub\Api\OpenApi\Schemas\CommonSchemas;
 use Hub\Api\OpenApi\Schemas\DeviceSchemas;
-use Hub\Api\OpenApi\Schemas\DiscoverySchemas;
 use Hub\Api\OpenApi\Schemas\NotificationSchemas;
 use Hub\Api\OpenApi\Schemas\TenancySchemas;
 
@@ -50,7 +49,6 @@ class OpenApiSpec
                 ['name' => 'Notifications'],
                 ['name' => 'System'],
                 ['name' => 'Device Types'],
-                ['name' => 'Discovery'],
             ],
             'paths' => self::withAmbientErrors(array_merge(
                 SystemPaths::paths(),
@@ -82,7 +80,6 @@ class OpenApiSpec
                     CommonSchemas::schemas(),
                     DeviceSchemas::schemas(),
                     CapabilitySchemas::schemas(),
-                    DiscoverySchemas::schemas(),
                     CatalogSchemas::schemas(),
                     TenancySchemas::schemas(),
                     NotificationSchemas::schemas(),

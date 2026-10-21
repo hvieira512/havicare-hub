@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Unit\Api\Services;
 
 use Hub\Api\Services\ConfigurationSyncStatus;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -24,7 +25,7 @@ final class ConfigurationSyncStatusTest extends TestCase
         self::assertSame(
             ['alarms.alarm_clock', 'settings_system.whitelist_enabled'],
             array_keys($flat),
-            'telemetry is not writable and must not be compared'
+            'a telemetria não se escreve e não se compara'
         );
         self::assertSame([['time' => '08:00', 'enabled' => true]], $flat['alarms.alarm_clock']);
         self::assertSame(['enabled' => true], $flat['settings_system.whitelist_enabled']);
@@ -54,9 +55,7 @@ final class ConfigurationSyncStatusTest extends TestCase
         self::assertFalse($subject->capabilityValuesEqual(['enabled' => true], ['enabled' => false]));
     }
 
-    /**
-     * @dataProvider lifecycleStatuses
-     */
+    #[DataProvider('lifecycleStatuses')]
     public function testPendingStatusReflectsTheLastCommandAndWhetherTheDeviceReported(
         string $lastStatus,
         bool $reportedExists,
@@ -139,7 +138,7 @@ final class ConfigurationSyncStatusTest extends TestCase
         self::assertSame(
             'failed-one',
             $this->subject()->genericCapabilityRowMeta(array_reverse($rows))['alarm_clock']['last_command_id'],
-            'a failure must win regardless of the order the rows arrive in'
+            'uma falha ganha seja qual for a ordem das linhas'
         );
     }
 

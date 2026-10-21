@@ -10,8 +10,12 @@ use Hub\Api\Http\Middleware\ApiLogContext;
 use Hub\Api\Http\Middleware\ApiRequestLogger;
 use Hub\Log\Logger;
 use PHPUnit\Framework\TestCase;
+use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use React\Http\Message\Response;
+use React\Promise\PromiseInterface;
+
+use function React\Promise\resolve;
 
 final class ApiRequestLoggerTest extends TestCase
 {
@@ -45,10 +49,7 @@ final class ApiRequestLoggerTest extends TestCase
         parent::tearDown();
     }
 
-    /**
-     * A dashboard serve o JS e o CSS inteiros a cada carregamento, e registá-los encheria o canal
-     * `api` sem nada em troca.
-     */
+    /** Só o `/api/` entra no canal `api`; os estáticos encheriam-no. */
     public function testOnlyApiPathsReachTheApiChannel(): void
     {
         $logger = new ApiRequestLogger();
@@ -113,6 +114,24 @@ final class ApiRequestLoggerTest extends TestCase
             self::assertStringContainsString($expected, $this->logContents());
             self::assertStringContainsString('"request_id":"req-' . $status . '"', $this->logContents());
         }
+    }
+
+    /** Uma rota que responde mais tarde regista-se quando a resposta chega, com o seu identificador. */
+    public function testAPromisedResponseIsLoggedWhenItArrives(): void
+    {
+        $returned = (new ApiRequestLogger())(
+            new ServerRequest('POST', '/api/radar-layout/sync', ['X-Request-Id' => 'req-later']),
+            static fn(): PromiseInterface => resolve(new Response(200))
+        );
+
+        self::assertInstanceOf(PromiseInterface::class, $returned);
+        $response = null;
+        $returned->then(static function (ResponseInterface $resolved) use (&$response): void {
+            $response = $resolved;
+        });
+        self::assertInstanceOf(ResponseInterface::class, $response);
+        self::assertSame('req-later', $response->getHeaderLine('X-Request-Id'));
+        self::assertStringContainsString('"request_id":"req-later"', $this->logContents());
     }
 
     // Uma falha a registar não pode derrubar um pedido que já foi respondido.

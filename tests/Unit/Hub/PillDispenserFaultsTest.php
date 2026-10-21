@@ -7,6 +7,7 @@ namespace Tests\Unit\Hub;
 use Hub\Device\DeviceEventDecoder;
 use Hub\Device\DeviceSession;
 use Hub\Protocol\Adapter\PillDispenserAdapter;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 /** As cinco avarias que o aparelho sabe reportar, uma a uma. */
@@ -24,7 +25,7 @@ final class PillDispenserFaultsTest extends TestCase
         yield 'keys' => [0x8125, 'keys'];
     }
 
-    #[\PHPUnit\Framework\Attributes\DataProvider('faults')]
+    #[DataProvider('faults')]
     public function testEachFaultBecomesItsOwnEvent(int $tag, string $fault): void
     {
         self::assertSame(['fault' => $fault], $this->decode([$tag => "\x01"])['device_fault'] ?? null);

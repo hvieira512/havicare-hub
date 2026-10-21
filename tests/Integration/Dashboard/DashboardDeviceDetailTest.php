@@ -7,6 +7,7 @@ namespace Tests\Integration\Dashboard;
 use GuzzleHttp\Psr7\ServerRequest;
 use Hub\Device\PendingDownlink;
 use Hub\Device\PendingDownlinkQueue;
+use Tests\Support\ConfigurationFixtures;
 use Tests\Support\DashboardHttpTestCase;
 use Tests\Support\Doubles\WavFixture;
 
@@ -28,14 +29,16 @@ final class DashboardDeviceDetailTest extends DashboardHttpTestCase
             'call_whitelist',
             'whitelist_enabled',
         ]);
-        $db->deviceConfigurations->saveDesired(
+        ConfigurationFixtures::desired(
+            $db,
             '861265061009822',
             'call_whitelist',
             'vivistar',
             'CALL_WHITELIST',
             ['fields' => ['|+351922222222']]
         );
-        $db->deviceConfigurations->saveDesired(
+        ConfigurationFixtures::desired(
+            $db,
             '861265061009822',
             'whitelist_enabled',
             'vivistar',
@@ -191,7 +194,8 @@ final class DashboardDeviceDetailTest extends DashboardHttpTestCase
         self::assertIsArray($model);
         $store->registerDevice('868017032159118', '4P Touch', 'D46', 'watch', 1001, '', '', 'hitcare');
         $db->modelCapabilities->replaceForModelId((int)$model['id'], ['medication_reminders']);
-        $db->deviceConfigurations->saveDesired(
+        ConfigurationFixtures::desired(
+            $db,
             '868017032159118',
             'takePills',
             'four-p-touch',
@@ -249,7 +253,8 @@ final class DashboardDeviceDetailTest extends DashboardHttpTestCase
         self::assertIsArray($model);
         $store->registerDevice('868017032159118', '4P Touch', 'D46', 'watch', 1001, '', '', 'hitcare');
         $db->modelCapabilities->replaceForModelId((int)$model['id'], ['medication_reminders']);
-        $db->deviceConfigurations->saveDesired(
+        ConfigurationFixtures::desired(
+            $db,
             '868017032159118',
             'takePills',
             'four-p-touch',

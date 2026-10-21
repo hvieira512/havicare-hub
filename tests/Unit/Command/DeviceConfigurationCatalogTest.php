@@ -11,6 +11,7 @@ use Hub\Domain\Capability\CapabilityCatalog;
 use Hub\Protocol\Adapter\FourPTouchAdapter;
 use Hub\Protocol\Adapter\VivistarAdapter;
 use Hub\Protocol\Adapter\WonlexAdapter;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Tests\Support\Doubles\WavFixture;
 
@@ -826,9 +827,7 @@ final class DeviceConfigurationCatalogTest extends TestCase
         yield 'do not disturb' => ['do_not_disturb', 'doNotDisturb'];
     }
 
-    /**
-     * @dataProvider fourPTouchConfigAliasProvider
-     */
+    #[DataProvider('fourPTouchConfigAliasProvider')]
     public function testFourPTouchPublicAliasesResolveToNativeConfigKeys(string $publicKey, string $nativeKey): void
     {
         $config = DeviceConfigurationCatalog::configForProtocol('four-p-touch', $publicKey);
@@ -983,11 +982,8 @@ final class DeviceConfigurationCatalogTest extends TestCase
         yield 'find device' => ['findDeviceCommand', [], '[3G*8800000015*0004*FIND]'];
     }
 
-    /**
-     * @param array<string, mixed> $desired
-     *
-     * @dataProvider singleFrameProvider
-     */
+    /** @param array<string, mixed> $desired */
+    #[DataProvider('singleFrameProvider')]
     public function testFourPTouchSingleFrameConfigurationsBuildTheirWire(string $key, array $desired, string $wire): void
     {
         $payload = DeviceConfigurationCatalog::commandPayload('four-p-touch', $key, $desired);
@@ -1209,9 +1205,8 @@ final class DeviceConfigurationCatalogTest extends TestCase
 
     /**
      * Um interruptor é o comando mais um `1` ou `0`; só o nome nativo distingue estes, a forma é a mesma.
-     *
-     * @dataProvider nativeToggleProvider
      */
+    #[DataProvider('nativeToggleProvider')]
     public function testATogglePutsItsOwnCommandOnTheWireWithOneOrZero(
         string $protocol,
         string $key,
@@ -1315,8 +1310,8 @@ final class DeviceConfigurationCatalogTest extends TestCase
      * A mensagem da validação é o que chega ao utilizador, por isso afirma-se ela e não só a recusa.
      *
      * @param array<string, mixed> $desired
-     * @dataProvider rejectedConfigurationProvider
      */
+    #[DataProvider('rejectedConfigurationProvider')]
     public function testValidationRefusesTheConfigurationAndSaysWhy(
         string $protocol,
         string $key,

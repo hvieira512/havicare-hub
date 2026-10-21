@@ -25,20 +25,17 @@ final class DeviceListApiTest extends MysqlDashboardTestCase
         ]);
 
         self::assertSame('ok', $response['status'] ?? null);
-        self::assertSame('9300000011', $api->show('864293000000111')['device']['deviceId'] ?? null);
+        self::assertSame('9300000011', $api->show('864293000000111', null, '')['device']['deviceId'] ?? null);
     }
 
-    /**
-     * Igualdade e não semelhança: escolher «L08» não traz o «L08 Pro Max». A correspondência
-     * parcial é da procura por texto livre.
-     */
+    /** O filtro de modelo compara o nome inteiro: «L08» não traz o «L08 Pro». */
     public function testListModelFilterMatchesTheWholeNameAndNotAPrefix(): void
     {
         [$api] = $this->makeApi();
 
-        self::assertSame(0, $api->list('page=1&limit=5&model=L08')['pagination']['total'] ?? null);
-        self::assertSame(1, $api->list('page=1&limit=5&model=L08 Pro')['pagination']['total'] ?? null);
-        self::assertSame(1, $api->list('page=1&limit=5&q=L08')['pagination']['total'] ?? null);
+        self::assertSame(0, $api->list('page=1&limit=5&model=L08', null, '')['pagination']['total'] ?? null);
+        self::assertSame(1, $api->list('page=1&limit=5&model=L08 Pro', null, '')['pagination']['total'] ?? null);
+        self::assertSame(1, $api->list('page=1&limit=5&q=L08', null, '')['pagination']['total'] ?? null);
     }
 
     public function testListAcceptsSeveralValuesForTheSameFilter(): void
@@ -46,17 +43,14 @@ final class DeviceListApiTest extends MysqlDashboardTestCase
         [$api, $db] = $this->makeApi();
         $db->whitelist->register('865028000000306', 'Wonlex', 'HW20PRO', 'radar');
 
-        $both = $api->list('page=1&limit=10&deviceType[]=watch&deviceType[]=radar');
-        $onlyRadar = $api->list('page=1&limit=10&deviceType[]=radar');
+        $both = $api->list('page=1&limit=10&deviceType[]=watch&deviceType[]=radar', null, '');
+        $onlyRadar = $api->list('page=1&limit=10&deviceType[]=radar', null, '');
 
         self::assertSame(3, $both['pagination']['total'] ?? null);
         self::assertSame(1, $onlyRadar['pagination']['total'] ?? null);
     }
 
-    /**
-     * Pares, e não duas listas cruzadas: {alfa, beta} com {1001, 2002} não traz a alfa com a
-     * 2002. Só divergem quando duas empresas partilham números.
-     */
+    /** O filtro de licença compara pares empresa e licença, e não as duas listas cruzadas. */
     public function testLicenseFilterMatchesCompanyAndLicensePairsAndNotTheirCrossProduct(): void
     {
         [$api, $db] = $this->makeApi();
@@ -64,8 +58,8 @@ final class DeviceListApiTest extends MysqlDashboardTestCase
         $db->whitelist->register('900000000000002', 'Vivistar', 'L08 Pro', 'watch', 2002, '', '', 'beta');
         $db->whitelist->register('900000000000003', 'Vivistar', 'L08 Pro', 'watch', 2002, '', '', 'alfa');
 
-        $pairs = $api->list('page=1&limit=10&license[]=alfa:1001&license[]=beta:2002');
-        $wholeCompany = $api->list('page=1&limit=10&license[]=alfa');
+        $pairs = $api->list('page=1&limit=10&license[]=alfa:1001&license[]=beta:2002', null, '');
+        $wholeCompany = $api->list('page=1&limit=10&license[]=alfa', null, '');
 
         $imeis = array_map(static fn (array $row): string => (string)$row['imei'], $pairs['data']);
         sort($imeis);
@@ -76,19 +70,16 @@ final class DeviceListApiTest extends MysqlDashboardTestCase
         self::assertSame(2, $wholeCompany['pagination']['total'] ?? null);
     }
 
-    /**
-     * O estado é presença em runtime e entra na mesma cláusula que os outros filtros: filtrá-lo
-     * depois de paginar daria uma página de dez a devolver um.
-     */
+    /** O filtro de presença entra antes da paginação, e o total sai certo. */
     public function testListFiltersByOnlineStateWithoutBreakingTheTotal(): void
     {
         [$api, $db, $store] = $this->makeApi();
         $db->whitelist->register('900000000000005', 'Vivistar', 'L08 Pro');
         $store->deviceSeen('861265061009822', ['online' => '1']);
 
-        $online = $api->list('page=1&limit=1&online=online');
-        $offline = $api->list('page=1&limit=1&online=offline');
-        $all = $api->list('page=1&limit=1');
+        $online = $api->list('page=1&limit=1&online=online', null, '');
+        $offline = $api->list('page=1&limit=1&online=offline', null, '');
+        $all = $api->list('page=1&limit=1', null, '');
 
         self::assertSame(1, $online['pagination']['total'] ?? null);
         self::assertSame('861265061009822', $online['data'][0]['imei'] ?? null);
@@ -98,10 +89,7 @@ final class DeviceListApiTest extends MysqlDashboardTestCase
         );
     }
 
-    /**
-     * A relação entre fornecedores e modelos vem do servidor: o mesmo nome de modelo pode
-     * existir em dois fornecedores.
-     */
+    /** Os modelos agrupam-se pelo fornecedor: o mesmo nome pode existir em dois. */
     public function testListGroupsModelsUnderTheSupplierTheyBelongTo(): void
     {
         [$api, $db] = $this->makeApi();
@@ -110,7 +98,7 @@ final class DeviceListApiTest extends MysqlDashboardTestCase
         $db->whitelist->register('900000000000012', 'Vivistar', 'VL17', 'watch', 1001, '', '', 'alfa');
         $db->whitelist->register('900000000000013', 'MOKO', 'MKGW4', 'gateway', 1001, '', '', 'alfa');
 
-        $tree = $api->list('page=1&limit=1')['filters']['counts']['supplierModels'] ?? [];
+        $tree = $api->list('page=1&limit=1', null, '')['filters']['counts']['supplierModels'] ?? [];
 
         $vivistar = null;
         foreach ($tree['suppliers'] ?? [] as $supplier) {
@@ -151,7 +139,7 @@ final class DeviceListApiTest extends MysqlDashboardTestCase
         $db->whitelist->register('900000000000007', 'Vivistar', 'L08 Pro', 'watch', 1001, '', '', 'alfa');
         $store->deviceSeen('900000000000006', ['online' => '1']);
 
-        $response = $api->list('page=1&limit=1');
+        $response = $api->list('page=1&limit=1', null, '');
         $counts = $response['filters']['counts'] ?? [];
         $tree = $counts['license'] ?? [];
         $alfa = null;
@@ -241,8 +229,8 @@ final class DeviceListApiTest extends MysqlDashboardTestCase
         $links = $api->links('d48c49f7909c');
         self::assertSame('eec5000202f9', $links['data'][0]['deviceKey'] ?? null);
         self::assertSame('diaper_sensor', $links['data'][0]['deviceType'] ?? null);
-        self::assertSame('eec5000202f9', $api->show('d48c49f7909c')['linkedDevices'][0]['deviceKey'] ?? null);
-        $sensor = $api->show('eec5000202f9');
+        self::assertSame('eec5000202f9', $api->show('d48c49f7909c', null, '')['linkedDevices'][0]['deviceKey'] ?? null);
+        $sensor = $api->show('eec5000202f9', null, '');
         self::assertArrayHasKey('diaper_moisture', $sensor['capabilities']['telemetry'] ?? []);
         self::assertArrayHasKey('diaper_condition', $sensor['capabilities']['telemetry'] ?? []);
         self::assertArrayNotHasKey('diaper_moisture', $sensor['capabilities']['health'] ?? []);
@@ -299,19 +287,19 @@ final class DeviceListApiTest extends MysqlDashboardTestCase
         // Só um dos dois gateways ouve a pulseira.
         $store->recordGatewaySighting('fbd87c59ba8b', 'c5e390f30bce', -71);
 
-        $onTheBracelet = array_column($api->show('fbd87c59ba8b')['linkedDevices'], 'rssiDbm', 'deviceKey');
+        $onTheBracelet = array_column($api->show('fbd87c59ba8b', null, '')['linkedDevices'], 'rssiDbm', 'deviceKey');
         self::assertSame(-71, $onTheBracelet['c5e390f30bce'] ?? null);
         // Um gateway que nunca a ouviu tem de ficar vazio em vez de ler 0 dBm, que seria o
         // sinal mais forte que há.
         self::assertArrayNotHasKey('rssiDbm', array_column(
-            $api->show('fbd87c59ba8b')['linkedDevices'],
+            $api->show('fbd87c59ba8b', null, '')['linkedDevices'],
             null,
             'deviceKey'
         )['dc1603ecf1f7']);
 
         // O mesmo avistamento, lido da página do gateway: fica guardado contra o dispositivo
         // retransmitido, e a ligação resolve-o dos dois lados.
-        $onTheGateway = $api->show('c5e390f30bce')['linkedDevices'][0] ?? [];
+        $onTheGateway = $api->show('c5e390f30bce', null, '')['linkedDevices'][0] ?? [];
         self::assertSame('fbd87c59ba8b', $onTheGateway['deviceKey'] ?? null);
         self::assertSame(-71, $onTheGateway['rssiDbm'] ?? null);
         self::assertNotSame('', $onTheGateway['signalSeenAt'] ?? '');

@@ -51,7 +51,6 @@ final class ConfigurationLifecyclePresenter
                 'deliveryStatus' => (string)$operation['delivery_status'],
                 'error' => (string)$operation['error_code'],
                 'attempts' => (int)$operation['attempts'],
-                'maxAttempts' => (int)$operation['max_attempts'],
                 'updatedAt' => (string)$operation['updated_at'],
             ], (array)$change['operations']);
             $nativeKey = (string)($operations[0]['nativeKey'] ?? '');

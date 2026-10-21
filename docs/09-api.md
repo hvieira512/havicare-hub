@@ -383,9 +383,6 @@ imagem do modelo no mesmo pedido.
 
 | | Rota | O que faz | |
 |---|---|---|---|
-| GET · POST | `/api/capability-discovery` | Lista e cria um rascunho a partir de um dispositivo real | **A** |
-| GET | `/api/capability-discovery/{id}` | Consulta o rascunho | **A** |
-| POST | `/api/capability-discovery/{id}/apply` | Aplica-o ao modelo | **A** |
 
 ### Clientes e utilizadores
 
@@ -449,9 +446,9 @@ contenha `D41` no nome interno ou no comercial.
 
 ### Colunas que se descrevem
 
-Sete listagens acrescentam um `columns` ao envelope: `/api/users`,
-`/api/models`, `/api/companies`, `/api/licenses`, `/api/suppliers`,
-`/api/denylist` e `/api/capability-discovery`. Cada
+Seis listagens acrescentam um `columns` ao envelope: `/api/users`,
+`/api/models`, `/api/companies`, `/api/licenses`, `/api/suppliers` e
+`/api/denylist`. Cada
 entrada diz o que se pode fazer àquela coluna, e nada sobre como ela se desenha
 — o nome visível é de quem constrói a interface.
 
@@ -524,11 +521,12 @@ mais curta de escrever.
 
 | Estado | Códigos |
 |---|---|
-| **400** | `invalid_request`, `invalid_config`, `invalid_link`, `invalid_state`, `unsupported_feature`, `unknown_protocol`, `device_already_associated`, `invalid_association`, `invalid_role`, `invalid_license`, `feature_not_requestable`, `unsupported_capability`, `invalid_requestable_capability`, `upload_failed`, `image_too_large`, `image_dimensions_too_large`, `gd_missing`, `gd_jpeg_missing`, `invalid_image`, `image_save_failed` |
+| **400** | `invalid_request`, `invalid_config`, `invalid_link`, `unsupported_feature`, `unknown_protocol`, `device_already_associated`, `invalid_association`, `invalid_role`, `invalid_license`, `feature_not_requestable`, `unsupported_capability`, `invalid_requestable_capability`, `upload_failed`, `image_too_large`, `image_dimensions_too_large`, `gd_missing`, `gd_jpeg_missing`, `invalid_image`, `image_save_failed` |
 | **401** | `invalid_credentials`, `invalid_refresh_token`, `unauthorized` |
 | **403** | `forbidden` |
-| **404** | `association_not_found`, `capability_not_found`, `company_not_found`, `denylist_not_found`, `discovery_not_found`, `license_not_found`, `model_not_found`, `not_found`, `notification_not_found`, `protocol_not_found`, `supplier_not_found`, `user_not_found` |
+| **404** | `association_not_found`, `capability_not_found`, `company_not_found`, `denylist_not_found`, `license_not_found`, `model_not_found`, `not_found`, `notification_not_found`, `protocol_not_found`, `supplier_not_found`, `user_not_found` |
 | **409** | `device_exists`, `model_exists`, `user_exists`, `duplicate` |
+| **422** | `incomplete_owner` — um dispositivo tem empresa e licença, ou nenhuma; o `fields` diz a que falta |
 | **429** | `too_many_attempts` |
 | **500** | `server_error` |
 | **503** | `too_many_streams` |

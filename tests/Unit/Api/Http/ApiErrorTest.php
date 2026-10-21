@@ -6,6 +6,7 @@ namespace Tests\Unit\Api\Http;
 
 use Hub\Api\Http\ApiError;
 use Hub\Api\Http\JsonResponder;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 final class ApiErrorTest extends TestCase
@@ -32,12 +33,12 @@ final class ApiErrorTest extends TestCase
             'denylistNotFound' => [fn(): ApiError => ApiError::denylistNotFound(), 'denylist_not_found', 'Denylist entry not found', 404],
             'licenseNotFound' => [fn(): ApiError => ApiError::licenseNotFound(), 'license_not_found', 'License not found', 404],
             'capabilityNotFound' => [fn(): ApiError => ApiError::capabilityNotFound(), 'capability_not_found', 'Capability not found', 404],
-            'discoveryNotFound' => [fn(): ApiError => ApiError::discoveryNotFound(), 'discovery_not_found', 'Discovery run not found', 404],
             'notificationNotFound' => [fn(): ApiError => ApiError::notificationNotFound(), 'notification_not_found', 'Notification not found', 404],
             'supplierNotFound' => [fn(): ApiError => ApiError::supplierNotFound(), 'supplier_not_found', 'Supplier does not exist', 404],
             'protocolNotFound' => [fn(): ApiError => ApiError::protocolNotFound(), 'protocol_not_found', 'Unsupported protocol', 404],
             'userNotFound' => [fn(): ApiError => ApiError::userNotFound(), 'user_not_found', 'API user not found', 404],
             'associationNotFound' => [fn(): ApiError => ApiError::associationNotFound(), 'association_not_found', 'Device association was not found', 404],
+            'incompleteOwner' => [fn(): ApiError => ApiError::incompleteOwner('licenseId'), 'incomplete_owner', 'company and licenseId go together', 422],
             'deviceExists' => [fn(): ApiError => ApiError::deviceExists(), 'device_exists', 'Device with this IMEI already exists', 409],
             'modelExists' => [fn(): ApiError => ApiError::modelExists(), 'model_exists', 'Another model with this supplier and model name already exists', 409],
             'userExists' => [fn(): ApiError => ApiError::userExists(), 'user_exists', 'Username already exists', 409],
@@ -54,7 +55,6 @@ final class ApiErrorTest extends TestCase
             'invalidRefreshToken' => [fn(): ApiError => ApiError::invalidRefreshToken(), 'invalid_refresh_token', 'Invalid refresh token', 401],
             'invalidRole' => [fn(): ApiError => ApiError::invalidRole(), 'invalid_role', 'role must be hub_admin or license_client', 400],
             'invalidLicense' => [fn(): ApiError => ApiError::invalidLicense(), 'invalid_license', 'A valid company license is required for license clients', 400],
-            'discoveryMissingModelId' => [fn(): ApiError => ApiError::discoveryMissingModelId(), 'invalid_state', 'Discovery run is missing the model id', 400],
             'featureNotRequestable' => [fn(): ApiError => ApiError::featureNotRequestable(), 'feature_not_requestable', 'Feature cannot be requested for this device', 400],
             'unsupportedCapability' => [fn(): ApiError => ApiError::unsupportedCapability(), 'unsupported_capability', 'One or more capabilities are not allowed for this device type', 400],
             'invalidRequestableCapability' => [fn(): ApiError => ApiError::invalidRequestableCapability(), 'invalid_requestable_capability', 'Requestable telemetry must also be supported and requestable in the capability catalog', 400],
@@ -68,10 +68,8 @@ final class ApiErrorTest extends TestCase
         ];
     }
 
-    /**
-     * @param callable(): ApiError $build
-     * @dataProvider errors
-     */
+    /** @param callable(): ApiError $build */
+    #[DataProvider('errors')]
     public function testEachErrorKeepsItsCodeMessageAndStatus(
         callable $build,
         string $code,
@@ -80,15 +78,13 @@ final class ApiErrorTest extends TestCase
     ): void {
         $error = $build();
 
-        self::assertSame(['error' => ['code' => $code, 'message' => $message]], $error->toArray());
+        $body = $error->toArray()['error'];
+        self::assertSame([$code, $message], [$body['code'], $body['message']]);
         self::assertSame($status, ApiError::declaredStatus($code));
         self::assertSame($status, (new JsonResponder())->result($error->toArray())->getStatusCode());
     }
 
-    /**
-     * O `codes()` declara cada rota na especificação: um construtor fora do mapa não se pode
-     * declarar, e um código sem construtor promete um estado que ninguém envia.
-     */
+    /** Cada código declarado tem construtor, e cada construtor um código declarado. */
     public function testTheDeclaredCodesAreExactlyTheOnesTheConstructorsProduce(): void
     {
         $fromConstructors = array_unique(array_map(
@@ -111,10 +107,7 @@ final class ApiErrorTest extends TestCase
         self::assertSame(201, $json->result(['status' => 'ok'], 201)->getStatusCode());
     }
 
-    /**
-     * O `result()` é leniente de propósito e responde 400 a um engano; quem não perdoa é o
-     * `declaredStatus()`, que rebenta a montar a especificação.
-     */
+    /** O `result()` responde 400 a um código desconhecido; o `declaredStatus()` recusa-o. */
     public function testAnUndeclaredCodeIsFourHundredInsteadOfInferredFromItsShape(): void
     {
         $json = new JsonResponder();

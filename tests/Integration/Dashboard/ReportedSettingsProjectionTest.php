@@ -38,10 +38,7 @@ final class ReportedSettingsProjectionTest extends MysqlDashboardTestCase
         self::assertSame(['enabled' => false, 'startHour' => 22], $reported['do_not_disturb'] ?? null);
     }
 
-    /**
-     * Sem mapa de configurações vale o caminho pelo tipo, que se recusa a adivinhar; a regra
-     * está no `AmbiguousReplyTypeTest`, e aqui prende-se que o caminho novo não o sobrepõe.
-     */
+    /** Sem mapa de configurações vale o caminho pelo tipo, que não adivinha. */
     public function testAPayloadWithoutSettingsKeepsTheOldBehaviour(): void
     {
         $db = ApiDataAccess::fromDatabase($this->createDashboardDatabase());

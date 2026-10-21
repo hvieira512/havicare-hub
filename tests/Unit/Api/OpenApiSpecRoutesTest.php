@@ -30,12 +30,12 @@ final class OpenApiSpecRoutesTest extends TestCase
         self::assertSame(
             [],
             array_values(array_diff($registered, $documented)),
-            'routes that exist but are missing from the OpenAPI spec'
+            'rotas que existem e faltam na especificação OpenAPI'
         );
         self::assertSame(
             [],
             array_values(array_diff($documented, $registered)),
-            'paths documented in the OpenAPI spec that no route serves'
+            'caminhos documentados na especificação OpenAPI que nenhuma rota serve'
         );
     }
 
@@ -53,10 +53,7 @@ final class OpenApiSpecRoutesTest extends TestCase
         }
     }
 
-    /**
-     * O 401 e o 500 nascem no `ApiKernel` e não numa rota, mas um cliente gerado a partir do
-     * documento precisa de ramo para eles.
-     */
+    /** O 401 e o 500 nascem no kernel, e cada operação declara-os. */
     public function testEveryOperationDeclaresTheErrorsTheKernelCanReturn(): void
     {
         $missingUnauthorized = [];

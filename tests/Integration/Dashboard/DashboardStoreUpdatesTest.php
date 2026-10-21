@@ -37,7 +37,8 @@ final class DashboardStoreUpdatesTest extends MysqlDashboardTestCase
                 continue;
             }
 
-            $keys = $redis->keys($root . '*');
+            // O `KEYS` devolve os nomes já com o prefixo, que o `DEL` voltaria a pôr.
+            $keys = array_map(static fn(string $key): string => substr($key, strlen($root) + 1), $redis->keys('*'));
             if ($keys !== []) {
                 $redis->del($keys);
             }
@@ -51,10 +52,11 @@ final class DashboardStoreUpdatesTest extends MysqlDashboardTestCase
 
     private function store(): DeviceStore
     {
+        $root = self::KEY_ROOT . ':' . bin2hex(random_bytes(4));
         $redis = new RedisClient([
             'host' => (string)(getenv('TEST_REDIS_HOST') ?: getenv('REDIS_HOST') ?: '127.0.0.1'),
             'port' => (int)(getenv('TEST_REDIS_PORT') ?: getenv('REDIS_PORT') ?: 6379),
-        ]);
+        ], ['prefix' => $root . ':']);
 
         try {
             $redis->connect();
@@ -62,11 +64,10 @@ final class DashboardStoreUpdatesTest extends MysqlDashboardTestCase
             self::markTestSkipped('Needs a reachable Redis: ' . $e->getMessage());
         }
 
-        $root = self::KEY_ROOT . ':' . bin2hex(random_bytes(4));
         $this->clients[] = $redis;
         $this->roots[] = $root;
 
-        return new DeviceStore($redis, 100, $root);
+        return new DeviceStore($redis);
     }
 
     /** @return array{DeviceStore, callable(): int} */
@@ -131,8 +132,8 @@ final class DashboardStoreUpdatesTest extends MysqlDashboardTestCase
         $store->markLatestCommand(self::DEVICE, 'test', ['status' => 'delivered']);
         $store->markCommandReply(self::DEVICE, 'test', null, '', true);
 
-        self::assertSame(1, $before, 'recording a command should announce once');
-        self::assertSame(4, $count(), 'every lifecycle transition should announce');
+        self::assertSame(1, $before, 'gravar um comando anuncia uma vez');
+        self::assertSame(4, $count(), 'cada transição do ciclo de vida anuncia');
     }
 
     public function testSweepsAnnounceToEveryListenerSinceTheyNameNoDevice(): void

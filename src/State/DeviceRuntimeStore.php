@@ -10,12 +10,12 @@ use Predis\ClientInterface;
 
 final class DeviceRuntimeStore
 {
+    private const PREFIX = 'hub:dashboard';
+
     public function __construct(
         private ClientInterface $redis,
         private int $limit = 100,
-        private string $prefix = 'hub:dashboard',
     ) {
-        $this->prefix = trim($this->prefix, ':');
         $this->limit = max(1, $this->limit);
     }
 
@@ -53,15 +53,12 @@ final class DeviceRuntimeStore
 
         $this->redis->srem($this->key('devices'), $imei);
         $this->redis->zrem($this->onlineDeviceSetKey(), $imei);
-        $this->redis->del([
-            $this->deviceKey($imei),
-            $this->deviceListKey($imei, 'raw'),
-            $this->deviceListKey($imei, 'telemetry'),
-            $this->deviceListKey($imei, 'events'),
-            $this->deviceListKey($imei, 'commands'),
-            $this->commandHashKey($imei),
-            $this->sightingKey($imei),
-        ]);
+        $keys = [$this->deviceKey($imei), $this->commandHashKey($imei), $this->sightingKey($imei)];
+        foreach (['raw', 'telemetry', 'events', 'commands', 'connections'] as $list) {
+            $list = $this->deviceListKey($imei, $list);
+            array_push($keys, $list, "{$list}:latest", "{$list}:seq");
+        }
+        $this->redis->del($keys);
     }
 
     public function updateDeviceAssociation(string $imei, string $company, int $licenseId): void
@@ -263,7 +260,7 @@ final class DeviceRuntimeStore
 
     private function key(string $suffix): string
     {
-        return "{$this->prefix}:{$suffix}";
+        return self::PREFIX . ':' . $suffix;
     }
 
     private function deviceKey(string $imei): string

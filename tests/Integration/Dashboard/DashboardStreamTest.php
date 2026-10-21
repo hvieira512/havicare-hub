@@ -119,10 +119,7 @@ final class DashboardStreamTest extends DashboardHttpTestCase
         self::assertSame(401, $response->getStatusCode());
     }
 
-    /**
-     * O token de acesso não abre nada a partir de um URL: vale uma hora para a API toda, e num
-     * endereço acabaria no registo de acessos de um proxy.
-     */
+    /** O token de acesso no URL não autentica: acabaria no registo de um proxy. */
     public function testAnAccessTokenInTheQueryStringNoLongerAuthenticates(): void
     {
         [$server] = $this->makeServerWithDatabase();
@@ -158,10 +155,7 @@ final class DashboardStreamTest extends DashboardHttpTestCase
         self::assertStringNotContainsString($token, $log);
     }
 
-    /**
-     * Um cliente que deixa de ler não pode obrigar o servidor a guardar-lhe tudo: o buffer
-     * cresceria até rebentar o limite de memória do processo.
-     */
+    /** O stream pára de escrever enquanto o cliente não lê, e retoma depois. */
     public function testAStreamStopsWritingWhileTheClientIsNotDrainingAndRecoversAfterwards(): void
     {
         [$server, , $store] = $this->makeServerWithDatabase();
@@ -358,7 +352,7 @@ final class DashboardStreamTest extends DashboardHttpTestCase
             }
         }
 
-        self::fail('SSE frame did not contain a data line.');
+        self::fail('o frame SSE não trazia linha de dados');
     }
 
     private function openDeviceStream(

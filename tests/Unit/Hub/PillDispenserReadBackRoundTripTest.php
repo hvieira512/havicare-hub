@@ -8,6 +8,7 @@ use Hub\Command\DeviceCommandCatalog;
 use Hub\Device\DeviceEventDecoder;
 use Hub\Device\DeviceSession;
 use Hub\Protocol\Adapter\PillDispenserAdapter;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 /** O `0x06` montado pelo construtor real lê-se como se fosse a resposta `0x86`. */
@@ -100,7 +101,7 @@ final class PillDispenserReadBackRoundTripTest extends TestCase
      * @param array<string, mixed> $payload
      * @param array<string, mixed> $expected
      */
-    #[\PHPUnit\Framework\Attributes\DataProvider('singleValueSettings')]
+    #[DataProvider('singleValueSettings')]
     public function testASingleValueSettingComesBackUnchanged(
         string $command,
         array $payload,

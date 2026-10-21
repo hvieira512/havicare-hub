@@ -51,10 +51,7 @@ final class DashboardStreamMemoryTest extends DashboardHttpTestCase
         }
     }
 
-    /**
-     * O pior caso, que é o que dimensiona o teto: um cliente que parou de ler e tem a fila
-     * cheia. É o produto disto pelo teto de ligações que define o orçamento do processo.
-     */
+    /** Um cliente parado com a fila cheia cabe no orçamento, que é o pior caso. */
     public function testAStalledStreamWithAFullQueueStaysWithinTheBudget(): void
     {
         [$server, , , $messages] = $this->makeServerWithDatabase(

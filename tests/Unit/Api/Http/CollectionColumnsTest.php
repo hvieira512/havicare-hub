@@ -54,10 +54,7 @@ final class CollectionColumnsTest extends TestCase
         self::assertTrue($described['role']['editable']);
     }
 
-    /**
-     * O pedido de escrita diz o que se *edita*, e não que colunas existem: a password e o
-     * `licenseRefId` não são colunas.
-     */
+    /** O que só se escreve, como a password e o `licenseRefId`, não é coluna. */
     public function testAWriteOnlyFieldDoesNotBecomeAColumn(): void
     {
         $fields = array_column($this->columns()->describe(), 'field');

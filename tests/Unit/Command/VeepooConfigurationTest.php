@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Unit\Command;
 
 use Hub\Command\DeviceConfigurationCatalog;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 /** O SDK aceita em silêncio uma janela mal escrita sem configurar nada, e não há construtor de tramas: a validação é aqui. */
@@ -33,10 +34,8 @@ final class VeepooConfigurationTest extends TestCase
         ];
     }
 
-    /**
-     * @dataProvider badWindows
-     * @param array<string, mixed> $payload
-     */
+    /** @param array<string, mixed> $payload */
+    #[DataProvider('badWindows')]
     public function testAMalformedWindowIsRejected(array $payload): void
     {
         self::assertNotNull(DeviceConfigurationCatalog::validate(

@@ -50,7 +50,7 @@ final class OpenApiSpecSchemasTest extends TestCase
             }
         }
 
-        self::assertNotEmpty($spec, 'the spec documents no paths at all');
+        self::assertNotEmpty($spec, 'a especificação não documenta caminho nenhum');
     }
 
     /** Um esquema que promete menos do que a resposta devolve engana quem gera tipos a partir dele. */

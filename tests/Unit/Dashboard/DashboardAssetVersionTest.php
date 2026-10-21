@@ -27,10 +27,7 @@ final class DashboardAssetVersionTest extends TestCase
         self::assertStringContainsString('href="/v/cafe1234cafe/assets/css/base.css"', $page);
     }
 
-    /**
-     * O que já tem impressão digital própria não a leva outra vez: uma versão nossa nova não pode
-     * obrigar a puxar o Bootstrap e as fontes de novo.
-     */
+    /** O que já traz impressão digital própria não leva a nossa versão. */
     public function testThirdPartyAssetsKeepTheirOwnPaths(): void
     {
         $page = $this->renderPage('cafe1234cafe');
@@ -60,10 +57,7 @@ final class DashboardAssetVersionTest extends TestCase
         self::assertStringContainsString('immutable', $response->getHeaderLine('Cache-Control'));
     }
 
-    /**
-     * Acrescentar, apagar ou alterar um módulo muda a versão, senão o URL ficava igual com
-     * `immutable` por cima.
-     */
+    /** Acrescentar, apagar ou alterar um módulo muda a versão. */
     public function testTheVersionChangesWithEveryShapeOfChange(): void
     {
         $root = sys_get_temp_dir() . '/hub-asset-version-' . bin2hex(random_bytes(4));
@@ -104,10 +98,7 @@ final class DashboardAssetVersionTest extends TestCase
         }
     }
 
-    /**
-     * O `immutable` promete o endereço e não o processo: o corpo em memória acompanha o ficheiro,
-     * senão um endereço novo servia bytes velhos que nem recarregar resolvia.
-     */
+    /** Um endereço versionado serve os bytes que estão em disco, e não os da memória. */
     public function testAVersionedAssetStillServesTheBytesOnDisk(): void
     {
         $path = sys_get_temp_dir() . '/hub-asset-version-body-' . bin2hex(random_bytes(4)) . '.js';

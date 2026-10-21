@@ -50,7 +50,7 @@ final class NamedTimeZoneFollowerTest extends DashboardHttpTestCase
         self::assertSame(['timeZone'], $sent);
 
         $follower = new NamedTimeZoneFollower(
-            new DeviceService($store, new Whitelist($this->whitelistPath, $db->whitelist), $hub, $db),
+            new DeviceService($store, new Whitelist($db->whitelist), $hub, $db),
             $db->configurationLifecycle,
             static fn (): array => [self::IMEI],
         );

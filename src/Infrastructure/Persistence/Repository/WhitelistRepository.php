@@ -344,8 +344,7 @@ final class WhitelistRepository
             $params = array_merge($params, $licenseParams);
         }
 
-        // Pares, e não dois filtros independentes: {hitcare, haviCare} com {1001, 2002}
-        // trazia um dispositivo da hitcare com a licença 2002.
+        // Pares, e não dois filtros independentes: cada licença vale só com a sua empresa.
         $pairs = $this->licensePairs($filters);
         if ($pairs !== []) {
             $pairClauses = [];

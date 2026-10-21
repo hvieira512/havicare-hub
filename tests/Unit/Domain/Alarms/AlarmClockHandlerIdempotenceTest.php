@@ -8,6 +8,7 @@ use Hub\Domain\Capability\AlarmClock\AlarmClockHandler;
 use Hub\Domain\Capability\AlarmClock\FourPTouch;
 use Hub\Domain\Capability\AlarmClock\Vivistar;
 use Hub\Domain\Capability\AlarmClock\Wonlex;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 /** O `DeviceCapabilityPresenter` chama o `fromNative` duas vezes, a segunda sobre a lista pública, e o resultado tem de ser igual. */
@@ -36,7 +37,7 @@ final class AlarmClockHandlerIdempotenceTest extends TestCase
     /**
      * @param array<string, mixed> $native
      */
-    #[\PHPUnit\Framework\Attributes\DataProvider('handlers')]
+    #[DataProvider('handlers')]
     public function testDecodingAnAlreadyDecodedValueChangesNothing(
         AlarmClockHandler $handler,
         array $native
@@ -54,7 +55,7 @@ final class AlarmClockHandlerIdempotenceTest extends TestCase
      *
      * @param array<string, mixed> $native
      */
-    #[\PHPUnit\Framework\Attributes\DataProvider('handlers')]
+    #[DataProvider('handlers')]
     public function testTheDefaultPayloadSurvivesTheSameRoundTrip(
         AlarmClockHandler $handler,
         array $native

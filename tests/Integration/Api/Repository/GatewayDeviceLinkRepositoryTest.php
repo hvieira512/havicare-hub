@@ -72,10 +72,7 @@ final class GatewayDeviceLinkRepositoryTest extends MysqlDashboardTestCase
         self::assertTrue($repository->isEnabled(self::GATEWAY, self::BRACELET));
     }
 
-    /**
-     * A resposta vale pela janela da cache: uma alteração feita por fora não é vista já, e é
-     * esse o preço de não ir ao MySQL a cada observação BLE.
-     */
+    /** A resposta vale pela janela da cache, para não ir ao MySQL a cada observação BLE. */
     public function testAnAnswerIsCachedForTheTtl(): void
     {
         $repository = $this->repository();
@@ -121,10 +118,7 @@ final class GatewayDeviceLinkRepositoryTest extends MysqlDashboardTestCase
         self::assertFalse($repository->isEnabled(self::GATEWAY, self::OTHER_BRACELET));
     }
 
-    /**
-     * As ligações de um aparelho, vistas dos dois lados: o `deviceKey` é sempre o do outro, e
-     * é dele que vêm o fornecedor, o modelo e o dono.
-     */
+    /** As ligações vêm dos dois lados, e o `deviceKey` é sempre o do outro aparelho. */
     public function testForDeviceListsBothDirectionsWithTheOtherDeviceDetails(): void
     {
         $repository = $this->repository();

@@ -21,7 +21,7 @@ final class RelayedConnectionTest extends TestCase
     public function testARelayedDeviceHeardAgainIsAnnouncedConnectedOnce(): void
     {
         $mqtt = new RecordingHubMqttBridge();
-        $store = new DeviceStore(new InMemoryRedisClient(), prefix: 'test:dashboard:relay');
+        $store = new DeviceStore(new InMemoryRedisClient());
         $relay = new RelayPublisher(
             $mqtt,
             $store,

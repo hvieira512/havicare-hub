@@ -13,10 +13,7 @@ use Tests\Support\DashboardHttpTestCase;
  */
 final class DashboardApiAuthTest extends DashboardHttpTestCase
 {
-    /**
-     * O pedido mal formado é 400 e a credencial recusada é 401: quem gera um cliente a partir da
-     * especificação precisa de distinguir os dois.
-     */
+    /** O pedido mal formado é 400 e a credencial recusada é 401. */
     public function testApiLoginSeparatesMalformedRequestsFromRejectedCredentials(): void
     {
         $server = $this->makeServer();

@@ -37,10 +37,7 @@ final class DashboardApiTenancyTest extends DashboardHttpTestCase
         self::assertSame('Device with this IMEI already exists', $body['error']['message'] ?? null);
     }
 
-    /**
-     * O 201 é argumento do `result()` e cai facilmente para dentro dos parênteses da chamada ao
-     * serviço num ternário de várias linhas, passando a 200 sem nada ficar vermelho.
-     */
+    /** As rotas de criação respondem 201. */
     public function testTheCreateRoutesAnswerTwoHundredAndOne(): void
     {
         $server = $this->makeServer();
@@ -141,10 +138,7 @@ final class DashboardApiTenancyTest extends DashboardHttpTestCase
         ));
     }
 
-    /**
-     * O `licenseId` chega ao registo como inteiro pela API e como texto pelo ficheiro da
-     * whitelist, e o isolamento entre clientes não pode depender de qual dos dois.
-     */
+    /** O isolamento entre clientes vale com o `licenseId` em inteiro ou em texto. */
     public function testTenantIsolationHoldsWhateverTypeTheLicenseIdArrivesAs(): void
     {
         foreach ([['1001', '2002'], [1001, 2002]] as [$mine, $theirs]) {
@@ -173,10 +167,7 @@ final class DashboardApiTenancyTest extends DashboardHttpTestCase
         }
     }
 
-    /**
-     * Um `hub_admin` não tem licença, e a tabela di-lo com NULL; o `license_client` ao lado
-     * prova que a licença a sério continua lá.
-     */
+    /** Um `hub_admin` não tem licença na tabela, e o `license_client` mantém a sua. */
     public function testAdminHasNoLicenceInTheTableAndTheClientKeepsItsOwn(): void
     {
         [$server, $db] = $this->makeServerWithDatabase();
@@ -213,10 +204,7 @@ final class DashboardApiTenancyTest extends DashboardHttpTestCase
         self::assertSame(404, $response->getStatusCode());
     }
 
-    /**
-     * Mesma empresa, licença diferente: o âmbito por empresa não apanha isto, e é este teste que
-     * prende a cláusula da licença.
-     */
+    /** Na mesma empresa, um cliente não chega a outra licença. */
     public function testTenantClientCannotAccessAnotherLicenseWithinItsOwnCompany(): void
     {
         [$server, $db, $store] = $this->makeServerWithDatabase();
@@ -234,7 +222,7 @@ final class DashboardApiTenancyTest extends DashboardHttpTestCase
             static fn(array $device): string => (string)$device['imei'],
             json_decode((string)$list->getBody(), true, 512, JSON_THROW_ON_ERROR)['data'] ?? []
         );
-        self::assertNotContains('861265061009899', $imeis, 'listing must be scoped by license, not company alone');
+        self::assertNotContains('861265061009899', $imeis, 'a listagem tem o âmbito da licença, e não só da empresa');
 
         $detail = $server(new ServerRequest(
             'GET',
@@ -455,8 +443,7 @@ final class DashboardApiTenancyTest extends DashboardHttpTestCase
 
         self::assertSame(200, $response->getStatusCode(), (string)$response->getBody());
         $body = json_decode((string)$response->getBody(), true, 512, JSON_THROW_ON_ERROR);
-        self::assertSame('null', $body['association']['company'] ?? null);
-        self::assertSame(0, $body['association']['licenseId'] ?? null);
+        self::assertSame(['company' => null, 'licenseId' => null], $body['association'] ?? []);
 
         $tenantRead = $server(new ServerRequest(
             'GET',
@@ -473,7 +460,7 @@ final class DashboardApiTenancyTest extends DashboardHttpTestCase
         $device = json_decode((string)$adminRead->getBody(), true, 512, JSON_THROW_ON_ERROR);
 
         self::assertSame(200, $adminRead->getStatusCode(), (string)$adminRead->getBody());
-        self::assertSame('null', $device['device']['company'] ?? null);
-        self::assertSame(0, $device['device']['licenseId'] ?? null);
+        self::assertNull($device['device']['company']);
+        self::assertNull($device['device']['licenseId']);
     }
 }

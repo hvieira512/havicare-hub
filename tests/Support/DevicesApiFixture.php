@@ -10,7 +10,6 @@ use Hub\Infrastructure\Persistence\Repository\ApiDataAccess;
 use Hub\Registry\Whitelist;
 use Hub\State\DeviceStore;
 use Tests\Support\Doubles\InMemoryRedisClient;
-use Tests\Support\Doubles\IngressFixtures;
 
 /**
  * A API de dispositivos sobre uma base clonada, com um relógio Vivistar e um 4P Touch registados.
@@ -19,17 +18,6 @@ use Tests\Support\Doubles\IngressFixtures;
  */
 trait DevicesApiFixture
 {
-    private string $whitelistPath;
-
-    protected function setUp(): void
-    {
-        parent::setUp();
-        $this->whitelistPath = IngressFixtures::whitelistPath([
-            '861265061009822' => ['supplier' => 'Vivistar', 'model' => 'L08 Pro'],
-            '868017032159118' => ['supplier' => '4P Touch', 'model' => 'D46'],
-        ]);
-    }
-
     /**
      * @return array{0: DeviceService, 1: ApiDataAccess, 2: DeviceStore}
      */
@@ -38,10 +26,10 @@ trait DevicesApiFixture
         $db = ApiDataAccess::fromDatabase($this->createDashboardDatabase());
         $db->whitelist->register('861265061009822', 'Vivistar', 'L08 Pro');
         $db->whitelist->register('868017032159118', '4P Touch', 'D46', 'watch', 0, '', '1703215911');
-        $store = new DeviceStore(new InMemoryRedisClient(), prefix: 'test:dashboard:devices-api');
+        $store = new DeviceStore(new InMemoryRedisClient());
         $store->setDataAccess($db);
         $store->registerDevice('861265061009822', 'Vivistar', 'L08 Pro');
-        $whitelist = new Whitelist($this->whitelistPath, $db->whitelist);
+        $whitelist = new Whitelist($db->whitelist);
 
         $submitted = [];
         $api = new DeviceService($store, $whitelist, $hub ?? $this->recordingHub($submitted), $db);

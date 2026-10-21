@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Unit\Api\Http;
 
 use Hub\Api\Http\CollectionQuery;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 final class CollectionQuerySortTest extends TestCase
@@ -81,12 +82,8 @@ final class CollectionQuerySortTest extends TestCase
         );
     }
 
-    /**
-     * O valor vai parar a um `ORDER BY`, e por isso a allowlist é a fronteira: o que não
-     * está nela não passa mutilado, cai para a coluna por omissão.
-     *
-     * @dataProvider rejectedValues
-     */
+    /** O valor vai parar a um `ORDER BY`: fora da allowlist, cai para a coluna por omissão. */
+    #[DataProvider('rejectedValues')]
     public function testWhatIsNotOnTheAllowlistFallsBackToTheDefault(string $value): void
     {
         self::assertSame(
@@ -100,25 +97,24 @@ final class CollectionQuerySortTest extends TestCase
     public static function rejectedValues(): array
     {
         return [
-            'coluna inventada' => ['inventada'],
-            'coluna de outra tabela' => ['l.name'],
-            'comentário SQL' => ['imei--'],
-            'ponto e vírgula' => ['imei; DROP TABLE whitelist'],
-            'vazio' => [''],
-            'só o separador' => [':'],
-            'sentido inventado' => ['company:acima'],
+            'made-up column' => ['inventada'],
+            'column from another table' => ['l.name'],
+            'SQL comment' => ['imei--'],
+            'semicolon' => ['imei; DROP TABLE whitelist'],
+            'empty' => [''],
+            'separator only' => [':'],
+            'made-up direction' => ['company:acima'],
             // O `-coluna` não é a forma desta API: o sentido escreve-se por extenso.
-            'sinal à frente do nome' => ['-company'],
+            'sign before the name' => ['-company'],
         ];
     }
 
     /**
-     * Uma tentativa de injecção que traz uma coluna válida atrás não passa a injecção: o
-     * `imei DESC` não está na allowlist e cai, e sobra o `company` que estava.
+     * De uma injecção só sobram as colunas que a allowlist conhece.
      *
-     * @dataProvider injectionsThatCarryAValidColumn
      * @param list<array{column: string, descending: bool}> $expected
      */
+    #[DataProvider('injectionsThatCarryAValidColumn')]
     public function testAnInjectionKeepsOnlyTheColumnsTheAllowlistRecognises(string $value, array $expected): void
     {
         self::assertSame($expected, $this->sort(['sort' => $value]));
@@ -128,8 +124,8 @@ final class CollectionQuerySortTest extends TestCase
     public static function injectionsThatCarryAValidColumn(): array
     {
         return [
-            'espaço depois da coluna' => ['imei DESC, company:asc', [['column' => 'company', 'descending' => false]]],
-            'subconsulta' => ['imei:asc, (SELECT 1)', [['column' => 'imei', 'descending' => false]]],
+            'space after the column' => ['imei DESC, company:asc', [['column' => 'company', 'descending' => false]]],
+            'subquery' => ['imei:asc, (SELECT 1)', [['column' => 'imei', 'descending' => false]]],
         ];
     }
 

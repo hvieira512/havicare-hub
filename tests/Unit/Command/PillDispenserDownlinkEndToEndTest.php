@@ -7,6 +7,7 @@ namespace Tests\Unit\Command;
 use Hub\Command\DeviceCommandCatalog;
 use Hub\Command\DeviceConfigurationCatalog;
 use Hub\Protocol\Adapter\PillDispenserAdapter;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 /** As TAGs esperadas são escritas à mão da secção 5 da especificação, para o teste não concordar consigo próprio. */
@@ -62,7 +63,7 @@ final class PillDispenserDownlinkEndToEndTest extends TestCase
      * @param array<string, mixed> $payload
      * @param list<int> $tags
      */
-    #[\PHPUnit\Framework\Attributes\DataProvider('everyConfiguration')]
+    #[DataProvider('everyConfiguration')]
     public function testThePublicKeyReachesTheTagsTheSpecAssignsIt(
         string $key,
         array $payload,
@@ -112,7 +113,7 @@ final class PillDispenserDownlinkEndToEndTest extends TestCase
     /**
      * @param array<string, mixed> $payload
      */
-    #[\PHPUnit\Framework\Attributes\DataProvider('chosenValues')]
+    #[DataProvider('chosenValues')]
     public function testTheChosenValueReachesTheFrame(
         string $key,
         array $payload,

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Unit\Command;
 
 use Hub\Command\DeviceConfigurationCatalog;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 /** Uma escrita que o aparelho recuse fica «em envio» até alguém reparar, por isso cada gama do `ZayataPayloadBuilder` leva um valor ilegal. */
@@ -38,7 +39,7 @@ final class PillDispenserValidationRangesTest extends TestCase
     /**
      * @param array<string, mixed> $payload
      */
-    #[\PHPUnit\Framework\Attributes\DataProvider('illegalValues')]
+    #[DataProvider('illegalValues')]
     public function testAnIllegalValueIsRefused(string $key, array $payload): void
     {
         $this->expectException(\InvalidArgumentException::class);
@@ -61,7 +62,7 @@ final class PillDispenserValidationRangesTest extends TestCase
      *
      * @param array<string, mixed> $payload
      */
-    #[\PHPUnit\Framework\Attributes\DataProvider('legalEdges')]
+    #[DataProvider('legalEdges')]
     public function testTheEdgeOfTheRangeIsAccepted(string $key, array $payload): void
     {
         self::assertNotSame([], DeviceConfigurationCatalog::commandPayloads('zayata-m228', $key, $payload));

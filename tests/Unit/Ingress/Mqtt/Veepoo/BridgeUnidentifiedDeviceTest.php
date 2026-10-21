@@ -4,10 +4,11 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Ingress\Mqtt\Veepoo;
 
-use Hub\State\DeviceStoreContract;
-use Tests\Support\Doubles\ArrayObservationStateStore;
 use Hub\Ingress\Mqtt\Veepoo\VeepooBridge;
+use Hub\State\DeviceStoreContract;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
+use Tests\Support\Doubles\ArrayObservationStateStore;
 use Tests\Support\Doubles\FakeMqttSubscriber;
 use Tests\Support\Doubles\IngressFixtures;
 use Tests\Support\Doubles\RecordingHubMqttBridge;
@@ -28,11 +29,8 @@ final class BridgeUnidentifiedDeviceTest extends TestCase
         ];
     }
 
-    /**
-     * @dataProvider unidentified
-     *
-     * @param array<string, mixed>|null $device
-     */
+    /** @param array<string, mixed>|null $device */
+    #[DataProvider('unidentified')]
     public function testAFrameWithoutADeviceIsNotRecordedAsUnauthorised(?array $device): void
     {
         $recorded = [];

@@ -52,10 +52,7 @@ final class SchemaCompletenessTest extends MysqlDashboardTestCase
         }
     }
 
-    /**
-     * O `device_type` referencia a `device_types`, que tem de reproduzir o
-     * `config/device-types.json`, e as três chaves estrangeiras têm de existir.
-     */
+    /** Cada `device_type` referencia a `device_types`, que reproduz o `device-types.json`. */
     public function testEveryDeviceTypeColumnPointsAtTheCatalogTable(): void
     {
         $pdo = $this->createDashboardDatabase()->pdo();
@@ -91,10 +88,7 @@ final class SchemaCompletenessTest extends MysqlDashboardTestCase
             ->execute(['999999999999999', 'Vivistar', 'L08 Pro', 'torradeira']);
     }
 
-    /**
-     * A coluna está em `ascii_bin`, que compara byte a byte: um `Watch` não casa com o `watch`.
-     * Os caminhos de escrita passam todos pelo `normalizeDeviceType()`, que faz `strtolower`.
-     */
+    /** A coluna compara byte a byte: um `Watch` não casa com o `watch`. */
     public function testADeviceTypeInTheWrongCaseIsRefused(): void
     {
         $pdo = $this->createDashboardDatabase()->pdo();

@@ -67,10 +67,7 @@ final class ProtocolDashboardMetaTest extends TestCase
         );
     }
 
-    /**
-     * A forma na resposta é o contrato com a dashboard: os metadados do domínio de cada protocolo
-     * mais a chave `dashboard`.
-     */
+    /** A resposta leva os metadados de domínio de cada protocolo e a chave `dashboard`. */
     public function testTheApiResponseStillCarriesBothHalves(): void
     {
         $data = (new ProtocolService())->list()['data'];

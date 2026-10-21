@@ -393,7 +393,6 @@ final class DeviceConfigurationUpdateService
             'payload' => $operation['payload'] ?? null,
             'bytes' => $operation['bytes'],
             'attempts' => 1,
-            'maxAttempts' => 3,
             'retryDelaySeconds' => 60,
             'lastAttemptAt' => $now,
             'nextRetryAt' => gmdate('Y-m-d\TH:i:s\Z', time() + 60),
@@ -461,7 +460,7 @@ final class DeviceConfigurationUpdateService
         if (!is_array($payload)) {
             return [];
         }
-        $contacts = $payload['contacts'] ?? $payload['familyNumbers'] ?? $payload;
+        $contacts = $payload['contacts'] ?? $payload;
 
         return is_array($contacts) && array_is_list($contacts) ? $contacts : [];
     }

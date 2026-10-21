@@ -7,7 +7,6 @@ namespace Hub\Api\Http;
 use Hub\Api\Request\ModelWriteRequest;
 use Hub\Domain\Capability\CapabilityCatalog;
 
-/** O descritor da listagem de modelos. */
 final class ModelColumns
 {
     /** @param list<array<string, mixed>> $models As linhas apresentadas, de onde saem as escolhas. */

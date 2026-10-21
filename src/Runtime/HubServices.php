@@ -67,8 +67,7 @@ final class HubServices
             self::redisOptions($config['redis']),
         );
 
-        $whitelistFile = trim((string)$config['hub']['whitelist_file']);
-        $whitelist = new Whitelist($whitelistFile !== '' ? $whitelistFile : null, $dataAccess->whitelist);
+        $whitelist = new Whitelist($dataAccess->whitelist);
         $denylist = new Denylist($dataAccess->denylist);
 
         $deviceStore = new DeviceStore($redis, (int)$config['dashboard']['history_limit']);
