@@ -5,10 +5,10 @@ import {
     onlineBadge as buildOnlineBadge,
     stateBadge as buildStateBadge,
 } from "../../src/Dashboard/dashboard/components/state-badge.js";
+import { asText } from "./support/dom.js";
 
-// Os construtores devolvem um fragmento de marcação; as assertivas de texto querem texto.
-const stateBadge = (...args) => String(buildStateBadge(...args));
-const onlineBadge = (...args) => String(buildOnlineBadge(...args));
+const stateBadge = asText(buildStateBadge);
+const onlineBadge = asText(buildOnlineBadge);
 
 /** Um tom que não existe no Bootstrap não pode gerar uma classe que não existe. */
 test("um tom desconhecido cai no secundário", () => {

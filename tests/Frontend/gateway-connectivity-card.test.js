@@ -2,9 +2,9 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import { requestCardShell as buildCard } from "../../src/Dashboard/dashboard/components/cards/request.js";
+import { asText } from "./support/dom.js";
 
-// O construtor devolve um fragmento de marcação; as assertivas de texto querem texto.
-const requestCardShell = (...args) => String(buildCard(...args));
+const requestCardShell = asText(buildCard);
 
 const connectivityCard = (data) => requestCardShell(
     { feature: "connectivity", requestable: false },

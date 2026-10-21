@@ -23,3 +23,6 @@ export function configSection(renderConfigInputs, entry, desired = {}, meta = {}
         `<section data-config-input="${input}" data-config-protocol="${meta.protocol ?? ""}" data-config-limit="${entry.limit ?? ""}">${html}</section>`,
     ).firstElementChild;
 }
+
+/** Um construtor de marcação a devolver texto, que é o que o `assert.match` aceita. */
+export const asText = (build) => (...args) => String(build(...args));

@@ -1,12 +1,12 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { asText } from "./support/dom.js";
 
 const { telemetryRequestCards, renderRequestCardGroup: buildGroup } = await import(
     "../../src/Dashboard/dashboard/devices/detail.js",
 );
 
-// O construtor devolve um fragmento de marcação; as assertivas de texto querem texto.
-const renderRequestCardGroup = (...args) => String(buildGroup(...args));
+const renderRequestCardGroup = asText(buildGroup);
 
 /**
  * Os cartões de «Pedir dados» separam a telemetria, que o dispositivo mede, da informação do

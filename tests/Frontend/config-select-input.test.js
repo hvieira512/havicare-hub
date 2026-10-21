@@ -2,15 +2,15 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import { CONFIG_INPUTS } from "../../src/Dashboard/dashboard/devices/config/inputs/index.js";
+import { asText } from "./support/dom.js";
 
 /**
  * O campo de escolha genérico desenha as opções que a definição declara, para o utilizador ver
  * «Baixo» e não `2`.
  */
-// Os construtores devolvem um fragmento de marcação; as assertivas de texto querem texto.
 const select = {
     ...CONFIG_INPUTS.select,
-    control: (...args) => String(CONFIG_INPUTS.select.control(...args)),
+    control: asText(CONFIG_INPUTS.select.control),
 };
 
 const entry = (field, options, extra = {}) => ({

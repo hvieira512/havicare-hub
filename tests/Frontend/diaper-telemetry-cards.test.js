@@ -3,10 +3,9 @@ import assert from "node:assert/strict";
 
 import { requestCardShell as buildCard } from "../../src/Dashboard/dashboard/components/cards/request.js";
 import { state } from "../../src/Dashboard/dashboard/state.js";
-import { parseFragment } from "./support/dom.js";
+import { asText, parseFragment } from "./support/dom.js";
 
-// O construtor devolve um fragmento de marcação; as assertivas de texto querem texto.
-const requestCardShell = (...args) => String(buildCard(...args));
+const requestCardShell = asText(buildCard);
 const textOf = (html) => parseFragment(html).textContent.replace(/\s+/g, " ");
 
 // O nome de uma capacidade vem do catálogo do tipo escolhido: sem ele o cartão mostra a

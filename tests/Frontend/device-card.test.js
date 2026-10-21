@@ -5,9 +5,9 @@ import {
     DEVICE_CARD_ACTION,
     deviceCard as buildCard,
 } from "../../src/Dashboard/dashboard/devices/device-card.js";
+import { asText } from "./support/dom.js";
 
-// Os construtores devolvem um fragmento de marcação; as assertivas de texto querem texto.
-const deviceCard = (...args) => String(buildCard(...args));
+const deviceCard = asText(buildCard);
 
 const device = {
     imei: "861265061009822",

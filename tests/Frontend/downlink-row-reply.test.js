@@ -6,7 +6,6 @@ const { downlinkActivityRow: buildRow } = await import(
     "../../src/Dashboard/dashboard/devices/detail.js",
 );
 
-// Os campos de marcação do descritor são fragmentos; as assertivas de texto querem texto.
 const downlinkActivityRow = (payload) => {
     const row = buildRow(payload);
     return { ...row, sub: String(row.sub ?? ""), expanded: String(row.expanded ?? "") };

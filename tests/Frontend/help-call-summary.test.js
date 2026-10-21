@@ -2,9 +2,9 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import { helpCallSummaryCard as buildCard } from "../../src/Dashboard/dashboard/devices/event-summary-cards.js";
+import { asText } from "./support/dom.js";
 
-// O construtor devolve um fragmento de marcação; as assertivas de texto querem texto.
-const helpCallSummaryCard = (...args) => String(buildCard(...args));
+const helpCallSummaryCard = asText(buildCard);
 
 const call = (pressType, occurredAt) => ({
     type: "help_call",

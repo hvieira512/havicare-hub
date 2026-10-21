@@ -3,11 +3,11 @@ import assert from "node:assert/strict";
 
 import { requestCardShell as buildCard } from "../../src/Dashboard/dashboard/components/cards/request.js";
 
-// O construtor devolve um fragmento de marcação; as assertivas de texto querem texto.
-const requestCardShell = (...args) => String(buildCard(...args));
+const requestCardShell = asText(buildCard);
 import { cardContent } from "./support/cards.js";
 import { allDetailItems } from "../../src/Dashboard/dashboard/devices/detail-filters.js";
 import { state } from "../../src/Dashboard/dashboard/state.js";
+import { asText } from "./support/dom.js";
 
 state.capabilityCatalogByType.pill_dispenser = [{ key: "cells_remaining", label: "Células restantes" }];
 state.selectedDetail = { model: { deviceType: "pill_dispenser" } };

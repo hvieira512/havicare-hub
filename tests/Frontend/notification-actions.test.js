@@ -2,9 +2,9 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import { notificationRow as buildRow, notificationsPanel } from "../../src/Dashboard/dashboard/notifications.js";
+import { asText } from "./support/dom.js";
 
-// O construtor devolve um fragmento de marcação; as assertivas de texto querem texto.
-const notificationRow = (...args) => String(buildRow(...args));
+const notificationRow = asText(buildRow);
 
 const notAuthorized = {
     id: 7,

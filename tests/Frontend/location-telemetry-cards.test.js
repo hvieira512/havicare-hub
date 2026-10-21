@@ -4,9 +4,9 @@ import assert from "node:assert/strict";
 import { cardContent as uplinkCardContent } from "./support/cards.js";
 import { requestCardShell as buildCard } from "../../src/Dashboard/dashboard/components/cards/request.js";
 
-// O construtor devolve um fragmento de marcação; as assertivas de texto querem texto.
-const requestCardShell = (...args) => String(buildCard(...args));
+const requestCardShell = asText(buildCard);
 import { state } from "../../src/Dashboard/dashboard/state.js";
+import { asText } from "./support/dom.js";
 
 state.capabilityCatalogByType.watch = [{ key: "location", label: "Localização" }];
 state.selectedDetail = { model: { deviceType: "watch" } };

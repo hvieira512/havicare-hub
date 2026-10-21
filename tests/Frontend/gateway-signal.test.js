@@ -8,10 +8,10 @@ import {
     signalLabel,
     signalMeter as buildMeter,
 } from "../../src/Dashboard/dashboard/devices/gateway-signal.js";
+import { asText } from "./support/dom.js";
 
-// Os construtores devolvem um fragmento de marcação; as assertivas de texto querem texto.
-const signalMeter = (...args) => String(buildMeter(...args));
-const gatewaySignalRows = (...args) => String(buildRows(...args));
+const signalMeter = asText(buildMeter);
+const gatewaySignalRows = asText(buildRows);
 
 // Com a forma das linhas `linkedDevices` que o `/api/devices/{imei}` serve, onde o hub
 // acrescenta o último avistamento registado do par (dispositivo, gateway).

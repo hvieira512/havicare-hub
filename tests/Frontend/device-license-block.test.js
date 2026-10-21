@@ -2,9 +2,9 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import { deviceLicenseBlock as buildBlock } from "../../src/Dashboard/dashboard/components/device-license.js";
+import { asText } from "./support/dom.js";
 
-// O construtor devolve um fragmento de marcação; as assertivas de texto querem texto.
-const deviceLicenseBlock = (...args) => String(buildBlock(...args));
+const deviceLicenseBlock = asText(buildBlock);
 
 /** A empresa fica na segunda linha: o mesmo sítio pode ter licença em duas empresas. */
 const device = {

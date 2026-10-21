@@ -6,10 +6,10 @@ import {
     apiUserForm as buildForm,
     licenseRefIdFor,
 } from "../../src/Dashboard/dashboard/settings/api-users.js";
+import { asText } from "./support/dom.js";
 
-// Os construtores devolvem um fragmento de marcação; as assertivas de texto querem texto.
-const apiUserForm = (...args) => String(buildForm(...args));
-const apiUserFilterControls = (...args) => String(buildFilterControls(...args));
+const apiUserForm = asText(buildForm);
+const apiUserFilterControls = asText(buildFilterControls);
 
 const admin = { id: 1, username: "havicare-platform", role: "hub_admin", enabled: 1 };
 const client = {
