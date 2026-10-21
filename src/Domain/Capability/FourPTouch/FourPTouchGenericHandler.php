@@ -116,7 +116,7 @@ final class FourPTouchGenericHandler
             'fall_detection' => ['fallDownAlert' => self::requireObjectValue($value, 'fallDownAlert')],
             'fall_sensitivity' => ['fallDownSensitivity' => $this->fallSensitivityPayload($value)],
             'auto_vitals_interval' => ['healthAutoMeasurement' => self::requireObjectValue($value, 'healthAutoMeasurement')],
-            'sound_profile' => ['profile' => ['mode' => self::requireIntField($value, 'mode')]],
+            'sound_profile' => ['profile' => ['mode' => self::requireStringField($value, 'mode')]],
             'pedometer_schedule' => ['walkTime' => ['ranges' => self::requireListValue(is_array($value) && array_key_exists('ranges', $value) ? $value['ranges'] : $value, 'ranges')]],
             'sleep_monitoring' => ['sleepTime' => ['range' => self::requireStringField($value, 'range')]],
             'temperature_measurement_interval' => ['bodyTemperatureInterval' => self::requireObjectValue($value, 'bodyTemperatureInterval')],

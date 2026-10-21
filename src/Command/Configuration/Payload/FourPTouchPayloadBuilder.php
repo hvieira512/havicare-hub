@@ -6,6 +6,20 @@ namespace Hub\Command\Configuration\Payload;
 
 final class FourPTouchPayloadBuilder extends ConfigurationPayloadBuilder
 {
+    /** O código do `profile` de cada perfil de som. */
+    public const SOUND_PROFILES = ['ring_and_vibrate' => 1, 'ring' => 2, 'vibrate' => 3, 'silent' => 4];
+
+    /**
+     * O código do `LZ` de cada idioma, pela etiqueta BCP 47. A ficha dá o 29 como «Polski»,
+     * repetido do 17, e fica de fora.
+     */
+    public const LANGUAGES = [
+        'en' => 0, 'zh-Hans' => 1, 'pt' => 3, 'es' => 4, 'de' => 5, 'tr' => 7, 'vi' => 8, 'ru' => 9,
+        'fr' => 10, 'el' => 11, 'it' => 12, 'sv' => 13, 'zh-Hant' => 14, 'bg' => 15, 'nl' => 16, 'pl' => 17,
+        'fi' => 18, 'th' => 19, 'he' => 22, 'da' => 23, 'hi' => 25, 'ro' => 26, 'cs' => 27, 'ar' => 28,
+        'hu' => 34, 'sk' => 36,
+    ];
+
     /**
      * O tecto do áudio aceite, antes de descodificar. É generoso porque a dashboard não limita a
      * gravação, e o `ffmpeg`, que corre síncrono no event loop, já a corta aos 15 segundos.
@@ -55,8 +69,9 @@ final class FourPTouchPayloadBuilder extends ConfigurationPayloadBuilder
             'monitorNumber' => [self::requiredString($payload['phone'] ?? null, 'phone')],
             'whitelistGroup1', 'whitelistGroup2' => self::stringList($payload['numbers'] ?? [], 5, 'numbers'),
             'languageTimezone' => [
-                self::zeroBasedRangeInt($payload['language'] ?? null, 0, 36, 'language'),
-                self::requiredString($payload['timeZone'] ?? null, 'timeZone'),
+                self::LANGUAGES[(string)($payload['language'] ?? '')]
+                    ?? throw new \InvalidArgumentException('language must be one of ' . implode(', ', array_keys(self::LANGUAGES))),
+                self::utcOffsetHours($payload['utcOffsetHours'] ?? null),
             ],
             'sosSmsAlerts', 'lowBatterySmsAlerts', 'removeWatchAlarm', 'removeWatchSmsAlerts' => [
                 self::boolInt($payload['enabled'] ?? null, 'enabled'),
@@ -80,7 +95,10 @@ final class FourPTouchPayloadBuilder extends ConfigurationPayloadBuilder
             'restartCommand', 'powerOffCommand', 'findDeviceCommand' => [],
             'rejectUnknownCalls' => [self::boolInt($payload['enabled'] ?? null, 'enabled')],
             'alarmClock' => self::alarmClock($payload),
-            'profile' => [self::soundProfileMode($payload['mode'] ?? null)],
+            'profile' => [
+                self::SOUND_PROFILES[(string)($payload['mode'] ?? '')]
+                    ?? throw new \InvalidArgumentException('mode must be one of ' . implode(', ', array_keys(self::SOUND_PROFILES))),
+            ],
             default => throw new \InvalidArgumentException("Unsupported 4P Touch configuration {$key}"),
         };
 
@@ -265,17 +283,14 @@ final class FourPTouchPayloadBuilder extends ConfigurationPayloadBuilder
         return [$exitCode, trim(implode("\n", $output))];
     }
 
-    private static function soundProfileMode(mixed $value): int
+    /** O desvio do fuso em horas, que o `LZ` aceita com meia hora. */
+    private static function utcOffsetHours(mixed $value): string
     {
-        if (!is_numeric((string)$value)) {
-            throw new \InvalidArgumentException('mode must be an integer');
-        }
-        $mode = (int)$value;
-        if ($mode < 1 || $mode > 4) {
-            throw new \InvalidArgumentException('mode must be between 1 and 4');
+        if (!is_numeric($value) || (float)$value < -12 || (float)$value > 14 || fmod((float)$value * 2, 1.0) !== 0.0) {
+            throw new \InvalidArgumentException('utcOffsetHours must be a half-hour step between -12 and 14');
         }
 
-        return $mode;
+        return (string)(0 + $value);
     }
 
     /**

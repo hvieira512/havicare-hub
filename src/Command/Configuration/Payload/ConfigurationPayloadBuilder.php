@@ -38,6 +38,17 @@ abstract class ConfigurationPayloadBuilder
         return $value;
     }
 
+    /** Uma hora `HH:MM` de 24 horas. */
+    protected static function hhmm(mixed $value, string $field): string
+    {
+        $value = is_string($value) ? trim($value) : '';
+        if (preg_match('/^(?:[01]\d|2[0-3]):[0-5]\d$/', $value) !== 1) {
+            throw new \InvalidArgumentException("{$field} must use 24-hour HH:MM format");
+        }
+
+        return $value;
+    }
+
     protected static function boolInt(mixed $value, string $field): int
     {
         if (is_bool($value)) {

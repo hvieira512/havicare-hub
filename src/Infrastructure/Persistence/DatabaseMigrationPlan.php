@@ -7,6 +7,7 @@ namespace Hub\Infrastructure\Persistence;
 use Hub\Infrastructure\Persistence\Migration\DropCapabilitiesTable;
 use Hub\Infrastructure\Persistence\Migration\DropUnreadColumns;
 use Hub\Infrastructure\Persistence\Migration\Migration;
+use Hub\Infrastructure\Persistence\Migration\PublicConfigurationShape;
 
 /**
  * As migrações posteriores à baseline (`schema.sql` e catálogo semeado). Uma migração sai daqui
@@ -20,6 +21,7 @@ final class DatabaseMigrationPlan
         return [
             new DropUnreadColumns(),
             new DropCapabilitiesTable(),
+            new PublicConfigurationShape(),
         ];
     }
 

@@ -285,7 +285,7 @@ final class DeviceDetailApiTest extends MysqlDashboardTestCase
             'wonlexCallInLimitSwitch',
             'wonlex-json',
             'deviceConfig',
-            ['switchState' => true]
+            ['enabled' => true]
         );
 
         $response = $api->show($imei, null, '');
@@ -322,7 +322,7 @@ final class DeviceDetailApiTest extends MysqlDashboardTestCase
         self::assertArrayHasKey('sos_contacts', $response['capabilities']['contacts'] ?? []);
     }
 
-    public function testShowDoesNotLeakWonlexSwitchStateIntoGenericConfigurationSurfaces(): void
+    public function testShowServesTheStoredWonlexSwitchAsIs(): void
     {
         [$api, $db] = $this->makeApi();
         $imei = '868705080300697';
@@ -344,7 +344,7 @@ final class DeviceDetailApiTest extends MysqlDashboardTestCase
             'wonlexFallWarnSwitch',
             'wonlex-json',
             'deviceConfig',
-            ['switchState' => true],
+            ['enabled' => true],
             'acked',
         );
 

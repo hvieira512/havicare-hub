@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Hub\Command\Configuration\Definition;
 
+use Hub\Command\Configuration\Payload\FourPTouchPayloadBuilder;
+
 final class FourPTouchConfigurationDefinitions
 {
     /** @return list<array<string, mixed>> */
@@ -25,7 +27,11 @@ final class FourPTouchConfigurationDefinitions
             $entry('sosContacts', 'SOS', 'sos_contacts', ['numbers'], ['SOS'], category: 'contacts', order: 10, limit: 3),
             $entry('whitelistGroup1', 'WHITELIST1', 'call_whitelist', ['numbers'], ['WHITELIST1'], category: 'contacts', order: 40, limit: 5),
             $entry('whitelistGroup2', 'WHITELIST2', 'call_whitelist', ['numbers'], ['WHITELIST2'], category: 'contacts', order: 50, limit: 5),
-            $entry('languageTimezone', 'LZ', 'languageTimezone', ['language', 'timeZone'], ['LZ'], category: 'system', order: 20, bounds: ['language' => ['min' => 0, 'max' => 36]]),
+            $entry('languageTimezone', 'LZ', 'languageTimezone', ['language', 'utcOffsetHours'], ['LZ'], category: 'system', order: 20, options: [
+                'language' => array_map(static fn(string $tag): array => ['value' => $tag], array_keys(FourPTouchPayloadBuilder::LANGUAGES)),
+                'utcOffsetHours' => ['min' => -12, 'max' => 14, 'step' => 0.5],
+                'default' => ['language' => 'pt', 'utcOffsetHours' => 0],
+            ]),
             $toggle('sosSmsAlerts', 'SOSSMS', 'alerts', 10),
             $toggle('lowBatterySmsAlerts', 'LOWBAT', 'alerts', 20),
             $toggle('removeWatchAlarm', 'REMOVE', 'alerts', 30),
@@ -47,7 +53,7 @@ final class FourPTouchConfigurationDefinitions
             ]),
             $entry('takePills', 'TAKEPILLS', 'takePills', ['reminderSettings', 'reminderText', 'voiceData'], ['TAKEPILLS'], category: 'alerts', order: 70, limit: 3),
             $entry('healthAutoMeasurement', 'HEALTHAUTOSET', 'intervalToggle', ['enabled', 'intervalMinutes'], ['HEALTHAUTOSET'], category: 'health', order: 10, options: ['min' => 5], bounds: ['intervalMinutes' => ['min' => 5]]),
-            $entry('walkTime', 'WALKTIME', 'timeRanges', ['ranges'], ['WALKTIME'], category: 'health', order: 20, limit: 3),
+            $entry('walkTime', 'WALKTIME', 'timeRanges', ['ranges'], ['WALKTIME'], category: 'health', order: 20, limit: 3, options: ['default' => ['ranges' => ['08:10-09:30']]]),
             $entry('sleepTime', 'SLEEPTIME', 'timeRange', ['range'], ['SLEEPTIME'], category: 'health', order: 30),
             $entry('bodyTemperatureInterval', 'bodytemp', 'intervalHoursToggle', ['enabled', 'intervalHours'], ['bodytemp'], category: 'health', order: 40, bounds: ['intervalHours' => ['min' => 1, 'max' => 12]]),
             $entry('makeCall', 'CALL', 'makeCall', ['phone'], ['CALL'], category: 'system', order: 5, transient: true),
@@ -78,7 +84,7 @@ final class FourPTouchConfigurationDefinitions
             ]),
             $entry('phonebook', 'PHBX2', 'phonebook', ['contacts'], ['PHBX2', 'DPHBX', 'PHB', 'PHB2'], category: 'contacts', order: 55, limit: 100),
             $entry('profile', 'profile', 'soundProfile', ['mode'], ['profile'], category: 'system', order: 55, options: [
-                'mode' => [['value' => 1], ['value' => 2], ['value' => 3], ['value' => 4]],
+                'mode' => array_map(static fn(string $mode): array => ['value' => $mode], array_keys(FourPTouchPayloadBuilder::SOUND_PROFILES)),
             ]),
             $toggle('rejectUnknownCalls', 'DEVREFUSEPHONESWITCH', 'contacts', 35),
         ];

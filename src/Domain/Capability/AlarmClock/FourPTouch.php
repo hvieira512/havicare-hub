@@ -120,7 +120,7 @@ final class FourPTouch implements AlarmClockHandler
         $time = $this->normalizeTime(
             (string)($value['time'] ?? $value['alarmTime'] ?? $value['reminderTime'] ?? ''),
         );
-        $enabled = self::boolLikeToBool($value['enabled'] ?? $value['switchState'] ?? true);
+        $enabled = self::boolLikeToBool($value['enabled'] ?? true);
         $frequency = $this->resolveFrequency($value);
 
         $custom = '';
@@ -281,7 +281,7 @@ final class FourPTouch implements AlarmClockHandler
             'time' => self::normalizeTimeStatic(
                 (string)($item['time'] ?? $item['alarmTime'] ?? $item['reminderTime'] ?? ''),
             ),
-            'enabled' => self::boolLikeToBool($item['enabled'] ?? $item['switchState'] ?? true),
+            'enabled' => self::boolLikeToBool($item['enabled'] ?? true),
             'recurrence' => ['kind' => $kind],
         ];
 

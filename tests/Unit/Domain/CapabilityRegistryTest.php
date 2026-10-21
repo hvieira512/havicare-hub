@@ -69,9 +69,9 @@ final class CapabilityRegistryTest extends TestCase
         $registry = new CapabilityRegistry();
 
         self::assertSame(
-            ['profile' => ['mode' => 1]],
+            ['profile' => ['mode' => 'ring_and_vibrate']],
             $registry->toNative('four-p-touch', 'sound_profile', [
-                'mode' => 1,
+                'mode' => 'ring_and_vibrate',
             ])
         );
     }
@@ -85,7 +85,7 @@ final class CapabilityRegistryTest extends TestCase
                 'name' => 'Care',
                 'phone' => '+351210000000',
             ]],
-            'sosNumbers' => ['+351210000000'],
+            'numbers' => ['+351210000000'],
         ]);
 
         self::assertSame('351', $native['familyNumber']['contacts'][0]['areaCode']);
@@ -126,39 +126,18 @@ final class CapabilityRegistryTest extends TestCase
         );
     }
 
-    public function testWonlexSwitchFieldsAreNormalizedBidirectionally(): void
+    /** A Wonlex guarda a forma pública: o `switchState` é só do fio. */
+    public function testWonlexSwitchesKeepThePublicShape(): void
     {
         $registry = new CapabilityRegistry();
 
         self::assertSame(
-            ['wonlexFallWarnSwitch' => ['switchState' => false]],
+            ['wonlexFallWarnSwitch' => ['enabled' => false]],
             $registry->toNative('wonlex-json', 'fall_detection', ['enabled' => false])
         );
         self::assertSame(
-            ['enabled' => true],
-            $registry->fromNative(
-                'wonlex-json',
-                'fall_detection',
-                'wonlexFallWarnSwitch',
-                ['switchState' => 1]
-            )
-        );
-        self::assertSame(
-            [
-                'remindValue' => 120,
-                'enabled' => true,
-                'exerciseEnabled' => false,
-            ],
-            $registry->fromNative(
-                'wonlex-json',
-                'heart_rate_high_alert',
-                'wonlexHeartRateHighRemind',
-                [
-                    'switchState' => 1,
-                    'remindValue' => 120,
-                    'exerciseSwitchState' => 0,
-                ]
-            )
+            ['enabled' => true, 'thresholdBpm' => 120],
+            $registry->fromNative('wonlex-json', 'heart_rate_high_alert', 'wonlexHeartRateHighRemind', ['enabled' => true, 'thresholdBpm' => 120])
         );
     }
 

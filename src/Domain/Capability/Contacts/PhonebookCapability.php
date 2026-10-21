@@ -60,7 +60,7 @@ final class PhonebookCapability implements CapabilityContract, CapabilityInputSa
         return [$nativeKey => ['contacts' => match ($protocol) {
             'wonlex-json' => $this->wonlexContacts(
                 $contacts,
-                is_array($value) ? ($value['sosNumbers'] ?? []) : []
+                is_array($value) ? ($value['numbers'] ?? []) : []
             ),
             default => self::requireListValue($contacts, 'contacts'),
         }]];

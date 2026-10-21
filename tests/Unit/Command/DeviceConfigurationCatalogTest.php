@@ -194,7 +194,7 @@ final class DeviceConfigurationCatalogTest extends TestCase
 
     public function testWonlexLocationIntervalBuildsJsonPayload(): void
     {
-        $payload = DeviceConfigurationCatalog::commandPayload('wonlex-json', 'locationInterval', ['intervalTime' => 300]);
+        $payload = DeviceConfigurationCatalog::commandPayload('wonlex-json', 'locationInterval', ['intervalSeconds' => 300]);
         self::assertSame('locationInterval', $payload['command']);
 
         $wire = DeviceCommandCatalog::buildDownlink('wonlex-json', '865028000000308', $payload['command'], $payload['payload']);
@@ -288,18 +288,18 @@ final class DeviceConfigurationCatalogTest extends TestCase
 
     public function testWonlexMeasurementIntervalsBuildNestedConfigPayloads(): void
     {
-        $ppg = DeviceConfigurationCatalog::commandPayload('wonlex-json', 'wonlexPPGInterval', ['interval' => 60]);
+        $ppg = DeviceConfigurationCatalog::commandPayload('wonlex-json', 'wonlexPPGInterval', ['intervalMinutes' => 60]);
         self::assertSame('deviceMeasuringFrequency', $ppg['command']);
         self::assertSame(['configs' => ['upPPG' => ['interval' => '60']]], $ppg['payload']);
 
-        $rr = DeviceConfigurationCatalog::commandPayload('wonlex-json', 'wonlexRRInterval', ['interval' => 15]);
+        $rr = DeviceConfigurationCatalog::commandPayload('wonlex-json', 'wonlexRRInterval', ['intervalMinutes' => 15]);
         self::assertSame('deviceMeasuringFrequency', $rr['command']);
         self::assertSame(['configs' => ['upRR' => ['interval' => '15']]], $rr['payload']);
 
         $bloodPressure = DeviceConfigurationCatalog::commandPayload(
             'wonlex-json',
             'wonlexBPInterval',
-            ['interval' => 0]
+            ['intervalMinutes' => 0]
         );
         self::assertSame('deviceMeasuringFrequency', $bloodPressure['command']);
         self::assertSame(['configs' => ['upBP' => ['interval' => '0']]], $bloodPressure['payload']);
@@ -344,7 +344,7 @@ final class DeviceConfigurationCatalogTest extends TestCase
 
     public function testWonlexStructuredDeviceConfigBuildsNestedPayloads(): void
     {
-        $toggle = DeviceConfigurationCatalog::commandPayload('wonlex-json', 'wonlexPPGBPTrend', ['switchState' => true]);
+        $toggle = DeviceConfigurationCatalog::commandPayload('wonlex-json', 'wonlexPPGBPTrend', ['enabled' => true]);
         self::assertSame('deviceConfig', $toggle['command']);
         self::assertSame(['configs' => ['PPGBPTrend' => ['switchState' => 1]]], $toggle['payload']);
 
@@ -416,7 +416,7 @@ final class DeviceConfigurationCatalogTest extends TestCase
             'items' => [array_diff_key($valid, ['label' => true])],
         ]));
         self::assertSame(
-            'alarm startTime must use 24-hour HH:mm format',
+            'alarm startTime must use 24-hour HH:MM format',
             DeviceConfigurationCatalog::validate('wonlex-json', 'alarm_clock', [
                 'items' => [array_replace($valid, ['time' => '99:77'])],
             ])
@@ -460,10 +460,10 @@ final class DeviceConfigurationCatalogTest extends TestCase
     public function testWonlexSleepAndThresholdConfigsBuildStructuredPayloads(): void
     {
         $sleep = DeviceConfigurationCatalog::commandPayload('wonlex-json', 'wonlexSleepIntervalOrSwitch', [
-            'switchState' => true,
-            'sleepStartTime' => '220000',
-            'sleepEndTime' => '100000',
-            'sleepTarget' => 480,
+            'enabled' => true,
+            'startTime' => '22:00',
+            'endTime' => '10:00',
+            'targetMinutes' => 480,
         ]);
         self::assertSame('deviceConfig', $sleep['command']);
         self::assertSame([
@@ -478,8 +478,8 @@ final class DeviceConfigurationCatalogTest extends TestCase
         ], $sleep['payload']);
 
         $oxygen = DeviceConfigurationCatalog::commandPayload('wonlex-json', 'wonlexBloodOxygenWarn', [
-            'switchState' => true,
-            'reminderValue' => 90,
+            'enabled' => true,
+            'thresholdPercent' => 90,
         ]);
         self::assertSame([
             'configs' => [
@@ -494,12 +494,12 @@ final class DeviceConfigurationCatalogTest extends TestCase
     public function testWonlexHeartRateAndBloodPressureWarningsBuildStructuredPayloads(): void
     {
         $heartRate = DeviceConfigurationCatalog::commandPayload('wonlex-json', 'wonlexHeartRateHighRemind', [
-            'switchState' => true,
-            'remindValue' => 120,
-            'exerciseSwitchState' => true,
-            'exerciseHRMin' => 100,
-            'exerciseHRMax' => 140,
-            'exerciseRemindValue' => 140,
+            'enabled' => true,
+            'thresholdBpm' => 120,
+            'exerciseEnabled' => true,
+            'exerciseMinBpm' => 100,
+            'exerciseMaxBpm' => 140,
+            'exerciseThresholdBpm' => 140,
         ]);
         self::assertSame([
             'configs' => [
@@ -515,9 +515,9 @@ final class DeviceConfigurationCatalogTest extends TestCase
         ], $heartRate['payload']);
 
         $bpWarning = DeviceConfigurationCatalog::commandPayload('wonlex-json', 'wonlexBPEarlyWarning', [
-            'switchState' => true,
-            'hpWarn' => 135,
-            'LPWarn' => 90,
+            'enabled' => true,
+            'systolicMmHg' => 135,
+            'diastolicMmHg' => 90,
         ]);
         self::assertSame([
             'configs' => [
@@ -528,6 +528,32 @@ final class DeviceConfigurationCatalogTest extends TestCase
                 ],
             ],
         ], $bpWarning['payload']);
+    }
+
+    public function testWonlexTemperatureAndBatteryThresholdsBuildTheirWireNames(): void
+    {
+        self::assertSame(
+            ['configs' => ['TemperatureExceedRemind' => ['switchState' => 1, 'RemindValue' => 38.5]]],
+            DeviceConfigurationCatalog::commandPayload('wonlex-json', 'wonlexTemperatureExceedRemind', ['enabled' => true, 'thresholdCelsius' => 38.5])['payload'],
+        );
+        self::assertSame(
+            ['configs' => ['LowPower' => ['Battery' => 20]]],
+            DeviceConfigurationCatalog::commandPayload('wonlex-json', 'wonlexLowPower', ['thresholdPercent' => 20])['payload'],
+        );
+    }
+
+    /** O 4P Touch recebe o perfil e o idioma em números; a API fala por nomes. */
+    public function testFourPTouchSoundProfileAndLanguageAreEnums(): void
+    {
+        self::assertSame(['fields' => ['3']], DeviceConfigurationCatalog::commandPayload('four-p-touch', 'profile', ['mode' => 'vibrate'])['payload']);
+        self::assertSame(
+            ['fields' => ['3', '1']],
+            DeviceConfigurationCatalog::commandPayload('four-p-touch', 'languageTimezone', ['language' => 'pt', 'utcOffsetHours' => 1])['payload'],
+        );
+        self::assertSame(
+            ['fields' => ['14', '-3.5']],
+            DeviceConfigurationCatalog::commandPayload('four-p-touch', 'languageTimezone', ['language' => 'zh-Hant', 'utcOffsetHours' => -3.5])['payload'],
+        );
     }
 
     public function testFourPTouchUploadIntervalBuildsNativeFields(): void
@@ -737,27 +763,6 @@ final class DeviceConfigurationCatalogTest extends TestCase
         self::assertSame(3, $config['limit'] ?? null);
         self::assertArrayNotHasKey('options', $config);
         self::assertSame('medication_reminders', CapabilityCatalog::mapConfigurationKey('takePills'));
-    }
-
-    public function testFourPTouchLanguageTimezoneBuildsNativeFields(): void
-    {
-        $payload = DeviceConfigurationCatalog::commandPayload('four-p-touch', 'languageTimezone', [
-            'language' => 3,
-            'timeZone' => '0',
-        ]);
-
-        self::assertSame('LZ', $payload['command']);
-        self::assertSame(['fields' => ['3', '0']], $payload['payload']);
-    }
-
-    public function testFourPTouchLanguageTimezoneAllowsEnglish(): void
-    {
-        $payload = DeviceConfigurationCatalog::commandPayload('four-p-touch', 'languageTimezone', [
-            'language' => 0,
-            'timeZone' => '+01:00',
-        ]);
-
-        self::assertSame(['fields' => ['0', '+01:00']], $payload['payload']);
     }
 
     public function testFourPTouchFallDownSensitivityBuildsFirmwareAwarePayload(): void
@@ -1172,7 +1177,7 @@ final class DeviceConfigurationCatalogTest extends TestCase
 
     public function testFourPTouchSoundProfileBuildsNativeFields(): void
     {
-        $silent = DeviceConfigurationCatalog::commandPayload('four-p-touch', 'sound_profile', ['mode' => 4]);
+        $silent = DeviceConfigurationCatalog::commandPayload('four-p-touch', 'sound_profile', ['mode' => 'silent']);
         self::assertSame('profile', $silent['command']);
         self::assertSame(['fields' => ['4']], $silent['payload']);
     }
@@ -1301,8 +1306,8 @@ final class DeviceConfigurationCatalogTest extends TestCase
             'phone must contain ASCII characters only',
         ];
         yield '4P Touch sound profile outside the vendor range' => [
-            'four-p-touch', 'sound_profile', ['mode' => 0],
-            'mode must be between 1 and 4',
+            'four-p-touch', 'sound_profile', ['mode' => 4],
+            'mode must be one of ring_and_vibrate, ring, vibrate, silent',
         ];
     }
 

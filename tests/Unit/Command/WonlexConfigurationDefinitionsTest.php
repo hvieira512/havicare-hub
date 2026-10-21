@@ -30,14 +30,14 @@ final class WonlexConfigurationDefinitionsTest extends TestCase
     {
         foreach (['wonlexTemperatureExceedRemind', 'wonlexTemperatureBelowRemind'] as $key) {
             self::assertSame(
-                ['switchState' => true, 'RemindValue' => 38.5],
+                ['enabled' => true, 'thresholdCelsius' => 38.5],
                 ConfigurationInputDefaults::forEntry($this->entry($key)),
                 $key,
             );
         }
 
         self::assertSame(
-            ['switchState' => true, 'reminderValue' => 90],
+            ['enabled' => true, 'thresholdPercent' => 90],
             ConfigurationInputDefaults::forEntry($this->entry('wonlexBloodOxygenWarn')),
         );
     }
@@ -48,8 +48,8 @@ final class WonlexConfigurationDefinitionsTest extends TestCase
         $low = ConfigurationInputDefaults::forEntry($this->entry('wonlexHeartRateLowRemind'));
         $high = ConfigurationInputDefaults::forEntry($this->entry('wonlexHeartRateHighRemind'));
 
-        self::assertArrayNotHasKey('remindValue', $low);
-        self::assertSame(120, $high['remindValue'] ?? null);
+        self::assertArrayNotHasKey('thresholdBpm', $low);
+        self::assertSame(120, $high['thresholdBpm'] ?? null);
     }
 
     /** @return array<string, mixed> */

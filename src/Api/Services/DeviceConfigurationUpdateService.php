@@ -108,7 +108,7 @@ final class DeviceConfigurationUpdateService
                 $sosValue = $configurations['sos_contacts']
                     ?? ($currentByKey['sos_contacts']['desired_payload'] ?? null)
                     ?? $this->wonlexSelectedFamilyNumbers($currentByKey);
-                $payload['sosNumbers'] = $this->wonlexSosNumbers($sosValue);
+                $payload['numbers'] = $this->wonlexSosNumbers($sosValue);
             }
             if ($protocol === 'wonlex-json' && $genericKey === 'sos_contacts') {
                 $payload = [
@@ -476,7 +476,6 @@ final class DeviceConfigurationUpdateService
         $items = $value['selectedNumbers']
             ?? $value['numbers']
             ?? $value['contacts']
-            ?? $value['sosNumbers']
             ?? $value;
         if (!is_array($items) || !array_is_list($items)) {
             return [];
