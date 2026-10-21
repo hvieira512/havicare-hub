@@ -48,11 +48,43 @@ final class DeviceOwnerRuleApiTest extends MysqlDashboardTestCase
         self::assertArrayHasKey($missing, $result['error']['fields'] ?? []);
     }
 
+    /** @return array<string, array{0: array<string, mixed>}> */
+    public static function sentinelOwners(): array
+    {
+        return [
+            'empty company and zero licence' => [['company' => '', 'licenseId' => 0]],
+            'null text company and zero licence' => [['company' => 'null', 'licenseId' => 0]],
+        ];
+    }
+
+    /**
+     * Sem dono é `null`: o `""`, o `'null'` e o `0` são sentinelas de dentro do hub.
+     *
+     * @param array<string, mixed> $owner
+     */
+    #[DataProvider('sentinelOwners')]
+    public function testSentinelsAreRefusedAsNoOwner(array $owner): void
+    {
+        [$api] = $this->makeApi();
+
+        $created = $api->create(['imei' => '865028000000306', 'supplier' => 'Vivistar', 'model' => 'L08 Pro'] + $owner);
+        $updated = $api->update('861265061009822', ['supplier' => 'Vivistar', 'model' => 'L08 Pro'] + $owner);
+
+        self::assertSame(['company', 'licenseId'], array_keys($created['error']['fields'] ?? []));
+        self::assertSame(['company', 'licenseId'], array_keys($updated['error']['fields'] ?? []));
+    }
+
     public function testAWholeOwnerOrNoneIsAccepted(): void
     {
         [$api] = $this->makeApi();
 
-        $none = $api->create(['imei' => '865028000000306', 'supplier' => 'Vivistar', 'model' => 'L08 Pro']);
+        $none = $api->create([
+            'imei' => '865028000000306',
+            'supplier' => 'Vivistar',
+            'model' => 'L08 Pro',
+            'company' => null,
+            'licenseId' => null,
+        ]);
         $whole = $api->create([
             'imei' => '865028000000307',
             'supplier' => 'Vivistar',

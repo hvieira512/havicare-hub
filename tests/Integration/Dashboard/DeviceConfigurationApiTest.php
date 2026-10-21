@@ -442,7 +442,7 @@ final class DeviceConfigurationApiTest extends MysqlDashboardTestCase
             'supplier' => 'Wonlex',
             'model' => 'HW20PRO',
             'deviceType' => 'watch',
-            'licenseId' => '0',
+            'licenseId' => null,
         ])['status'] ?? null);
         $db->modelCapabilities->replaceForModelId((int)$model['id'], ['push_message']);
         $store->registerDevice($imei, 'Wonlex', 'HW20PRO');
@@ -530,7 +530,7 @@ final class DeviceConfigurationApiTest extends MysqlDashboardTestCase
             'supplier' => 'Wonlex',
             'model' => 'HW20PRO',
             'deviceType' => 'watch',
-            'licenseId' => '0',
+            'licenseId' => null,
         ])['status'] ?? null);
 
         $model = $db->models->find('Wonlex', 'HW20PRO');
@@ -697,7 +697,7 @@ final class DeviceConfigurationApiTest extends MysqlDashboardTestCase
             'supplier' => 'Wonlex',
             'model' => 'HW20PRO',
             'deviceType' => 'watch',
-            'licenseId' => '0',
+            'licenseId' => null,
         ]);
         self::assertSame('ok', $created['status'] ?? null);
         $db->modelCapabilities->replaceForModelId((int)$model['id'], [...$requestableFeatures, ...$nonRequestableFeatures]);

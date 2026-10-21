@@ -166,11 +166,11 @@ export async function refreshGatewayOptions(selectedKeys = null) {
     }
 
     const company = els.deviceCompany.value || "";
-    const licenseId = els.deviceLicenseId.value || "0";
+    const licenseId = els.deviceLicenseId.value;
     const preserved = selectedKeys === null
         ? selectedGatewayKeys()
         : selectedKeys;
-    if (!company || licenseId === "0") {
+    if (!company || !licenseId) {
         renderGatewayOptions(
             [],
             [],

@@ -72,7 +72,7 @@ test("two companies can share a licence number, and the choice tells them apart"
 test("the trail badge names the licence in words", () => {
     const tree = licenseTree(ROWS);
     assert.equal(licenseBadgeValue(null, tree), "Sem licença");
-    assert.equal(licenseBadgeValue({ company: "", licenseId: "0" }, tree), "Sem licença");
+    assert.equal(licenseBadgeValue({ company: "", licenseId: "" }, tree), "Sem licença");
     assert.equal(
         licenseBadgeValue({ company: "hitcare", licenseId: "1001" }, tree),
         "gucc.dev (1001)",

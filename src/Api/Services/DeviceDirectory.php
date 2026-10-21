@@ -119,18 +119,6 @@ final class DeviceDirectory
         return $this->whitelist->getMetadata($imei)?->company ?? '';
     }
 
-    public function normalizeLicenseId(int|string $licenseId, string $deviceType): int
-    {
-        $normalized = trim($licenseId);
-
-        if ($normalized === '' && $deviceType === 'watch') {
-            return 0;
-        }
-
-        return $normalized !== '' ? (int)$normalized : 0;
-    }
-
-
     /** @return array<string, mixed> */
     public function deviceSnapshot(string $imei): array
     {

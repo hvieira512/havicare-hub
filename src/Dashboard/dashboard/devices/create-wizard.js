@@ -321,24 +321,14 @@ function renderIdentity(answers) {
             : ""}`;
 }
 
-/** A autorização é por empresa e licença; a ausência de dono escreve-se de duas maneiras. */
+/** A autorização é por empresa e licença. */
 function eligibleGatewayList(answers) {
     const owner = answers.owner || {};
     return (state.wizardGateways || []).filter(
         (gateway) =>
-            companyKey(gateway.company) === companyKey(owner.company) &&
-            licenseIdKey(gateway.licenseId) === licenseIdKey(owner.licenseId),
+            String(gateway.company ?? "") === String(owner.company ?? "") &&
+            String(gateway.licenseId ?? "") === String(owner.licenseId ?? ""),
     );
-}
-
-function companyKey(value) {
-    const name = String(value ?? "").trim();
-    return name === "null" ? "" : name;
-}
-
-function licenseIdKey(value) {
-    const id = String(value ?? "").trim();
-    return id === "" ? "0" : id;
 }
 
 function renderFooter() {
@@ -383,7 +373,7 @@ function handleClick(event) {
     if (license) {
         answerAndRender("owner", {
             company: license.dataset.licenseCompany || "",
-            licenseId: license.dataset.licenseId || "0",
+            licenseId: license.dataset.licenseId || "",
         });
     }
 }
@@ -489,7 +479,7 @@ async function loadWizardGateways() {
         imei: String(device.imei || "").toLowerCase(),
         model: device.model || "",
         image: device.image || "",
-        company: device.company || "",
+        company: device.company ?? "",
         licenseId: device.licenseId ?? "",
     }));
 }
@@ -508,8 +498,7 @@ export async function createDeviceFromWizard(answers) {
         answers.model.supplier,
         answers.model.model,
         answers.type,
-        // Sem empresa não há licença, e a whitelist escreve-o "0".
-        String(answers.owner?.licenseId || "0"),
+        String(answers.owner?.licenseId ?? ""),
         fields.sim ? String(answers.sim || "") : "",
         byImei ? "" : identity,
         "",

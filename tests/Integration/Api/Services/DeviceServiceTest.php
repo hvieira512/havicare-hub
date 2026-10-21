@@ -141,7 +141,7 @@ final class DeviceServiceTest extends MysqlDashboardTestCase
             'imei' => '861265061009877',
             'supplier' => 'Vivistar',
             'model' => 'L08 Pro',
-            'licenseId' => '0',
+            'licenseId' => null,
         ]);
 
         self::assertSame('ok', $result['status'] ?? null);

@@ -27,7 +27,7 @@ final class DashboardApiTenancyTest extends DashboardHttpTestCase
                 'supplier' => 'Vivistar',
                 'model' => 'L08 Pro',
                 'deviceType' => 'watch',
-                'licenseId' => '0',
+                'licenseId' => null,
             ], JSON_THROW_ON_ERROR)
         ));
         $body = json_decode((string)$response->getBody(), true, 512, JSON_THROW_ON_ERROR);

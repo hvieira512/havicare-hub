@@ -5,7 +5,7 @@ import {
 } from "../api/index.js";
 import { ensureCapabilityCatalog } from "../capability-catalog.js";
 import { apiError, confirmDestructive } from "../dialogs.js";
-import { clearInvalid, markInvalid } from "../validation.js";
+import { clearInvalid, markApiFields } from "../validation.js";
 import { ensureLicensesLoaded } from "../licenses.js";
 import {
     deviceTypeCardsHtml,
@@ -180,7 +180,7 @@ export async function editDevice(imei, supplier, model) {
     syncDeleteFooterButton();
     renderDeviceTypeSelector("watch");
     els.deviceCompany.value = "";
-    els.deviceLicenseId.value = "0";
+    els.deviceLicenseId.value = "";
     resetEditWizard([]);
     await renderDeviceSelectors(supplier, model);
     renderDeviceSimNumberField("");
@@ -206,8 +206,7 @@ export async function editDevice(imei, supplier, model) {
         const device = detail.device || {};
         const deviceModel = detail.model;
         const deviceType = String(deviceModel?.deviceType || "watch");
-        const licenseId = String(device.licenseId || "0");
-        const deviceCompany = String(device.company || "");
+        const licenseId = String(device.licenseId ?? "");
         renderDeviceTypeSelector(deviceType);
         await renderDeviceSelectors(
             String(deviceModel?.supplier || supplier),
@@ -215,8 +214,7 @@ export async function editDevice(imei, supplier, model) {
             deviceType,
         );
         if (superseded()) return;
-        // `null` é como a base de dados escreve "sem empresa": não é um nome.
-        els.deviceCompany.value = deviceCompany === "null" ? "" : deviceCompany;
+        els.deviceCompany.value = device.company ?? "";
         els.deviceLicenseId.value = licenseId;
         state.deviceModal.deviceType = normalizeDeviceType(deviceType);
         state.deviceModal.licenseId = licenseId;
@@ -257,14 +255,11 @@ function renderDeviceModalIdentity(device, deviceModel, deviceType) {
     const commercial = String(deviceModel?.commercialName || deviceModel?.internalModel || "");
     const supplier = String(deviceModel?.supplier || "");
     const company = companyLabel(device?.company);
-    const licenseId = String(device?.licenseId || "0");
     const online = Boolean(device?.online);
     const meta = [
         deviceTypeLabel(normalizeDeviceType(deviceType)),
         supplierModelLabel(supplier, commercial),
-        licenseId !== "0" && licenseId !== ""
-            ? `${company} / ${licenseId}`
-            : company,
+        device?.licenseId ? `${company} / ${device.licenseId}` : company,
     ].filter((part) => part !== "");
 
     // O estado é um ponto e não uma pastilha, para a linha caber; quem não vê o ponto lê a palavra.
@@ -396,7 +391,7 @@ export async function syncDeviceModalContext(loadCatalog = false) {
     state.deviceModal.capabilityCatalog = await ensureCapabilityCatalog(
         state.deviceModal.deviceType,
     );
-    state.deviceModal.licenseId = els.deviceLicenseId.value.trim() || "0";
+    state.deviceModal.licenseId = els.deviceLicenseId.value.trim();
     state.deviceModal.simNumber = deviceSimNumber();
     state.deviceModal.deviceId = els.deviceDeviceId?.value.trim() || "";
 }
@@ -442,18 +437,7 @@ export async function saveDevice() {
 
     if (classificationIsMissing(supplier, model)) return;
 
-    if (identifiedByImei) {
-        if (!imei) {
-            markInvalid(els.deviceImei, "O IMEI é obrigatório");
-            return;
-        }
-    } else {
-        if (!deviceId) {
-            markInvalid(els.deviceDeviceId, "O ID do dispositivo é obrigatório");
-            return;
-        }
-        imei = deviceId;
-    }
+    if (!identifiedByImei) imei = deviceId;
 
     if (fields.sim) {
         try {
@@ -468,16 +452,10 @@ export async function saveDevice() {
     }
 
     const originalImei = els.deviceImei.dataset.originalImei;
-    const company = els.deviceCompany.value || "null";
+    const company = els.deviceCompany.value;
     const desiredGatewayKeys = linksToGateway(deviceType, state.deviceModal.protocol)
         ? selectedGatewayKeys()
         : [];
-    if (deviceType !== "watch" && (licenseId === "" || licenseId === "0")) {
-        setDeviceFormError(
-            "É necessário selecionar uma licença para este tipo de dispositivo",
-        );
-        return;
-    }
 
     const result = await apiSaveDevice(
         imei,
@@ -491,7 +469,10 @@ export async function saveDevice() {
         company,
     );
     if (result.error) {
-        setDeviceFormError(apiError(result));
+        const identity = identifiedByImei ? els.deviceImei : els.deviceDeviceId;
+        if (!markApiFields(result, (field) => ({ imei: identity, deviceId: els.deviceDeviceId })[field])) {
+            setDeviceFormError(apiError(result));
+        }
         return;
     }
 

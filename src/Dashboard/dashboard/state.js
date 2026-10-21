@@ -9,7 +9,7 @@ export function blankDeviceModal(overrides = {}) {
         detailLoaded: false,
         imei: "",
         deviceType: "watch",
-        licenseId: "0",
+        licenseId: "",
         simNumber: "",
         deviceId: "",
         linkedGatewayKeys: [],

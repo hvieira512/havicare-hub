@@ -202,7 +202,7 @@ final class DevicePaths
                     'responses' => Responses::map(
                         [
                             '200' => Responses::json(
-                                'Device association updated. If the company exists but the requested license does not, the license is created automatically for that company.',
+                                'Device association updated. When a hub admin names an existing company with a license it does not have yet, that license is created; a license client can only associate to its own existing license.',
                                 'DeviceAssociationResponse',
                             ),
                         ],

@@ -47,22 +47,17 @@ export function deviceTypeShortLabel(deviceType) {
     return DEVICE_TYPES[deviceType]?.shortLabel || deviceTypeLabel(deviceType);
 }
 
-export function normalizeLicenseId(licenseId) {
-    const value = String(licenseId ?? "0").trim();
-    return value === "" ? "0" : value;
-}
-
 export function companyLabel(company) {
     const value = String(company ?? "").trim();
-    return value === "" || value === "null" ? "Sem empresa" : value;
+    return value === "" ? "Sem empresa" : value;
 }
 
 export function licenseDisplayLabel(
     licenseId,
     licenses = [],
 ) {
-    const normalized = normalizeLicenseId(licenseId);
-    if (normalized === "0") {
+    const normalized = String(licenseId ?? "").trim();
+    if (normalized === "") {
         return "Sem Licença";
     }
 

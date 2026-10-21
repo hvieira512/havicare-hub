@@ -20,7 +20,7 @@ final class DeviceListApiTest extends MysqlDashboardTestCase
             'supplier' => '4P Touch',
             'model' => 'D46',
             'deviceType' => 'watch',
-            'licenseId' => '0',
+            'licenseId' => null,
             'deviceId' => '',
         ]);
 

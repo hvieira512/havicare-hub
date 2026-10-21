@@ -180,11 +180,15 @@ final class DeviceSchemas
                                 'items' => [
                                     'type' => 'object',
                                     'properties' => [
-                                        // A chave do fabricante, e também o `regionId` que a
+                                        // A chave do fabricante, e também o `areaId` que a
                                         // telemetria de presença reporta.
                                         'key' => ['type' => 'integer', 'example' => 0],
-                                        'type' => ['type' => 'integer', 'example' => 5],
-                                        'name' => ['type' => 'string', 'example' => 'Cama 1'],
+                                        'type' => [
+                                            'type' => 'string',
+                                            'enum' => ['custom', 'bed', 'interference', 'door', 'monitoring_bed', 'alarm_area', 'furniture'],
+                                            'example' => 'monitoring_bed',
+                                        ],
+                                        'name' => ['type' => 'string', 'nullable' => true, 'example' => 'Cama 1'],
                                         'xMinDm' => ['type' => 'integer', 'example' => -20],
                                         'yMinDm' => ['type' => 'integer', 'example' => -8],
                                         'xMaxDm' => ['type' => 'integer', 'example' => -11],
@@ -193,6 +197,7 @@ final class DeviceSchemas
                                 ],
                             ],
                             'fetchedAt' => ['type' => 'string', 'nullable' => true],
+                            'maxAreas' => ['type' => 'integer', 'description' => 'How many areas the radar keeps.', 'example' => 16],
                         ],
                     ],
                 ],
@@ -387,7 +392,7 @@ final class DeviceSchemas
             // com o corpo: criar a licença em falta.
             'DeviceAssociationRequest' => array_merge(
                 SchemaFromRequest::schema(DeviceAssociationRequest::class),
-                ['description' => 'Associates the device to an existing company and license. If the company exists but the license row does not, the hub creates the license automatically using the requested licenseId.'],
+                ['description' => 'Associates the device to a company and license. Only a hub admin may name a license the company does not have yet, and the hub then creates it; for a license client the license must already exist.'],
             ),
             'DeviceAssociationResponse' => [
                 'type' => 'object',

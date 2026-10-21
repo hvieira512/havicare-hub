@@ -407,11 +407,11 @@ class DeviceService
         $model = trim($request->model);
         $modelRecord = $this->directory->modelForSupplierAndName($supplier, $model);
         $deviceType = DeviceMetadata::normalizeDeviceType((string)($modelRecord['device_type'] ?? $request->deviceType));
-        $licenseId = $this->directory->normalizeLicenseId((string)$request->licenseId, $deviceType);
+        $licenseId = $request->licenseId ?? 0;
         $simNumber = trim($request->simNumber);
         $deviceId = trim($request->deviceId);
         $company = DeviceMetadata::normalizeCompany($request->company);
-        $ownerError = self::ownerError($company, $licenseId);
+        $ownerError = self::ownerError($request);
         if ($ownerError !== null) {
             return $ownerError->toArray();
         }
@@ -471,11 +471,11 @@ class DeviceService
         $model = trim($request->model);
         $modelRecord = $this->directory->modelForSupplierAndName($supplier, $model);
         $deviceType = DeviceMetadata::normalizeDeviceType((string)($modelRecord['device_type'] ?? $request->deviceType));
-        $licenseId = $this->directory->normalizeLicenseId((string)$request->licenseId, $deviceType);
+        $licenseId = $request->licenseId ?? 0;
         $simNumber = trim($request->simNumber);
         $deviceId = trim($request->deviceId);
         $company = DeviceMetadata::normalizeCompany($request->company);
-        $ownerError = self::ownerError($company, $licenseId);
+        $ownerError = self::ownerError($request);
         if ($ownerError !== null) {
             return $audit->reject($ownerError, 'incomplete_owner');
         }
@@ -531,12 +531,13 @@ class DeviceService
         return ['status' => 'ok', 'imei' => $newImei];
     }
 
-    private static function ownerError(string $company, int $licenseId): ?ApiError
+    /** A empresa e a licença vão juntas: as duas, ou nenhuma. Dentro do hub, nenhuma é `'null'` e `0`. */
+    private static function ownerError(DeviceWriteRequest $request): ?ApiError
     {
-        if ($company === 'null' && $licenseId !== 0) {
+        if ($request->company === null && $request->licenseId !== null) {
             return ApiError::incompleteOwner('company');
         }
-        if ($company !== 'null' && $licenseId === 0) {
+        if ($request->company !== null && $request->licenseId === null) {
             return ApiError::incompleteOwner('licenseId');
         }
 
