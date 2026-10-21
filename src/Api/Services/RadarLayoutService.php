@@ -6,6 +6,7 @@ namespace Hub\Api\Services;
 
 use Hub\Api\Auth\ApiAuthContext;
 use Hub\Api\Http\ApiError;
+use Hub\Command\Configuration\Payload\QinglanstPayloadBuilder;
 use Hub\Domain\DeviceMetadata;
 use Hub\Infrastructure\Persistence\Repository\ApiDataAccess;
 use Hub\Ingress\Http\Qinglanst\RadarLayoutSync;
@@ -39,7 +40,7 @@ class RadarLayoutService
         if ($layout === null) {
             // Um radar por sincronizar não é um erro: é o estado em que todos nascem, e o
             // ecrã tem de saber desenhar o vazio em vez de um alarme.
-            return ['data' => ['configured' => false, 'room' => null, 'areas' => [], 'fetchedAt' => null]];
+            return ['data' => ['configured' => false, 'room' => null, 'areas' => [], 'fetchedAt' => null, 'maxAreas' => QinglanstPayloadBuilder::MAX_AREAS]];
         }
 
         return ['data' => [
@@ -47,6 +48,7 @@ class RadarLayoutService
             'room' => $layout['room'],
             'areas' => $layout['areas'],
             'fetchedAt' => $layout['fetchedAt'],
+            'maxAreas' => QinglanstPayloadBuilder::MAX_AREAS,
         ]];
     }
 

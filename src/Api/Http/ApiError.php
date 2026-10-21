@@ -61,6 +61,7 @@ final class ApiError
         'user_not_found' => 404,
         'device_exists' => 409,
         'incomplete_owner' => 422,
+        'invalid_radar_areas' => 422,
         'model_exists' => 409,
         'user_exists' => 409,
         // O nome de empresa repetido, que o `TenancyPaths` documenta como 409.
@@ -353,6 +354,16 @@ final class ApiError
             'company and licenseId go together',
             [$missing => ['company and licenseId go together']],
         );
+    }
+
+    /**
+     * As áreas de um radar que partem uma regra; cada motivo é um código.
+     *
+     * @param array<string, list<string>> $fields
+     */
+    public static function invalidRadarAreas(array $fields): self
+    {
+        return self::withFields('invalid_radar_areas', 'The radar areas break a placement rule', $fields);
     }
 
     public static function invalidRole(): self

@@ -36,7 +36,7 @@ final class DeviceConfigurationUpdateService
      * @param array<string, mixed>|null $modelRow
      * @param array<string, mixed> $metadata
      * @param array<string, mixed> $device
-     * @return array{results?: list<array<string, mixed>>, error?: array<string, string>}
+     * @return array{results?: list<array<string, mixed>>, error?: array<string, mixed>}
      */
     public function update(
         string $imei,
@@ -115,6 +115,16 @@ final class DeviceConfigurationUpdateService
                     'selectedNumbers' => $this->wonlexSosNumbers($payload),
                     'phonebookContacts' => $this->wonlexPhonebookContacts($currentByKey),
                 ];
+            }
+
+            if ($genericKey === 'radar_areas' && is_array($payload['items'] ?? null)) {
+                $violations = RadarAreaRules::violations(
+                    array_values($payload['items']),
+                    $this->db->radarLayouts->findByImei($imei)['room'] ?? null,
+                );
+                if ($violations !== []) {
+                    return ApiError::invalidRadarAreas($violations)->toArray();
+                }
             }
 
             // Uma ordem, não um valor: consome-se aqui e não chega ao que fica guardado.

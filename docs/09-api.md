@@ -534,12 +534,12 @@ mais curta de escrever.
 | **403** | `forbidden` |
 | **404** | `association_not_found`, `capability_not_found`, `company_not_found`, `denylist_not_found`, `license_not_found`, `model_not_found`, `not_found`, `notification_not_found`, `protocol_not_found`, `supplier_not_found`, `user_not_found` |
 | **409** | `device_exists`, `model_exists`, `user_exists`, `duplicate` |
-| **422** | `incomplete_owner` — um dispositivo tem empresa e licença, ou nenhuma; o `fields` diz a que falta |
+| **422** | `incomplete_owner` — um dispositivo tem empresa e licença, ou nenhuma; o `fields` diz a que falta · `invalid_radar_areas` — as áreas de um radar partem uma regra; o `fields` diz qual, por área (`items[i]`): `door_off_wall`, `outside_room`, `second_monitoring_bed`, ou `too_many_areas` na lista |
 | **429** | `too_many_attempts` |
 | **500** | `server_error` |
 | **503** | `too_many_streams` |
 
-São **45 códigos**. Um código não declarado responde com 400.
+São **46 códigos**. Um código não declarado responde com 400.
 
 Duas distinções relevantes:
 

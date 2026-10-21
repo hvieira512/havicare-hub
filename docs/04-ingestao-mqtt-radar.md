@@ -288,6 +288,12 @@ que o `getDeviceInfo` devolve: `modelNumber` 2, **HC2**, nos radares todos.
 | | `measure_boundary` *(ação)* | `enabled`: começar ou parar | `border` com −127 ou 127 nos quatro vértices |
 | | `read_device_state` *(ação)* | — | `deviceProp` |
 
+**As áreas cumprem regras que o servidor verifica** contra a sala da última
+planta sincronizada: a porta encosta a uma parede (até 20 cm), as outras áreas
+cabem nos limites de deteção, há no máximo uma cama de monitorização e no máximo
+16 áreas. Uma regra partida responde `422 invalid_radar_areas`, com o motivo por
+área no `fields`; a dashboard só o mostra (`src/Api/Services/RadarAreaRules.php`).
+
 **Cada escrita parte do que o radar tem.** O `QinglanstCloudCommands` lê o
 `deviceProp` e monta os pedidos sobre ele: o `threshold` leva sempre os sete
 números, porque um que falte volta ao valor de fábrica, e o `postureParams` é uma

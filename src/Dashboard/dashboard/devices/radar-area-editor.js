@@ -3,7 +3,6 @@ import { html, raw } from "../html.js";
 import { stateBadge } from "../components/state-badge.js";
 import {
     CREATABLE_TYPES,
-    MAX_AREAS,
     addArea,
     areaStatus,
     areaWarnings,
@@ -37,13 +36,16 @@ const clone = (areas) => areas.map((area) => ({ ...area }));
  * @param {object} options.scene      a cena da planta, já com a sala desenhada
  * @param {HTMLElement} options.host  o corpo do cartão, onde a tela está
  * @param {HTMLElement} options.canvas o contentor da tela
- * @param {{room: object, areas: Array<object>}} options.draft a planta do radar, no formato do contrato
- * @param {(items: Array<object>) => Promise<void>} options.onSend
+ * @param {{room: object, areas: Array<object>, maxAreas: number}} options.draft a planta do radar, como a API a dá
+ * @param {(items: Array<object>) => Promise<object>} options.onSend devolve a resposta da API
  */
 export function createAreaEditor({ scene, host, canvas, draft, onSend }) {
     const originals = clone(draft.areas);
     const originalByKey = new Map(originals.map((area) => [area.key, area]));
     const room = draft.room;
+    const maxAreas = draft.maxAreas;
+    // O que a API recusou no último envio; mexer na planta apaga-o.
+    let rejected = [];
     let areas = clone(originals);
     let history = [];
     let selectedKey = areas[0]?.key ?? null;
@@ -74,6 +76,7 @@ export function createAreaEditor({ scene, host, canvas, draft, onSend }) {
     }
 
     function commit(change) {
+        rejected = [];
         remember();
         change();
         render();
@@ -86,17 +89,13 @@ export function createAreaEditor({ scene, host, canvas, draft, onSend }) {
         render();
     }
 
-    function warnings() {
-        return areaWarnings(areas, room);
-    }
-
     function drawPlan() {
         scene.drawAreas(areas, {
             originals: new Map(areas
                 .filter((area) => areaStatus(area, originals) === "edited")
                 .map((area) => [area.key, originalByKey.get(area.key)])),
             selectedKey,
-            warnKeys: new Set(warnings().filter((warning) => warning.hard).map((warning) => warning.key)),
+            warnKeys: new Set(rejected.map((warning) => warning.key)),
         });
     }
 
@@ -114,7 +113,7 @@ export function createAreaEditor({ scene, host, canvas, draft, onSend }) {
     }
 
     function renderTools() {
-        const full = firstFreeKey(areas) === null;
+        const full = firstFreeKey(areas, maxAreas) === null;
         tools.innerHTML = html`
             <div class="d-flex flex-wrap gap-2 flex-grow-1 min-w-0">${areas.map(chip)}</div>
             <div class="d-flex gap-2 flex-shrink-0">
@@ -190,15 +189,13 @@ export function createAreaEditor({ scene, host, canvas, draft, onSend }) {
     }
 
     function renderBottom() {
-        const list = warnings();
         const pending = pendingCount();
-        const tooMany = liveCount() > MAX_AREAS;
         bottom.innerHTML = html`
-            ${list.map((warning) => html`<div class="alert ${warning.hard ? "alert-danger" : "alert-warning"} small py-2 px-3 mb-0">${warning.text}</div>`)}
+            ${rejected.map((warning) => html`<div class="alert alert-danger small py-2 px-3 mb-0">${warning.text}</div>`)}
             <div class="d-flex align-items-center gap-2 flex-wrap border-top pt-3">
-                <span class="small text-secondary me-auto">${liveCount()} de ${MAX_AREAS} áreas · ${pending ? `${pending} por enviar` : "planta igual à do radar"}</span>
+                <span class="small text-secondary me-auto">${liveCount()} de ${maxAreas} áreas · ${pending ? `${pending} por enviar` : "planta igual à do radar"}</span>
                 <button type="button" class="btn btn-outline-secondary" data-area-reset${pending ? "" : raw(" disabled")}>Repor</button>
-                <button type="button" class="btn btn-primary" data-area-send${pending && !tooMany && !sending ? "" : raw(" disabled")}>${sending ? "A enviar" : "Enviar ao dispositivo"}</button>
+                <button type="button" class="btn btn-primary" data-area-send${pending && !sending ? "" : raw(" disabled")}>${sending ? "A enviar" : "Enviar ao dispositivo"}</button>
             </div>`;
     }
 
@@ -234,11 +231,15 @@ export function createAreaEditor({ scene, host, canvas, draft, onSend }) {
     async function send() {
         sending = true;
         renderBottom();
+        const items = draftItems(areas);
         try {
-            await onSend(draftItems(areas));
+            rejected = areaWarnings(await onSend(items), items, maxAreas);
         } finally {
             sending = false;
-            if (bottom.isConnected) renderBottom();
+            if (bottom.isConnected) {
+                drawPlan();
+                renderBottom();
+            }
         }
     }
 
@@ -252,7 +253,7 @@ export function createAreaEditor({ scene, host, canvas, draft, onSend }) {
         } else if (target.dataset.areaAdd !== undefined) {
             const center = [(room.xMinDm + room.xMaxDm) / 2, (room.yMinDm + room.yMaxDm) / 2];
             commit(() => {
-                areas = addArea(areas, Number(target.dataset.areaAdd), center);
+                areas = addArea(areas, Number(target.dataset.areaAdd), center, maxAreas);
                 selectedKey = areas.at(-1).key;
             });
         } else if ("areaUndo" in target.dataset) {

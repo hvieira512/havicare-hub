@@ -44,6 +44,7 @@ const ERROR_TEXT = {
     user_exists: "Já existe um utilizador com este nome.",
     duplicate: "Já existe uma empresa com este nome.",
     incomplete_owner: "A empresa e a licença vão juntas: escolha as duas, ou nenhuma.",
+    invalid_radar_areas: "As áreas não cumprem as regras do radar.",
     too_many_attempts: "Demasiadas tentativas. Espere um pouco e volte a tentar.",
     server_error: "Erro no servidor. Volte a tentar.",
     too_many_streams: "Há demasiadas ligações abertas. Feche um separador e volte a tentar.",
