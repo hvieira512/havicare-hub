@@ -46,6 +46,11 @@ export function deviceTypeLabel(deviceType) {
     );
 }
 
+/** O nome que cabe num mosaico estreito; sem `shortLabel` no catálogo, é o nome inteiro. */
+export function deviceTypeShortLabel(deviceType) {
+    return DEVICE_TYPES[deviceType]?.shortLabel || deviceTypeLabel(deviceType);
+}
+
 export function normalizeLicenseId(licenseId) {
     const value = String(licenseId ?? "0").trim();
     return value === "" ? "0" : value;

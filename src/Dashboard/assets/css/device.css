@@ -490,10 +490,9 @@
     }
 }
 
-/* O mosaico de tipos: o mesmo do assistente de "Adicionar dispositivo", a duas colunas
-   porque é o que cabe numa coluna de 4/12. */
+/* O mosaico de tipos na coluna 4/12 do selector: três por linha, com o nome curto do catálogo. */
 .device-type-grid {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 /* A mesma grelha fora da coluna estreita do selector, com mais colunas onde há largura. */

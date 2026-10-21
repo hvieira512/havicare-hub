@@ -49,6 +49,7 @@
     },
     "diaper_sensor": {
         "label": "Medidor de fraldas",
+        "shortLabel": "Fraldas",
         "icon": "fa-droplet",
         "identity": {
             "field": "deviceId",
@@ -84,6 +85,7 @@
     },
     "pill_dispenser": {
         "label": "Dispensador de comprimidos",
+        "shortLabel": "Dispensador",
         "icon": "fa-pills",
         "identity": {
             "field": "deviceId",

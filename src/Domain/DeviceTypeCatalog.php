@@ -16,7 +16,7 @@ final class DeviceTypeCatalog
     private static ?array $cache = null;
 
     /**
-     * @return array<string, array{label: string, icon: string, identity: array{field: string, label: string, help: string, placeholder: string}, sim: bool, gatewayLinks: bool}>
+     * @return array<string, array{label: string, shortLabel?: string, icon: string, identity: array{field: string, label: string, help: string, placeholder: string}, sim: bool, gatewayLinks: bool}>
      */
     public static function all(): array
     {
