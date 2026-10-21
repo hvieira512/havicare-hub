@@ -6,16 +6,17 @@ namespace Hub\Location;
 
 final class PrivateRadioMap
 {
+    private const MINIMUM_MATCHES = 2;
+    private const MAXIMUM_LEARNING_ACCURACY_METERS = 100.0;
+    private const DEFAULT_GPS_ACCURACY_METERS = 50.0;
+    private const MINIMUM_SATELLITES = 4;
+    private const MAXIMUM_OBSERVATION_DISTANCE_METERS = 250.0;
+    private const CLUSTER_RADIUS_METERS = 150.0;
+
     public function __construct(
         private readonly PrivateRadioMapStoreContract $store,
         private readonly BeaconDbRequestBuilder $requestBuilder,
         private readonly string $hashKey,
-        private readonly int $minimumMatches = 2,
-        private readonly float $maximumLearningAccuracyMeters = 100.0,
-        private readonly float $defaultGpsAccuracyMeters = 50.0,
-        private readonly int $minimumSatellites = 4,
-        private readonly float $maximumObservationDistanceMeters = 250.0,
-        private readonly float $clusterRadiusMeters = 150.0,
         private readonly float $maximumResolutionAccuracyMeters = 500.0,
     ) {
     }
@@ -56,7 +57,7 @@ final class PrivateRadioMap
                     $fix['lat'],
                     $fix['lon'],
                 );
-                if (($current['conflicted'] ?? false) || $distance > $this->maximumObservationDistanceMeters) {
+                if (($current['conflicted'] ?? false) || $distance > self::MAXIMUM_OBSERVATION_DISTANCE_METERS) {
                     $current['conflicted'] = true;
                     $current['observationCount'] = max(1, (int)($current['observationCount'] ?? 1)) + 1;
                     $current['lastSeenAt'] = $now;
@@ -81,7 +82,7 @@ final class PrivateRadioMap
                     'accuracyMeters' => $boundedAccuracy,
                     'observationCount' => $newCount,
                     'source' => 'learned',
-                    'conflicted' => $boundedAccuracy > $this->maximumObservationDistanceMeters,
+                    'conflicted' => $boundedAccuracy > self::MAXIMUM_OBSERVATION_DISTANCE_METERS,
                     'firstSeenAt' => (string)($current['firstSeenAt'] ?? $now),
                     'lastSeenAt' => $now,
                 ];
@@ -124,8 +125,8 @@ final class PrivateRadioMap
         $wifi = isset($request['wifiAccessPoints']) && is_array($request['wifiAccessPoints'])
             ? $request['wifiAccessPoints']
             : [];
-        if (count($wifi) < $this->minimumMatches) {
-            throw new \InvalidArgumentException("At least {$this->minimumMatches} valid BSSIDs are required");
+        if (count($wifi) < self::MINIMUM_MATCHES) {
+            throw new \InvalidArgumentException(sprintf('At least %d valid BSSIDs are required', self::MINIMUM_MATCHES));
         }
 
         $now = gmdate('Y-m-d H:i:s');
@@ -169,7 +170,7 @@ final class PrivateRadioMap
         $wifi = isset($request['wifiAccessPoints']) && is_array($request['wifiAccessPoints'])
             ? $request['wifiAccessPoints']
             : [];
-        if (count($wifi) < $this->minimumMatches) {
+        if (count($wifi) < self::MINIMUM_MATCHES) {
             return null;
         }
 
@@ -182,12 +183,12 @@ final class PrivateRadioMap
                 && $this->validCoordinates((float)($entry['lat'] ?? 0.0), (float)($entry['lon'] ?? 0.0))
                 && (float)($entry['accuracyMeters'] ?? 0.0) > 0.0,
         ));
-        if (count($candidates) < $this->minimumMatches) {
+        if (count($candidates) < self::MINIMUM_MATCHES) {
             return null;
         }
 
         $cluster = $this->largestCluster($candidates);
-        if (count($cluster) < $this->minimumMatches) {
+        if (count($cluster) < self::MINIMUM_MATCHES) {
             return null;
         }
 
@@ -242,7 +243,7 @@ final class PrivateRadioMap
                         (float)$anchor['lon'],
                         (float)$candidate['lat'],
                         (float)$candidate['lon'],
-                    ) <= $this->clusterRadiusMeters
+                    ) <= self::CLUSTER_RADIUS_METERS
                 ) {
                     $cluster[] = $candidate;
                 }
@@ -296,15 +297,15 @@ final class PrivateRadioMap
         $accuracy = $data['accuracyMeters'] ?? null;
         if (is_numeric($accuracy) && (float)$accuracy > 0.0) {
             $accuracy = (float)$accuracy;
-            if ($accuracy > $this->maximumLearningAccuracyMeters) {
+            if ($accuracy > self::MAXIMUM_LEARNING_ACCURACY_METERS) {
                 return null;
             }
         } else {
             $satellites = is_numeric($data['satelliteCount'] ?? null) ? (int)$data['satelliteCount'] : 0;
-            if ($satellites < $this->minimumSatellites) {
+            if ($satellites < self::MINIMUM_SATELLITES) {
                 return null;
             }
-            $accuracy = $this->defaultGpsAccuracyMeters;
+            $accuracy = self::DEFAULT_GPS_ACCURACY_METERS;
         }
 
         return ['lat' => $lat, 'lon' => $lon, 'accuracyMeters' => $accuracy];

@@ -30,30 +30,30 @@ final class GatewayIngressConfigTest extends TestCase
         putenv("{$name}={$value}");
     }
 
-    public function testTheDeployedEnvironmentVariablesKeepWorking(): void
+    public function testTheOldMokoNamesAreNotRead(): void
     {
-        // As duas máquinas têm `MOKO_GATEWAY_*` no `.env`, e deixar de as ler desligaria os gateways.
+        $this->env('GATEWAY_TOPIC_FILTER', '');
+        $this->env('GATEWAY_ENABLED', '');
         $this->env('MOKO_GATEWAY_TOPIC_FILTER', 'antigo/#');
-        $this->env('MOKO_GATEWAY_IDLE_TIMEOUT_SECONDS', '999');
+        $this->env('MOKO_GATEWAY_ENABLED', 'false');
 
         $config = Config::load()->all();
 
-        self::assertSame('antigo/#', $config['gateway']['topic_filter']);
-        self::assertSame(999, $config['gateway']['idle_timeout_seconds']);
+        self::assertSame('havicare-hub/null/0/gw/+/raw', $config['gateway']['topic_filter']);
+        self::assertTrue($config['gateway']['enabled']);
     }
 
-    public function testTheNewNameWinsWhenBothAreSet(): void
+    public function testTheIdleTimeoutDefaultsToWhatBothServersRun(): void
     {
-        $this->env('MOKO_GATEWAY_TOPIC_FILTER', 'antigo/#');
-        $this->env('GATEWAY_TOPIC_FILTER', 'novo/#');
+        $this->env('GATEWAY_IDLE_TIMEOUT_SECONDS', '');
 
-        self::assertSame('novo/#', Config::load()->all()['gateway']['topic_filter']);
+        self::assertSame(1500, Config::load()->all()['gateway']['idle_timeout_seconds']);
     }
 
     public function testTheGatewaySwitchIsWhatTheBraceletIngressFollows(): void
     {
         // As pulseiras Veepoo são retransmitidas pelo gateway, e por isso a variável leva o nome dele.
-        $this->env('MOKO_GATEWAY_ENABLED', 'false');
+        $this->env('GATEWAY_ENABLED', 'false');
 
         self::assertFalse(Config::load()->all()['gateway']['enabled']);
     }

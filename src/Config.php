@@ -8,7 +8,7 @@ namespace Hub;
  * @phpstan-type TcpIngressConfig array{host: string, port: int}
  * @phpstan-type DashboardConfig array{cors_allowed_origins: list<string>, host: string, port: int, api_auth_required: bool, api_token_ttl_seconds: int, api_refresh_token_ttl_seconds: int, history_limit: int, command_timeout_seconds: int, device_idle_timeout_seconds: int, max_open_streams: int, max_open_streams_per_user: int, login_max_per_address: int, login_max_per_username: int, login_max_global: int}
  * @phpstan-type HubRuntimeConfig array{downlink_queue_ttl_seconds: int, whitelist_file: string}
- * @phpstan-type LocationResolutionConfig array{enabled: bool, endpoint: string, user_agent: string, timeout_seconds: float, max_accuracy_meters: float, cache_ttl_seconds: int, failure_cache_ttl_seconds: int, max_concurrency: int, max_queue: int, circuit_failure_threshold: int, circuit_open_seconds: int, rate_limit_open_seconds: int, radio_map_enabled: bool, radio_map_hash_key: string, radio_map_minimum_matches: int, radio_map_maximum_learning_accuracy_meters: float, radio_map_default_gps_accuracy_meters: float, radio_map_minimum_satellites: int, radio_map_maximum_observation_distance_meters: float, radio_map_cluster_radius_meters: float, radio_map_cache_ttl_seconds: int}
+ * @phpstan-type LocationResolutionConfig array{enabled: bool, endpoint: string, user_agent: string, timeout_seconds: float, max_accuracy_meters: float, cache_ttl_seconds: int, failure_cache_ttl_seconds: int, max_concurrency: int, max_queue: int, circuit_failure_threshold: int, circuit_open_seconds: int, rate_limit_open_seconds: int, radio_map_enabled: bool, radio_map_hash_key: string}
  * @phpstan-type NcsConfig array{enabled: bool, topic_filter: string}
  * @phpstan-type GatewayConfig array{enabled: bool, topic_filter: string, dedupe_ttl_seconds: int, telemetry_refresh_seconds: int, idle_timeout_seconds: int}
  * @phpstan-type QinglanstConfig array{enabled: bool, host: string, port: int, username: string, password: string, topic_filter: string, client_id_prefix: string, tls_enabled: bool, tls_verify_peer: bool, tls_ca_file: string, tls_cert_file: string, tls_key_file: string, dashboard_seen_min_interval_ms: int, stats_flush_seconds: int, idle_timeout_seconds: int}
@@ -29,47 +29,35 @@ class Config
         $this->data = $data;
     }
 
-    /**
-     * Uma definição da ingestão de gateways, pelo nome novo ou pelo antigo `MOKO_GATEWAY_*` que
-     * as máquinas têm no `.env`. Um filtro de tópicos vazio não dá erro, só não recebe nada.
-     */
-    private static function gatewayEnv(string $suffix, string $default): string
+    /** Um booleano do ambiente; vazio ou ilegível vale o `$default`. */
+    public static function flag(string $name, bool $default): bool
     {
-        foreach (["GATEWAY_{$suffix}", "MOKO_GATEWAY_{$suffix}"] as $name) {
-            $value = getenv($name);
-            if ($value !== false && trim((string)$value) !== '') {
-                return (string)$value;
-            }
-        }
+        return match (strtolower(trim((string)getenv($name)))) {
+            '1', 'true', 'yes', 'on' => true,
+            '0', 'false', 'no', 'off' => false,
+            default => $default,
+        };
+    }
 
-        return $default;
+    /** Um valor do ambiente; vazio vale o `$default`, mas o `'0'` conta. */
+    private static function env(string $name, string $default): string
+    {
+        $value = trim((string)getenv($name));
+
+        return $value === '' ? $default : $value;
     }
 
     public static function load(): self
     {
-        $mqttTlsEnabledRaw = strtolower(trim((string)(getenv('MQTT_TLS_ENABLED') ?: 'false')));
-        $mqttTlsEnabled = in_array($mqttTlsEnabledRaw, ['1', 'true', 'yes', 'on'], true);
-        $mqttTlsVerifyPeerRaw = strtolower(trim((string)(getenv('MQTT_TLS_VERIFY_PEER') ?: 'true')));
-        $mqttTlsVerifyPeer = in_array($mqttTlsVerifyPeerRaw, ['1', 'true', 'yes', 'on'], true);
+        $mqttTlsEnabled = self::flag('MQTT_TLS_ENABLED', false);
+        $mqttTlsVerifyPeer = self::flag('MQTT_TLS_VERIFY_PEER', true);
         // O radar publica no mesmo broker que o hub e herda a postura de TLS dele; o
         // `QINGLANST_MQTT_TLS_ENABLED` é para quando deixarem de ser o mesmo servidor.
-        $qinglanstTlsRaw = trim((string)(getenv('QINGLANST_MQTT_TLS_ENABLED') ?: ''));
-        $qinglanstTlsEnabled = $qinglanstTlsRaw === ''
-            ? $mqttTlsEnabled
-            : in_array(strtolower($qinglanstTlsRaw), ['1', 'true', 'yes', 'on'], true);
-        $dashboardApiAuthRequiredRaw = strtolower(trim((string)(getenv('DASHBOARD_API_AUTH_REQUIRED') ?: 'true')));
-        $dashboardApiAuthRequired = in_array($dashboardApiAuthRequiredRaw, ['1', 'true', 'yes', 'on'], true);
+        $qinglanstTlsEnabled = self::flag('QINGLANST_MQTT_TLS_ENABLED', $mqttTlsEnabled);
         $downlinkQueueTtlRaw = getenv('DOWNLINK_QUEUE_TTL_SECONDS');
         $downlinkQueueTtl = $downlinkQueueTtlRaw === false || trim((string)$downlinkQueueTtlRaw) === ''
             ? 300
             : max(1, (int)$downlinkQueueTtlRaw);
-        $locationResolutionEnabledEnv = getenv('LOCATION_RESOLUTION_ENABLED');
-        $locationResolutionEnabledRaw = strtolower(trim((string)(
-            $locationResolutionEnabledEnv === false || trim((string)$locationResolutionEnabledEnv) === ''
-                ? 'true'
-                : $locationResolutionEnabledEnv
-        )));
-        $locationResolutionEnabled = in_array($locationResolutionEnabledRaw, ['1', 'true', 'yes', 'on'], true);
         $beaconDbCacheTtlEnv = getenv('BEACONDB_CACHE_TTL_SECONDS');
         $beaconDbCacheTtl = $beaconDbCacheTtlEnv === false || trim((string)$beaconDbCacheTtlEnv) === ''
             ? 86400
@@ -92,7 +80,7 @@ class Config
             'dashboard' => [
                 'host' => getenv('DASHBOARD_HOST') ?: '0.0.0.0',
                 'port' => (int)(getenv('DASHBOARD_PORT') ?: 8081),
-                'api_auth_required' => $dashboardApiAuthRequired,
+                'api_auth_required' => self::flag('DASHBOARD_API_AUTH_REQUIRED', true),
                 'api_token_ttl_seconds' => (int)(getenv('DASHBOARD_API_TOKEN_TTL_SECONDS') ?: 3600),
                 'api_refresh_token_ttl_seconds' => (int)(getenv('DASHBOARD_API_REFRESH_TOKEN_TTL_SECONDS') ?: 2592000),
                 'history_limit' => (int)(getenv('DASHBOARD_HISTORY_LIMIT') ?: 100),
@@ -122,7 +110,7 @@ class Config
                 'whitelist_file' => getenv('WHITELIST_FILE') ?: '',
             ],
             'location_resolution' => [
-                'enabled' => $locationResolutionEnabled,
+                'enabled' => self::flag('LOCATION_RESOLUTION_ENABLED', true),
                 'endpoint' => getenv('BEACONDB_ENDPOINT') ?: 'https://api.beacondb.net/v1/geolocate',
                 'user_agent' => getenv('BEACONDB_USER_AGENT') ?: 'Havicare Hub/1.0',
                 'timeout_seconds' => max(0.1, (float)(getenv('BEACONDB_TIMEOUT_SECONDS') ?: 2.0)),
@@ -134,34 +122,27 @@ class Config
                 'circuit_failure_threshold' => $locationCircuitFailureThreshold,
                 'circuit_open_seconds' => $locationCircuitOpenSeconds,
                 'rate_limit_open_seconds' => $locationRateLimitOpenSeconds,
-                'radio_map_enabled' => !in_array(strtolower(trim((string)(getenv('RADIO_MAP_ENABLED') ?: 'true'))), ['0', 'false', 'no', 'off'], true),
+                'radio_map_enabled' => self::flag('RADIO_MAP_ENABLED', true),
                 'radio_map_hash_key' => getenv('RADIO_MAP_HASH_KEY') ?: '',
-                'radio_map_minimum_matches' => max(2, (int)(getenv('RADIO_MAP_MINIMUM_MATCHES') ?: 2)),
-                'radio_map_maximum_learning_accuracy_meters' => max(1.0, (float)(getenv('RADIO_MAP_MAXIMUM_LEARNING_ACCURACY_METERS') ?: 100.0)),
-                'radio_map_default_gps_accuracy_meters' => max(1.0, (float)(getenv('RADIO_MAP_DEFAULT_GPS_ACCURACY_METERS') ?: 50.0)),
-                'radio_map_minimum_satellites' => max(3, (int)(getenv('RADIO_MAP_MINIMUM_SATELLITES') ?: 4)),
-                'radio_map_maximum_observation_distance_meters' => max(25.0, (float)(getenv('RADIO_MAP_MAXIMUM_OBSERVATION_DISTANCE_METERS') ?: 250.0)),
-                'radio_map_cluster_radius_meters' => max(10.0, (float)(getenv('RADIO_MAP_CLUSTER_RADIUS_METERS') ?: 150.0)),
-                'radio_map_cache_ttl_seconds' => max(0, (int)(getenv('RADIO_MAP_CACHE_TTL_SECONDS') ?: 60)),
             ],
             'ncs' => [
-                'enabled' => !in_array(strtolower(trim((string)(getenv('NCS_ENABLED') ?: 'true'))), ['0', 'false', 'no', 'off'], true),
+                'enabled' => self::flag('NCS_ENABLED', true),
                 'topic_filter' => getenv('NCS_TOPIC_FILTER') ?: '/voerka/#',
             ],
             // A ingestão de gateways e não de um fornecedor: o espaço de tópicos `.../gw/` é do hub, e
             // leem-no a ingestão MOKO e a das pulseiras Veepoo.
             'gateway' => [
-                'enabled' => !in_array(strtolower(trim((string)self::gatewayEnv('ENABLED', 'true'))), ['0', 'false', 'no', 'off'], true),
-                'topic_filter' => self::gatewayEnv('TOPIC_FILTER', 'havicare-hub/null/0/gw/+/raw'),
+                'enabled' => self::flag('GATEWAY_ENABLED', true),
+                'topic_filter' => self::env('GATEWAY_TOPIC_FILTER', 'havicare-hub/null/0/gw/+/raw'),
                 // A dev lê os gateways reais: com isto a `false`, não lhes escreve.
-                'commands_enabled' => !in_array(strtolower(trim((string)self::gatewayEnv('COMMANDS_ENABLED', 'true'))), ['0', 'false', 'no', 'off'], true),
-                'dedupe_ttl_seconds' => max(1, (int)self::gatewayEnv('DEDUPE_TTL_SECONDS', '5')),
-                'telemetry_refresh_seconds' => max(1, (int)self::gatewayEnv('TELEMETRY_REFRESH_SECONDS', '60')),
-                'idle_timeout_seconds' => max(10, (int)self::gatewayEnv('IDLE_TIMEOUT_SECONDS', '180')),
-                'raw_history_sample_seconds' => max(0, (int)self::gatewayEnv('RAW_HISTORY_SAMPLE_SECONDS', '30')),
+                'commands_enabled' => self::flag('GATEWAY_COMMANDS_ENABLED', true),
+                'dedupe_ttl_seconds' => max(1, (int)self::env('GATEWAY_DEDUPE_TTL_SECONDS', '5')),
+                'telemetry_refresh_seconds' => max(1, (int)self::env('GATEWAY_TELEMETRY_REFRESH_SECONDS', '60')),
+                'idle_timeout_seconds' => max(10, (int)self::env('GATEWAY_IDLE_TIMEOUT_SECONDS', '1500')),
+                'raw_history_sample_seconds' => max(0, (int)self::env('GATEWAY_RAW_HISTORY_SAMPLE_SECONDS', '30')),
             ],
             'qinglanst' => [
-                'enabled' => in_array(strtolower(trim((string)(getenv('QINGLANST_ENABLED') ?: 'false'))), ['1', 'true', 'yes', 'on'], true),
+                'enabled' => self::flag('QINGLANST_ENABLED', false),
                 'host' => getenv('QINGLANST_MQTT_HOST') ?: '',
                 'port' => (int)(getenv('QINGLANST_MQTT_PORT') ?: 1883),
                 'username' => getenv('QINGLANST_MQTT_USERNAME') ?: '',
@@ -183,7 +164,7 @@ class Config
                 'layout_sync_timeout_seconds' => max(1, (int)(getenv('QINGLANST_LAYOUT_SYNC_TIMEOUT_SECONDS') ?: 15)),
             ],
             'tuya' => [
-                'enabled' => in_array(strtolower(trim((string)(getenv('TUYA_ENABLED') ?: 'false'))), ['1', 'true', 'yes', 'on'], true),
+                'enabled' => self::flag('TUYA_ENABLED', false),
                 'access_id' => getenv('TUYA_ACCESS_ID') ?: '',
                 'access_secret' => getenv('TUYA_ACCESS_SECRET') ?: '',
                 'pulsar_url' => getenv('TUYA_PULSAR_URL') ?: 'wss://mqe.tuyaeu.com:8285/',
@@ -195,8 +176,8 @@ class Config
             'mqtt' => [
                 'host' => getenv('MQTT_HOST') ?: '',
                 'port' => (int)(getenv('MQTT_PORT') ?: 1883),
-                'username' => getenv('MQTT_USERNAME') ?: (getenv('MQTT_PUBLISHER_USERNAME') ?: ''),
-                'password' => getenv('MQTT_PASSWORD') ?: (getenv('MQTT_PUBLISHER_PASSWORD') ?: ''),
+                'username' => getenv('MQTT_USERNAME') ?: '',
+                'password' => getenv('MQTT_PASSWORD') ?: '',
                 'topic_prefix' => trim((string)(getenv('MQTT_TOPIC_PREFIX') ?: ''), '/'),
                 'client_id_prefix' => getenv('MQTT_CLIENT_ID_PREFIX') ?: 'health-mqtt',
                 'keepalive' => (int)(getenv('MQTT_KEEPALIVE') ?: 60),
