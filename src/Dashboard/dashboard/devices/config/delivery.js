@@ -1,10 +1,7 @@
 import { esc } from "../../format.js";
 import { stateBadge } from "../../components/state-badge.js";
 
-/**
- * O que aconteceu ao valor depois de o hub o guardar: guardar no hub e aplicar no aparelho
- * podem estar separados por dias.
- */
+/** O que aconteceu ao valor depois de o hub o guardar, que aplicá-lo pode levar dias. */
 
 const CONFIGURATION_DELIVERY_META = {
     pending_delivery: {
@@ -122,12 +119,8 @@ export function renderConfigurationDeliveryNotice(meta, delivery) {
         </div>`;
 }
 
-/**
- * Acerta no sítio a pastilha e o aviso de cada bloco: redesenhar a raiz deitaria fora o que
- * estivesse a meio de ser escrito noutro bloco.
- */
+/** Acerta no sítio a pastilha e o aviso de cada bloco, sem deitar fora o que se está a escrever. */
 export function patchConfigurationDeliveryStates(root, configurationSync) {
-    // As linhas entram a par das secções: um interruptor agrupado também tem pastilha.
     for (const section of root.querySelectorAll("[data-config-section], [data-config-row]")) {
         const key = section.dataset.capabilityKey || section.dataset.configKey || "";
         if (key === "") continue;
@@ -138,7 +131,6 @@ export function patchConfigurationDeliveryStates(root, configurationSync) {
             delivery,
         );
 
-        // Trocada inteira pela do componente, para a marcação ser uma só.
         const badge = section.querySelector(".state-badge");
         if (badge) {
             badge.outerHTML = stateBadge(meta.label, meta.tone);
@@ -158,8 +150,7 @@ export function patchConfigurationDeliveryStates(root, configurationSync) {
                 notice.outerHTML = noticeHtml;
             }
         } else if (noticeHtml !== "") {
-            // Onde o desenho o põe de origem: antes do formulário, ou da caixa de falha num
-            // cartão de acção.
+            // Onde o desenho o põe de origem.
             const anchor = section.querySelector("[data-config-form], [data-config-feedback-key]");
             if (anchor) {
                 anchor.insertAdjacentHTML("beforebegin", noticeHtml);
@@ -168,8 +159,7 @@ export function patchConfigurationDeliveryStates(root, configurationSync) {
             }
         }
 
-        // Decide se o «Enviar» reacende sem se mexer no valor; quem o reacende é o painel, que
-        // importa daqui.
+        // Lido pelo painel para reacender o «Enviar» sem se mexer no valor.
         section.dataset.configDelivery = String(delivery?.status || "");
     }
 }

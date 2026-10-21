@@ -11,11 +11,6 @@ import {
     readTextArray,
 } from "../readers.js";
 
-/**
- * Os campos que só o 4P Touch declara: o perfil de som, os alarmes do relógio, as janelas
- * horárias, o idioma com fuso, a chamada e a escuta.
- */
-
 function makeCallInput(entry, desired) {
     return html`
         <div>
@@ -219,10 +214,7 @@ function fallSensitivityLevelsInput(desired) {
         </div>`;
 }
 
-/**
- * A escala do firmware manda nos botões: os níveis acima dela saem da vista, e um valor que
- * ficasse fora da escala volta a um nível que ainda existe.
- */
+/** Os níveis acima da escala do firmware saem da vista, e um valor fora dela volta a um que existe. */
 export function syncFallSensitivityLevels(section, levels) {
     const totalLevels = parseInt(levels, 10);
     const buttons = section.querySelectorAll(
@@ -237,14 +229,12 @@ export function syncFallSensitivityLevels(section, levels) {
         button.disabled = !visible;
     });
 
-    // Com a escala por escolher o `totalLevels` é `NaN`, e nenhuma comparação é verdadeira:
-    // os botões ficam todos escondidos e o valor fica como está.
+    // Com a escala por escolher o `totalLevels` é `NaN`, e o valor fica como está.
     if (!(parseInt(currentInput?.value, 10) > totalLevels)) {
         return;
     }
 
-    // O maior que ainda existe, e não o primeiro à vista: o nível 1 é a sensibilidade
-    // **máxima**, e quem estava no 7 ou no 8 queria o oposto disso.
+    // O maior que ainda existe: o nível 1 é a sensibilidade máxima, o oposto de quem estava no 8.
     const lastEnabled = Array.from(buttons).findLast(
         (button) => !button.classList.contains("d-none") && !button.disabled,
     );
@@ -291,7 +281,6 @@ function timeRangeInput(desired) {
         </div>`;
 }
 
-/** Cada tipo de campo declara as suas faces juntas: desenhar, ler de volta e valor inicial. */
 export const INPUTS = {
     makeCall: {
         render: makeCallInput,

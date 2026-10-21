@@ -6,29 +6,21 @@ import { enabledSwitch, nextUid } from "./shared.js";
 import { selectOptions } from "./generic.js";
 import { readCheckbox, readText } from "../readers.js";
 
-/**
- * O dispensador tem **nove alarmes fixos**, que não se criam nem apagam: o formulário mostra
- * os nove, e o número do slot liga cada um ao estado que o aparelho reporta.
- */
+// Nove alarmes fixos, que não se criam nem apagam; o número do slot liga cada um ao reportado.
 
 const SLOTS = 9;
 
-/**
- * O «sem alarme» do M228, que ele devolve e aceita. A meia-noite não serve de vazio: um slot a
- * `00:00` toca e gasta um compartimento todos os dias.
- */
+/** O «sem alarme» do M228: um slot a `00:00` toca e gasta um compartimento todos os dias. */
 const UNSET_HOUR = 24;
 const UNSET_MINUTE = 60;
 
 const pad = (value) => String(value).padStart(2, "0");
 
-/** `HH:MM` para o seletor, ou vazio quando não há hora nenhuma para mostrar. */
 const toTimeValue = (hour, minute) =>
     hour === undefined || hour === null || hour >= UNSET_HOUR || minute >= UNSET_MINUTE
         ? ""
         : `${pad(hour)}:${pad(minute)}`;
 
-/** De `HH:MM` de volta a hora e minuto, que é o que as TAGs do aparelho levam. */
 const fromTimeValue = (value) => {
     const [hour, minute] = String(value ?? "").split(":");
     return { hour: Number(hour) || 0, minute: Number(minute) || 0 };
@@ -40,10 +32,7 @@ const timeField = (configField, hour, minute) =>
     html`<input class="form-control" type="time" data-config-field="${configField}"
         value="${(toTimeValue(hour, minute))}">`;
 
-/**
- * Sem interruptor: nesta firmware o `0x1041`--`0x1049` é inerte, e quem decide se há alarme é
- * a hora estar preenchida.
- */
+/** Sem interruptor: o `0x1041`--`0x1049` é inerte, e há alarme quando há hora. */
 const slotCell = (index, plan) =>
     html`
         <div class="col">
@@ -53,10 +42,8 @@ const slotCell = (index, plan) =>
             </div>
         </div>`;
 
-/** Sem rótulo próprio: o cartão da configuração já mostra «Plano de medicação» por cima. */
 function alarmsInput(entry, desired) {
-    // Pelo número do alarme, não pela posição na lista: pela posição, um plano só do alarme 5
-    // cai na primeira caixa e mostra um número que não é o dele.
+    // Pelo número do alarme e não pela posição: um plano só do alarme 5 cairia na primeira caixa.
     const bySlot = new Map(
         medicationPlanTimes(desired?.plans).map((entry) => [entry.slot, entry]),
     );
@@ -67,10 +54,7 @@ function alarmsInput(entry, desired) {
     return html`<div class="row row-cols-1 row-cols-sm-2 row-cols-xl-3 g-2">${raw(cells.join(""))}</div>`;
 }
 
-/**
- * Lê os nove slots e deixa cair os em branco. Cada plano leva o número do seu alarme, para a
- * lista compactada não escrever no slot errado.
- */
+/** Deixa cair os slots em branco; cada plano leva o número do seu alarme. */
 function readAlarms(section) {
     const plans = [];
     for (let index = 0; index < SLOTS; index++) {
@@ -93,10 +77,7 @@ function readAlarms(section) {
 const dateField = (name, value) =>
     html`<input class="form-control" type="date" data-config-field="${name}" value="${(String(value ?? ""))}">`;
 
-/**
- * A escala do volume, do mais alto (`0`) ao silêncio. Valores e rótulos vêm da definição; os
- * ícones e os tons ficam aqui porque são apresentação deste aparelho.
- */
+/** Do mais alto (`0`) ao silêncio; valores e rótulos vêm da definição, os ícones e tons daqui. */
 const VOLUME_STEPS = {
     0: { icon: "fa-volume-high", tone: "primary" },
     1: { icon: "fa-volume-low", tone: "secondary" },
@@ -112,14 +93,12 @@ function volumeScale(entry, desired) {
         field: name,
         value: desired?.[name] ?? fallback,
         label: entry.label || "Volume",
-        // Por valor e não por posição, para reordenar a definição não trocar os ícones.
         options: options.map((option) => ({ ...option, ...(VOLUME_STEPS[option.value] || {}) })),
     });
 }
 
 export const INPUTS = {
     volumeScale: {
-        // `render` e não `control`: a escala ocupa a largura do cartão, por baixo do título.
         render: volumeScale,
         read: (section) => {
             const node = section.querySelector("input[type=radio][data-config-field]:checked");

@@ -2,11 +2,6 @@ import { esc } from "../../format.js";
 import { normalizePhoneControl } from "../../phone.js";
 import { protocolPhonebookConstraints } from "./protocol-catalog.js";
 
-/**
- * Leitores partilhados, da secção desenhada ao payload. Um campo perdido aqui parece gravado;
- * a ida e volta prende-se no `config-payload-roundtrip.test.js`.
- */
-
 export function firstFieldName(section) {
     return (
         section.querySelector("[data-config-field]")?.dataset.configField ||

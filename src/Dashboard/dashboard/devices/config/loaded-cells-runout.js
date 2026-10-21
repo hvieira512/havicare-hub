@@ -1,15 +1,9 @@
-/**
- * A consequência de «Carregado até ao compartimento», por baixo do campo: com o plano e a
- * posição do prato, o número que se escreve vira a data em que a medicação acaba.
- */
+/** Com o plano e a posição do prato, o «Carregado até ao compartimento» vira a data em que a medicação acaba. */
 
 import { runoutAt, runoutLabel } from "../medication-runout.js";
 import { state } from "../../state.js";
 
-/**
- * O detalhe do aparelho que o modal mostra. O modal só tem a configuração: a telemetria vem do
- * selecionado, e só serve quando é o mesmo aparelho.
- */
+/** O modal só tem a configuração: a telemetria vem do selecionado, e só quando é o mesmo aparelho. */
 function modalDetail() {
     const detail = state.selectedDetail;
     return detail?.device?.imei === state.deviceModal.imei ? detail : null;
@@ -67,7 +61,6 @@ export function loadedCellsRunoutText(loaded, now = new Date()) {
         : `Com ${plans.length} ${plans.length === 1 ? "dose" : "doses"} por dia, acaba ${runoutLabel(when, now)}.`;
 }
 
-/** Reescreve a frase da linha enquanto se escreve no campo. */
 export function syncLoadedCellsRunout(input) {
     const target = input
         ?.closest("[data-config-row], [data-config-section]")

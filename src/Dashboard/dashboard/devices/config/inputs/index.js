@@ -7,10 +7,7 @@ import { INPUTS as scale } from "./scale.js";
 import { INPUTS as vivistar } from "./vivistar.js";
 import { INPUTS as wonlex } from "./wonlex.js";
 
-/**
- * Todos os tipos de campo, cada um com `render`, `read`, `defaults` e `help` juntos. Que tipo
- * cada protocolo declara diz-o `src/Command/Configuration/Definition/`.
- */
+/** Que tipo cada protocolo declara diz-o `src/Command/Configuration/Definition/`. */
 export const CONFIG_INPUTS = {
     ...generic,
     ...capability,

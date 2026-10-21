@@ -1,11 +1,6 @@
 import { html } from "../../html.js";
 
-/**
- * As formas dos campos de alarme, partilhadas por quem os desenha e por quem os lê. Vivem
- * aqui e não num dos dois lados porque importar um do outro fechava um ciclo.
- */
-
-/** A semana como se lê, e não como o fabricante a escreve. */
+/** De segunda a domingo; a posição do domingo é de cada fabricante e converte-se na fronteira. */
 const WEEKDAYS = [
     { value: 1, label: "Seg" },
     { value: 2, label: "Ter" },
@@ -16,10 +11,6 @@ const WEEKDAYS = [
     { value: 7, label: "Dom" },
 ];
 
-/**
- * O selector de dias, sempre de segunda a domingo: a posição do domingo é de cada fabricante,
- * e converte-se na fronteira.
- */
 export function weekdayPicker(days, rowId) {
     const checked = new Set(
         (Array.isArray(days) ? days : [])
@@ -62,7 +53,7 @@ export function weekdaysToFourPTouchMask(days) {
     return Array.from({ length: 7 }, (_, index) => (positions.has(index) ? "1" : "0")).join("");
 }
 
-/** O caminho de volta: da máscara do 4P Touch para os dias de 1 a 7. @returns {number[]} */
+/** Da máscara do 4P Touch para os dias de 1 a 7. */
 export function fourPTouchMaskToWeekdays(mask) {
     const raw = String(mask || "").trim();
     if (!/^[01]{7}$/.test(raw)) {
@@ -79,7 +70,6 @@ export function fourPTouchMaskToWeekdays(mask) {
     return days.sort((a, b) => a - b);
 }
 
-/** A recorrência em palavras, que é o que a linha fechada mostra em vez da máscara de dias. */
 export function recurrenceWords(kind, days) {
     if (kind !== "custom") {
         return kind === "daily" ? "todos os dias" : "uma vez";
@@ -93,10 +83,7 @@ export function recurrenceWords(kind, days) {
     return names.length > 0 ? names.join(", ") : "dias por escolher";
 }
 
-/**
- * A linha fechada de uma entrada de alarme: interruptor, título e valor à direita, com o
- * resto por baixo. O `name` agrupa as linhas da mesma lista e o browser fecha as outras.
- */
+/** O `name` agrupa as linhas da mesma lista, e o browser fecha as outras. */
 export function alarmDisclosure({ kind, group, control = "", summary: given, body, attrs = "" }) {
     const summary = alarmLineSlots(given);
 
@@ -128,7 +115,6 @@ function alarmLineSlots(summary) {
     };
 }
 
-/** O «acrescentar» de uma lista, com a conta do que lá está por baixo do texto. */
 export function addAlarmButton(kind, label, count, limit) {
     return html`
         <div>
@@ -138,7 +124,6 @@ export function addAlarmButton(kind, label, count, limit) {
         </div>`;
 }
 
-/** O rótulo do botão de rádio escolhido, que é o que o utilizador leu ao escolher. */
 function checkedLabel(row, selector) {
     const checked = row.querySelector(selector);
     if (!checked) return "";
@@ -149,10 +134,7 @@ const fieldValue = (row, selector) => String(row.querySelector(selector)?.value 
 
 const TAKE_PILLS_FREQUENCIES = { 1: "once", 2: "daily", 3: "custom" };
 
-/**
- * O que enche cada encaixe da linha fechada, por tipo de lista. Aqui, e não espalhado por
- * cada fornecedor: o que muda entre eles são os campos que declaram, não a gramática.
- */
+/** O que enche cada encaixe da linha fechada, por tipo de lista e não por fornecedor. */
 const ALARM_LINE_SUMMARIES = {
     alarm_clock: (row) => {
         const time = fieldValue(row, "[data-alarm-clock-field=\"time\"]");
@@ -186,7 +168,6 @@ const ALARM_LINE_SUMMARIES = {
     },
 };
 
-/** Volta a escrever a linha fechada a partir dos campos que estão abertos por baixo dela. */
 export function refreshAlarmLine(row) {
     const summarize = ALARM_LINE_SUMMARIES[row?.dataset?.repeatRow || ""];
     if (!summarize) return;
@@ -198,7 +179,6 @@ export function refreshAlarmLine(row) {
     }
 }
 
-/** O teclado edita os campos abertos, e a linha fechada por cima tem de acompanhá-los. */
 function refreshAlarmLineFrom(event) {
     const row = event.target?.closest?.("[data-repeat-row]");
     if (row) refreshAlarmLine(row);
@@ -223,7 +203,6 @@ export function normalizeAlarmClockRecurrenceKind(value) {
     return "once";
 }
 
-/** Os dias marcados, já na máscara que o 4P Touch espera. */
 export function readFourPTouchAlarmDays(row) {
     return weekdaysToFourPTouchMask(readWeekdays(row));
 }

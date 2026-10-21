@@ -1,9 +1,7 @@
 import { html } from "../../../html.js";
 import { boolValue } from "../normalizers.js";
 
-/** As peças que os campos de todos os fornecedores partilham. */
-
-/** Cresce por processo. Só tem de ser único dentro da página, não estável entre carregamentos. */
+/** Só tem de ser único dentro da página. */
 let uidCounter = 0;
 
 export function nextUid(prefix) {
@@ -11,10 +9,7 @@ export function nextUid(prefix) {
     return `${prefix}-${uidCounter}`;
 }
 
-/**
- * O `ariaLabel` serve os cartões que não desenham rótulo visível: o nome da definição está
- * no título da linha, e um campo sem nome nenhum não se lê a um leitor de ecrã.
- */
+/** O `ariaLabel` serve os cartões sem rótulo visível, que têm o nome no título da linha. */
 export const numberField = (
     configField,
     value,
@@ -24,8 +19,6 @@ export const numberField = (
     const ariaAttr = ariaLabel === "" ? "" : html` aria-label="${ariaLabel}"`;
     const input = html`<input class="form-control" type="number" min="${min}"${maxAttr} step="${step}" data-config-field="${configField}"${ariaAttr} value="${String(value)}">`;
 
-    // A unidade cola-se ao campo: no nome da definição ela obriga a ler duas coisas em
-    // sítios diferentes para saber uma.
     return unit === ""
         ? input
         : html`<div class="input-group${cls ? ` ${cls}` : ""}">${input}<span class="input-group-text">${unit}</span></div>`;
@@ -39,10 +32,7 @@ export function enabledSwitch(enabled, cls = "") {
         </div>`;
 }
 
-/**
- * Um interruptor e o intervalo dele, sem rótulo: o nome está na linha de cima e a unidade
- * colada ao campo.
- */
+/** Um interruptor e o intervalo dele, sem rótulo: o nome está na linha de cima. */
 export function intervalToggle(desired, field, { fallback, unit, bounds = {} }) {
     return html`
         <div class="d-flex align-items-center gap-3">
@@ -56,7 +46,6 @@ export function intervalToggle(desired, field, { fallback, unit, bounds = {} }) 
         </div>`;
 }
 
-/** A etiqueta ao lado do interruptor diz em que estado ele está. */
 export function syncSwitchLabel(input) {
     const label = input.parentElement?.querySelector("[data-switch-label]");
     if (!label) return;
@@ -66,7 +55,6 @@ export function syncSwitchLabel(input) {
         : label.dataset.switchOff || "Desligado";
 }
 
-/** Escreve cada campo do preset e recalcula qual dos botões fica aceso. */
 function applyConfigPreset(section, button) {
     let preset;
     try {
@@ -89,8 +77,7 @@ function applyConfigPreset(section, button) {
 }
 
 export function updateConfigChoice(section, button) {
-    // Um preset preenche vários campos de uma vez, como os dois inteiros da sensibilidade das
-    // fraldas; nenhum preset activo quer dizer valores próprios.
+    // Um preset preenche vários campos de uma vez; nenhum activo quer dizer valores próprios.
     if (button.dataset.configPreset) {
         applyConfigPreset(section, button);
         return;

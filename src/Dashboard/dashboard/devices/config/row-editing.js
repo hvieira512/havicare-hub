@@ -9,13 +9,8 @@ import { syncAlarmClockCustomVisibility } from "./inputs/capability.js";
 import { nextUid } from "./inputs/shared.js";
 
 /**
- * Linhas repetíveis de uma secção: `data-repeat-list="<tipo>"` no contentor, `data-repeat-row`
- * em cada linha e `data-repeat-limit` opcional.
- */
-
-/**
  * `render` desenha a linha de novo; sem ele clona-se a última e limpa-se. `keepLast` limpa a
- * última em vez de a apagar, para haver sempre molde para clonar.
+ * última em vez de a apagar, para haver sempre molde.
  */
 const REPEAT_ROW_KINDS = {
     contacts: { keepLast: true },
@@ -43,7 +38,6 @@ export function appendRepeatRow(section, kind) {
     if (!spec || !list) return;
 
     const rows = list.querySelectorAll(`[data-repeat-row="${kind}"]`);
-    // Sem `data-repeat-limit` não há limite.
     const limit = parseInt(list.dataset.repeatLimit || "", 10);
     if (Number.isFinite(limit) && rows.length >= limit) return;
 
@@ -74,10 +68,7 @@ export function appendRepeatRow(section, kind) {
     openOnly(list, added);
 }
 
-/**
- * Renomeia os `id`, `name` e `for` de uma linha nova: repetidos, os rádios de duas linhas
- * formam um grupo só e as etiquetas apontam para as caixas da outra.
- */
+/** Repetidos, os rádios de duas linhas formariam um grupo só e as etiquetas apontariam para a outra. */
 function restampRowIds(row) {
     const suffix = nextUid("copy");
     const rename = (value) => `${value}-${suffix}`;
@@ -94,7 +85,7 @@ function restampRowIds(row) {
     }
 }
 
-/** Só uma entrada aberta de cada vez, e a aberta é aquela em que se acabou de mexer. */
+/** Só uma entrada aberta de cada vez: aquela em que se acabou de mexer. */
 function openOnly(list, row) {
     const group = list.querySelector("details[name]")?.name || "";
     for (const details of list.querySelectorAll("details")) {
@@ -125,10 +116,7 @@ export function removeRepeatRow(button) {
     syncAddButton(section, kind);
 }
 
-/**
- * Limpa uma linha: os valores saem, e o que tem um estado inicial próprio -- o interruptor
- * de ligado, a recorrência, o indicativo do telefone -- volta a ele.
- */
+/** Os valores saem, e o que tem estado inicial próprio (interruptor, recorrência, indicativo) volta a ele. */
 function resetRowFields(row) {
     row.querySelectorAll("input, select").forEach((input) => {
         if (input.matches("[data-alarm-clock-field=\"enabled\"]")) {
@@ -170,7 +158,6 @@ function resetRowFields(row) {
     resetPhoneControls(row);
 }
 
-/** O botão de acrescentar apaga-se no limite. */
 function syncAddButton(section, kind) {
     const list = section?.querySelector(`[data-repeat-list="${kind}"]`);
     const addButton = section?.querySelector(`[data-action="addRepeatRow"][data-repeat-kind="${kind}"]`);

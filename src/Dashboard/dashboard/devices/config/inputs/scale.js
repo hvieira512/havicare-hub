@@ -3,11 +3,7 @@ import { html, raw } from "../../../html.js";
 import { state } from "../../../state.js";
 import { nextUid } from "./shared.js";
 
-/**
- * Os utilizadores da balança: um cartão por pessoa, com o estado dela e as ações do dia, e um
- * formulário que só abre para acrescentar ou editar. O identificador é do hub e viaja escondido no
- * cartão; um cartão sem ele é um registo novo.
- */
+// O identificador é do hub e viaja escondido no cartão: um cartão sem ele é um registo novo.
 
 const SEX = { male: "Homem", female: "Mulher" };
 
@@ -150,7 +146,6 @@ function picked(formElement, field) {
     return formElement.querySelector(`[data-scale-field="${field}"] [aria-pressed="true"]`)?.dataset.value ?? "";
 }
 
-/** O que está no formulário, ou a razão por que não se guarda. */
 function readForm(formElement) {
     const number = (field) => {
         const text = String(formElement.querySelector(`input[data-scale-field="${field}"]`).value).trim();
@@ -195,7 +190,7 @@ function cardElement(section, user) {
     return holder.content.firstElementChild;
 }
 
-/** As ações da lista. Devolve se mexeu no que vai ser enviado. */
+/** Devolve se mexeu no que vai ser enviado. */
 export function handleScaleUserAction(section, button) {
     const action = button.dataset.action;
     const formElement = section.querySelector("[data-scale-user-form]");

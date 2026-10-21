@@ -7,8 +7,6 @@ import {
     readNumber,
 } from "../readers.js";
 
-/** Os campos que só o Vivistar declara: a sensibilidade de queda e o envio da localização. */
-
 function fallSensitivityInput(desired) {
     const current = parseInt(String(desired.sensitivity ?? 2), 10) || 2;
     const options = [
@@ -140,7 +138,6 @@ export function syncWorkingModeExtra(section, mode) {
     extra.classList.toggle("d-none", String(mode) !== "8");
 }
 
-/** Cada tipo de campo declara as suas faces juntas: desenhar, ler de volta e valor inicial. */
 export const INPUTS = {
     fallSensitivity: {
         render: (_entry, desired) => fallSensitivityInput(desired),

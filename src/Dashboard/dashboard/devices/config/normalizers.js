@@ -1,7 +1,5 @@
 import { normalizeAlarmClockRecurrenceKind } from "./alarm-fields.js";
 
-/** Os valores guardados nas formas que os campos desenham, em funções puras sem DOM nem API. */
-
 export function normalizeAlarmClockItems(desired) {
     const base = Array.isArray(desired) ? desired : desired?.items ?? [];
     const items = Array.isArray(base) ? base : [base];

@@ -16,8 +16,6 @@ import { resetPhoneControls } from "../../phone.js";
 import { state } from "../../state.js";
 import { CONFIG_INPUTS } from "./inputs/index.js";
 
-/** O painel de configuração do modal: gravar e a fase da interface de cada secção. */
-
 let els;
 
 const configFeedbackTimers = new Map();
@@ -27,7 +25,6 @@ export function initDeviceConfigPanel(context) {
     els = context.els;
 }
 
-/** Chamado quando o próprio utilizador fecha um aviso. */
 export function dismissConfigFeedback(key) {
     clearTimeout(configFeedbackTimers.get(key));
     configFeedbackTimers.delete(key);
@@ -60,12 +57,7 @@ function configReadErrors(container) {
     return errors;
 }
 
-/**
- * Só as definições que diferem do desenhado viajam: o aparelho executa um comando de cada vez.
- * As acções ficam de fora.
- *
- * @returns {Object<string, object>} chave da definição => valor a enviar
- */
+/** Só viajam as definições que diferem do desenhado, sem as acções: o aparelho executa um comando de cada vez. */
 export function changedConfigEntries(container) {
     const changed = {};
     const rows = container.querySelectorAll(SAVEABLE_BLOCKS);
@@ -93,10 +85,7 @@ export function changedConfigEntries(container) {
     return changed;
 }
 
-/**
- * Se o bloco difere da fotografia tirada ao desenhá-lo. Falha aberta: uma leitura que falha
- * conta como alteração.
- */
+/** Falha aberta: uma leitura que falha conta como alteração. */
 function isConfigBlockEdited(element) {
     if (!("configPristine" in element.dataset)) return false;
     try {
@@ -106,7 +95,6 @@ function isConfigBlockEdited(element) {
     }
 }
 
-/** Quantas edições estão no ecrã por enviar; só conta o que alguém editou. */
 export function unsentConfigChanges(root) {
     const sections = [...root.querySelectorAll("[data-config-section]")]
         .filter((section) => section.dataset.configTransient !== "1" && isConfigBlockEdited(section));
@@ -147,8 +135,7 @@ export async function saveDeviceConfigurations(container) {
     const imei = state.deviceModal.imei;
     try {
         const result = await apiSaveConfiguration(imei, { configurations: changed });
-        // Trocou-se de aparelho enquanto isto viajava: a resposta é do anterior e não pode
-        // escrever as configurações de quem está agora no ecrã.
+        // A resposta de um aparelho anterior não escreve no de quem está agora no ecrã.
         if (state.deviceModal.imei !== imei) return;
         if (result.error) {
             toast("error", result.error.message || "Não foi possível enviar as alterações");
@@ -168,10 +155,7 @@ export async function saveDeviceConfigurations(container) {
     }
 }
 
-/**
- * A frase vem da definição do protocolo e não da capacidade: o mesmo `restart_device` tem
- * efeitos diferentes no relógio e no dispensador. Sem frase declarada não há caixa.
- */
+/** A frase vem da definição do protocolo, que o mesmo comando faz coisas diferentes em cada aparelho. */
 export function dangerousCommandPrompt(section, imei) {
     const text = String(section?.dataset?.configConfirm || "");
     if (text === "") {
@@ -241,10 +225,8 @@ export async function saveDeviceConfiguration(section, actionValue = "") {
         }
 
         if (isTransientAction) {
-            // O pedido disparado guarda o seu estado: é o que a pastilha do cartão mostra até
-            // o dispositivo confirmar ou falhar.
-            const command = (result.commands || [])[0] || null;
             // O `id` casa com esta acção a resposta do aparelho que chega pelo stream.
+            const command = (result.commands || [])[0] || null;
             state.deviceModal.actionDeliveries[capabilityKey] = command
                 ? {
                         id: String(command.id || ""),
@@ -263,8 +245,7 @@ export async function saveDeviceConfiguration(section, actionValue = "") {
                 result.capabilities || state.deviceModal.capabilities;
         }
 
-        // Sem mensagem: o destino do pedido conta-o a pastilha do cartão. A `feedback` limpa-se
-        // para um erro anterior não ficar por baixo de um envio que correu bem.
+        // Sem mensagem: o destino do pedido conta-o a pastilha. Limpa-se o erro anterior.
         setConfigUi(key, { phase: "sent", feedback: null });
         renderDeviceConfigurationModal();
         transitionConfigPhase(key, "sent", 1200, () => {
@@ -308,7 +289,6 @@ export function syncDeviceModalCommandStates(imei, commands) {
     );
     let changed = false;
 
-    // As acções guardam o estado de entrega noutro mapa, que também acompanha o comando.
     for (const [capabilityKey, delivery] of Object.entries(state.deviceModal.actionDeliveries || {})) {
         const command = delivery?.id ? commandsById.get(String(delivery.id)) : null;
         if (!command) {
@@ -364,14 +344,12 @@ export function syncDeviceModalCommandStates(imei, commands) {
         state.deviceModal.activeTab === "config" &&
         document.getElementById("deviceModal")?.classList.contains("show")
     ) {
-        // Só o estado de entrega mudou: acerta-se a pastilha de cada bloco no sítio, para não
-        // se deitar fora o que estiver a ser escrito nos outros.
+        // Acerta-se a pastilha no sítio, para não deitar fora o que se está a escrever.
         patchConfigurationDeliveryStates(
             els.deviceConfigRoot,
             state.deviceModal.configurationSync,
         );
-        // Uma entrega que acaba de falhar volta a tornar a configuração enviável, sem se lhe
-        // mexer no valor: é a mesma regra de quem desenha o cartão de raiz.
+        // Uma entrega que acaba de falhar volta a tornar a configuração enviável.
         for (const section of els.deviceConfigRoot.querySelectorAll("[data-config-section]")) {
             syncConfigSectionDirty(section);
         }
@@ -515,12 +493,8 @@ export function renderDeviceConfigurationModal() {
     armConfigFeedbackAutoClose();
 }
 
-/**
- * O rodapé conta edições por submeter, não entregas. As nunca gravadas contam-se à parte,
- * porque viajam sem ninguém lhes tocar.
- */
+/** Conta edições por submeter, não entregas; as nunca gravadas à parte, que viajam sem lhes tocarem. */
 function paneStatusLabel(pending, edited) {
-    // Sem nada por enviar não se diz nada: os botões desligados já o dizem.
     if (pending === 0) return "";
     if (edited === 0) {
         return `${pending} ${pending === 1 ? "definição" : "definições"} no valor padrão, por enviar`;
@@ -528,10 +502,7 @@ function paneStatusLabel(pending, edited) {
     return `${edited} ${edited === 1 ? "alteração" : "alterações"} por enviar`;
 }
 
-/**
- * As três contas da mesma coisa: o separador do modal, a linha de cada secção e o rodapé
- * dela. Saem todas das mesmas duas leituras, para nenhuma poder discordar das outras.
- */
+/** O separador, a linha de cada secção e o rodapé saem das mesmas leituras, para não discordarem. */
 export function syncConfigCounts(root) {
     markEditedConfigBlocks(root);
 
@@ -571,10 +542,7 @@ export function syncConfigCounts(root) {
     }
 }
 
-/**
- * A fotografia de cada bloco logo depois de desenhar, para o «Enviar» só acender quando o
- * valor muda. Falha aberta: sem leitura, o botão fica activo.
- */
+/** A fotografia de cada bloco ao desenhar; falha aberta: sem leitura, o botão fica activo. */
 function drawnFieldValue(input) {
     return input.type === "checkbox" || input.type === "radio" ? input.checked : input.value;
 }
@@ -586,8 +554,7 @@ export function captureConfigPristine(root) {
         } catch {
             delete section.dataset.configPristine;
         }
-        // O Repor devolve cada campo tal como foi desenhado: o nome e o formato do campo nem
-        // sempre são os do valor guardado (`range` em duas horas, `220000` em `22:00`).
+        // O Repor devolve cada campo como foi desenhado, que nem sempre é o formato guardado.
         section.dataset.configPristineFields = JSON.stringify(
             [...section.querySelectorAll("[data-config-field]")].map(drawnFieldValue),
         );
@@ -595,24 +562,16 @@ export function captureConfigPristine(root) {
     }
 }
 
-/**
- * Acende o "Enviar" do bloco quando o valor difere do que estava desenhado, ou quando não há
- * valor nenhum -- uma acção sem parâmetros envia-se tal como está.
- */
+/** Acende o «Enviar» quando o valor difere do desenhado, ou quando não há valor nenhum. */
 export function syncConfigSectionDirty(section) {
     const button = section.querySelector("[data-action=\"saveConfig\"]");
-    // Só o estado inactivo é que se gere por diferença: a enviar, enviado ou falhado, o
-    // botão está a dizer outra coisa e não se lhe mexe.
+    // Fora do estado inactivo, o botão está a dizer outra coisa e não se lhe mexe.
     if (!button || button.dataset.configPhase !== "idle") return;
     if (!("configPristine" in section.dataset)) return;
 
-    // Sem diferença a medir, enviar faz sentido numa acção, que é sempre um pedido novo, e numa
-    // definição nunca recebida, que mostra o padrão do catálogo e não o que lá está.
+    // Sem diferença, envia-se uma definição nunca recebida ou uma entrega falhada.
     const neverSent = section.dataset.configStored === "0";
-    // E numa entrega falhada: o valor está guardado, e o que se repete é a entrega.
     const deliveryFailed = section.dataset.configDelivery === "failed";
-    // A cor do botão aceso. Uma acção que pede confirmação continua a vermelho: o peso dela
-    // está aqui, e não numa faixa de aviso, e não pode ser apagado por um sincronismo.
     const active = section.dataset.configConfirm ? "btn-outline-danger" : "btn-primary";
     if (section.dataset.configTransient === "1" || neverSent || deliveryFailed) {
         button.classList.add(active);

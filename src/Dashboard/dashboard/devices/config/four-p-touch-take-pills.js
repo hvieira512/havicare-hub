@@ -102,7 +102,6 @@ export function readTakePills(section) {
     const voiceMimeType = readText(section, "voiceMimeType");
 
     const plans = groups.map((group) => {
-        // `:checked` porque a recorrência é um grupo de rádios, como no bloco dos alarmes.
         const frequency =
             parseInt(
                 String(
@@ -154,7 +153,6 @@ function normalizeVoiceEnabled(desired, hasVoiceData) {
 }
 
 function normalizeReminderSettings(desired) {
-    // A forma pública: um plano por lembrete, com uma hora cada.
     if (Array.isArray(desired?.plans)) {
         return desired.plans
             .map((plan) => (Array.isArray(plan?.times) ? plan.times[0] : plan))
@@ -167,7 +165,6 @@ function normalizeReminderSettings(desired) {
 }
 
 function normalizeReminder(item) {
-    // A `recurrence` é a forma pública, a mesma que os alarmes usam; a máscara é a nativa.
     const custom = Array.isArray(item.recurrence?.days)
         ? weekdaysToFourPTouchMask(item.recurrence.days)
         : String(item.custom ?? item.reminderCustom ?? "");

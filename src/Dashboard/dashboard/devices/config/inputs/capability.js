@@ -26,11 +26,6 @@ import {
     readUniquePhoneArray,
 } from "../readers.js";
 
-/**
- * Os campos das capacidades genéricas do hub, de nenhum fornecedor: o `normalizeConfigEntry`
- * escolhe-os pela chave de capacidade e não pelo `input` declarado.
- */
-
 function diaperSensitivityInput(desired, meta = {}) {
     const presets = meta.presets || {};
     const bounds = meta.bounds || {};
@@ -99,8 +94,7 @@ function heartRateThresholdsInput(_entry, desired) {
         </div>`;
 }
 
-/** O corpo com que a pulseira calcula calorias e composição corporal; não identifica ninguém. */
-
+/** O corpo com que a pulseira calcula calorias e composição corporal. */
 function personalInfoInput(_entry, desired) {
     const sex = desired.sex === "male" ? "male" : "female";
     return html`
@@ -274,10 +268,7 @@ function alarmClockInput(entry, desired, meta = {}) {
         </div>`;
 }
 
-/**
- * A ordem é a mesma em todos os fornecedores -- hora, nome, recorrência, e depois o que cada
- * um declarar de seu. O que não couber desce; o URL do som ocupa a linha toda.
- */
+/** Hora, nome, recorrência, e depois o que cada fornecedor declarar de seu; o que não couber desce. */
 function alarmClockRow(item = {}, typeOptions = [], recurrenceOptions = [], wonlexFields = {}, group = "alarm-clock") {
     const rowId = nextUid("alarm-clock");
     const recurrenceKind = normalizeAlarmClockRecurrenceKind(
@@ -473,7 +464,6 @@ function readAlarmClock(section) {
     return master === null ? { items } : { masterEnabled: master.checked, items };
 }
 
-/** Cada tipo de campo declara as suas faces juntas: desenhar, ler, valor inicial e legenda. */
 export const INPUTS = {
     diaperSensitivity: {
         render: (_entry, desired, meta) => diaperSensitivityInput(desired, meta),
@@ -481,7 +471,6 @@ export const INPUTS = {
             pollutionRange: readNumber(section, "pollutionRange"),
             pollutionValue: readNumber(section, "pollutionValue"),
         }),
-        // Sem `defaults`: abre vazio. Não é decisão desta camada qual seria o valor plausível.
     },
     windowToggle: {
         render: windowToggleInput,
@@ -490,7 +479,6 @@ export const INPUTS = {
             enabled: readCheckbox(section, "enabled"),
             range: `${readText(section, "rangeStart")}-${readText(section, "rangeEnd")}`,
         }),
-        // Sem `defaults`: abre vazio. Não é decisão desta camada qual seria o valor plausível.
     },
     personalInfo: {
         render: personalInfoInput,

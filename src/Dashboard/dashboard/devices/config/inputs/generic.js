@@ -13,11 +13,6 @@ import {
     readText,
 } from "../readers.js";
 
-/**
- * Os campos que mais do que um fornecedor declara, desenhados da mesma maneira venham de onde
- * vierem; o nome nativo resolve-o a definição.
- */
-
 export function toggleField(entry) {
     return entry.fields?.[0] || "enabled";
 }
@@ -37,10 +32,7 @@ export function toggleInput(entry, desired) {
         </div>`;
 }
 
-/**
- * Um número, sem rótulo: quem o nomeia é o título do cartão, e a unidade vai ao lado do
- * campo. O `aria-label` guarda o nome para quem não vê a linha.
- */
+/** Sem rótulo, que o nome é o título do cartão; o `aria-label` guarda-o para quem não vê a linha. */
 function numberControl(entry, desired) {
     const key = entry.fields?.[0] || "value";
     // A escala parte do mínimo declarado: o tom de pele vai de 1 a 6.
@@ -139,12 +131,10 @@ export function contactsInput(entry, desired, meta = {}) {
         </div>`;
 }
 
-/** As opções que a definição declara em `options: { campo: [{value, label}] }`. */
 export function selectOptions(entry) {
     const name = entry.fields?.[0] || "value";
     const options = Array.isArray(entry.options?.[name]) ? entry.options[name] : [];
-    // A definição pode dizer de onde parte. Sem isso seria a primeira da lista, que numa
-    // lista ordenada por valor — os fusos horários — é a ponta e não o meio.
+    // Sem `default` declarado seria a primeira, que numa lista ordenada (os fusos) é a ponta.
     const declared = entry.options?.default;
 
     return {
@@ -154,7 +144,6 @@ export function selectOptions(entry) {
     };
 }
 
-/** Um valor escolhido de uma lista, com o significado à vista em vez de um número solto. */
 function selectInput(entry, desired) {
     const { name, options, fallback } = selectOptions(entry);
     const current = String(desired?.[name] ?? fallback);
@@ -164,7 +153,6 @@ function selectInput(entry, desired) {
             return html`<option value="${value}"${value === current ? raw(" selected") : ""}>${String(option.label ?? value)}</option>`;
         });
 
-    // Sem rótulo: o cartão da configuração já mostra o nome por cima.
     return html`<select class="form-select" data-config-field="${name}">${choices}</select>`;
 }
 
@@ -175,8 +163,7 @@ export const INPUTS = {
             const node = section.querySelector("select[data-config-field]");
             if (!node) return {};
             const raw = String(node.value ?? "");
-            // Os valores do protocolo são inteiros; só um que não pareça número é que passa
-            // como texto.
+            // Só o que não parece número passa como texto.
             return { [node.dataset.configField]: raw !== "" && !Number.isNaN(Number(raw)) ? Number(raw) : raw };
         },
         defaults: (entry) => {
@@ -198,8 +185,7 @@ export const INPUTS = {
             const field = firstFieldName(section);
             return { [field]: readNumber(section, field) };
         },
-        // Parte de onde a escala parte: um campo que vai de 1 a 6 aberto em zero oferece um
-        // valor que o aparelho recusa.
+        // Do mínimo: um campo de 1 a 6 aberto em zero oferece um valor que o aparelho recusa.
         defaults: (entry) => ({
             [entry.fields?.[0] || "value"]: entry.options?.default ?? entry.options?.min ?? 0,
         }),
@@ -232,8 +218,7 @@ export const INPUTS = {
         }),
         defaults: () => ({ enabled: true, intervalMinutes: 60 }),
     },
-    // Uma acção não tem campo nenhum: o que se envia é o próprio pedido. Sem `render`, o
-    // cartão sabe que pode desenhar a versão de uma linha.
+    // Uma acção não tem campos; sem `render`, o cartão desenha-se numa linha.
     action: {
         read: () => ({}),
     },

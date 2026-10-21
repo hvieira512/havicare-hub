@@ -1,8 +1,6 @@
 import { titleize } from "../../format.js";
 import { protocolGroupedCapabilities } from "./protocol-catalog.js";
 
-/** Do catálogo cru do protocolo às secções prontas a desenhar, em funções puras. */
-
 const CONFIG_SECTION_ORDER = [
     "health",
     "contacts",
@@ -11,11 +9,7 @@ const CONFIG_SECTION_ORDER = [
     "settings_system",
 ];
 
-/**
- * As secções do painel, já filtradas, agrupadas, ordenadas e etiquetadas.
- *
- * @returns {Array<{key: string, label: string, entries: Array<object>}>}
- */
+/** As secções do painel, já filtradas, agrupadas, ordenadas e etiquetadas. */
 export function configCatalogSections(protocol, catalog, capabilityCatalog) {
     const groups = groupedCatalog(
         normalizedCatalogForProtocol(protocol, catalog, capabilityCatalog),
@@ -114,8 +108,7 @@ function assignCapabilitySection(entry, capabilityCatalog) {
         return null;
     }
 
-    // Uma grandeza pedível declarada em `telemetry` não tem secção de configuração: o pedido
-    // cabe em Sistema.
+    // Uma grandeza pedível de `telemetry` não tem secção de configuração: cabe em Sistema.
     const declared = String(definition.section || "");
     const section = CONFIG_SECTION_ORDER.includes(declared)
         ? declared

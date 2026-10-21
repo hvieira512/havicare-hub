@@ -3,8 +3,6 @@ import { boolValue } from "../normalizers.js";
 import { readCheckbox, readNumber } from "../readers.js";
 import { enabledSwitch, nextUid, numberField } from "./shared.js";
 
-/** Os campos que o radar declara; os nomes vêm todos da definição. */
-
 const fieldsOf = (entry, count) => Array.from({ length: count }, (_, index) => entry.fields?.[index] ?? `value${index}`);
 
 function readChecked(section, field) {
