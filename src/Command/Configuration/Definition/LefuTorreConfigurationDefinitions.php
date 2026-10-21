@@ -21,7 +21,7 @@ final class LefuTorreConfigurationDefinitions
             // A lista entrega-se em registos e remoções: os dois comandos vêm declarados aqui.
             $entry('scale_users', 'scaleUsers', 'scaleUsers', ['items'], [
                 'torre_user_02', 'torre_user_04', 'torre_user_07', 'registerScaleUser', 'deleteScaleUser', 'selectScaleUser',
-            ], category: 'health', order: 30),
+            ], category: 'health', order: 30, bounds: ['heightCm' => ['min' => 50, 'max' => 250], 'weightKg' => ['min' => 0, 'max' => 250]]),
             $entry('select_scale_user', 'selectScaleUser', 'scaleUserAction', ['id'], ['torre_user_07'], category: 'health', order: 40, transient: true),
             $entry('read_scale_history', 'readScaleHistory', 'scaleUserChoice', ['id'], ['torre_history_0a'], category: 'health', order: 50, transient: true),
             $entry('weight_unit', 'weightUnit', 'select', ['unit'], ['torre_05_set'], category: 'system', order: 10, options: [

@@ -45,11 +45,22 @@ final class VeepooConfigurationDefinitions
             ...$configs,
             $entry('blood_oxygen_window', 'windowToggle', ['enabled', 'range'], 'health', $order),
             // Os limiares são avaliados pelo aparelho sobre a medição dele, e não pela aplicação.
-            $entry('heart_rate_alert', 'heartRateThresholds', ['enabled', 'maxBpm', 'minBpm'], 'alarms', $order + 10),
+            $entry('heart_rate_alert', 'heartRateThresholds', ['enabled', 'maxBpm', 'minBpm'], 'alarms', $order + 10, bounds: [
+                'maxBpm' => ['min' => 40, 'max' => 220],
+                'minBpm' => ['min' => 30, 'max' => 200],
+            ]),
             // A potência do LED do sensor ótico, de que sai tudo o que a pulseira mede por luz.
-            $entry('skin_tone', 'number', ['level'], 'health', $order + 20, options: ['min' => 1, 'max' => 6]),
+            $entry('skin_tone', 'number', ['level'], 'health', $order + 20, bounds: ['level' => ['min' => 1, 'max' => 6]]),
             // O corpo com que ela calcula calorias e composição corporal, e não quem a usa.
-            $entry('personal_info', 'personalInfo', ['heightCm', 'weightKg', 'age', 'sex', 'stepGoal', 'sleepGoalMinutes'], 'health', $order + 30),
+            $entry('personal_info', 'personalInfo', ['heightCm', 'weightKg', 'age', 'sex', 'stepGoal', 'sleepGoalMinutes'], 'health', $order + 30, options: [
+                'sex' => [['value' => 'female'], ['value' => 'male']],
+            ], bounds: [
+                'heightCm' => ['min' => 50, 'max' => 250],
+                'weightKg' => ['min' => 10, 'max' => 300],
+                'age' => ['min' => 1, 'max' => 120],
+                'stepGoal' => ['min' => 100, 'max' => 100000],
+                'sleepGoalMinutes' => ['min' => 60, 'max' => 900],
+            ]),
             // Vibra quando recebe a ordem e não guarda estado: pede-se por `/requests`.
             ConfigurationDefinition::make(
                 'find_device',

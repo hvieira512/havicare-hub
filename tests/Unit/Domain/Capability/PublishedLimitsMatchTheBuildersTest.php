@@ -14,9 +14,13 @@ final class PublishedLimitsMatchTheBuildersTest extends TestCase
     public function testEveryPublishedLimitIsTheOneTheBuilderEnforces(): void
     {
         $checked = 0;
-        foreach (['four-p-touch', 'wonlex-json', 'vivistar-iw'] as $protocol) {
+        foreach (['four-p-touch', 'wonlex-json', 'vivistar-iw', 'veepoo-ble'] as $protocol) {
             foreach (DeviceConfigurationCatalog::configsForProtocol($protocol) as $entry) {
                 $key = (string)$entry['key'];
+                // O mínimo e o máximo limitam-se um ao outro, e nos extremos um dos dois tem de recusar.
+                if ($protocol === 'veepoo-ble' && $key === 'heart_rate_alert') {
+                    continue;
+                }
                 // Os outros campos limitados no mínimo, para a recusa só poder vir do campo em teste.
                 $payload = array_map(static fn(array $bounds): int => $bounds['min'], $entry['bounds'] ?? [])
                     + ConfigurationInputDefaults::forEntry($entry);
