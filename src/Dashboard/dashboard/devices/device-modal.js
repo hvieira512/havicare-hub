@@ -35,7 +35,6 @@ import {
     deviceTypeLabel,
     findModelInfo,
     linksToGateway,
-    modelCommercialName,
     modelInternalName,
     modelsForSupplierAndType,
     normalizeDeviceType,
@@ -293,15 +292,7 @@ export async function renderDeviceSelectors(
     const supplier = suppliers.includes(selectedSupplier)
         ? selectedSupplier
         : suppliers[0] || "";
-    const availableModels = modelsForSupplierAndType(
-        supplier,
-        currentDeviceType,
-        models,
-    ).filter(
-        (entry) =>
-            modelInternalName(entry) !== "4P-TOUCH" &&
-            modelCommercialName(entry) !== "4P-TOUCH",
-    );
+    const availableModels = modelsForSupplierAndType(supplier, currentDeviceType, models);
     const availableModelNames = availableModels.map((model) =>
         modelInternalName(model),
     );

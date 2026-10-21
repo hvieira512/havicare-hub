@@ -1,4 +1,5 @@
-import { eventTime, rowPayload, titleize } from "../../format.js";
+import { eventTime, rowPayload } from "../../format.js";
+import { valueLabel } from "../../i18n.js";
 import { capabilityLabel } from "../../capability-catalog.js";
 import { stateBadge } from "../state-badge.js";
 import { telemetryCard } from "./shell.js";
@@ -19,34 +20,30 @@ export function requestCardContent(type) {
     };
 }
 
-/** Os estados que o mosaico mostra: sem `acked`, que a resposta já é o valor, nem `superseded`. */
-const REQUEST_CARD_STATE = {
-    queued: { label: "em fila", tone: "secondary" },
-    sent: { label: "enviado", tone: "secondary" },
-    waiting: { label: "à espera", tone: "warning" },
-    failed: { label: "falhou", tone: "danger" },
-    dropped: { label: "descartado", tone: "danger" },
+/** O tom de cada estado de um pedido. O vazio do `sent` deixa-o no azul da marca. */
+const DOWNLINK_TONE = {
+    queued: "secondary",
+    sent: "",
+    waiting: "warning",
+    acked: "success",
+    failed: "danger",
+    dropped: "danger",
+    superseded: "secondary",
+    unknown: "secondary",
 };
 
-/** O estado de um pedido na linha do painel. O tom vazio do `sent` deixa-o no azul da marca. */
-const DOWNLINK_STATE = {
-    queued: { label: "em fila", tone: "secondary" },
-    sent: { label: "enviado", tone: "" },
-    waiting: { label: "à espera", tone: "warning" },
-    acked: { label: "confirmado", tone: "success" },
-    failed: { label: "falhou", tone: "danger" },
-    dropped: { label: "descartado", tone: "danger" },
-    superseded: { label: "substituído", tone: "secondary" },
-    unknown: { label: "desconhecido", tone: "secondary" },
-};
+/** Os que o mosaico mostra: sem `acked`, que a resposta já é o valor, nem `superseded`. */
+const REQUEST_CARD_STATES = ["queued", "sent", "waiting", "failed", "dropped"];
+
+const downlinkState = (status) => ({
+    label: valueLabel("downlinkStatus", status) ?? valueLabel("downlinkStatus", "unknown"),
+    tone: DOWNLINK_TONE[status] ?? "secondary",
+});
 
 export function statusBadge(status) {
-    const known = DOWNLINK_STATE[status];
+    const { label, tone } = downlinkState(status);
 
-    return stateBadge(
-        known?.label || titleize(status).toLowerCase(),
-        known?.tone ?? "secondary",
-    );
+    return stateBadge(label, tone);
 }
 
 /** O pedido mais recente da categoria; uma falha só conta se não chegou leitura depois dela. */
@@ -58,10 +55,11 @@ function latestRequestState(type, commands, lastTelemetryTime) {
         return null;
     }
 
-    const entry = REQUEST_CARD_STATE[String(latest.status || "")];
-    if (!entry) {
+    const status = String(latest.status || "");
+    if (!REQUEST_CARD_STATES.includes(status)) {
         return null;
     }
+    const entry = downlinkState(status);
 
     const failed = entry.tone === "danger";
     if (

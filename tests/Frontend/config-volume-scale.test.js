@@ -10,19 +10,12 @@ import { parseFragment } from "./support/dom.js";
  */
 
 const entry = {
+    capabilityKey: "alarm_volume",
     fields: ["volume"],
-    options: {
-        volume: [
-            { value: 0, label: "Alto" },
-            { value: 1, label: "Médio" },
-            { value: 2, label: "Baixo" },
-            { value: 3, label: "Silêncio" },
-        ],
-        default: 0,
-    },
+    options: { volume: [{ value: 0 }, { value: 1 }, { value: 2 }, { value: 3 }] },
 };
 
-const render = (desired) => parseFragment(CONFIG_INPUTS.volumeScale.render(entry, desired));
+const render = (desired) => parseFragment(CONFIG_INPUTS.volumeScale.render(entry, desired, { protocol: "zayata-m228" }));
 
 test("draws one button per option, with the label visible", () => {
     const root = render({ volume: 1 });
@@ -39,13 +32,6 @@ test("the chosen option is the marked one", () => {
 
     assert.equal(checked.length, 1);
     assert.equal(checked[0].getAttribute("value"), "2");
-});
-
-test("without a chosen value it starts from what the setting declares", () => {
-    const root = render({});
-    const checked = [...root.querySelectorAll("input[type=radio]")].filter((el) => el.checked);
-
-    assert.equal(checked[0].getAttribute("value"), "0");
 });
 
 test("the value comes back as a number, which is what the TAG carries", () => {

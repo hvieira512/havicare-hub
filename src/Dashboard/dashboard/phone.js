@@ -3,8 +3,6 @@ import { html } from "./html.js";
 const PHONE_COUNTRIES = [
     {
         code: "PT",
-        name: "Portugal",
-        flag: "🇵🇹",
         dialCode: "351",
         minLength: 9,
         maxLength: 9,
@@ -12,8 +10,6 @@ const PHONE_COUNTRIES = [
     },
     {
         code: "ES",
-        name: "Espanha",
-        flag: "🇪🇸",
         dialCode: "34",
         minLength: 9,
         maxLength: 9,
@@ -21,8 +17,6 @@ const PHONE_COUNTRIES = [
     },
     {
         code: "FR",
-        name: "França",
-        flag: "🇫🇷",
         dialCode: "33",
         minLength: 9,
         maxLength: 9,
@@ -30,8 +24,6 @@ const PHONE_COUNTRIES = [
     },
     {
         code: "IT",
-        name: "Itália",
-        flag: "🇮🇹",
         dialCode: "39",
         minLength: 9,
         maxLength: 10,
@@ -39,8 +31,6 @@ const PHONE_COUNTRIES = [
     },
     {
         code: "DE",
-        name: "Alemanha",
-        flag: "🇩🇪",
         dialCode: "49",
         minLength: 10,
         maxLength: 11,
@@ -48,14 +38,20 @@ const PHONE_COUNTRIES = [
     },
     {
         code: "GB",
-        name: "Reino Unido",
-        flag: "🇬🇧",
         dialCode: "44",
         minLength: 10,
         maxLength: 10,
         groups: [4, 3, 3],
     },
 ];
+
+const regionNames = new Intl.DisplayNames("pt-PT", { type: "region" });
+
+/** O nome pelo `Intl` e a bandeira pelos dois símbolos de região do código. */
+for (const country of PHONE_COUNTRIES) {
+    country.name = regionNames.of(country.code);
+    country.flag = String.fromCodePoint(...[...country.code].map((letter) => 0x1F1A5 + letter.charCodeAt(0)));
+}
 
 const DEFAULT_COUNTRY = "PT";
 

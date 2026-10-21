@@ -46,7 +46,7 @@ test("an unheard link reads as unknown, not as near", () => {
 test("a heard link shows the band, the reading and how stale it is", () => {
     const label = signalLabel({ rssiDbm: -64, at: new Date().toISOString() });
 
-    assert.match(label, /^Bom · -64 dBm · há \d+s$/);
+    assert.match(label, /^Bom · -64 dBm · (agora|há \d+ s)$/);
 });
 
 test("a reading without a timestamp still shows band and strength", () => {
@@ -71,7 +71,7 @@ test("but still says when it was and what it read", () => {
     const label = signalLabel({ rssiDbm: -32, at: secondsAgo(28 * 86400) });
 
     assert.match(label, /-32 dBm/);
-    assert.match(label, /28d/);
+    assert.match(label, /28 dias/);
 });
 
 test("within the limit, the reading still counts", () => {

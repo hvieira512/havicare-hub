@@ -1,14 +1,5 @@
 import { capabilityLabel } from "../../capability-catalog.js";
-import { titleize } from "../../format.js";
-
-// As interfaces que o `Hub\Ingress\Mqtt\Moko\GatewayNormalizer` e o radar emitem.
-const CONNECTIVITY_INTERFACE_LABELS = {
-    wifi: "Wi-Fi",
-    ethernet: "Ethernet",
-    ethernet_wifi: "Ethernet + Wi-Fi",
-    cellular: "Rede móvel",
-    "4g": "4G",
-};
+import { UNTRANSLATED, valueLabel } from "../../i18n.js";
 
 const CONNECTIVITY_INTERFACE_ICONS = {
     wifi: "fa-wifi",
@@ -29,7 +20,7 @@ export function connectivityValue(data) {
     const parts = [];
     const iface = String(data?.interface || "").trim();
     if (iface !== "") {
-        parts.push(CONNECTIVITY_INTERFACE_LABELS[iface] || titleize(iface));
+        parts.push(valueLabel("interface", iface) ?? UNTRANSLATED);
     }
 
     const networkType = String(data?.networkType || "").trim();

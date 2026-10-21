@@ -17,6 +17,10 @@ const ENTRY = {
     input: "fallSensitivityLevels",
     fields: ["sensitivity", "levels"],
     category: "alerts",
+    options: {
+        sensitivity: [1, 2, 3, 4, 5, 6, 7, 8].map((value) => ({ value })),
+        levels: [{ value: 6 }, { value: 8 }],
+    },
 };
 
 const sectionWith = (sensitivity, levels) => parseFragment(
@@ -24,12 +28,17 @@ const sectionWith = (sensitivity, levels) => parseFragment(
 ).firstElementChild;
 
 const chosenLevel = (section) =>
-    section.querySelector("[data-config-field=\"sensitivity\"]").value;
+    section.querySelector("[data-config-field=\"sensitivity\"]:checked")?.value;
+
+const lowerTo = (section, levels) => {
+    section.querySelector("[data-config-field=\"levels\"]").value = String(levels);
+    syncFallSensitivityLevels(section);
+};
 
 test("lowering the scale clamps the level to the highest left, not the first", () => {
     const section = sectionWith(7, 8);
 
-    syncFallSensitivityLevels(section, 6);
+    lowerTo(section, 6);
 
     assert.equal(chosenLevel(section), "6", "o 7 desce para o 6, não salta para o 1");
 });
@@ -37,17 +46,17 @@ test("lowering the scale clamps the level to the highest left, not the first", (
 test("a level that fits the new scale stays where it is", () => {
     const section = sectionWith(3, 8);
 
-    syncFallSensitivityLevels(section, 6);
+    lowerTo(section, 6);
 
     assert.equal(chosenLevel(section), "3");
 });
 
-/** O botão que fica escolhido tem de ser o que o valor diz, ou o ecrã e o payload divergem. */
-test("the active button follows the level it dropped to", () => {
-    const section = sectionWith(8, 8);
+/** Os níveis acima da escala saem da vista e deixam de se poder escolher. */
+test("the levels above the scale are hidden and disabled", () => {
+    const section = sectionWith(3, 8);
 
-    syncFallSensitivityLevels(section, 6);
+    lowerTo(section, 6);
 
-    const active = section.querySelector(".sens-level-btn.active");
-    assert.equal(active.dataset.configValue, "6");
+    const hidden = [...section.querySelectorAll("[data-config-field=\"sensitivity\"]:disabled")].map((radio) => radio.value);
+    assert.deepEqual(hidden, ["7", "8"]);
 });

@@ -515,6 +515,22 @@ publicado.
 > dispositivo mudar de estado. Um consumidor não deve exigir a ausência do
 > campo, apenas deixar de depender dele.
 
+## Pendente do hitCare
+
+O que fica como está porque o hitCare o lê, com o sítio no hub e o ficheiro do
+hitCare que o prende:
+
+- **As etiquetas das opções no `_meta`** (`working_mode.mode`,
+  `fall_sensitivity.sensitivity`, `alarm_clock.days`, `alarm_clock.type`,
+  `alarm_clock.recurrence`): `VivistarConfigurationDefinitions`,
+  `FourPTouchConfigurationDefinitions`, `AlarmClock/Wonlex.php`,
+  `AlarmClock/Vivistar.php`, `AlarmClockCapability.php`. O hitCare desenha os
+  `<select>` com elas em `ajax/custom.php:1948,2150,2170-2177`; saem quando ele
+  traduzir os valores.
+- **O `working_mode.mode` da Vivistar em inteiros** (`1`, `2`, `3`, `8`), e não
+  numa enumeração: o hitCare envia o número e testa o `8` em
+  `ajax/custom.php:1265-1280`.
+
 ## Implementação
 
 | Ficheiro | Responsabilidade |

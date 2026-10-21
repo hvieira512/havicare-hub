@@ -48,8 +48,8 @@ test("a field whose key carries the unit shows the unit", () => {
     assert.deepEqual(silent, []);
 });
 
-/** Os campos de configuração guardam a unidade na etiqueta, que é de onde o painel a tira. */
-test("configuration fields keep the unit in parentheses", () => {
-    assert.equal(fieldUnit("intervalTime"), "s");
-    assert.equal(fieldUnit("sleepTarget"), "min");
+/** Os campos de configuração dizem a unidade no nome, e o painel tira-a de lá. */
+test("configuration fields carry their unit in the name", () => {
+    assert.equal(fieldUnit("intervalSeconds"), "s");
+    assert.equal(fieldUnit("targetMinutes"), "min");
 });

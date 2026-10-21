@@ -18,9 +18,8 @@ const INTERVAL = {
     key: "locationInterval",
     capabilityKey: "location_reporting_interval",
     command: "locationInterval",
-    label: "Intervalo de localização",
     input: "number",
-    fields: ["intervalTime"],
+    fields: ["intervalSeconds"],
 };
 
 const sectionOf = (entry, row = null, stored = null) =>
@@ -33,16 +32,15 @@ test("the stored value is not repeated under the name", () => {
         key: "autoHealth",
         capabilityKey: "auto_health",
         command: "HEALTHAUTOSET",
-        label: "Medição automática de saúde",
         input: "number",
-        fields: ["interval"],
-    }, { interval: 60 }, true);
+        fields: ["intervalMinutes"],
+    }, { intervalMinutes: 60 }, true);
 
     assert.equal(section.querySelector("[data-config-summary]").textContent.trim(), "era 60 min");
 });
 
 test("an edited setting shows the value that was there", () => {
-    const section = sectionOf(INTERVAL, { intervalTime: 3600 }, true);
+    const section = sectionOf(INTERVAL, { intervalSeconds: 3600 }, true);
 
     assert.match(section.querySelector(".config-when-changed").textContent, /era 3600\s+s/);
 });
@@ -51,7 +49,7 @@ test("«Alterado» takes over while the edit is unsent, without erasing the deli
     const host = document.createElement("div");
     host.innerHTML = `<div data-config-root><div data-config-pane="health"></div></div>`;
     const pane = host.querySelector("[data-config-pane]");
-    pane.appendChild(sectionOf(INTERVAL, { intervalTime: 3600 }, true));
+    pane.appendChild(sectionOf(INTERVAL, { intervalSeconds: 3600 }, true));
     document.body.replaceChildren(host);
     captureConfigPristine(host);
     initDeviceConfigPanel({ els: {} });

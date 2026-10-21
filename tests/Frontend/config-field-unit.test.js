@@ -11,7 +11,7 @@ const { renderConfigSection } =
 /** A unidade cola-se ao campo: `60` seguido de `min` é uma medida só. */
 
 test("without a unit the field stays as it is, with no wrapper", () => {
-    const root = parseFragment(numberField("intervalMinutes", 60));
+    const root = parseFragment(numberField("level", 60));
 
     assert.equal(root.querySelector(".input-group"), null);
     assert.equal(root.querySelector("input").value, "60");
@@ -35,26 +35,25 @@ test("the unit is escaped: it comes from the catalog, not the code", () => {
 const unitOf = (protocol, entry) => parseFragment(renderConfigSection(protocol, entry, null))
     .querySelector(".input-group-text")?.textContent.trim();
 
-/** A unidade declarada em `options.label` ganha à que se adivinha pelo nome do campo. */
-test("the declared unit appears beside the field", () => {
+/** A unidade do dicionário ganha à que se adivinha pelo nome do campo. */
+test("the dictionary's unit appears beside the field", () => {
     assert.equal(unitOf("zayata-m228", {
         key: "retrieval_warning",
+        capabilityKey: "retrieval_warning",
         command: "retrievalWarning",
-        label: "Avisar de atraso ao fim de",
         input: "number",
         fields: ["minutes"],
-        options: { min: 0, max: 1440, label: "Minutos" },
-    }), "Minutos");
+        options: { min: 0, max: 1440 },
+    }), "min");
 });
 
-/** O protocolo da Wonlex diz que o `intervalTime` é em segundos. */
-test("without a declared unit the native name's unit applies", () => {
+test("without a declared unit the field name's unit applies", () => {
     assert.equal(unitOf("wonlex-json", {
-        key: "locationInterval",
+        key: "location_reporting_interval",
+        capabilityKey: "location_reporting_interval",
         command: "locationInterval",
-        label: "Intervalo de localização",
         input: "number",
-        fields: ["intervalTime"],
+        fields: ["intervalSeconds"],
     }), "s");
 });
 
@@ -62,10 +61,10 @@ test("without a declared unit the native name's unit applies", () => {
 test("a field called unit does not pass its choices off as a unit", () => {
     assert.equal(unitOf("lefu-torre", {
         key: "weight_unit",
+        capabilityKey: "weight_unit",
         command: "weightUnit",
-        label: "Unidade do visor",
         input: "select",
         fields: ["unit"],
-        options: { unit: [{ value: "kg", label: "Quilogramas" }, { value: "lb", label: "Libras" }], default: "kg" },
+        options: { unit: [{ value: "kg" }, { value: "lb" }], default: "kg" },
     }), undefined);
 });

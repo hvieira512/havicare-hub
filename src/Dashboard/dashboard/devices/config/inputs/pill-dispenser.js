@@ -1,14 +1,10 @@
 import { field } from "../../../components/form-field.js";
 import { medicationPlanTimes } from "../../medication-plan.js";
 import { html, raw } from "../../../html.js";
-import { segmentedScale } from "./segmented-scale.js";
-import { enabledSwitch, nextUid } from "./shared.js";
-import { selectOptions } from "./generic.js";
+import { choiceField, enabledSwitch, entryText, fieldChoices, readChoice } from "./shared.js";
 import { readCheckbox, readText } from "../readers.js";
 
-// Nove alarmes fixos, que não se criam nem apagam; o número do slot liga cada um ao reportado.
-
-const SLOTS = 9;
+// Os alarmes são fixos, tantos quantos o `limit` da definição; o número liga cada um ao reportado.
 
 /** O «sem alarme» do M228: um slot a `00:00` toca e gasta um compartimento todos os dias. */
 const UNSET_HOUR = 24;
@@ -43,11 +39,12 @@ const slotCell = (index, plan) =>
         </div>`;
 
 function alarmsInput(entry, desired) {
+    const slots = Number(entry.limit) || 0;
     // Pelo número do alarme e não pela posição: um plano só do alarme 5 cairia na primeira caixa.
     const bySlot = new Map(
         medicationPlanTimes(desired?.plans).map((entry) => [entry.slot, entry]),
     );
-    const cells = Array.from({ length: SLOTS }, (_, index) =>
+    const cells = Array.from({ length: slots }, (_, index) =>
         slotCell(index, bySlot.get(index + 1)),
     );
 
@@ -57,7 +54,7 @@ function alarmsInput(entry, desired) {
 /** Deixa cair os slots em branco; cada plano leva o número do seu alarme. */
 function readAlarms(section) {
     const plans = [];
-    for (let index = 0; index < SLOTS; index++) {
+    for (let index = 0; section.querySelector(`[data-config-field="time-${index}"]`); index++) {
         const value = readText(section, `time-${index}`);
         if (isBlank(value)) continue;
         const { hour, minute } = fromTimeValue(value);
@@ -77,7 +74,7 @@ function readAlarms(section) {
 const dateField = (name, value) =>
     html`<input class="form-control" type="date" data-config-field="${name}" value="${(String(value ?? ""))}">`;
 
-/** Do mais alto (`0`) ao silêncio; valores e rótulos vêm da definição, os ícones e tons daqui. */
+/** Do mais alto (`0`) ao silêncio; os valores vêm da definição, os ícones e tons daqui. */
 const VOLUME_STEPS = {
     0: { icon: "fa-volume-high", tone: "primary" },
     1: { icon: "fa-volume-low", tone: "secondary" },
@@ -85,15 +82,14 @@ const VOLUME_STEPS = {
     3: { icon: "fa-volume-xmark", tone: "danger" },
 };
 
-function volumeScale(entry, desired) {
-    const { name, options, fallback } = selectOptions(entry);
+function volumeScale(entry, desired, meta) {
+    const name = entry.fields?.[0] || "volume";
 
-    return segmentedScale({
-        name: nextUid(`cfg-${name}`),
+    return choiceField({
         field: name,
-        value: desired?.[name] ?? fallback,
-        label: entry.label || "Volume",
-        options: options.map((option) => ({ ...option, ...(VOLUME_STEPS[option.value] || {}) })),
+        value: desired?.[name],
+        label: entryText(entry, meta).label,
+        options: fieldChoices(entry, meta, name).map((option) => ({ ...option, ...(VOLUME_STEPS[option.value] || {}) })),
     });
 }
 
@@ -101,17 +97,8 @@ export const INPUTS = {
     volumeScale: {
         render: volumeScale,
         read: (section) => {
-            const node = section.querySelector("input[type=radio][data-config-field]:checked");
-            if (!node) return {};
-            const value = String(node.value ?? "");
-            return {
-                [node.dataset.configField]:
-                    value !== "" && !Number.isNaN(Number(value)) ? Number(value) : value,
-            };
-        },
-        defaults: (entry) => {
-            const { name, options } = selectOptions(entry);
-            return { [name]: entry.options?.default ?? options[0]?.value ?? 0 };
+            const name = section.querySelector("input[type=radio][data-config-field]")?.dataset.configField ?? "volume";
+            return { [name]: readChoice(section, name) };
         },
     },
     pillDispenserPeriod: {
@@ -126,12 +113,10 @@ export const INPUTS = {
             startDate: readText(section, "startDate"),
             endDate: readText(section, "endDate"),
         }),
-        defaults: () => ({ enabled: false, startDate: "", endDate: "" }),
     },
     pillDispenserAlarms: {
         render: alarmsInput,
         read: readAlarms,
-        defaults: () => ({ plans: [] }),
     },
     pillDispenserQuietHours: {
         render: (entry, desired) =>
@@ -152,12 +137,5 @@ export const INPUTS = {
                 endMinute: end.minute,
             };
         },
-        defaults: () => ({
-            enabled: false,
-            startHour: 22,
-            startMinute: 0,
-            endHour: 7,
-            endMinute: 0,
-        }),
     },
 };

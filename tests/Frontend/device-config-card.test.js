@@ -91,11 +91,8 @@ test("without settings there is no body", () => {
     assert.equal(uplinkCardContent("device_config", { settings: {} }).body || "", "");
 });
 
-/**
- * O frame `CONFIG` do 4P Touch parte-se em `chave:valor` e a chave entra como vier. Uma que o
- * catálogo não conheça chega ao ecrã pelo `humanizeCapabilityKey`, que não escapa nada.
- */
-test("a key the device invented reaches the details escaped", () => {
+/** Uma chave que o aparelho inventou não chega ao ecrã: diz que não tem tradução. */
+test("a key the device invented shows as untranslated, never as markup", () => {
     const content = uplinkCardContent("device_config", {
         settings: {
             "<img src=x onerror=alert(1)>": { enabled: true },
@@ -103,6 +100,6 @@ test("a key the device invented reaches the details escaped", () => {
         },
     });
 
-    assert.doesNotMatch(content.details, /<img/i);
-    assert.match(content.details, /&lt;/);
+    assert.doesNotMatch(content.details, /img/i);
+    assert.match(content.details, /Sem tradução/);
 });

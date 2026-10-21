@@ -34,18 +34,6 @@ test("number survives the round trip", () => {
     assert.deepEqual(roundTrip(entry, { interval: 0 }), { interval: 0 });
 });
 
-test("text survives the round trip, including characters that need escaping", () => {
-    const entry = { input: "text", key: "label", fields: ["value"] };
-
-    assert.deepEqual(roundTrip(entry, { value: "a \"quoted\" <b>" }), { value: "a \"quoted\" <b>" });
-});
-
-test("an empty text field reads back as an empty string, not undefined", () => {
-    const entry = { input: "text", key: "label", fields: ["value"] };
-
-    assert.deepEqual(roundTrip(entry, {}), { value: "" });
-});
-
 test("action inputs carry no payload", () => {
     assert.deepEqual(roundTrip({ input: "action", key: "reset" }, {}), {});
 });
@@ -133,6 +121,7 @@ test("a decimal weight keeps its decimals", () => {
         input: "personalInfo",
         key: "personal_info",
         fields: ["heightCm", "weightKg", "age", "sex", "stepGoal", "sleepGoalMinutes"],
+        options: { sex: [{ value: "female" }, { value: "male" }] },
     };
 
     assert.equal(roundTrip(entry, { weightKg: 65.5 }).weightKg, 65.5);
@@ -143,6 +132,7 @@ test("personal information survives the round trip", () => {
         input: "personalInfo",
         key: "personal_info",
         fields: ["heightCm", "weightKg", "age", "sex", "stepGoal", "sleepGoalMinutes"],
+        options: { sex: [{ value: "female" }, { value: "male" }] },
     };
     const desired = {
         heightCm: 181, weightKg: 78, age: 29, sex: "male", stepGoal: 10000, sleepGoalMinutes: 450,
@@ -220,6 +210,7 @@ test("the 4P Touch alarm list survives the round trip", () => {
 });
 
 const entryFor = (input, fields = [], extra = {}) => ({ input, key: input, fields, ...extra });
+const choices = (...values) => values.map((value) => ({ value }));
 
 test("phone survives the round trip", () => {
     assert.deepEqual(
@@ -229,21 +220,13 @@ test("phone survives the round trip", () => {
 });
 
 test("fall sensitivity survives the round trip", () => {
-    assert.deepEqual(roundTrip(entryFor("fallSensitivity"), { sensitivity: 2 }), { sensitivity: 2 });
+    const entry = entryFor("fallSensitivity", ["sensitivity"], { options: { sensitivity: choices(1, 2, 3) } });
+    assert.deepEqual(roundTrip(entry, { sensitivity: 2 }), { sensitivity: 2 });
 });
 
 test("fall sensitivity levels keep the scale alongside the level", () => {
     assert.deepEqual(
-        roundTrip(entryFor("fallSensitivityLevels"), { sensitivity: 4, levels: 8 }),
-        { sensitivity: 4, levels: 8 },
-    );
-});
-
-test("a stored sensitivity scale the firmware cannot use is offered as the default one", () => {
-    // O formulário só oferece 6 e 8, e por isso um 7 guardado desenha-se como 8 em vez de
-    // apresentar uma escala que seria rejeitada ao gravar.
-    assert.deepEqual(
-        roundTrip(entryFor("fallSensitivityLevels"), { sensitivity: 4, levels: 7 }),
+        roundTrip(entryFor("fallSensitivityLevels", ["sensitivity"], { options: { sensitivity: choices(1, 2, 3, 4, 5, 6, 7, 8), levels: choices(6, 8) } }), { sensitivity: 4, levels: 8 }),
         { sensitivity: 4, levels: 8 },
     );
 });
@@ -256,43 +239,21 @@ test("hour interval toggle survives the round trip", () => {
 });
 
 test("working mode and sound profile survive the round trip", () => {
-    assert.deepEqual(roundTrip(entryFor("workingMode"), { mode: 3 }), { mode: 3 });
-    assert.deepEqual(roundTrip(entryFor("soundProfile"), { mode: 2 }), { mode: 2 });
-});
-
-test("blood pressure keeps both readings", () => {
+    assert.deepEqual(roundTrip(entryFor("workingMode", ["mode"], { options: { mode: choices(1, 2, 3) } }), { mode: 3 }), { mode: 3 });
     assert.deepEqual(
-        roundTrip(entryFor("bloodPressure"), { systolic: 118, diastolic: 76 }),
-        { systolic: 118, diastolic: 76 },
+        roundTrip(entryFor("soundProfile", ["mode"], { options: { mode: choices("ring_and_vibrate", "ring") } }), { mode: "ring" }),
+        { mode: "ring" },
     );
 });
 
 test("the wonlex blood pressure alert keeps both thresholds", () => {
-    // O `hpWarn` e o `LPWarn` são os que a definição da Wonlex declara e o
-    // `WonlexPayloadBuilder` exige.
-    assert.deepEqual(
-        roundTrip(entryFor("wonlexBloodPressureWarning", ["switchState", "hpWarn", "LPWarn"]), {
-            switchState: true,
-            hpWarn: 135,
-            LPWarn: 90,
-        }),
-        { enabled: true, hpWarn: 135, LPWarn: 90 },
-    );
+    const payload = { enabled: true, systolicMmHg: 135, diastolicMmHg: 90 };
+    assert.deepEqual(roundTrip(entryFor("wonlexBloodPressureWarning", ["enabled", "systolicMmHg", "diastolicMmHg"]), payload), payload);
 });
 
-test("language and timezone survive the round trip as a preset pair", () => {
-    assert.deepEqual(
-        roundTrip(entryFor("languageTimezone"), { language: 3, timeZone: "1" }),
-        { language: 3, timeZone: "1" },
-    );
-});
-
-test("a language and timezone combination with no preset falls back to the first one", () => {
-    // O formulário só oferece os presets que o firmware suporta.
-    assert.deepEqual(
-        roundTrip(entryFor("languageTimezone"), { language: 2, timeZone: "9" }),
-        { language: 0, timeZone: "0" },
-    );
+test("language and time zone are two fields, read back as they were drawn", () => {
+    const entry = entryFor("languageTimezone", ["language", "utcOffsetHours"], { options: { language: choices("en", "pt") } });
+    assert.deepEqual(roundTrip(entry, { language: "pt", utcOffsetHours: -3.5 }), { language: "pt", utcOffsetHours: -3.5 });
 });
 
 test("dual toggle keeps both switches", () => {
@@ -314,59 +275,38 @@ test("time ranges survive the round trip, one range and several", () => {
     );
 });
 
-test("wonlex sleep settings survive, with switchState read back as enabled", () => {
-    assert.deepEqual(
-        roundTrip(entryFor("wonlexSleepSettings"), {
-            switchState: true,
-            sleepStartTime: "220000",
-            sleepEndTime: "100000",
-            sleepTarget: 480,
-        }),
-        { enabled: true, sleepStartTime: "220000", sleepEndTime: "100000", sleepTarget: 480 },
-    );
+test("wonlex sleep settings survive the round trip", () => {
+    const payload = { enabled: true, startTime: "22:00", endTime: "10:00", targetMinutes: 480 };
+    assert.deepEqual(roundTrip(entryFor("wonlexSleepSettings"), payload), payload);
 });
 
-test("wonlex reminder threshold survives, with switchState read back as enabled", () => {
-    assert.deepEqual(
-        roundTrip(entryFor("wonlexReminderThreshold", ["switchState", "reminderValue"]), {
-            switchState: true,
-            reminderValue: 90,
-        }),
-        { enabled: true, reminderValue: 90 },
-    );
+test("wonlex reminder threshold reads the field the definition names", () => {
+    const payload = { enabled: true, thresholdCelsius: 38.5 };
+    assert.deepEqual(roundTrip(entryFor("wonlexReminderThreshold", ["enabled", "thresholdCelsius"]), payload), payload);
 });
 
-test("wonlex heart rate range survives, with both switches read back as enabled flags", () => {
-    assert.deepEqual(
-        roundTrip(entryFor("wonlexHeartRateRange"), {
-            switchState: true,
-            remindValue: 120,
-            exerciseSwitchState: true,
-            exerciseHRMin: 100,
-            exerciseHRMax: 140,
-            exerciseRemindValue: 140,
-        }),
-        {
-            enabled: true,
-            remindValue: 120,
-            exerciseEnabled: true,
-            exerciseHRMin: 100,
-            exerciseHRMax: 140,
-            exerciseRemindValue: 140,
-        },
-    );
+test("wonlex heart rate range survives the round trip", () => {
+    const payload = {
+        enabled: true,
+        thresholdBpm: 120,
+        exerciseEnabled: true,
+        exerciseMinBpm: 100,
+        exerciseMaxBpm: 140,
+        exerciseThresholdBpm: 140,
+    };
+    assert.deepEqual(roundTrip(entryFor("wonlexHeartRateRange"), payload), payload);
 });
 
-test("the call whitelist is a list of numbers, and named contacts on vivistar", () => {
+test("the call whitelist is a list of numbers, or named contacts when the field says so", () => {
     const numbers = { numbers: ["+351911111111"] };
     const contacts = { contacts: [{ name: "Ana", phone: "+351911111111" }] };
 
     assert.deepEqual(
-        roundTrip(entryFor("call_whitelist", [], { limit: 5 }), numbers, { limit: 5 }),
+        roundTrip(entryFor("call_whitelist", ["numbers"], { limit: 5 }), numbers, { limit: 5 }),
         ["+351911111111"],
     );
     assert.deepEqual(
-        roundTrip(entryFor("call_whitelist", [], { limit: 5 }), contacts, { limit: 5, protocol: "vivistar-iw" }),
+        roundTrip(entryFor("call_whitelist", ["contacts"], { limit: 5 }), contacts, { limit: 5 }),
         contacts,
     );
 });

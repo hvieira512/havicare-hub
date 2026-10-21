@@ -13,6 +13,8 @@ final class VivistarConfigurationDefinitions
 
         // hitcare: as etiquetas das opções do modo, da sensibilidade e dos lembretes ficam porque o
         // hitCare as mostra do `_meta`; saem quando ele traduzir os valores.
+        // hitcare: o modo fica em inteiros, e não numa enumeração, porque o hitCare envia o número e
+        // testa o `8`; muda quando o `ajax/custom.php` mandar o nome.
         return [
             $entry('sosContacts', 'BP12', 'sos_contacts', ['numbers'], ['AP12'], category: 'contacts', order: 10, limit: 3),
             $entry('call_whitelist', 'BP14', 'call_whitelist', ['contacts'], ['AP14'], category: 'contacts', order: 20, limit: 10),

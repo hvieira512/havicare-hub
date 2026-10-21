@@ -154,10 +154,46 @@ A secção `telemetry` é **só de leitura** — descreve o que se pode medir:
 }
 ```
 
-As entradas escrevíveis trazem ainda `value`, com o valor público atual, e
-`_meta`, com as opções e as etiquetas que uma interface precisa para as
-desenhar. **Nenhuma entrada pública expõe identidade de protocolo** — os nomes
-nativos só aparecem nas `operations[]` da resposta a um `PATCH`.
+As entradas escrevíveis trazem ainda `value`, com o valor público atual — o de
+partida, quando nada foi guardado, e é o `ConfigurationInputDefaults` quem o
+decide —, e `_meta`, com as opções e os limites que uma interface precisa para
+as desenhar. **Nenhuma entrada pública expõe identidade de protocolo** — os
+nomes nativos só aparecem nas `operations[]` da resposta a um `PATCH`.
+
+### O texto é de quem desenha
+
+A API e o MQTT levam só chaves, enumerações e códigos de erro ingleses. O nome
+de uma capacidade, a ajuda de uma configuração, a frase de confirmação de uma
+acção destrutiva (o `risk: "destructive"` do catálogo), o nome de cada opção e
+o texto de cada botão (o `verb` e os `actions` são enumerações: `read`,
+`factory_reset`, `send_message`, `start`, `stop`, `vibrate`) vivem no
+dicionário da dashboard, o `src/Dashboard/dashboard/pt-PT.json`, chaveados pela
+capacidade e, onde o mesmo nome faz coisas diferentes, pelo protocolo. O
+`PortugueseDictionaryTest` falha quando o catálogo ganha uma chave sem tradução.
+
+As etiquetas de opções que o hitCare mostra do `_meta` — o modo de envio da
+Vivistar, a sensibilidade de queda e a recorrência, os dias e o tipo dos
+despertadores — ficam enquanto ele não traduzir os valores; ver o
+[contrato MQTT](08-contrato-mqtt.md#pendente-do-hitcare).
+
+### A forma pública da Wonlex e do 4P Touch
+
+| Configuração | Campos |
+|---|---|
+| Interruptores da Wonlex | `enabled`, e não `switchState` |
+| `location_reporting_interval` (Wonlex) | `intervalSeconds` |
+| Intervalos de medição (Wonlex) | `intervalMinutes` |
+| `low_battery_alert` (Wonlex) | `thresholdPercent` |
+| `blood_oxygen_alert` (Wonlex) | `enabled`, `thresholdPercent` |
+| `temperature_high_alert`, `temperature_low_alert` | `enabled`, `thresholdCelsius` |
+| `blood_pressure_alert` | `enabled`, `systolicMmHg`, `diastolicMmHg` |
+| `heart_rate_high_alert`, `heart_rate_low_alert` | `enabled`, `thresholdBpm`, `exerciseEnabled`, `exerciseMinBpm`, `exerciseMaxBpm`, `exerciseThresholdBpm` |
+| `sleep_monitoring` (Wonlex) | `enabled`, `startTime` e `endTime` em `HH:MM`, `targetMinutes` |
+| `sound_profile` (4P Touch) | `mode`: `ring_and_vibrate`, `ring`, `vibrate`, `silent` |
+| `language_timezone` (4P Touch) | `language` em etiqueta BCP 47 (`pt`, `en`, `zh-Hans`…) e `utcOffsetHours` |
+
+O construtor de cada protocolo traduz para o fio: `switchState`, `RemindValue`,
+`hpWarn`, `HHmmss`, os códigos do `LZ` e do `profile`.
 
 Um campo numérico traz no `_meta` os limites que o hub aplica — os mesmos que
 recusam um `PATCH` fora deles com `invalid_config`:

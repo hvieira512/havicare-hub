@@ -90,7 +90,7 @@ function segmented(field, options, value) {
     </div>`;
 }
 
-function form() {
+function form(bounds) {
     return html`
         <div class="scale-user-form border rounded p-3 vstack gap-2" data-scale-user-form hidden>
             <div class="fw-semibold" data-scale-form-title>Novo utilizador</div>
@@ -98,8 +98,8 @@ function form() {
                 <label class="col-12 col-md-6 form-label-sm">Nome<input class="form-control" type="text" maxlength="64" data-scale-field="name"></label>
                 <label class="col-6 col-md-3 form-label-sm">Data de nascimento<input class="form-control" type="date" data-scale-field="birthDate"></label>
                 <div class="col-6 col-md-3 form-label-sm d-flex flex-column gap-1">Sexo${segmented("sex", [["male", "Homem"], ["female", "Mulher"]], "male")}</div>
-                <label class="col-6 col-md-3 form-label-sm">Altura (cm)<input class="form-control" type="number" min="50" max="250" data-scale-field="heightCm"></label>
-                <label class="col-6 col-md-3 form-label-sm">Peso inicial (kg)<input class="form-control" type="number" min="0" max="250" step="0.1" data-scale-field="weightKg"></label>
+                <label class="col-6 col-md-3 form-label-sm">Altura (cm)<input class="form-control" type="number" min="${bounds.heightCm?.min ?? 0}" max="${bounds.heightCm?.max ?? ""}" data-scale-field="heightCm"></label>
+                <label class="col-6 col-md-3 form-label-sm">Peso inicial (kg)<input class="form-control" type="number" min="${bounds.weightKg?.min ?? 0}" max="${bounds.weightKg?.max ?? ""}" step="0.1" data-scale-field="weightKg"></label>
                 <div class="col-12 col-md-6 form-label-sm d-flex flex-column gap-1">Modo atleta${segmented("athlete", [["false", "Não"], ["true", "Sim"]], "false")}</div>
             </div>
             <div class="small text-danger" data-scale-form-error hidden></div>
@@ -111,7 +111,7 @@ function form() {
         </div>`;
 }
 
-function scaleUsersInput(_entry, desired) {
+function scaleUsersInput(entry, desired) {
     const users = Array.isArray(desired?.items) ? desired.items : [];
     const online = String(desired?.onlineUserId ?? "");
     const group = nextUid("scale-online");
@@ -119,7 +119,7 @@ function scaleUsersInput(_entry, desired) {
         <div class="vstack gap-2">
             <div class="d-flex justify-content-end"><button type="button" class="btn btn-outline-secondary btn-sm" data-action="scaleUserAdd">Adicionar</button></div>
             <div class="vstack gap-2" data-scale-user-list data-scale-group="${group}">${users.map((user) => userCard(user, { online, group }))}</div>
-            ${form()}
+            ${form(entry.bounds ?? {})}
         </div>`;
 }
 
@@ -254,7 +254,6 @@ export const INPUTS = {
             const items = [...section.querySelectorAll("[data-scale-user]")].map(userOf);
             return online ? { items, onlineUserId: online } : { items };
         },
-        defaults: () => ({ items: [] }),
     },
     // Ler o histórico de uma pessoa: escolhe-se pelo nome, e sem ninguém registado não há envio.
     scaleUserChoice: {

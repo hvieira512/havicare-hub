@@ -17,6 +17,15 @@ deviceTypesIsland.textContent = readFileSync(
 );
 dom.window.document.body.appendChild(deviceTypesIsland);
 
+const i18nIsland = dom.window.document.createElement("script");
+i18nIsland.type = "application/json";
+i18nIsland.id = "hub-i18n";
+i18nIsland.textContent = readFileSync(
+    fileURLToPath(new URL("../../../src/Dashboard/dashboard/pt-PT.json", import.meta.url)),
+    "utf8",
+);
+dom.window.document.body.appendChild(i18nIsland);
+
 /**
  * O `matchMedia`, que o jsdom não instala, conduzível por quem testa: sem ele o `theme.js` cai
  * sempre no claro, e o ramo do sistema escuro fica por testar.

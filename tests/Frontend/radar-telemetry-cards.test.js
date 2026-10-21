@@ -26,10 +26,8 @@ test("sleep state is a card with the value in Portuguese", () => {
     assert.equal(card.value, "Sono profundo");
 });
 
-test("a state the map does not know shows as it came instead of vanishing", () => {
-    // O fabricante pode acrescentar estados numa versão nova do firmware. O hub manda a
-    // enumeração à mesma, e mostrar "Rem Sleep" é melhor do que mostrar "-".
-    assert.equal(uplinkCardContent("sleep_state", { state: "rem_sleep" }).value, "Rem Sleep");
+test("a state the dictionary does not know says so instead of vanishing or showing English", () => {
+    assert.equal(uplinkCardContent("sleep_state", { state: "rem_sleep" }).value, "Sem tradução");
 });
 
 test("a radar that sees nobody is working", () => {

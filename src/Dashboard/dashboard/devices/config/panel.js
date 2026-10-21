@@ -15,6 +15,7 @@ import { confirmDestructive, toast } from "../../dialogs.js";
 import { resetPhoneControls } from "../../phone.js";
 import { state } from "../../state.js";
 import { CONFIG_INPUTS } from "./inputs/index.js";
+import { countLabel } from "../../i18n.js";
 
 let els;
 
@@ -267,10 +268,8 @@ export async function saveDeviceConfiguration(section, actionValue = "") {
     }
 }
 
-/** O radar mostra o que tem quando lho perguntam: abrir as configurações pergunta, uma vez por abertura. */
+/** Um aparelho que só mostra o que tem quando lho perguntam pergunta-se ao abrir, uma vez por abertura. */
 export function requestRadarStateOnOpen() {
-    if (state.deviceModal.protocol !== "qinglanst-radar") return;
-
     const section = els?.deviceConfigRoot?.querySelector("[data-config-section][data-config-key=\"read_device_state\"]");
     if (!section ||
         state.deviceModal.actionDeliveries[section.dataset.capabilityKey || "read_device_state"] ||
@@ -497,9 +496,9 @@ export function renderDeviceConfigurationModal() {
 function paneStatusLabel(pending, edited) {
     if (pending === 0) return "";
     if (edited === 0) {
-        return `${pending} ${pending === 1 ? "definição" : "definições"} no valor padrão, por enviar`;
+        return `${countLabel(pending, "definição", "definições")} no valor padrão, por enviar`;
     }
-    return `${edited} ${edited === 1 ? "alteração" : "alterações"} por enviar`;
+    return `${countLabel(edited, "alteração", "alterações")} por enviar`;
 }
 
 /** O separador, a linha de cada secção e o rodapé saem das mesmas leituras, para não discordarem. */
@@ -517,7 +516,7 @@ export function syncConfigCounts(root) {
         if (changed) {
             changed.textContent = edited === 0
                 ? ""
-                : ` · ${edited} ${edited === 1 ? "alterada" : "alteradas"}`;
+                : ` · ${countLabel(edited, "alterada", "alteradas")}`;
             changed.classList.toggle("text-warning-emphasis", edited > 0);
         }
 

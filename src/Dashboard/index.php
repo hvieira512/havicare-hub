@@ -68,6 +68,7 @@ require_once __DIR__ . '/components/modal.php';
     </div>
 
     <script type="application/json" id="hub-device-types"><?= \Hub\Domain\DeviceTypeCatalog::asJson() ?></script>
+    <script type="application/json" id="hub-i18n"><?= json_encode(json_decode((string)file_get_contents(__DIR__ . '/dashboard/pt-PT.json')), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG) ?></script>
     <script src="/assets/vendor/bootstrap/bootstrap.bundle.min.js"></script>
     <script src="/assets/vendor/sweetalert2/sweetalert2.all.min.js"></script>
     <script type="module" src="<?= $asset('main.js') ?>"></script>

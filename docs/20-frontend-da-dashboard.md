@@ -136,7 +136,9 @@ dashboard/
 ├── state.js                o objeto de estado, um só, com um sub-objeto por ecrã
 ├── domain.js               o vocabulário: tipos de dispositivo, modelos, fornecedores, licenças
 ├── radar-style.js          como se pinta o que um radar vê: posturas e tipos de área
-├── format.js               esc(), datas, e as etiquetas por chave
+├── format.js               esc(), datas pelo Intl, unidades e valores de campo
+├── i18n.js                 o dicionário pt-PT: capacidades, opções, ajudas, verbos
+├── pt-PT.json              o texto do dicionário, servido na ilha #hub-i18n
 ├── html.js                 html`` e raw(): a marcação escapa por omissão
 ├── components/             uma peça de interface por ficheiro: recebe dados, devolve HTML
 │   ├── state-badge.js      a pastilha de estado: ponto ou ícone, rótulo e tom
@@ -366,18 +368,15 @@ afirmam que certas linhas lá estão. Mover uma função entre ficheiros parte-o
   obrigava a um registo de callbacks que custa mais do que resolve. É o único
   ciclo do grafo.
 - **Um tipo de campo de configuração declara as suas faces num descritor só** —
-  `render` ou `control`, `read`, `defaults` e `help`, em
-  `devices/config/inputs/`. Eram mapas paralelos indexados pela mesma chave e
-  alinhados à mão: uma entrada em falta não dava erro, dava um campo genérico ou
-  um payload vazio. Um descritor sem `defaults` é agora uma ausência visível, e
-  algumas estão anotadas como tal.
+  `render` ou `control` e `read`, em `devices/config/inputs/`, todos com a
+  assinatura `(entry, desired, meta)`. O valor de partida, as opções e os
+  limites vêm da API; o texto, do `i18n.js`.
 
   O `render` e o `control` decidem a forma do bloco e não são cosmética: com
   `render` o descritor desenha o corpo inteiro do cartão, com `control` devolve
   só o controlo e o painel monta o cartão à volta dele — nome, subtítulo,
-  pastilha de estado e a unidade colada ao campo. O que o `defaults` devolve
-  tem de ser o que o `read` devolve, e
-  não o que o controlo se chama — o `config-payload-roundtrip.test.js` prende-o.
+  pastilha de estado e a unidade colada ao campo. O que se desenha tem de ser o
+  que o `read` devolve — o `config-payload-roundtrip.test.js` prende-o.
 - **As famílias de cartões que só existem num aparelho vivem em `cards/`** —
   radar, fralda, gateway, NCS e localização. A linha não é o tamanho: uma
   postura ou uma contagem de pessoas não existe num relógio. O eixo do *tipo de

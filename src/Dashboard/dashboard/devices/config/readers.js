@@ -1,6 +1,5 @@
 import { esc } from "../../format.js";
 import { normalizePhoneControl } from "../../phone.js";
-import { protocolPhonebookConstraints } from "./protocol-catalog.js";
 
 export function firstFieldName(section) {
     return (
@@ -70,36 +69,20 @@ export function readPhone(section, field) {
     return control ? normalizePhoneControl(control) : "";
 }
 
+/** Um contacto leva nome e telefone; uma linha só com um dos dois recusa-se em vez de se perder. */
 export function readContacts(section) {
-    const phonebookConstraints = protocolPhonebookConstraints(
-        String(section.dataset.configProtocol || ""),
-    );
-    const nameMaxLength = parseInt(
-        String(section.dataset.phonebookNameMaxLength || phonebookConstraints.name?.maxLength || "0"),
-        10,
-    ) || 0;
     const contacts = [];
-    let sawIncompleteRow = false;
-
     for (const row of section.querySelectorAll("[data-repeat-row=\"contacts\"]")) {
-        const name = readContactName(row, nameMaxLength);
+        const name = readContactName(row);
         const phone = readContactPhone(row);
         if (name === "" && phone === "") {
             continue;
         }
         if (name === "" || phone === "") {
-            sawIncompleteRow = true;
-            if (!phonebookConstraints.allowPartialRows) {
-                throw new Error("Nome e telefone são obrigatórios");
-            }
-            continue;
+            throw new Error("Nome e telefone são obrigatórios");
         }
 
         contacts.push({ name, phone });
-    }
-
-    if (phonebookConstraints.allowPartialRows && contacts.length === 0 && sawIncompleteRow) {
-        throw new Error("Nome e telefone são obrigatórios");
     }
 
     return contacts;
@@ -119,9 +102,10 @@ function findDuplicateValues(values) {
     return [...duplicates];
 }
 
-function readContactName(row, maxLength) {
+function readContactName(row) {
     const input = row.querySelector("[data-repeat-field=\"name\"]");
     const value = String(input?.value || "").trim();
+    const maxLength = input?.maxLength > 0 ? input.maxLength : 0;
     if (maxLength > 0 && unicodeLength(value) > maxLength) {
         throw new Error(`O nome deve ter no máximo ${maxLength} caracteres`);
     }

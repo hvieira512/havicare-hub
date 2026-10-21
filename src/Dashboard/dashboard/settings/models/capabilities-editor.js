@@ -8,11 +8,11 @@ import { sectionStrip } from "../../components/chips.js";
 import { modelPreviewHtml } from "../../components/model-image.js";
 import {
     capabilitiesGroupedBySection,
-    capabilityLabelByKey,
     modelCommercialName,
     modelDeviceType,
     modelInternalName,
 } from "../../domain.js";
+import { capabilityLabel } from "../../i18n.js";
 import { CAPABILITY_SECTION_ICONS } from "../../capability-catalog.js";
 import { getSettingsModelsRuntime } from "./shell.js";
 import { backToModelList } from "./list.js";
@@ -237,10 +237,7 @@ function renderCapabilitiesSection() {
     if (section) {
         const rows = section.entries
             .map((feature) => {
-                const labelText = capabilityLabelByKey(
-                    feature,
-                    state.settingsModal.capabilityCatalog,
-                );
+                const labelText = capabilityLabel(feature);
                 const sectionState = capabilities[section.section] || {};
                 const isInModelPayload = Object.prototype.hasOwnProperty.call(
                     sectionState,

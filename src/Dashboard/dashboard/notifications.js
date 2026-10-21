@@ -5,7 +5,8 @@ import {
     markNotificationsRead,
 } from "./api/index.js";
 import { getDashboardApiToken } from "./api/http.js";
-import { ago } from "./format.js";
+import { ago, when } from "./format.js";
+import { countLabel } from "./i18n.js";
 import { html, raw } from "./html.js";
 import { confirmDestructive, toast } from "./dialogs.js";
 import { loadSettingsModal } from "./settings/index.js";
@@ -18,13 +19,13 @@ const NOTIFICATION_TYPES = {
         title: "Dispositivo não autorizado",
         icon: "fa-triangle-exclamation",
         showsDevice: true,
-        count: (n) => (n > 1 ? `${n} tentativas` : "1 tentativa"),
+        count: (n) => countLabel(n, "tentativa", "tentativas"),
     },
     hub_unclean_restart: {
         title: "O hub reiniciou-se sozinho",
         icon: "fa-bolt",
         showsDevice: false,
-        count: (n) => (n > 1 ? `${n} vezes` : "1 vez"),
+        count: (n) => countLabel(n, "vez", "vezes"),
     },
 };
 
@@ -32,7 +33,7 @@ const DEFAULT_NOTIFICATION_TYPE = {
     title: "Notificação",
     icon: "fa-triangle-exclamation",
     showsDevice: true,
-    count: (n) => (n > 1 ? `${n} ocorrências` : "1 ocorrência"),
+    count: (n) => countLabel(n, "ocorrência", "ocorrências"),
 };
 
 const notificationType = (type) =>
@@ -48,8 +49,13 @@ const renderBadge = (count) => {
     elements.badge.classList.toggle("d-none", normalized === 0);
     elements.summary.textContent = normalized === 0
         ? ""
-        : `${normalized} ${normalized === 1 ? "não lida" : "não lidas"}`;
+        : countLabel(normalized, "não lida", "não lidas");
 };
+
+function restartDetails(reason) {
+    if (!reason?.pid) return "O processo anterior terminou sem se desligar em condições";
+    return `O processo ${reason.pid}, arrancado em ${when(reason.startedAt)}, terminou sem se desligar em condições`;
+}
 
 /** Uma notificação e o que se pode fazer com ela: registar à frente, e o vermelho no que cala o aparelho. */
 export function notificationRow(notification) {
@@ -64,8 +70,8 @@ export function notificationRow(notification) {
                     ? `licença ${notification.licenseId}`
                     : notification.model || notification.ident,
             ].filter(Boolean).join(" · ")
-        // Para o hub, a razão é a notícia.
-        : String(notification.reason || "");
+        // Para o hub, a razão é a notícia: o processo que caiu e quando tinha arrancado.
+        : restartDetails(notification.reason);
     const unreadClass = notification.readAt
         ? ""
         : " list-group-item-primary";

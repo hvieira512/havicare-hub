@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import { parseFragment } from "./support/dom.js";
-import { defaultConfigPayload, renderConfigSection } from "../../src/Dashboard/dashboard/devices/config/index.js";
+import { renderConfigSection } from "../../src/Dashboard/dashboard/devices/config/index.js";
 
 /**
  * Um campo estreito ocupa uma linha só, e do rótulo sobra a unidade ao lado do controlo; sem
@@ -14,7 +14,7 @@ const LOCATION_INTERVAL = {
     command: "locationInterval",
     label: "Intervalo de localização",
     input: "number",
-    fields: ["intervalTime"],
+    fields: ["intervalSeconds"],
 };
 
 const sectionOf = (entry) => parseFragment(renderConfigSection("wonlex-json", entry, null));
@@ -32,7 +32,7 @@ test("the unit the label carried sits beside the control", () => {
         capabilityKey: "heart_rate_measurement_interval",
         label: "Intervalo de frequência cardíaca",
         input: "number",
-        fields: ["interval"],
+        fields: ["intervalMinutes"],
     });
 
     assert.match(section.textContent, /\bmin\b/);
@@ -42,17 +42,4 @@ test("the field still has a name for screen readers", () => {
     const input = sectionOf(LOCATION_INTERVAL).querySelector("input[type=\"number\"]");
 
     assert.equal(input.getAttribute("aria-label"), "Intervalo de localização");
-});
-
-/** O tom de pele da Veepoo vai de 1 a 6, e o aparelho recusa o zero. */
-test("the default respects the minimum the setting declares", () => {
-    const skinTone = {
-        key: "skin_tone",
-        label: "Tom de pele",
-        input: "number",
-        fields: ["level"],
-        options: { min: 1, max: 6 },
-    };
-
-    assert.deepEqual(defaultConfigPayload(skinTone, "veepoo-ble"), { level: 1 });
 });

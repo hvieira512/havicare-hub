@@ -7,15 +7,14 @@ import { CONFIG_INPUTS } from "../../src/Dashboard/dashboard/devices/config/inpu
 const { pillDispenserAlarms: alarms, pillDispenserPeriod: period, pillDispenserQuietHours: quietHours } =
     CONFIG_INPUTS;
 
-const entry = (fields) => ({ fields });
-const render = (input, desired) => parseFragment(input.render({ fields: [] }, desired));
+const entry = (fields) => ({ fields, limit: 9 });
+const render = (input, desired) => parseFragment(input.render({ fields: [], limit: 9 }, desired));
 const daily = (time, slot) => ({ times: [{ time, enabled: true, slot, recurrence: { kind: "daily" } }] });
 
 test("the plan starts empty without breaking", () => {
     const html = String(alarms.render(entry(["plans"]), {}));
 
     assert.equal((html.match(/data-alarm-slot/g) || []).length, 9);
-    assert.deepEqual(alarms.defaults(entry(["plans"])), { plans: [] });
 });
 
 test("the plan period draws both dates and the switch", () => {
@@ -27,8 +26,6 @@ test("the plan period draws both dates and the switch", () => {
     assert.match(html, /type="date"[^>]*data-config-field="startDate"/);
     assert.match(html, /data-config-field="endDate"/);
     assert.match(html, /2026-12-31/);
-    // Sem período é um estado legítimo, e não um formulário por preencher.
-    assert.deepEqual(period.defaults(), { enabled: false, startDate: "", endDate: "" });
 });
 
 /** O número do alarme tem de ser o que chega ao aparelho: sem os vazios, escolher o 5 escreveria no 3. */
@@ -47,7 +44,7 @@ test("the chosen alarm carries its own number, not its list position", () => {
 });
 
 test("alarm 5 is drawn in box 5", () => {
-    const cells = String(alarms.render({}, { plans: [daily("10:24", 5)] }))
+    const cells = String(alarms.render({ limit: 9 }, { plans: [daily("10:24", 5)] }))
         .split("data-alarm-slot=\"")
         .slice(1);
 

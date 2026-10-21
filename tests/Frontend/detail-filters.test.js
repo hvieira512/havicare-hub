@@ -287,7 +287,7 @@ describe("device switch", () => {
         populateDetailFilterTypes();
         assert.deepEqual(
             [...els.detailFilterType.options].map((option) => option.value),
-            ["all", "blood_pressure", "heart_rate"],
+            ["all", "heart_rate", "blood_pressure"],
         );
 
         selectImei("bbb222");

@@ -1,3 +1,5 @@
+import { UNTRANSLATED, valueLabel } from "./i18n.js";
+
 export const esc = (value) =>
     String(value ?? "").replace(
         /[&<>"']/g,
@@ -11,370 +13,83 @@ export const esc = (value) =>
             })[char],
     );
 
-export const titleize = (value) =>
-    String(value ?? "desconhecido")
-        .replace(/[_-]+/g, " ")
-        .replace(/\b\w/g, (char) => char.toUpperCase());
+const relative = new Intl.RelativeTimeFormat("pt-PT", { numeric: "auto", style: "short" });
 
+/** Há quanto tempo, na maior unidade que cabe: segundos, minutos, horas ou dias. */
 export const ago = (value) => {
     if (!value) return "nunca";
-    const seconds = Math.max(
-        0,
-        Math.floor((Date.now() - Date.parse(value)) / 1000),
-    );
-    if (seconds < 60) return `há ${seconds}s`;
-    if (seconds < 3600) return `há ${Math.floor(seconds / 60)}m`;
-    if (seconds < 86400) return `há ${Math.floor(seconds / 3600)}h`;
-    return `há ${Math.floor(seconds / 86400)}d`;
+    const seconds = Math.max(0, Math.floor((Date.now() - Date.parse(value)) / 1000));
+    if (seconds < 60) return relative.format(-seconds, "second");
+    if (seconds < 3600) return relative.format(-Math.floor(seconds / 60), "minute");
+    if (seconds < 86400) return relative.format(-Math.floor(seconds / 3600), "hour");
+    return relative.format(-Math.floor(seconds / 86400), "day");
+};
+
+/** A data de um instante, ou `null` quando não é instante nenhum. */
+const parsedDate = (value) => {
+    const parsed = value ? Date.parse(value) : NaN;
+    return Number.isNaN(parsed) ? null : new Date(parsed);
 };
 
 export const when = (value) => {
     if (!value) return "";
-    const parsed = Date.parse(value);
-    if (Number.isNaN(parsed)) return String(value);
-    return new Date(parsed).toLocaleString("pt-PT");
+    return parsedDate(value)?.toLocaleString("pt-PT") ?? String(value);
 };
 
 /** Só a hora: a data vive no cabeçalho do dia, e repeti-la em cada linha come a coluna. */
 export const timeOnly = (value) => {
     if (!value) return "";
-    const parsed = Date.parse(value);
-    if (Number.isNaN(parsed)) return String(value);
-    return new Date(parsed).toLocaleTimeString("pt-PT", { hour: "2-digit", minute: "2-digit" });
+    return parsedDate(value)?.toLocaleTimeString("pt-PT", { hour: "2-digit", minute: "2-digit" }) ?? String(value);
 };
 
 /** O dia de um instante, para agrupar. Local e não UTC: o corte é à meia-noite de cá. */
 export const dayKey = (value) => {
-    if (!value) return "";
-    const parsed = Date.parse(value);
-    if (Number.isNaN(parsed)) return "";
-    const date = new Date(parsed);
-    return `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`;
+    const date = parsedDate(value);
+    return date ? `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}` : "";
 };
 
 const DAY_MONTH = { day: "numeric", month: "long" };
+const relativeDay = new Intl.RelativeTimeFormat("pt-PT", { numeric: "auto" });
 
 /** O cabeçalho de um dia, com «Hoje» e «Ontem». */
 export const dayLabel = (value) => {
-    if (!value) return "";
-    const parsed = Date.parse(value);
-    if (Number.isNaN(parsed)) return "";
-    const date = new Date(parsed);
+    const date = parsedDate(value);
+    if (!date) return "";
     const today = new Date();
-    const dayMonth = date.toLocaleDateString("pt-PT", DAY_MONTH);
-
-    if (dayKey(value) === dayKey(today.toISOString())) return `Hoje, ${dayMonth}`;
-    const yesterday = new Date(today.getTime() - 86400000);
-    if (dayKey(value) === dayKey(yesterday.toISOString())) return `Ontem, ${dayMonth}`;
-    if (date.getFullYear() === today.getFullYear()) return dayMonth;
-    return `${dayMonth} de ${date.getFullYear()}`;
+    const midnight = (day) => new Date(day.getFullYear(), day.getMonth(), day.getDate()).getTime();
+    const daysAgo = Math.round((midnight(today) - midnight(date)) / 86400000);
+    const sameYear = date.getFullYear() === today.getFullYear();
+    const dayMonth = date.toLocaleDateString("pt-PT", sameYear ? DAY_MONTH : { ...DAY_MONTH, year: "numeric" });
+    if (daysAgo === 0 || daysAgo === 1) {
+        const word = relativeDay.format(-daysAgo, "day");
+        return `${word.charAt(0).toUpperCase()}${word.slice(1)}, ${dayMonth}`;
+    }
+    return dayMonth;
 };
 
-export const fieldLabel = (key) =>
-    ({
-        distanceMeters: "Distância",
-        caloriesKcal: "Calorias",
-        exerciseSeconds: "Exercício",
-        periodSeconds: "Janela",
-        bmi: "IMC",
-        bodyFatPercent: "Gordura",
-        fatMassKg: "Massa gorda",
-        leanMassKg: "Massa magra",
-        musclePercent: "Músculo",
-        muscleMassKg: "Massa muscular",
-        subcutaneousFatPercent: "Gordura subcutânea",
-        bodyWaterPercent: "Água",
-        waterMassKg: "Massa de água",
-        skeletalMusclePercent: "Músculo esquelético",
-        boneMassKg: "Massa óssea",
-        idealWeightKg: "Peso ideal",
-        weightControlKg: "Controlo de peso",
-        fatControlKg: "Controlo de gordura",
-        muscleControlKg: "Controlo muscular",
-        proteinPercent: "Proteína",
-        proteinMassKg: "Massa proteica",
-        basalMetabolicRateKcal: "Metabolismo basal",
-        standMinutes: "Tempo em pé",
-        source: "Origem",
-        gpsValid: "GPS válido",
-        speedKmh: "Velocidade",
-        accuracyMeters: "Precisão",
-        pagerId: "Pager",
-        buttonId: "Botão",
-        gatewayId: "Gateway",
-        weightKg: "Peso",
-        scaleUserId: "Utilizador",
-        userId: "Utilizador",
-        impedance50KhzOhm: "Impedância a 50 kHz",
-        impedance100KhzOhm: "Impedância a 100 kHz",
-        impedanceOhm: "Impedância",
-        channel: "Canal",
-        gsmSignal: "Sinal GSM",
-        pressType: "Tipo de toque",
-        triggerCount: "Total de toques",
-        presses: "Toques",
-        xMg: "Eixo X",
-        yMg: "Eixo Y",
-        zMg: "Eixo Z",
-        magnitudeMg: "Intensidade",
-        interface: "Interface",
-        communicationVersion: "Firmware de comunicação",
-        networkType: "Rede",
-        signalQuality: "Qualidade do sinal",
-        signalStrengthDbm: "Intensidade do sinal",
-        satelliteCount: "Satélites",
-        steps: "Passos",
-        bodyCelsius: "Temperatura",
-        percent: "Percentagem",
-        affectedChannelCount: "Canais afetados",
-        maximumDelta: "Delta máximo",
-        chargingState: "Estado de carga",
-        // Apesar do nome, o `batteryType` do Wonlex diz porque é que a leitura foi enviada.
-        batteryType: "Motivo do envio",
-        batteryPercent: "Bateria",
-        rollFrequency: "Frequência de rotação",
-        workMode: "Modo de trabalho",
-        glucoseMgDl: "Glicemia",
-        summary: "Resumo",
-        reportedAt: "Reportado em",
-        temperatureCelsius: "Temperatura",
-        lowCelsius: "Mínima",
-        highCelsius: "Máxima",
-        humidityPercent: "Humidade",
-        remaining: "Restantes",
-        total: "Total",
-        current: "Atual",
-        level: "Nível",
-        wifiSignalDbm: "Sinal WiFi",
-        gsmSignalDbm: "Sinal GSM",
-        alarmSlot: "Alarme",
-        cellNumber: "Compartimento",
-        scheduledAt: "Hora prevista",
-        takenAt: "Hora da toma",
-        method: "Método",
-        result: "Resultado",
-        fault: "Avaria",
-        alarm: "Alarme",
-        alarms: "Alarmes",
-        takenCount: "Tomadas",
-        missedCount: "Falhadas",
-        lidOpen: "Tampa aberta",
-        mainsPowered: "Ligado à corrente",
-        environmentAlarm: "Ambiente fora da gama",
-        ccid: "CCID",
-        people: "Pessoas",
-        breathing: "Respiração",
-        sleep_state: "Estado do sono",
-        walkingDistance: "Distância a andar",
-        walkingTimeS: "Tempo a andar",
-        meditationTimeS: "Tempo em meditação",
-        inBedTimeS: "Tempo na cama",
-        standingTimeS: "Tempo em pé",
-        multiplayerTimeS: "Tempo em atividade",
-        breathingActive: "Respiração ativa",
-        realTimeBreathing: "Respiração agora",
-        realTimeHeartRate: "FC agora",
-        avgBreathing: "Respiração média",
-        avgHeartRate: "FC média",
-        breathingStatus: "Estado respiratório",
-        heartRateStatus: "Estado da FC",
-        vitalSignsStatus: "Estado dos sinais vitais",
-        ack: "ACK",
-        settings: "Definições",
-        intervalSeconds: "Intervalo (s)",
-        // A Wonlex manda o intervalo de localização em segundos, e zero desliga-o.
-        intervalTime: "Intervalo (s)",
-        intervalMinutes: "Intervalo (min)",
-        interval: "Intervalo (min)",
-        password: "Palavra-passe",
-        phone: "Telefone",
-        Battery: "Bateria (%)",
-        switchState: "Estado",
-        sleepStartTime: "Início do sono",
-        sleepEndTime: "Fim do sono",
-        sleepTarget: "Meta de sono (min)",
-        reminderValue: "Valor de alerta",
-        RemindValue: "Valor de alerta",
-        remindValue: "Limite principal",
-        hpWarn: "Sistólica máxima",
-        LPWarn: "Diastólica máxima",
-        exerciseSwitchState: "Alarmes em exercício",
-        exerciseHRMin: "FC mínima em exercício",
-        exerciseHRMax: "FC máxima em exercício",
-        exerciseRemindValue: "Limite em exercício",
-        event: "Evento",
-        help_call: "Chamada de ajuda",
-        reset: "Tecla acionada",
-        deviceId: "ID do dispositivo",
-        topicSourceId: "Origem",
-        messageType: "Tipo",
-        from: "Gateway",
-        transparent: "Transparente",
-        key: "Tecla",
-        lastEvent: "Último evento",
-        personIndex: "Pessoa",
-        // As pontuações do sono pelo que medem: `nightScore` é a das idas à casa de banho.
-        qualityStars: "Estrelas",
-        deepSleepScore: "Pontuação do sono profundo",
-        efficiencyScore: "Pontuação de eficiência",
-        fallAsleepScore: "Pontuação do adormecer",
-        durationScore: "Pontuação da duração",
-        nightWakingScore: "Pontuação das idas à casa de banho",
-        insomniaScore: "Pontuação de insónia",
-        awakeningCount: "Despertares",
-        firstDeepSleepMinutes: "Primeiro sono profundo",
-        nightAwakeMinutes: "Tempo levantado",
-        returnToDeepSleepMeanMinutes: "Média até voltar ao sono profundo",
-        totalDurationMinutes: "Duração",
-        timingValid: "Instantes de confiança",
-        // As grandezas com o nome do contrato; a unidade sai no `FIELD_UNIT`.
-        bpm: "Frequência cardíaca",
-        breathsPerMinute: "Frequência respiratória",
-        spo2Percent: "Oxigénio no sangue",
-        systolicMmHg: "Sistólica",
-        diastolicMmHg: "Diastólica",
-        surfaceCelsius: "Temperatura da superfície",
-        environmentCelsius: "Temperatura ambiente",
-        umolPerL: "Concentração",
-        totalCholesterolMmolPerL: "Colesterol total",
-        triglyceridesMmolPerL: "Triglicéridos",
-        hdlMmolPerL: "HDL",
-        ldlMmolPerL: "LDL",
-        milliseconds: "Milissegundos",
-        heartRateBpm: "Frequência cardíaca",
-        qtcMilliseconds: "QTc",
-        hrvMilliseconds: "VFC",
-        rrIntervalMilliseconds: "Intervalo RR",
-        frequencyHz: "Amostragem",
-        sampleCount: "Amostras",
-        irregularHeartbeat: "Batimento irregular",
-        memoryGroup: "Grupo de memória",
-        fromHistory: "Da memória",
-        site: "Local",
-        durationMinutes: "Duração",
-        startTime: "Início",
-        endTime: "Fim",
-        segments: "Troços",
-        intervals: "Intervalos",
-        timestamp: "Instante",
-        version: "Versão",
-        type: "Tipo",
-        state: "Estado",
-        value: "Valor",
-        count: "Contagem",
-        score: "Pontuação",
-    })[key] || titleize(key);
-
-/** A unidade entre parênteses no rótulo de um campo: de «Intervalo (min)» sai «min». */
-export const fieldUnit = (key) => fieldLabel(key).match(/\(([^)]+)\)\s*$/)?.[1] ?? "";
-
-/** Os valores de enumeração em português, por campo: `low` e `high` mudam de sentido entre campos. */
-const FIELD_VALUE_LABELS = {
-    site: { forehead: "Testa", ear: "Ouvido" },
-    // O bit dos relógios e a enumeração do dispensador, que no contrato partilham o campo.
-    chargingState: {
-        0: "Não está a carregar",
-        1: "A carregar",
-        charging: "A carregar",
-        full: "Carregada",
-        normal: "Não está a carregar",
-        low: "Bateria fraca",
-        absent: "Sem bateria",
-    },
-    // Os quatro motivos que o Wonlex declara para enviar uma leitura de bateria.
-    batteryType: {
-        0: "Ao ligar",
-        1: "Ao desligar",
-        2: "Envio periódico",
-        3: "Bateria fraca",
-    },
-    result: {
-        on_time: "A horas",
-        late: "Tardia",
-        abnormal: "Anormal",
-        missed: "Falhada",
-    },
-    method: {
-        on_time: "A horas",
-        early: "Antecipada",
-        late: "Atrasada",
-    },
-    level: {
-        ok: "Normal",
-        low: "A acabar",
-        empty: "Sem medicação",
-    },
-    fault: {
-        rotation: "Rotação do prato",
-        tray_reset: "Reposição do prato",
-        pusher: "Empurrador",
-        cell_door: "Porta do compartimento",
-        keys: "Teclas",
-    },
-    // O `state` é partilhado; só entram os valores que ainda não tinham tradução.
-    state: {
-        // O estado de cada alarme do dispensador, como o aparelho o classifica.
-        idle: "Sem toma marcada",
-        preparing: "A preparar",
-        waiting: "À espera de sair",
-        awaiting_retrieval: "À espera de ser levantada",
-        timed_out: "Não chegou a sair",
-        retrieval_timed_out: "Saiu e não foi levantada",
-        missed: "Toma falhada",
-        taken: "Tomada",
-    },
-    sleep_state: {
-        awake: "Acordado",
-        light_sleep: "Sono leve",
-        deep_sleep: "Sono profundo",
-        undefined: "Indefinido",
-    },
-    posture: {
-        initialization: "A iniciar",
-        walking: "A andar",
-        suspected_fall: "Suspeita de queda",
-        sitting: "Sentado",
-        standing: "De pé",
-        fall_confirmation: "Queda confirmada",
-        lying_down: "Deitado",
-        suspected_sitting_on_ground: "Suspeita de estar sentado no chão",
-        confirmed_sitting_on_ground: "Sentado no chão",
-        sitting_up_bed: "Sentado na cama",
-        suspected_sitting_up_bed: "Suspeita de estar sentado na cama",
-        confirmed_sitting_up_bed: "Sentado na cama",
-        unknown: "Desconhecida",
-    },
-    lastEvent: {
-        no_event: "Sem eventos",
-        enter_room: "Entrou na divisão",
-        leave_room: "Saiu da divisão",
-        enter_area: "Entrou na área",
-        leave_area: "Saiu da área",
-        unknown: "Desconhecido",
-    },
-    breathingStatus: {
-        normal: "Normal",
-        hypopnea: "Hipopneia",
-        hyperpnea: "Hiperpneia",
-        apnea: "Apneia",
-    },
-    heartRateStatus: {
-        normal: "Normal",
-        low: "Baixa",
-        high: "Alta",
-        undefined: "Indefinida",
-    },
-    vitalSignsStatus: {
-        normal: "Normal",
-        weak: "Fraco",
-        undefined: "Indefinido",
-    },
-};
-
-// O estado de sono chega em `sleep_state.state` e no `sleepState` do `vitals_minute_stats`.
-FIELD_VALUE_LABELS.sleepState = FIELD_VALUE_LABELS.sleep_state;
+export { fieldLabel } from "./i18n.js";
 
 const FIELD_UNIT = {
+    afterMinutes: "min",
+    afterSeconds: "s",
+    backM: "m",
+    exerciseMaxBpm: "bpm",
+    exerciseMinBpm: "bpm",
+    exerciseThresholdBpm: "bpm",
+    frontM: "m",
+    heightCm: "cm",
+    intervalHours: "h",
+    intervalMinutes: "min",
+    intervalSeconds: "s",
+    leftM: "m",
+    maxBpm: "bpm",
+    minBpm: "bpm",
+    rightM: "m",
+    sleepGoalMinutes: "min",
+    targetMinutes: "min",
+    thresholdBpm: "bpm",
+    thresholdCelsius: "°C",
+    thresholdPercent: "%",
     accuracyMeters: "m",
     distanceMeters: "m",
     distanceKm: "km",
@@ -446,51 +161,31 @@ const FIELD_UNIT = {
     frequencyHz: "Hz",
 };
 
+/** A unidade de um campo, pelo nome dele; vazia quando não a tem. */
+export const fieldUnit = (key) => FIELD_UNIT[key] ?? "";
+
+const numberFormat = new Intl.NumberFormat("pt-PT", { maximumFractionDigits: 2 });
+
+export const formatNumber = (value) => numberFormat.format(value);
+
 export const fieldValue = (key, value) => {
     if (value === undefined || value === null || value === "") return "-";
 
     if (typeof value === "boolean") return value ? "Sim" : "Não";
 
-    if (typeof value === "number" && FIELD_UNIT[key]) {
-        return `${value} ${FIELD_UNIT[key]}`;
-    }
-
     const raw = String(value);
-    const translated = FIELD_VALUE_LABELS[key]?.[raw];
+    const translated = valueLabel(key, raw);
     if (translated) return translated;
 
-    // Só o que parece enumeração se embeleza: um ISO 8601 ou texto livre passam intactos.
-    return /^[a-z][a-z0-9]*(_[a-z0-9]+)*$/.test(raw) ? titleize(raw) : raw;
+    if (typeof value === "number") {
+        return FIELD_UNIT[key] ? `${formatNumber(value)} ${FIELD_UNIT[key]}` : formatNumber(value);
+    }
+
+    // Só o que parece enumeração fica por traduzir: um ISO 8601 ou texto livre passam intactos.
+    return /^[a-z][a-z0-9]*(_[a-z0-9]+)*$/.test(raw) ? UNTRANSLATED : raw;
 };
 
-export const commandLabel = (command) =>
-    ({
-        "Heart rate": "Frequência cardíaca",
-        "Blood pressure": "Tensão arterial",
-
-        "Blood oxygen": "Oxigénio no sangue",
-        Temperature: "Temperatura",
-        "Temperature variant": "Temperatura",
-        "Breath rate": "Frequência respiratória",
-        Location: "Localização",
-        "Sleep data": "Sono",
-        Sleep: "Sono",
-        "Daily totals": "Totais do dia",
-        "Body composition": "Composição corporal",
-        "Firmware version": "Versão de firmware",
-        "Device status": "Estado do dispositivo",
-        "Stored configuration": "Configuração guardada",
-        "Stored configuration (rest)": "Configuração guardada (resto)",
-        ECG: "ECG",
-        HRV: "VFC",
-        PPG: "PPG",
-        "RR interval": "Intervalo RR",
-        Battery: "Bateria",
-        "Blood glucose": "Glicemia",
-        Stress: "Stress",
-    })[command.label] ||
-    command.label ||
-    command.command;
+export { commandLabel } from "./i18n.js";
 
 /** Por que razão um pedido falhou; um código desconhecido aparece como veio. */
 export const commandError = (code) =>

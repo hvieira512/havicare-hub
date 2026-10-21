@@ -19,6 +19,7 @@ import {
     radarVitalsMinuteStatsValue,
 } from "./radar.js";
 import { capabilityLabel } from "../../capability-catalog.js";
+import { countLabel, valueLabel } from "../../i18n.js";
 
 /** O ícone e o tom de cada capacidade: `[ícone, tom]`. */
 const CARD_STYLE = {
@@ -104,12 +105,6 @@ function scaleUserName(id) {
     const users = state.selectedDetail?.configurations?.scale_users?.items ?? [];
     return users.find((user) => user?.id === id)?.name || id;
 }
-
-const WEIGHING_PHASE = {
-    weight: { idle: "Balança vazia", settling: "A estabilizar", stable: "Peso estável", overload: "Excesso de peso" },
-    impedance: { measuring: "A medir a impedância", measured: "Impedância medida", failed: "Impedância falhou" },
-    heartRate: { measuring: "A medir a FC", measured: "FC medida", failed: "FC falhou" },
-};
 
 export function cardIcon(type) {
     return CARD_STYLE[type]?.[0] || "fa-circle-info";
@@ -303,7 +298,7 @@ const UPLINK_CARD_RENDERERS = {
     weighing_status: (data) => ({
         value: data?.shuttingDown
             ? "A desligar"
-            : [WEIGHING_PHASE.heartRate[data?.heartRate], WEIGHING_PHASE.impedance[data?.impedance], WEIGHING_PHASE.weight[data?.weight]]
+            : [valueLabel("heartRatePhase", data?.heartRate), valueLabel("impedancePhase", data?.impedance), valueLabel("weightPhase", data?.weight)]
                     .find(Boolean) ?? capabilityLabel("weighing_status"),
         details: data?.weightKg ? `${data.weightKg} kg` : "",
     }),
@@ -436,12 +431,6 @@ const UPLINK_CARD_RENDERERS = {
     "device.disconnected": () => ({ value: "Desligado" }),
 };
 
-// Os dois estados do dispensador que não são carga e que por isso o ícone não desenha.
-const BATTERY_STATE_LABEL = {
-    low: "Bateria fraca",
-    absent: "Sem bateria",
-};
-
 /** `meta` é o que se sabe da leitura fora dela, como quando chegou. */
 export function uplinkCardContent(type, data, meta = {}) {
     const rendered = UPLINK_CARD_RENDERERS[type]?.(data, meta) || {
@@ -459,7 +448,7 @@ function deviceConfigContent(data) {
     return {
         value: settings.length === 1
             ? capabilityLabel(settings[0][0])
-            : `${settings.length} definições`,
+            : countLabel(settings.length, "definição", "definições"),
         details: joinMarkup(settings.map(([key]) => html`${capabilityLabel(key)}`)),
         span: 12,
         body: reportedSettingsBody(settings),
@@ -553,8 +542,8 @@ function batteryBadge(data) {
 
 function batteryDetails(data) {
     // A carga e a corrente estão no ícone; ficam os dois estados que ele não sabe desenhar.
-    if (data.lowBattery === true) return BATTERY_STATE_LABEL.low;
-    const state = BATTERY_STATE_LABEL[data.chargingState] ||
+    if (data.lowBattery === true) return valueLabel("chargingState", "low");
+    const state = (["low", "absent"].includes(data.chargingState) ? valueLabel("chargingState", data.chargingState) : "") ||
         (data.chargingState == null ? compactDetails(data, ["batteryType"]) : "");
 
     return joinMarkup([state]);

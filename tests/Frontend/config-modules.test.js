@@ -2,43 +2,33 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import { asText, parseFragment } from "./support/dom.js";
-import {
-    takePillsInput as buildTakePillsInput,
-    takePillsReminderGroup as buildTakePillsReminderGroup,
-} from "../../src/Dashboard/dashboard/devices/config/four-p-touch-take-pills.js";
+import { readTakePills, takePillsInput as buildTakePillsInput } from "../../src/Dashboard/dashboard/devices/config/four-p-touch-take-pills.js";
 
 const takePillsInput = asText(buildTakePillsInput);
-const takePillsReminderGroup = asText(buildTakePillsReminderGroup);
+const entry = { key: "medication_reminders", capabilityKey: "medication_reminders", limit: 1 };
+const plan = (time, recurrence) => ({ times: [{ time, enabled: true, recurrence }] });
 
 test("4P Touch medication UI escapes values and respects the reminder limit", () => {
-    const html = takePillsInput({
+    const html = takePillsInput(entry, {
         reminderText: "<script>alert(\"x\")</script>",
-        reminderSettings: [
-            { time: "08:00", enabled: true, frequency: 1 },
-            { time: "20:00", enabled: false, frequency: 2 },
-        ],
+        plans: [plan("08:00", { kind: "once" }), plan("20:00", { kind: "daily" })],
     }, { limit: 1 });
 
     assert.match(html, /&lt;script&gt;alert\(&quot;x&quot;\)&lt;\/script&gt;/);
-    assert.equal((html.match(/data-takepills-reminder-group=/g) || []).length, 1);
-    assert.match(html, /data-action="addRepeatRow" data-repeat-kind="takePillsReminder" disabled/);
+    assert.equal((html.match(/data-repeat-row="alarm_clock"/g) || []).length, 1);
+    assert.match(html, /data-action="addRepeatRow" data-repeat-kind="alarm_clock" disabled/);
 });
 
-/** A máscara `0111110` tem o domingo na posição 0: são segunda a sexta. */
-test("4P Touch custom-frequency reminder ticks the days of the mask, not the mask", () => {
-    const html = takePillsReminderGroup(
-        { time: "09:30", enabled: true, frequency: 3, custom: "0111110" },
-        0,
-        [{ value: 3, label: "Personalizado" }],
-    );
-    const root = parseFragment(html);
+/** Os lembretes são linhas de alarme: a recorrência personalizada marca os dias, de 1 a 7. */
+test("a custom reminder ticks its days and reads them back", () => {
+    const root = parseFragment(takePillsInput({ ...entry, limit: 3 }, {
+        reminderText: "Tomar",
+        plans: [plan("09:30", { kind: "custom", days: [1, 2, 3, 4, 5] })],
+    }, { limit: 3 }));
 
-    assert.match(html, /data-takepills-custom-wrapper="0"/);
-    assert.doesNotMatch(html, /data-takepills-custom-wrapper="0"[^>]*d-none/);
     assert.deepEqual(
-        Array.from(root.querySelectorAll("[data-weekday]:checked")).map((i) => i.value),
+        Array.from(root.querySelectorAll("[data-weekday]:checked")).map((input) => input.value),
         ["1", "2", "3", "4", "5"],
     );
-    // A máscara não anda na marcação: escolhem-se os dias.
-    assert.doesNotMatch(html, /value="0111110"/);
+    assert.deepEqual(readTakePills(root).plans, [plan("09:30", { kind: "custom", days: [1, 2, 3, 4, 5] })]);
 });

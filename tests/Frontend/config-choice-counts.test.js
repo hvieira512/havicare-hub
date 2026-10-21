@@ -8,7 +8,7 @@ import {
     initDeviceConfigPanel,
     syncConfigCounts,
 } from "../../src/Dashboard/dashboard/devices/config/panel.js";
-import { handleDeviceConfigClick } from "../../src/Dashboard/dashboard/devices/config/handlers.js";
+import { handleDeviceConfigChange } from "../../src/Dashboard/dashboard/devices/config/handlers.js";
 
 /**
  * Os cartões de escolha não têm botão próprio: quem envia é o rodapé da secção. Se o clique
@@ -19,9 +19,9 @@ const CATALOG = [{
     key: "fall_detection",
     capabilityKey: "fall_detection",
     command: "fall_detection",
-    label: "Deteção de queda",
     input: "fallSensitivity",
     fields: ["sensitivity"],
+    options: { sensitivity: [{ value: 1 }, { value: 2 }, { value: 3 }] },
     category: "alarms",
 }];
 
@@ -48,26 +48,26 @@ const render = () => {
 const sendButton = (root) =>
     root.querySelector("[data-config-pane=\"alarms\"] [data-action=\"saveConfigPane\"]");
 
-const choiceButton = (root, value) =>
-    root.querySelector(`[data-action="selectConfigChoice"][data-config-value="${value}"]`);
+const choose = (root, value) => {
+    const radio = root.querySelector(`input[type="radio"][data-config-field="sensitivity"][value="${value}"]`);
+    radio.checked = true;
+    handleDeviceConfigChange({ target: radio });
+};
 
 test("choosing another level lights the section's send button", () => {
     const root = render();
     assert.equal(sendButton(root).disabled, true);
 
-    const button = choiceButton(root, "3");
-    button.dispatchEvent(new window.Event("click", { bubbles: true }));
-    handleDeviceConfigClick({ target: button });
+    choose(root, "3");
 
-    assert.equal(root.querySelector("[data-config-field=\"sensitivity\"]").value, "3");
     assert.equal(sendButton(root).disabled, false);
 });
 
 test("going back to the starting level turns the send button off again", () => {
     const root = render();
 
-    handleDeviceConfigClick({ target: choiceButton(root, "3") });
-    handleDeviceConfigClick({ target: choiceButton(root, "2") });
+    choose(root, "3");
+    choose(root, "2");
 
     assert.equal(sendButton(root).disabled, true);
 });

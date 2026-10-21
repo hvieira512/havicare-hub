@@ -55,7 +55,7 @@ test("the card says when the device last spoke", () => {
     );
 
     assert.match(markup, /device-card-when/);
-    assert.match(markup, /há 3h/);
+    assert.match(markup, /há 3 h/);
 });
 
 test("a device that never spoke says so instead of a date that does not exist", () => {
