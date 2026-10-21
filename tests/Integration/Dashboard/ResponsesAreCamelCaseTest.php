@@ -35,7 +35,7 @@ final class ResponsesAreCamelCaseTest extends DashboardHttpTestCase
         $db->whitelist->register('594B3CF100A7', 'Qinglanst', 'HC2', 'radar', 1001, '', '594B3CF100A7', 'hitcare');
         $db->radarLayouts->store('594B3CF100A7', [
             'room' => ['xMinDm' => -20, 'yMinDm' => 0, 'xMaxDm' => 20, 'yMaxDm' => 30],
-            'areas' => [['key' => 0, 'type' => 5, 'name' => 'Cama', 'xMinDm' => -5, 'yMinDm' => 5, 'xMaxDm' => 5, 'yMaxDm' => 20]],
+            'areas' => [['key' => 0, 'type' => 'monitoring_bed', 'name' => 'Cama', 'xMinDm' => -5, 'yMinDm' => 5, 'xMaxDm' => 5, 'yMaxDm' => 20]],
         ], '2026-10-21 10:00:00');
         $db->whitelist->register('C80000000001', 'MOKO', 'MKGW', 'gateway', 1001, '', '', 'hitcare');
         $db->gatewayDeviceLinks->upsert('C80000000001', '861265061009822');

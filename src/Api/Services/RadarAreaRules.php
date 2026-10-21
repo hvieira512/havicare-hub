@@ -9,17 +9,6 @@ use Hub\Command\Configuration\Payload\QinglanstPayloadBuilder;
 /** As regras das áreas de um radar contra a sala que ele tem: o que a dashboard mostra é o que isto recusa. */
 final class RadarAreaRules
 {
-    /** O número do fabricante de cada tipo, para as áreas que ainda o tragam. */
-    private const TYPES = [
-        1 => 'custom',
-        2 => 'bed',
-        3 => 'interference',
-        4 => 'door',
-        5 => 'monitoring_bed',
-        6 => 'alarm_area',
-        7 => 'furniture',
-    ];
-
     /** A porta conta como encostada até 20 cm da parede. */
     private const DOOR_WALL_TOLERANCE_DM = 2;
 
@@ -39,7 +28,7 @@ final class RadarAreaRules
 
         $monitoringBeds = 0;
         foreach ($items as $index => $item) {
-            $type = self::type($item['type'] ?? null);
+            $type = $item['type'] ?? null;
             if ($type === 'monitoring_bed' && ++$monitoringBeds > 1) {
                 $violations["items[{$index}]"][] = 'second_monitoring_bed';
             }
@@ -54,11 +43,6 @@ final class RadarAreaRules
         }
 
         return $violations;
-    }
-
-    private static function type(mixed $type): ?string
-    {
-        return is_numeric($type) ? (self::TYPES[(int)$type] ?? null) : (is_string($type) ? $type : null);
     }
 
     /**

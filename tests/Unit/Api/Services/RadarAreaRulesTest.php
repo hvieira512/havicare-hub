@@ -26,17 +26,14 @@ final class RadarAreaRulesTest extends TestCase
         ], self::ROOM));
     }
 
-    /** O tipo ainda pode chegar pelo número do fabricante: 4 é a porta, 5 a cama de monitorização. */
-    public function testTheVendorTypeNumbersReadAsTheirNames(): void
+    /** O número do fabricante não é tipo da API: a recusa dele é do `invalid_config`, não destas regras. */
+    public function testVendorTypeNumbersAreNotTypes(): void
     {
-        self::assertSame(
-            ['items[1]' => ['door_off_wall'], 'items[2]' => ['second_monitoring_bed']],
-            RadarAreaRules::violations([
-                self::area(5, -5, 5, 5, 20),
-                self::area(4, 0, 10, 3, 13),
-                self::area(5, 6, 5, 12, 20),
-            ], self::ROOM),
-        );
+        self::assertSame([], RadarAreaRules::violations([
+            self::area(5, -5, 5, 5, 20),
+            self::area(4, 0, 10, 3, 13),
+            self::area(5, 6, 5, 12, 20),
+        ], self::ROOM));
     }
 
     /** Sem planta guardada não se sabe onde estão as paredes. */

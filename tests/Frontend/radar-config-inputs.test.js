@@ -164,8 +164,8 @@ test("switching the mounting to wall sets the wall factory limits", async () => 
 
 test("areas are not edited in the card and read back unchanged", () => {
     const items = [
-        { key: 0, type: 5, name: "Cama de monitorização", xMinDm: -4, yMinDm: -6, xMaxDm: 6, yMaxDm: 13 },
-        { key: 1, type: 4, name: "Porta", xMinDm: 17, yMinDm: 15, xMaxDm: 20, yMaxDm: 18 },
+        { key: 0, type: "monitoring_bed", name: "Cama de monitorização", xMinDm: -4, yMinDm: -6, xMaxDm: 6, yMaxDm: 13 },
+        { key: 1, type: "door", name: "Porta", xMinDm: 17, yMinDm: 15, xMaxDm: 20, yMaxDm: 18 },
     ];
     const root = section(areas, { items });
 
