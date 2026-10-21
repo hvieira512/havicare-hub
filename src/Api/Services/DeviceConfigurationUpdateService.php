@@ -460,7 +460,7 @@ final class DeviceConfigurationUpdateService
         if (!is_array($payload)) {
             return [];
         }
-        $contacts = $payload['contacts'] ?? $payload['familyNumbers'] ?? $payload;
+        $contacts = $payload['contacts'] ?? $payload;
 
         return is_array($contacts) && array_is_list($contacts) ? $contacts : [];
     }

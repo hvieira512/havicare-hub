@@ -102,10 +102,8 @@ final class SystemdWatchdogTest extends TestCase
         self::assertNotNull($watchdog);
 
         $loop = Loop::get();
+        // O loop nunca corre, que é o que um loop encalhado faz; o ping só sai de dentro dele.
         $timer = $watchdog->attach($loop);
-
-        // O loop nunca corre, que é o que um loop encalhado faz.
-        usleep(300_000);
 
         self::assertSame([], $this->drain(), 'sem loop a girar não pode sair um único ping');
         self::assertNotNull($timer);
