@@ -483,8 +483,7 @@ export const commandLabel = (command) =>
     ({
         "Heart rate": "Frequência cardíaca",
         "Blood pressure": "Tensão arterial",
-        "Systolic blood pressure": "Tensão arterial sistólica",
-        "Diastolic blood pressure": "Tensão arterial diastólica",
+
         "Blood oxygen": "Oxigénio no sangue",
         Temperature: "Temperatura",
         "Temperature variant": "Temperatura",
@@ -496,8 +495,8 @@ export const commandLabel = (command) =>
         "Body composition": "Composição corporal",
         "Firmware version": "Versão de firmware",
         "Device status": "Estado do dispositivo",
-        "Refresh telemetry": "Atualizar telemetria",
         "Stored configuration": "Configuração guardada",
+        "Stored configuration (rest)": "Configuração guardada (resto)",
         ECG: "ECG",
         HRV: "VFC",
         PPG: "PPG",
@@ -505,8 +504,6 @@ export const commandLabel = (command) =>
         Battery: "Bateria",
         "Blood glucose": "Glicemia",
         Stress: "Stress",
-        "Heart rate and blood pressure":
-            "Frequência cardíaca e tensão arterial",
     })[command.label] ||
     command.label ||
     command.command;

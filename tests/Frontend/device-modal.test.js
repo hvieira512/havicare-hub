@@ -78,26 +78,6 @@ test("o modal cujo detalhe o servidor recusou não se deixa gravar", async () =>
     assert.match(state.deviceModal.errorMessage, /não chegou a carregar/i);
 });
 
-/** A guarda é só da edição: criar não tem detalhe para carregar. */
-test("criar um dispositivo continua a poder gravar-se", async () => {
-    state.deviceModal = { ...state.deviceModal, mode: "create", detailLoaded: false };
-
-    let posted = false;
-    globalThis.fetch = async () => {
-        posted = true;
-        return errorResponse();
-    };
-    els.deviceForm.dataset.deviceType = "watch";
-    els.deviceForm.dataset.supplier = "wonlex";
-    els.deviceForm.dataset.model = "D41";
-    els.deviceImei.value = "861265061009822";
-    els.deviceLicenseId.value = "1";
-
-    await saveDevice();
-
-    assert.equal(posted, true);
-});
-
 /**
  * O `editDevice` substitui o `state.deviceModal` inteiro, e o `panel.js` escreve sem guarda no
  * `actionDeliveries`.

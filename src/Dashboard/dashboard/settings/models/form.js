@@ -288,10 +288,8 @@ async function refreshTemplate() {
         ? response.enabledCapabilities.map(String)
         : [];
     state.modelModal.enabledCapabilities = capabilities;
-    state.modelModal.templateSupplier = String(response.supplier || supplier.name);
-    state.modelModal.templateDeviceType = String(response.deviceType || deviceType);
     state.modelModal.templateSummary =
-        `${capabilities.length} capacidades predefinidas para ${state.modelModal.templateSupplier} (${deviceTypeLabel(deviceType)}).`;
+        `${capabilities.length} capacidades predefinidas para ${response.supplier || supplier.name} (${deviceTypeLabel(deviceType)}).`;
     els.modelWizardTemplateSummary.textContent = state.modelModal.templateSummary;
 }
 

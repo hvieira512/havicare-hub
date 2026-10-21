@@ -27,8 +27,7 @@ import { capabilityLabel } from "../../capability-catalog.js";
  * `capabilityLabel`; o tom fica aqui porque uma cor é escolha de apresentação.
  */
 const CARD_STYLE = {
-    positions: ["fa-location-crosshairs", "info"],
-    vitals: ["fa-heart-pulse", "success"],
+
     position_minute_stats: ["fa-chart-column", "secondary"],
     vitals_minute_stats: ["fa-chart-line", "secondary"],
     heart_rate: ["fa-heart-pulse", "danger"],

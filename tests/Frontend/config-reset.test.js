@@ -3,10 +3,7 @@ import assert from "node:assert/strict";
 
 import { renderConfigInputs } from "../../src/Dashboard/dashboard/devices/config/index.js";
 import { captureConfigPristine } from "../../src/Dashboard/dashboard/devices/config/panel.js";
-import {
-    handleDeviceConfigReset,
-    resetConfigPane,
-} from "../../src/Dashboard/dashboard/devices/config/handlers.js";
+import { resetConfigPane } from "../../src/Dashboard/dashboard/devices/config/handlers.js";
 import { configSection, parseFragment } from "./support/dom.js";
 
 /**
@@ -79,26 +76,4 @@ test("o Repor devolve as horas do sono da Wonlex", () => {
     );
 
     assert.deepEqual(restored, drawn);
-});
-
-/** O `type="reset"` devolve os campos sem disparar `change`, e a etiqueta tem de acompanhar. */
-test("depois do Repor a etiqueta do interruptor diz o que ele mostra", async () => {
-    const entry = { input: "alarm_clock", key: "alarm_clock", fields: ["masterEnabled", "items"] };
-    const section = configSection(renderConfigInputs, entry, { masterEnabled: true }, {});
-    const form = document.createElement("form");
-    section.parentNode?.insertBefore(form, section);
-    form.appendChild(section);
-    form.addEventListener("reset", handleDeviceConfigReset);
-
-    const input = section.querySelector("[data-alarm-clock-field=\"masterEnabled\"]");
-    const label = input.parentElement.querySelector("[data-switch-label]");
-
-    input.checked = false;
-    input.dispatchEvent(new window.Event("change", { bubbles: true }));
-
-    form.reset();
-    await Promise.resolve();
-
-    assert.equal(input.checked, true, "o Repor devolveu o interruptor ao inicial");
-    assert.equal(label.textContent, "Lembretes ligados", "e a etiqueta acompanhou");
 });

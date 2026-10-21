@@ -170,26 +170,6 @@ export function modelsForSupplierAndType(
     );
 }
 
-export function deriveFourPTouchDeviceId(imei) {
-    const digits = String(imei || "").replace(/\D+/g, "");
-    if (digits.length === 15) return digits.slice(4, 14);
-    if (digits.length === 10) return digits;
-    if (digits.length > 10) return digits.slice(-10);
-    return digits;
-}
-
-export function isFourPTouchSelection(
-    supplier = "",
-    model = "",
-    models = [],
-) {
-    return (
-        supplierProtocol(supplier, models) === "four-p-touch" ||
-        supplier === "4P Touch" ||
-        model === "4P Touch"
-    );
-}
-
 export function humanizeCapabilityKey(value) {
     return String(value || "")
         .replace(/_/g, " ")

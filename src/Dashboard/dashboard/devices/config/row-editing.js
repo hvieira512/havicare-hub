@@ -5,7 +5,7 @@ import {
     takePillsReminderGroup,
 } from "./four-p-touch-take-pills.js";
 import { syncAlarmClockCustomVisibility } from "./inputs/capability.js";
-import { createContactRow } from "./inputs/generic.js";
+
 import { nextUid } from "./inputs/shared.js";
 
 /**
@@ -18,7 +18,7 @@ import { nextUid } from "./inputs/shared.js";
  * última em vez de a apagar, para haver sempre molde para clonar.
  */
 const REPEAT_ROW_KINDS = {
-    contacts: { keepLast: true, template: createContactRow },
+    contacts: { keepLast: true },
     sos_contacts: { keepLast: true },
     call_whitelist: { keepLast: true },
     numbers: { keepLast: true },
@@ -59,7 +59,7 @@ export function appendRepeatRow(section, kind) {
             added = fresh;
         }
     } else {
-        const template = rows[rows.length - 1] || spec.template?.(section);
+        const template = rows[rows.length - 1];
         if (!template) return;
         const clone = template.cloneNode(true);
         restampRowIds(clone);

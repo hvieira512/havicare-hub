@@ -146,7 +146,6 @@ function renderGatewayOptions(gateways = [], selectedKeys = [], emptyText = "") 
             .join("");
     }
     refreshTooltips(list);
-    state.deviceModal.gatewayOptions = gateways;
     updateGatewayLinkSelection();
 }
 

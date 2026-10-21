@@ -94,7 +94,6 @@ async function fetchSummary() {
     state.summary = {
         devices: devicesResponse.data || [],
         devicesError: devicesResponse.error || null,
-        models: state.summary.models || [],
         devicePagination: devicesResponse.pagination || {
             limit: state.deviceListPageSize,
             page: 1,

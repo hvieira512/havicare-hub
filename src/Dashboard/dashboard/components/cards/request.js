@@ -10,31 +10,6 @@ import { locationCoordinates } from "./location.js";
  * categoria e o estado do comando mais recente. Usa a casca e os renderizadores do uplink.
  */
 
-const COMMAND_FEATURE_RULES = [
-    ["heart", "heart_rate"],
-    ["blood pressure", "blood_pressure"],
-    ["oxygen", "blood_oxygen"],
-    ["bo", "blood_oxygen"],
-    ["temp", "temperature"],
-    ["location", "location"],
-    ["sleep", "sleep"],
-    ["ecg", "ecg"],
-    ["hrv", "hrv"],
-    ["breath", "breath_rate"],
-    ["ppg", "ppg"],
-    ["rr", "rr_interval"],
-];
-
-function commandFeature(command) {
-    if (command.feature) return command.feature;
-    const haystack =
-        `${command.command || ""} ${command.label || ""}`.toLowerCase();
-    for (const [needle, feature] of COMMAND_FEATURE_RULES) {
-        if (haystack.includes(needle)) return feature;
-    }
-    return "device_config";
-}
-
 /** Só a localização precisa disto: um relatório sem coordenadas é válido e não diz onde. */
 const USABLE_PAYLOAD = {
     location: (payload) => locationCoordinates(payload?.data) !== null,
@@ -86,7 +61,7 @@ export function statusBadge(status) {
  */
 function latestRequestState(type, commands, lastTelemetryTime) {
     const latest = commands
-        .filter((command) => commandFeature(command) === type)
+        .filter((command) => command.feature === type)
         .sort((left, right) => commandTime(right) - commandTime(left))[0];
     if (!latest) {
         return null;
@@ -116,15 +91,6 @@ function commandTime(command) {
 }
 
 function requestTelemetryTypes(type) {
-    if (type === "positions") {
-        return ["position"];
-    }
-    if (type === "vitals") {
-        return ["vitals"];
-    }
-    if (type === "position_minute_stats" || type === "vitals_minute_stats") {
-        return [type];
-    }
     // O índice de humidade é uma capacidade à parte, mas não um cartão à parte: o cartão
     // dos canais mostra-o como valor.
     if (type === "diaper_moisture") {
@@ -139,7 +105,7 @@ export function requestCardShell(
     telemetry = [],
     commands = [],
 ) {
-    const type = commandFeature(command);
+    const type = command.feature;
     const card = requestCardContent(type);
     const requestable = command.requestable !== false;
     const telemetryTypes = requestTelemetryTypes(type);

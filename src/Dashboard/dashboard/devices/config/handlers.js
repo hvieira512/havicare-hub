@@ -299,20 +299,3 @@ export function resetConfigPane(pane) {
         }
     }
 }
-
-/**
- * O `type="reset"` não dispara `change`, por isso as etiquetas dos interruptores acertam-se
- * aqui, numa microtarefa: a reposição acontece depois dos ouvintes.
- */
-export function handleDeviceConfigReset(event) {
-    const form = event.target.closest?.("form") || event.target;
-
-    queueMicrotask(() => {
-        for (const input of form.querySelectorAll(
-            ".form-check-input[type=\"checkbox\"][role=\"switch\"]",
-        )) {
-            syncSwitchLabel(input);
-        }
-        syncConfigCountsFrom(form);
-    });
-}

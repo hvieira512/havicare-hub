@@ -41,7 +41,6 @@ async function openModelDetail(modelId) {
     );
 
     state.settingsModal.currentCapabilitiesModel = model;
-    state.settingsModal.capabilityModelId = Number(model.id);
     state.settingsModal.capabilityRequestableCapabilities = Array.isArray(
         model.requestableCapabilities,
     )

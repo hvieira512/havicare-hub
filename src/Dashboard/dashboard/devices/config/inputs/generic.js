@@ -1,7 +1,7 @@
 import { fieldLabel } from "../../../format.js";
 import { html, raw } from "../../../html.js";
 import { field } from "../../../components/form-field.js";
-import { renderPhoneControl, resetPhoneControls } from "../../../phone.js";
+import { renderPhoneControl } from "../../../phone.js";
 import { protocolPhonebookConstraints } from "../protocol-catalog.js";
 import { boolValue } from "../normalizers.js";
 import { intervalToggle, numberField } from "./shared.js";
@@ -96,7 +96,7 @@ export function contactsInput(entry, desired, meta = {}) {
             : [];
     const rows = contacts.length ? contacts.slice(0, limit) : [{}];
     const phonebookConstraints = protocolPhonebookConstraints(meta.protocol || "");
-    const isPhonebookLike = String(entry.key || "") === "phonebook" || String(entry.key || "") === "call_whitelist";
+
     const nameMaxLengthValue = Math.max(
         0,
         parseInt(String(meta.name?.maxLength ?? phonebookConstraints.name?.maxLength ?? 0), 10) || 0,
@@ -106,19 +106,13 @@ export function contactsInput(entry, desired, meta = {}) {
         parseInt(String(meta.phone?.maxLength ?? phonebookConstraints.phone?.maxLength ?? 0), 10) || 0,
     );
     const nameMaxLength = nameMaxLengthValue > 0 ? html` maxlength="${nameMaxLengthValue}"` : "";
-    const nameLimitAttr = isPhonebookLike && nameMaxLengthValue > 0
-        ? html` data-phonebook-name-max-length="${nameMaxLengthValue}"`
-        : "";
-    const phoneLimitAttr = isPhonebookLike && phoneMaxLengthValue > 0
-        ? html` data-phonebook-phone-max-length="${phoneMaxLengthValue}"`
-        : "";
     return html`
         <div>
             <div class="d-flex justify-content-between align-items-center mb-2">
                 <label class="form-label-sm mb-0">Contactos</label>
                 <button type="button" class="btn btn-outline-secondary btn-sm" data-action="addRepeatRow" data-repeat-kind="contacts" ${rows.length >= limit ? "disabled" : ""}>Adicionar <span data-repeat-count>(${rows.length} de ${limit})</span></button>
             </div>
-            <div class="vstack gap-2" data-repeat-list="contacts" data-repeat-limit="${limit}"${nameLimitAttr}${phoneLimitAttr}>
+            <div class="vstack gap-2" data-repeat-list="contacts" data-repeat-limit="${limit}">
                 ${rows
                     .map(
                         (contact, index) => html`
@@ -143,40 +137,6 @@ export function contactsInput(entry, desired, meta = {}) {
                     )}
             </div>
         </div>`;
-}
-
-function isFourPTouchPhonebookSection(section) {
-    return String(section?.dataset?.configProtocol || "") === "four-p-touch" &&
-        String(section?.dataset?.configKey || "") === "phonebook";
-}
-
-/** A primeira linha de contactos, quando a lista veio vazia e não há de onde clonar. */
-export function createContactRow(section) {
-    const phonebook = isFourPTouchPhonebookSection(section);
-    const nameMaxLength = parseInt(
-        section?.dataset.phonebookNameMaxLength || "0", 10,
-    ) || 0;
-    const phoneMaxLength = parseInt(
-        section?.dataset.phonebookPhoneMaxLength || (phonebook ? "20" : "0"), 10,
-    ) || 0;
-
-    const wrapper = document.createElement("div");
-    wrapper.className = "row g-2 align-items-end";
-    wrapper.dataset.repeatRow = "contacts";
-    wrapper.innerHTML = html`
-        <div class="col-md-6">
-            <input class="form-control" type="text" placeholder="Nome"${phonebook && nameMaxLength > 0 ? ` maxlength="${nameMaxLength}"` : ""} data-repeat-field="name">
-        </div>
-        <div class="col-md-6">
-            <div class="d-flex gap-2">
-                <div class="flex-grow-1">
-                    ${renderPhoneControl({ repeatField: "phone", maxLength: phoneMaxLength })}
-                </div>
-                <button type="button" class="btn btn-outline-danger btn-quiet-danger btn-sm" data-action="removeRepeatRow">-</button>
-            </div>
-        </div>`;
-    resetPhoneControls(wrapper);
-    return wrapper;
 }
 
 /** As opções que a definição declara em `options: { campo: [{value, label}] }`. */

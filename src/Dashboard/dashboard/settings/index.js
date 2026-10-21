@@ -33,13 +33,11 @@ export function initSettings(context) {
  * evento não dispara quando o separador pedido já é o activo.
  */
 export async function loadSettingsModal(
-    section = state.settingsModal.section || "models",
+    section = state.settingsModal.section,
 ) {
     resetSettingsModal();
     state.modelModal.enabledCapabilities = [];
     state.modelModal.templateSummary = "";
-    state.modelModal.templateSupplier = "";
-    state.modelModal.templateDeviceType = "watch";
 
     activateSettingsSection(section);
     showSettingsModal();

@@ -31,11 +31,9 @@ import {
 } from "./gateway-links.js";
 import {
     companyLabel,
-    deriveFourPTouchDeviceId,
     deviceTypeFields,
     deviceTypeLabel,
     findModelInfo,
-    isFourPTouchSelection,
     linksToGateway,
     modelCommercialName,
     modelInternalName,
@@ -79,7 +77,7 @@ import {
     saveTextStorage,
 } from "../storage.js";
 
-/** O modal de adicionar e editar um dispositivo: selectores, formulário, gravar e apagar. */
+/** O modal de editar um dispositivo: selectores, formulário, gravar e apagar. */
 
 let els;
 let deviceModal;
@@ -178,10 +176,8 @@ export async function editDevice(imei, supplier, model) {
     els.deviceImei.dataset.originalImei = imei;
     configPanelIfLoaded()?.panel.resetConfigUiState();
     state.deviceModal = blankDeviceModal({
-        mode: "edit",
         activeTab,
         imei,
-        originalImei: imei,
         supplier,
         model,
         loading: true,
@@ -240,7 +236,6 @@ export async function editDevice(imei, supplier, model) {
         renderDeviceSimNumberField(String(device.simNumber || ""));
         state.deviceModal.simNumber = String(device.simNumber || "");
         els.deviceDeviceId.value = String(device.deviceId || "");
-        applyFourPTouchDeviceIdUi();
         state.deviceModal.deviceId = String(device.deviceId || "");
         const linkedGatewayKeys = gatewayKeysFromLinks(
             detail.linkedDevices || [],
@@ -351,7 +346,6 @@ export async function renderDeviceSelectors(
     renderEditWizard();
     await syncDeviceModalContext();
     applyDeviceTypeFields();
-    applyFourPTouchDeviceIdUi();
     configPanelIfLoaded()?.panel.renderDeviceConfigurationModal();
 }
 
@@ -395,7 +389,6 @@ function updateDevicePreview() {
         modelInfo,
         model || "Selecione um modelo",
     );
-    applyFourPTouchDeviceIdUi();
 }
 
 export async function syncDeviceModalContext(loadCatalog = false) {
@@ -440,33 +433,9 @@ export async function ensureDeviceConfigurationCatalogLoaded() {
     }
 }
 
-function applyFourPTouchDeviceIdUi() {
-    if (!els.deviceDeviceId) {
-        return;
-    }
-
-    const isFourPTouch = isFourPTouchSelection(
-        els.deviceForm.dataset.supplier || "",
-        els.deviceForm.dataset.model || "",
-        state.deviceTypeSuppliersModels,
-    );
-    if (isFourPTouch) {
-        const derived = deriveFourPTouchDeviceId(els.deviceImei.value.trim());
-        els.deviceDeviceId.value = derived;
-        els.deviceDeviceId.readOnly = true;
-        els.deviceDeviceIdLabel.textContent = "ID do dispositivo";
-        els.deviceDeviceIdHelp.textContent =
-            "Derivado automaticamente do IMEI para 4P Touch.";
-        els.deviceDeviceId.placeholder = "Derivado do IMEI";
-    } else {
-        els.deviceDeviceId.readOnly = false;
-    }
-}
-
 export async function saveDevice() {
-    // Editar o que não chegou a carregar é gravar os valores de arranque por cima do registo
-    // real. Criar não traz detalhe nenhum e por isso não entra aqui.
-    if (state.deviceModal.mode === "edit" && !state.deviceModal.detailLoaded) {
+    // Editar o que não chegou a carregar é gravar os valores de arranque por cima do registo real.
+    if (!state.deviceModal.detailLoaded) {
         setDeviceFormError("O dispositivo não chegou a carregar. Feche e volte a abrir.");
         return;
     }
@@ -486,15 +455,7 @@ export async function saveDevice() {
     // A identidade e o SIM são perguntas distintas: o gateway identifica-se por MAC e leva SIM.
     const fields = deviceTypeFields(deviceType, state.deviceModal.protocol);
     const identifiedByImei = fields.identity.field === "imei";
-    const deviceId = isFourPTouchSelection(
-        supplier,
-        model,
-        state.deviceTypeSuppliersModels,
-    )
-        ? deriveFourPTouchDeviceId(imei)
-        : identifiedByImei
-            ? ""
-            : els.deviceDeviceId.value.trim();
+    const deviceId = identifiedByImei ? "" : els.deviceDeviceId.value.trim();
 
     if (classificationIsMissing(supplier, model)) return;
 
@@ -523,7 +484,7 @@ export async function saveDevice() {
         }
     }
 
-    const originalImei = els.deviceImei.dataset.originalImei || "";
+    const originalImei = els.deviceImei.dataset.originalImei;
     const company = els.deviceCompany.value || "null";
     const desiredGatewayKeys = linksToGateway(deviceType, state.deviceModal.protocol)
         ? selectedGatewayKeys()
@@ -557,7 +518,7 @@ export async function saveDevice() {
     }
 
     if (linksToGateway(deviceType, state.deviceModal.protocol)) {
-        const currentGatewayKeys = originalImei && originalImei !== imei
+        const currentGatewayKeys = originalImei !== imei
             ? []
             : state.deviceModal.linkedGatewayKeys || [];
         const linkError = await syncGatewayLinks(
@@ -575,11 +536,7 @@ export async function saveDevice() {
         state.deviceModal.selectedGatewayKeys = desiredGatewayKeys;
     }
 
-    if (
-        state.selectedImei &&
-        originalImei &&
-        state.selectedImei === originalImei
-    ) {
+    if (state.selectedImei === originalImei) {
         selectImei(imei);
         if (state.selectedImei) {
             saveTextStorage(SELECTED_DEVICE_STORAGE_KEY, state.selectedImei);

@@ -24,7 +24,7 @@ beforeEach(() => {
     initGatewayLinksUi({ els });
     els.deviceForm.dataset.deviceType = "diaper_sensor";
     els.deviceCompany.value = "havicare";
-    state.deviceModal.gatewayOptions = [];
+
     state.selectedDetail = null;
 });
 
@@ -41,11 +41,7 @@ test("a resposta atrasada não desenha os gateways da licença anterior", async 
     await fetches.respond("licenseId=1", gatewaysOfBothLicenses);
     await Promise.all([first, second]);
 
-    assert.deepEqual(
-        state.deviceModal.gatewayOptions.map((gateway) => gateway.imei),
-        ["gw-l2"],
-        "só podem ficar os gateways da licença que está no formulário",
-    );
+    assert.match(els.deviceGatewayLinksList.innerHTML, /gw-l2/);
     assert.doesNotMatch(
         els.deviceGatewayLinksList.innerHTML,
         /gw-l1/,

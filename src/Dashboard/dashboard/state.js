@@ -1,7 +1,6 @@
 /** O modal de dispositivo em branco: o `editDevice` substitui o estado inteiro. */
 export function blankDeviceModal(overrides = {}) {
     return {
-        mode: "create",
         activeTab: "general",
         activeCategory: "",
         // No telemóvel, se a secção ativa está aberta ou se se está a ver a lista delas.
@@ -9,14 +8,12 @@ export function blankDeviceModal(overrides = {}) {
         // A falso, o formulário tem valores de arranque e não representa registo nenhum.
         detailLoaded: false,
         imei: "",
-        originalImei: "",
         deviceType: "watch",
         licenseId: "0",
         simNumber: "",
         deviceId: "",
         linkedGatewayKeys: [],
         selectedGatewayKeys: [],
-        gatewayOptions: [],
         supplier: "",
         model: "",
         protocol: "",
@@ -55,7 +52,6 @@ export function blankSettingsModal(overrides = {}) {
         capabilityQuery: "",
         capabilityTemplateEnabledKeys: [],
         capabilitySuppliersForDeviceType: [],
-        capabilityModelId: null,
         capabilityModelTemplateKeys: [],
         capabilityEnabledCapabilities: [],
         capabilityRequestableCapabilities: [],
@@ -81,10 +77,8 @@ export function blankSettingsModal(overrides = {}) {
 export const state = {
     // Gateways registados, para o assistente de adicionar oferecer os elegíveis.
     wizardGateways: [],
-    companies: [],
     summary: {
         devices: [],
-        models: [],
         devicePagination: { limit: 20, page: 1, total_pages: 1, total: 0 },
         deviceFiltersAvailable: {
             deviceType: [],
@@ -143,15 +137,13 @@ export const state = {
         capabilities: [],
         enabledCapabilities: [],
         templateSummary: "",
-        templateSupplier: "",
-        templateDeviceType: "watch",
     },
     protocolCatalogs: {},
     // As licenças, uma vez por sessão, e aqui e não no `settingsModal` porque a árvore do
     // filtro da listagem também as lê. Quem as muda limpa-as, pelo `invalidateLicenses`.
     licenses: [],
     settingsModal: blankSettingsModal({
-        section: "suppliers",
+        section: "models",
         modelsCarousel: null,
     }),
     modelPreviewObjectUrl: null,
