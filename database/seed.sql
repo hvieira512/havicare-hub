@@ -1,4 +1,5 @@
--- O inventário de dispositivos, capturado do hub de produção (sockets.hitcare.net).
+-- O inventário de dispositivos de desenvolvimento. Os números de SIM e os nomes das licenças de
+-- clientes são fictícios.
 --
 -- Cada instrução é idempotente e resolve os ids por chave natural; os dispositivos e as
 -- ligações a gateways usam INSERT IGNORE, para não pisar edições feitas à mão.
@@ -15,12 +16,12 @@ INSERT INTO licenses (company_id, license_id, name)
 SELECT c.id, l.license_id, l.name FROM companies c JOIN (
     SELECT 'havicare' AS company, 1 AS license_id, 'hc.dev' AS name
     UNION ALL SELECT 'havicare', 22, 'hc2.dev'
-    UNION ALL SELECT 'havicare', 24, 'besenior.havicare'
+    UNION ALL SELECT 'havicare', 24, 'lar-exemplo.havicare'
     UNION ALL SELECT 'havicare', 25, 'demo.havicare'
     UNION ALL SELECT 'hitcare', 1001, 'gucc.dev'
-    UNION ALL SELECT 'hitcare', 2004, 'gerpi.cvp-chelvas'
-    UNION ALL SELECT 'hitcare', 2051, 'gerpi1.emeis-pt'
-    UNION ALL SELECT 'hitcare', 2103, 'gerpi1.casabrancaresidencial'
+    UNION ALL SELECT 'hitcare', 2004, 'gerpi.lar-a'
+    UNION ALL SELECT 'hitcare', 2051, 'gerpi1.lar-b'
+    UNION ALL SELECT 'hitcare', 2103, 'gerpi1.lar-c'
 ) l ON l.company = c.name
 ON DUPLICATE KEY UPDATE name = VALUES(name);
 
@@ -31,21 +32,21 @@ ON DUPLICATE KEY UPDATE name = VALUES(name);
 -- Um dispositivo sem dono tem `NULL` nas duas colunas: o `0` e o `'null'` são sentinelas de
 -- memória, que o `WhitelistRepository` converte na fronteira.
 INSERT IGNORE INTO whitelist (imei, supplier, model, device_type, license_id, sim_number, device_id, company) VALUES
-    ('351266770073676', '4P Touch', 'Y6M', 'watch', 1, '+351962621694', '6677007367', 'havicare'),
-    ('637507597567372', '4P Touch', 'D46', 'watch', NULL, '+351962621781', '0759756737', NULL),
-    ('861265061009822', 'Vivistar', 'L08 Pro', 'watch', 1, '+351962621789', '', 'havicare'),
+    ('351266770073676', '4P Touch', 'Y6M', 'watch', 1, '+351000000001', '6677007367', 'havicare'),
+    ('637507597567372', '4P Touch', 'D46', 'watch', NULL, '+351000000002', '0759756737', NULL),
+    ('861265061009822', 'Vivistar', 'L08 Pro', 'watch', 1, '+351000000003', '', 'havicare'),
     ('861265061009830', 'Vivistar', 'L08 Pro', 'watch', 1, '', '', 'havicare'),
-    ('861265061274392', 'Vivistar', 'VL16P', 'watch', 1001, '+351962621844', '', 'hitcare'),
-    ('861265061323462', 'Vivistar', 'VL16P', 'watch', 1001, '+351962621730', '6506132346', 'hitcare'),
-    ('861265061386014', 'Vivistar', 'VL17', 'watch', NULL, '+351962621635', '', NULL),
+    ('861265061274392', 'Vivistar', 'VL16P', 'watch', 1001, '+351000000004', '', 'hitcare'),
+    ('861265061323462', 'Vivistar', 'VL16P', 'watch', 1001, '+351000000005', '6506132346', 'hitcare'),
+    ('861265061386014', 'Vivistar', 'VL17', 'watch', NULL, '+351000000006', '', NULL),
     ('861265062542599', 'Vivistar', 'VL17', 'watch', 1, '', '', 'havicare'),
-    ('861265062542615', 'Vivistar', 'VL17', 'watch', NULL, '+351962621803', '', NULL),
-    ('861265062544868', 'Vivistar', 'VL16P', 'watch', 1, '+351962621463', '', 'havicare'),
+    ('861265062542615', 'Vivistar', 'VL17', 'watch', NULL, '+351000000007', '', NULL),
+    ('861265062544868', 'Vivistar', 'VL16P', 'watch', 1, '+351000000008', '', 'havicare'),
     ('861728087056333', '4P Touch', 'Y6S', 'watch', 1, '', '2808705633', 'havicare'),
     ('861728087060467', '4P Touch', 'D44S', 'watch', 1, '', '2808706046', 'havicare'),
-    ('861728087743062', '4P Touch', 'D41', 'watch', 1, '+351962621664', '2808774306', 'havicare'),
+    ('861728087743062', '4P Touch', 'D41', 'watch', 1, '+351000000009', '2808774306', 'havicare'),
     -- A 1001 é da hitcare: uma licença não existe sem a empresa a que pertence.
-    ('863737079757376', '4P Touch', 'D46', 'watch', 1001, '+351962621781', '3707975737', 'hitcare'),
+    ('863737079757376', '4P Touch', 'D46', 'watch', 1001, '+351000000002', '3707975737', 'hitcare'),
     ('868160060298224', '4P Touch', 'D45 Pro', 'watch', NULL, '', '6006029822', NULL),
     ('868705080304889', 'Wonlex', 'HW20PRO', 'watch', 1, '', '', 'havicare'),
     ('868705080304962', 'Wonlex', 'HW20PRO', 'watch', 1, '', '', 'havicare'),
