@@ -1,8 +1,6 @@
 import { capabilityLabel } from "../../capability-catalog.js";
 import { titleize } from "../../format.js";
 
-/** Os cartões do gateway: que interfaces tem, e por qual está a falar. */
-
 // As interfaces que o `Hub\Ingress\Mqtt\Moko\GatewayNormalizer` e o radar emitem.
 const CONNECTIVITY_INTERFACE_LABELS = {
     wifi: "Wi-Fi",

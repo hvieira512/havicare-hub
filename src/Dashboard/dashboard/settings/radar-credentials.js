@@ -8,10 +8,7 @@ import { state } from "../state.js";
 import { html, raw } from "../html.js";
 import { clearInvalid, markInvalid } from "../validation.js";
 
-/**
- * O acesso à cloud do fabricante dos radares, que é de cada licença: com a conta de outra, os
- * radares respondem offline, e nem o endereço base coincide entre inquilinos.
- */
+/** As credenciais da cloud dos radares, por licença: com a conta de outra, os radares respondem offline. */
 
 export const EDITOR_KIND = "radarCredentials";
 
@@ -27,10 +24,7 @@ export function clearRadarCredentials() {
     state.settingsModal.radarCredentials = null;
 }
 
-/**
- * Um segredo já guardado diz que está lá, em vez de ser uma caixa vazia: o campo em branco
- * quer dizer "fica como está".
- */
+/** Um segredo guardado diz que está lá; o campo em branco quer dizer «fica como está». */
 function secretField(id, field, label, stored) {
     return html`
         <div class="col-12 col-sm-6">
@@ -46,10 +40,7 @@ function secretField(id, field, label, stored) {
         </div>`;
 }
 
-/**
- * O que o botão de experimentar responde. Autenticar não prova que a conta é desta licença, e
- * por isso diz-se quantos destes radares ela conhece.
- */
+/** Autenticar não prova que a conta é desta licença: diz-se quantos destes radares ela conhece. */
 export function radarCheckMessage({ radars, responding, error }) {
     if (error) {
         return { tone: "danger", text: `Não ligou: ${error}` };
@@ -75,10 +66,7 @@ export function radarCheckMessage({ radars, responding, error }) {
     return { tone: "success", text: `Ligou · ${responding} ${noun} nesta conta` };
 }
 
-/**
- * A linha aberta. Num telefone sai da indentação e toma o cartão todo, e só os dois botões que
- * se usam ficam na primeira linha.
- */
+/** A linha aberta; num telefone toma o cartão todo. */
 export function radarCredentialsEditorRow(license) {
     const stored = state.settingsModal.radarCredentials;
 
@@ -116,10 +104,7 @@ export function radarCredentialsEditorRow(license) {
         </div>`;
 }
 
-/**
- * Substituir um segredo guardado: o aviso dá lugar ao campo, e a partir daí o que lá for
- * escrito é o que vai.
- */
+/** Substituir um segredo guardado: o aviso dá lugar ao campo. */
 export function replaceRadarSecret(row, field) {
     const slot = row.el.querySelector(`[data-secret-kept="${field}"]`);
     if (!slot) return;
@@ -140,10 +125,7 @@ export function tryRadarCredentials(row) {
     });
 }
 
-/**
- * Grava o que está na linha. Devolve o resultado da API, ou `null` quando um campo
- * obrigatório está vazio -- a marcação do campo já aconteceu aqui.
- */
+/** Grava a linha; `null` quando falta um campo obrigatório, que fica marcado. */
 export async function submitRadarCredentials(row) {
     clearInvalid(row.el);
 
@@ -161,8 +143,7 @@ export async function submitRadarCredentials(row) {
         return null;
     }
 
-    // Os segredos vão em branco quando ninguém lhes tocou, e em branco o servidor mantém os
-    // que já lá estão.
+    // Um segredo em branco fica como está no servidor.
     return apiSaveRadarCredentials(row.id, {
         baseUrl,
         username,

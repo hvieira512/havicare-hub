@@ -1,7 +1,4 @@
-/**
- * Carrega um script de terceiros à primeira vez que é preciso. A promessa fica guardada por
- * `src`, e um erro apaga-a para a chamada seguinte tentar de novo.
- */
+/** Carrega um script de terceiros à primeira vez, uma promessa por `src`; um erro deixa tentar de novo. */
 const loading = new Map();
 
 export function loadScript(src) {

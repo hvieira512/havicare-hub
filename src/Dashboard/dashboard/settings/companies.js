@@ -26,18 +26,13 @@ import {
     tryRadarCredentials,
 } from "./radar-credentials.js";
 
-/**
- * O separador das licenças, dentro de cada empresa. A linha que se toca é a que se transforma,
- * e uma licença nasce na empresa em que se carregou no `+`.
- */
+/** As licenças, dentro de cada empresa; a linha que se toca é a que se transforma. */
 let els;
-// A página de empresas que está à vista, para uma alteração numa licença a poder redesenhar
-// sem ir buscar as empresas outra vez.
+// A página de empresas à vista, para redesenhar depois de mexer numa licença.
 let currentCompanies = [];
 let currentLicenses = [];
 
-// Uma vaga só para os dois tipos de linha: abrir uma empresa fecha a licença que estivesse
-// aberta, e ao contrário, sem ninguém se lembrar de o fazer.
+// Uma vaga só para os dois tipos de linha: abrir uma empresa fecha a licença aberta, e ao contrário.
 const editor = inlineEditor(() => renderCompanySection());
 
 export function initSettingsCompanies(context) {
@@ -45,8 +40,7 @@ export function initSettingsCompanies(context) {
 }
 
 export async function loadSettingsCompanySection(companiesPage = 1) {
-    // As licenças vêm todas de uma vez porque se desenham dentro da empresa a que pertencem, e
-    // paginadas à parte ficariam fora da página da sua empresa.
+    // As licenças vêm todas, porque se desenham dentro da empresa a que pertencem.
     const [companyData, licenses] = await Promise.all([
         apiGetCompanies({ page: companiesPage }),
         ensureLicensesLoaded(),
@@ -87,12 +81,7 @@ async function reloadLicenses() {
     renderCompanySection();
 }
 
-/* ---------- as linhas ---------- */
-
-/**
- * Os verbos de uma linha num menu só, com os nomes escritos. O `"divider"` no lugar de uma
- * entrada dá a linha que separa o apagar do resto.
- */
+/** Os verbos de uma linha num menu; o `"divider"` separa o apagar do resto. */
 function rowActionsMenu(label, items) {
     const entries = items.map((item) => (item === "divider"
         ? html`<li><hr class="dropdown-divider"></li>`
@@ -105,10 +94,7 @@ function rowActionsMenu(label, items) {
         </div>`;
 }
 
-/**
- * O que a linha diz por baixo do nome: o número da licença, quantos aparelhos a usam -- que
- * é o que se quer saber antes de a apagar -- e a cloud dos radares quando está configurada.
- */
+/** O número da licença, quantos aparelhos a usam e, quando configurada, a cloud dos radares. */
 function licenseMetaHtml(license) {
     const devices = Number(license.device_count);
     const meta = `licença ${license.license_id} · ${devices} ${devices === 1 ? "aparelho" : "aparelhos"}`;
@@ -116,8 +102,6 @@ function licenseMetaHtml(license) {
         ? html` · <span class="text-success">cloud dos radares ligada</span>`
         : "";
 
-    // Sem truncar: num telefone a linha inteira não cabe, e o que se perderia era «cloud dos
-    // radares ligada», que é o facto que só aqui se lê.
     return html`<div class="small text-secondary">${meta}${raw(cloud)}</div>`;
 }
 
@@ -203,8 +187,7 @@ function companyCard(company) {
     const rows = owned
         .map((license) => {
             if (editor.at("license", license.id)) return licenseEditorRow(license, company.id);
-            // A linha das credenciais abre por baixo da licença a que pertence, e não no
-            // lugar dela: o que se está a configurar continua à vista.
+            // As credenciais abrem por baixo da licença, que continua à vista.
             if (editor.at(RADAR_EDITOR_KIND, license.id)) {
                 return licenseViewRow(license) + radarCredentialsEditorRow(license);
             }
@@ -246,13 +229,9 @@ function renderCompanySection() {
     focusEditor(els.companyListBody);
 }
 
-/* ---------- abrir e fechar ---------- */
-
 export function newCompany() {
     editor.draft("company");
 }
-
-/* ---------- gravar e apagar ---------- */
 
 async function saveCompanyRow(button) {
     const row = editorOf(button, "company");
@@ -272,10 +251,7 @@ async function saveCompanyRow(button) {
     await reloadCompanies();
 }
 
-/**
- * O que a caixa diz antes de apagar: apagar a licença não apaga os dispositivos, deixa-os com
- * um número de licença que já não se resolve.
- */
+/** Apagar a licença não apaga os dispositivos: ficam com uma licença que já não existe. */
 export function licenseDeletePrompt(license, deviceCount) {
     const name = license.name ? ` — ${license.name}` : "";
     return {
@@ -350,8 +326,6 @@ async function saveLicenseRow(button) {
     await reloadLicenses();
 }
 
-/* ---------- as credenciais da cloud dos radares ---------- */
-
 async function openRadarCredentials(licenseRefId) {
     const result = await loadRadarCredentials(licenseRefId);
     if (result.error) {
@@ -372,12 +346,11 @@ async function saveRadarCredentialsRow(button) {
         return;
     }
     clearRadarCredentials();
-    // As licenças voltam a vir: é delas que a linha tira o estado da cloud.
     await reloadLicenses();
     toast("success", "Credenciais guardadas");
 }
 
-/** Experimenta antes de gravar, e escreve o resultado por cima dos botões. */
+/** Experimenta as credenciais antes de gravar, e escreve o resultado por cima dos botões. */
 async function checkRadarCredentialsRow(button) {
     const row = editorOf(button, RADAR_EDITOR_KIND);
     const slot = row?.el.querySelector("#radarCheckResult");
@@ -433,7 +406,6 @@ async function deleteLicense(id) {
     await reloadLicenses();
 }
 
-/** Os cliques da lista: as linhas das licenças estão dentro da empresa a que pertencem. */
 export function handleCompanyListClick(event) {
     const button = event.target.closest("button");
     if (!button) return;

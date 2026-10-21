@@ -54,7 +54,7 @@ export const dayKey = (value) => {
 
 const DAY_MONTH = { day: "numeric", month: "long" };
 
-/** O cabeçalho de um dia. «Hoje» e «Ontem» poupam a quem lê a conta de cabeça. */
+/** O cabeçalho de um dia, com «Hoje» e «Ontem». */
 export const dayLabel = (value) => {
     if (!value) return "";
     const parsed = Date.parse(value);
@@ -141,7 +141,6 @@ export const fieldLabel = (key) =>
         lowCelsius: "Mínima",
         highCelsius: "Máxima",
         humidityPercent: "Humidade",
-        // Dispensador de comprimidos.
         remaining: "Restantes",
         total: "Total",
         current: "Atual",
@@ -214,8 +213,7 @@ export const fieldLabel = (key) =>
         key: "Tecla",
         lastEvent: "Último evento",
         personIndex: "Pessoa",
-        // O sono: as pontuações do firmware. Os nomes dizem o que medem e não o que o
-        // fabricante lhes chama -- `nightScore` é a pontuação das idas à casa de banho.
+        // As pontuações do sono pelo que medem: `nightScore` é a das idas à casa de banho.
         qualityStars: "Estrelas",
         deepSleepScore: "Pontuação do sono profundo",
         efficiencyScore: "Pontuação de eficiência",
@@ -229,8 +227,7 @@ export const fieldLabel = (key) =>
         returnToDeepSleepMeanMinutes: "Média até voltar ao sono profundo",
         totalDurationMinutes: "Duração",
         timingValid: "Instantes de confiança",
-        // As grandezas que chegam com o nome do contrato. A unidade vive no nome do campo e
-        // sai no `FIELD_UNIT`; aqui fica só o que se mede.
+        // As grandezas com o nome do contrato; a unidade sai no `FIELD_UNIT`.
         bpm: "Frequência cardíaca",
         breathsPerMinute: "Frequência respiratória",
         spo2Percent: "Oxigénio no sangue",
@@ -244,7 +241,6 @@ export const fieldLabel = (key) =>
         hdlMmolPerL: "HDL",
         ldlMmolPerL: "LDL",
         milliseconds: "Milissegundos",
-        // O que um exame de ECG apura, além da onda.
         heartRateBpm: "Frequência cardíaca",
         qtcMilliseconds: "QTc",
         hrvMilliseconds: "VFC",
@@ -269,16 +265,10 @@ export const fieldLabel = (key) =>
         score: "Pontuação",
     })[key] || titleize(key);
 
-/**
- * A unidade que o rótulo de um campo carrega entre parênteses: de «Intervalo (min)» sai «min»,
- * para os cartões onde o rótulo desaparece.
- */
+/** A unidade entre parênteses no rótulo de um campo: de «Intervalo (min)» sai «min». */
 export const fieldUnit = (key) => fieldLabel(key).match(/\(([^)]+)\)\s*$/)?.[1] ?? "";
 
-/**
- * O valor de um campo de enumeração, em português. Por chave de campo e não global: `low` e
- * `high` mudam de sentido entre uma frequência cardíaca e uma bateria.
- */
+/** Os valores de enumeração em português, por campo: `low` e `high` mudam de sentido entre campos. */
 const FIELD_VALUE_LABELS = {
     site: { forehead: "Testa", ear: "Ouvido" },
     // O bit dos relógios e a enumeração do dispensador, que no contrato partilham o campo.
@@ -298,7 +288,6 @@ const FIELD_VALUE_LABELS = {
         2: "Envio periódico",
         3: "Bateria fraca",
     },
-    // Dispensador de comprimidos: o resultado da toma, como o aparelho a classifica.
     result: {
         on_time: "A horas",
         late: "Tardia",
@@ -322,8 +311,7 @@ const FIELD_VALUE_LABELS = {
         cell_door: "Porta do compartimento",
         keys: "Teclas",
     },
-    // O `state` é partilhado por várias capacidades, e por isso só entra aqui o valor que
-    // ainda não tinha tradução; os outros continuam a passar pelo `titleize`.
+    // O `state` é partilhado; só entram os valores que ainda não tinham tradução.
     state: {
         // O estado de cada alarme do dispensador, como o aparelho o classifica.
         idle: "Sem toma marcada",
@@ -383,11 +371,9 @@ const FIELD_VALUE_LABELS = {
     },
 };
 
-// O estado de sono é a mesma grandeza em dois sítios: a capacidade `sleep_state`, cujo campo
-// é o `state`, e o `sleepState` do `vitals_minute_stats`.
+// O estado de sono chega em `sleep_state.state` e no `sleepState` do `vitals_minute_stats`.
 FIELD_VALUE_LABELS.sleepState = FIELD_VALUE_LABELS.sleep_state;
 
-/** A unidade vive no nome do campo, e quem lê o ecrã só vê o rótulo em português. */
 const FIELD_UNIT = {
     accuracyMeters: "m",
     distanceMeters: "m",
@@ -463,7 +449,6 @@ const FIELD_UNIT = {
 export const fieldValue = (key, value) => {
     if (value === undefined || value === null || value === "") return "-";
 
-    // Um booleano, que de outro modo sairia titleizado do inglês.
     if (typeof value === "boolean") return value ? "Sim" : "Não";
 
     if (typeof value === "number" && FIELD_UNIT[key]) {
@@ -474,8 +459,7 @@ export const fieldValue = (key, value) => {
     const translated = FIELD_VALUE_LABELS[key]?.[raw];
     if (translated) return translated;
 
-    // Só o que parece uma enumeração é que se embeleza: um número, uma percentagem ou um
-    // texto livre passam intactos, para o `titleize` não trocar maiúsculas num ISO 8601.
+    // Só o que parece enumeração se embeleza: um ISO 8601 ou texto livre passam intactos.
     return /^[a-z][a-z0-9]*(_[a-z0-9]+)*$/.test(raw) ? titleize(raw) : raw;
 };
 
@@ -508,10 +492,7 @@ export const commandLabel = (command) =>
     command.label ||
     command.command;
 
-/**
- * Por que razão um pedido falhou, em português. Um código que não esteja aqui aparece como
- * veio, porque esconder um motivo novo é pior.
- */
+/** Por que razão um pedido falhou; um código desconhecido aparece como veio. */
 export const commandError = (code) =>
     ({
         no_response: "O aparelho não respondeu",

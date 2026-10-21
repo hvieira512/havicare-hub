@@ -1,8 +1,6 @@
 import { capabilityLabel } from "../../capability-catalog.js";
 import { PRESS_TYPE_LABEL } from "../../domain.js";
 
-/** Os cartões da chamada de enfermagem Voerka: o pedido de ajuda e o pager. */
-
 const NCS_PAGER_EVENT_VALUE = {
     help_call: "Chamada de ajuda",
     reset: "Cancelado",
@@ -17,12 +15,8 @@ export function helpCallContent(data) {
         : { ...base, value: `${base.value} (${pressType})` };
 }
 
-/**
- * O `rowValue` leva o comando porque o nome da linha já diz o que aconteceu, e sem ele a
- * coluna do valor repete "Chamada de ajuda" ao lado de "Chamada de ajuda".
- */
+/** O `rowValue` leva o comando, porque o nome da linha já diz «Chamada de ajuda». */
 export function ncsPagerContent(type, data) {
-    // O ícone vem do `CARD_STYLE`, pelo `uplinkCardContent`; o valor difere do nome da capacidade.
     const value = NCS_PAGER_EVENT_VALUE[type] || capabilityLabel(type);
     const pagerId = String(data?.pagerId || "");
 

@@ -17,19 +17,13 @@ import { setSettingsNavCount } from "../shell.js";
 import { resetModelWizard } from "./form.js";
 import { getSettingsModelsRuntime, isModelListShown, showModelsPane } from "./shell.js";
 
-/**
- * O catálogo: um nível por tipo de dispositivo, e o modelo como folha. O fornecedor é um dado
- * da linha e não uma pasta.
- */
+/** O catálogo: um nível por tipo de dispositivo, e o modelo como folha. */
 
 function plural(count, singular, pluralWord) {
     return `${count} ${count === 1 ? singular : pluralWord}`;
 }
 
-/**
- * Os grupos que valem a pena desenhar: a API devolve um por cada tipo do catálogo, e aqui um
- * tipo sem fornecedores é uma moldura vazia e cai fora.
- */
+/** Os grupos a desenhar: um tipo sem fornecedores cai fora. */
 function catalogGroups() {
     return (state.settingsModal.modelCatalog || [])
         .map((group) => ({
@@ -42,10 +36,7 @@ function catalogGroups() {
         .filter((group) => group.suppliers.length > 0);
 }
 
-/**
- * O que a linha diz a seguir ao nome comercial. O nome interno repete-se muitas vezes com o
- * comercial (D41/D41), e só se diz quando é outro.
- */
+/** O que a linha diz a seguir ao nome comercial; o interno só quando é outro. */
 function modelRowMeta(model, showType) {
     const internal = modelInternalName(model);
     return [
@@ -60,8 +51,6 @@ function modelRow(model, { showType = false } = {}) {
 
     const name = modelCommercialName(model);
 
-    // Numa linha a partir do `sm`, e em duas abaixo: num telemóvel o nome comercial come a linha
-    // toda e o fornecedor desapareceria.
     return `
         <div class="tree-row catalog-model position-relative d-flex align-items-center" data-action="modelCapabilities" data-id="${esc(model.id)}" role="button" tabindex="0">
         <span class="catalog-model-image flex-shrink-0 d-flex align-items-center justify-content-center">${modelImageHtml(model, 28)}</span>
@@ -94,10 +83,7 @@ function typeCard(group) {
         </div>`;
 }
 
-/**
- * A busca achata a árvore, senão um resultado fica escondido dentro de um grupo fechado.
- * Sem o cabeçalho do tipo por cima, cada linha passa a dizer também de que tipo é.
- */
+/** A busca achata a árvore, e cada linha passa a dizer de que tipo é. */
 function searchResults(query) {
     const needle = query.toLowerCase();
     return catalogGroups()
@@ -127,8 +113,7 @@ function renderModelsSection() {
             ),
         0,
     );
-    // Um fornecedor que sirva dois tipos conta uma vez: é a resposta a "quantos
-    // fornecedores temos", e não a "quantos nós tem a árvore".
+    // Um fornecedor que sirva dois tipos conta uma vez.
     const suppliers = new Set(
         groups.flatMap((group) =>
             group.suppliers.map((supplier) => String(supplier.name || "")),
@@ -170,18 +155,12 @@ async function loadSettingsModelFilters() {
     return filters;
 }
 
-/**
- * O catálogo vem inteiro numa chamada.
- *
- * ponytail: sem paginação. Com centenas de modelos, o caminho é nascerem fechados e buscar
- * os filhos ao abrir, e não cortar um grupo entre duas páginas.
- */
+/** ponytail: sem paginação. Com centenas de modelos, nascem fechados e buscam os filhos ao abrir. */
 async function loadSettingsModelsSection() {
     const response = await apiGetCatalog();
     state.settingsModal.modelCatalog = response.data || [];
     state.settingsModal.sectionLoaded.models = true;
-    // Aqui e não no `renderModelsSection`: a busca redesenha a cada tecla, e o assistente
-    // do outro slide não tem nada a ver com isso.
+    // Aqui e não no `renderModelsSection`, que a busca redesenha a cada tecla.
     resetModelWizard();
     showModelListSlide();
     renderModelsSection();
@@ -195,7 +174,6 @@ async function loadSettingsModelsSection() {
 function handleModelsListSearchInput() {
     const { els } = getSettingsModelsRuntime();
     state.settingsModal.modelsSearchQuery = els.modelsListSearch.value.trim();
-    // Sem espera: o filtro é local, e um debounce sobre uma lista em memória seria só atraso.
     renderModelsSection();
 }
 
@@ -214,14 +192,10 @@ function backToModelList() {
     void loadSettingsModelsSection();
 }
 
-/**
- * Põe o separador no seu ecrã de entrada, ao voltar da ficha e ao carregar o separador: a
- * abertura limpa o estado, e a ficha sem modelo não tem nada para mostrar.
- */
+/** O ecrã de entrada do separador, ao voltar da ficha e ao carregar o separador. */
 function showModelListSlide() {
     const { els } = getSettingsModelsRuntime();
 
-    // Na lista o rasto tem um só degrau e repetiria o título logo por baixo.
     els.modelsBreadcrumb.classList.add("d-none");
     els.modelsBreadcrumbModels.classList.add("active");
     els.modelsBreadcrumbNew.classList.add("d-none");
@@ -238,10 +212,7 @@ function showModelListSlide() {
     state.settingsModal.capabilityModelTemplateKeys = [];
 }
 
-/**
- * O rasto e o painel do assistente de um modelo novo. O «Fechar» do rodapé do modal sai:
- * enquanto há formulário por gravar, o rodapé é o do assistente.
- */
+/** O painel do modelo novo; o «Fechar» do rodapé sai, porque o rodapé é o do assistente. */
 function showNewModelSlide() {
     const { els } = getSettingsModelsRuntime();
     els.settingsCloseBtn?.classList.add("d-none");

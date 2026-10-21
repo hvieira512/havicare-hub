@@ -1,7 +1,4 @@
-/**
- * Os ouvintes da coluna dos dispositivos. É raiz de composição, e por isso pode importar de
- * onde precisar: quase todos atravessam duas ou três funcionalidades.
- */
+/** Os ouvintes da coluna dos dispositivos; raiz de composição, pode importar de onde precisar. */
 import { state } from "../state.js";
 import { syncPhoneControl } from "../phone.js";
 import { normalizeDeviceType } from "../domain.js";
@@ -93,10 +90,7 @@ function bindRadarMap() {
     globalThis.addEventListener("resize", () => resizeRadarMap());
 }
 
-/**
- * Fechada a planta por cima das configurações, o cartão das áreas mostra o que se enviou; com
- * outras edições por enviar fica como está, para não as deitar fora.
- */
+/** Fechada a planta, o cartão das áreas mostra o que se enviou, a não ser que haja outras edições por enviar. */
 function refreshConfigAfterRadarMap() {
     // A planta fechou-se e levou o `modal-open`; o modal do dispositivo continua aberto.
     if (els.deviceModal.classList.contains("show")) document.body.classList.add("modal-open");
@@ -107,7 +101,6 @@ function refreshConfigAfterRadarMap() {
     loaded.panel.renderDeviceConfigurationModal();
 }
 
-/** Os botões que abrem o assistente e o selector, e o atalho de editar o escolhido. */
 function bindEntryPoints() {
     els.addDeviceBtn.addEventListener("click", () => {
         void openWizard();
@@ -138,10 +131,7 @@ function bindEntryPoints() {
     }
 }
 
-/**
- * A régua do telemóvel manda na régua do cartão da atividade, para as duas não divergirem; a
- * telemetria são os cartões da coluna do aparelho, mostrados pelo atributo na raiz.
- */
+/** A régua do telemóvel manda na do cartão da atividade; a telemetria mostra-se pelo atributo na raiz. */
 function bindDeviceTabs() {
     for (const button of els.deviceTabs.querySelectorAll(".nav-link")) {
         button.addEventListener("click", () => showDeviceTab(button));
@@ -198,16 +188,10 @@ function bindDeviceForm() {
     bindUnsentConfigGuard();
 }
 
-/**
- * A saída depois de a carga do painel falhar: recarrega a página, porque um segundo `import()`
- * resolve para a falha guardada sem voltar à rede.
- */
+/** Recarregar a página: um segundo `import()` resolve para a falha guardada sem voltar à rede. */
 const CONFIG_RETRY_ACTION = "reloadForConfigPanel";
 
-/**
- * Abrir o separador manda vir o painel de configurações; enquanto não chega, a raiz mostra a
- * mesma frase de espera que o painel, para as duas esperas se lerem como uma.
- */
+/** Abrir o separador manda vir o painel; enquanto não chega, a raiz mostra a mesma frase de espera. */
 async function openConfigPanel() {
     els.deviceConfigRoot.innerHTML = emptyPanel("A carregar configurações...");
 
@@ -227,7 +211,6 @@ async function openConfigPanel() {
     panel.requestRadarStateOnOpen();
 }
 
-/** Fechar com configuração escrita e por enviar pede confirmação antes de a deitar fora. */
 function bindUnsentConfigGuard() {
     let confirmedClose = false;
 
@@ -237,7 +220,6 @@ function bindUnsentConfigGuard() {
             return;
         }
 
-        // Painel por carregar é painel sem campos escritos: não há nada por enviar.
         const pending = configPanelIfLoaded()
             ?.panel.unsentConfigChanges(els.deviceConfigRoot) ?? 0;
         if (pending === 0) return;
@@ -279,8 +261,7 @@ function bindListAndFilters() {
 }
 
 function bindDetail() {
-    // As duas listas abrem a linha carregada, ao rato e ao teclado, com o ouvinte na lista porque
-    // as linhas se redesenham a cada mensagem do stream.
+    // As linhas redesenham-se a cada mensagem do stream: o ouvinte fica na lista.
     for (const list of [els.telemetryList, els.downlinkRequests]) {
         list?.addEventListener("click", toggleActivityRow);
         list?.addEventListener("keydown", toggleActivityRow);
@@ -323,8 +304,7 @@ function bindConfigPanel() {
         }
     });
 
-    // Um ouvinte por evento, e não dois: o "Enviar" de cada bloco acende por diferença,
-    // depois de quem trata o campo ter feito o seu trabalho.
+    // Um ouvinte por evento: o "Enviar" de cada bloco acende por diferença, depois do campo tratado.
     for (const [type, pick] of [
         ["click", (handlers) => handlers.handleDeviceConfigClick],
         ["input", (handlers) => handlers.handleDeviceConfigInput],
@@ -332,8 +312,7 @@ function bindConfigPanel() {
 
     ]) {
         els.deviceConfigRoot.addEventListener(type, (event) => {
-            // Sem o painel carregado a raiz só tem a frase da espera ou a da falha, e não há
-            // controlo nenhum para tratar.
+            // Sem o painel carregado, a raiz não tem controlo nenhum.
             const loaded = configPanelIfLoaded();
             if (!loaded) return;
 
@@ -382,8 +361,7 @@ function handleDeviceFormChange(event) {
 
 function handleDeviceSupplierClick(event) {
     const button = event.target.closest("[data-action=\"selectDeviceSupplier\"]");
-    // Escolher o fornecedor não responde à pergunta do modelo: é o par que identifica, e a
-    // pergunta só fecha quando houver modelo.
+    // O fornecedor sozinho não responde à pergunta: é o par com o modelo que identifica.
     if (button) renderDeviceSelectors(button.dataset.value, "");
 }
 
@@ -413,8 +391,6 @@ function handleDeviceListClick(event) {
     const button = event.target.closest("[data-action]");
     if (!button) return;
     const { action, imei } = button.dataset;
-    // A acção vem do módulo do cartão em vez de ser a string repetida aqui: quem muda a
-    // marcação muda o ouvinte no mesmo sítio.
     if (action === DEVICE_CARD_ACTION) selectDevice(imei);
     else if (action === "retryDeviceList") void loadSummary();
     else if (action === "clearDeviceFilters") void clearDeviceFilters();
@@ -428,7 +404,6 @@ function handleRequestGridClick(event) {
         requestTelemetryFeature(String(button.dataset.feature || ""));
         return;
     }
-    // O cartão da presença abre a planta da divisão do radar escolhido.
     if (button.dataset.action === "openRadarMap") {
         void openRadarMap(String(state.selectedDetail?.device?.imei || ""));
     }

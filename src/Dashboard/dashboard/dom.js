@@ -1,7 +1,4 @@
-/**
- * Todos os elementos com `id`, por `id`. Um `id` renomeado só na marcação rebenta o arranque,
- * e o `DashboardElementIdsTest` apanha-o antes.
- */
+/** Todos os elementos com `id`, por `id`; o `DashboardElementIdsTest` confere-os com a marcação. */
 export function cacheElements() {
     const els = {};
     for (const el of document.querySelectorAll("[id]")) els[el.id] = el;
@@ -10,10 +7,7 @@ export function cacheElements() {
 
 const lastHtml = new WeakMap();
 
-/**
- * Escreve a marcação só quando difere da anterior: substituir o `innerHTML` tira o foco a quem
- * o tem. O `beforeWrite` corre só quando se escreve.
- */
+/** Escreve a marcação só quando difere da anterior, porque substituir o `innerHTML` tira o foco. */
 export function renderInto(container, markup, beforeWrite = null) {
     // Pelo texto: o `html` devolve um `Fragment` novo a cada render.
     markup = String(markup);

@@ -2,23 +2,17 @@ import { initializeDashboardSession } from "./dashboard/auth/session.js";
 import { initializeTheme } from "./dashboard/theme.js";
 import { installErrorReporting } from "./dashboard/observability.js";
 
-// Antes de tudo, para apanhar também o que rebentar no arranque.
 installErrorReporting();
 
-/**
- * O grafo da dashboard carrega-se só depois de autenticar, e uma vez só. Uma carga falhada não
- * se recupera aqui: o browser guarda a falha, e quem a trata é o `session.js`.
- */
+/** O grafo da dashboard carrega-se depois de autenticar, uma vez; uma falha trata-a o `session.js`. */
 let dashboardApp = null;
 const loadDashboardApp = () => (dashboardApp ??= import("./dashboard/app.js"));
 
 document.addEventListener("DOMContentLoaded", () => {
-    // O tema antes da sessão: o `<head>` já pintou a página na cor certa, e o que falta aqui
-    // é ligar o botão -- que existe no ecrã de entrada tanto como no da aplicação.
+    // O `<head>` já pintou o tema; falta ligar o botão, que existe também no ecrã de entrada.
     initializeTheme();
 
-    // A carga arranca no clique, em paralelo com o pedido de autenticação: é espera que já
-    // se estava a gastar de qualquer maneira.
+    // A carga arranca no clique, em paralelo com o pedido de autenticação.
     document
         .getElementById("dashboardLoginForm")
         ?.addEventListener("submit", () => void loadDashboardApp(), { once: true });

@@ -1,9 +1,6 @@
 import { html } from "../html.js";
 
-/**
- * A imagem de um modelo, pequena para uma listagem e grande para uma ficha, com a mesma
- * cadeia de nome: o comercial, o interno, e o do modelo.
- */
+/** A imagem de um modelo, com o nome comercial, o interno, e o do modelo, por esta ordem. */
 
 const modelLabel = (modelInfo, fallback) =>
     modelInfo?.commercial_name ||
@@ -20,10 +17,7 @@ export function modelImageHtml(modelInfo, size = 40) {
         : html`<i class="fa-solid fa-microchip text-secondary" style="width:${size}px;font-size:${Math.round(size * 0.62)}px"></i>`;
 }
 
-/**
- * A imagem grande, ou o ícone com a etiqueta quando não há imagem. Não fixa tamanho de
- * propósito: quem manda é o contentor, que já o limita por CSS.
- */
+/** A imagem grande, ou o ícone com a etiqueta; o tamanho é do contentor. */
 export function modelPreviewHtml(modelInfo, label = "Modelo") {
     return modelInfo?.image
         ? html`<img src="${modelInfo.image}" class="object-fit-contain mw-100" alt="${modelLabel(modelInfo, label)}">`

@@ -24,23 +24,18 @@ export function blankDeviceModal(overrides = {}) {
         configurationSync: { entries: {} },
         capabilities: {},
         enabledCapabilityKeys: [],
-        // Estado do último pedido de cada acção, que não é uma configuração guardada e por
-        // isso não vive no `configurationSync`.
+        // O estado do último pedido de cada acção, que não é configuração guardada.
         actionDeliveries: {},
         configUi: {},
         errorMessage: "",
         loading: false,
-        // Enquanto o detalhe não chega, assume-se ligado: o aviso de fila aparece quando se
-        // souber que não está, e não por não se saber ainda.
+        // Enquanto o detalhe não chega assume-se ligado, para o aviso de fila não aparecer por não se saber.
         online: true,
         ...overrides,
     };
 }
 
-/**
- * O modal de definições em branco. A secção aberta e o carrossel não entram aqui: quem repõe
- * passa-os de volta, porque sobrevivem à abertura.
- */
+/** O modal de definições em branco; a secção aberta sobrevive, e quem repõe passa-a de volta. */
 export function blankSettingsModal(overrides = {}) {
     return {
         radarCredentials: null,
@@ -87,8 +82,7 @@ export const state = {
             supplier: [],
             model: [],
         },
-        // As contagens por opção, que dizem o que se ganha ao marcar mais uma caixa. Vêm na
-        // mesma resposta que traz a lista, logo actualizam-se com ela.
+        // As contagens por opção: o que se ganha ao marcar mais uma caixa.
         deviceFilterCounts: {
             deviceType: [],
             supplier: [],
@@ -114,8 +108,7 @@ export const state = {
         severity: "all",
         q: "",
     },
-    // Listas, porque os filtros aceitam vários valores. A licença guarda pares "empresa" ou
-    // "empresa:número", ou "none". O estado é o único de valor único.
+    // Listas, porque os filtros aceitam vários valores; a licença guarda "empresa", "empresa:número" ou "none".
     deviceFilters: {
         deviceType: [],
         supplier: [],
@@ -126,11 +119,10 @@ export const state = {
     deviceSearchQuery: "",
     selectedImei: null,
     selectedDetail: null,
-    // Com cache, e aqui e não no `settingsModal` porque a coluna de detalhe também o lê.
+    // Aqui e não no `settingsModal`, porque a coluna de detalhe também o lê.
     capabilityCatalogByType: {},
     deviceModal: blankDeviceModal(),
-    // A planta do radar que está aberta. O `imei` diz de quem é, e não se lê do detalhe: o
-    // modal sobrevive a uma troca de dispositivo na lista de trás.
+    // O `imei` diz de quem é a planta aberta: o modal sobrevive a uma troca de dispositivo.
     radarMap: { imei: "", layout: null },
     modelModalSuppliers: [],
     modelModal: {
@@ -139,8 +131,7 @@ export const state = {
         templateSummary: "",
     },
     protocolCatalogs: {},
-    // As licenças, uma vez por sessão, e aqui e não no `settingsModal` porque a árvore do
-    // filtro da listagem também as lê. Quem as muda limpa-as, pelo `invalidateLicenses`.
+    // As licenças, uma vez por sessão; o filtro da listagem também as lê.
     licenses: [],
     settingsModal: blankSettingsModal({
         section: "models",
@@ -149,19 +140,16 @@ export const state = {
     loadingCommands: new Set(),
     deviceListPage: 1,
     telemetryPage: 1,
-    // O Redis guarda 100 entradas por lista, e as duas do painel dão 200 no pior caso. A 15
-    // são catorze páginas, que é o que o paginador consegue mostrar numa linha só.
+    // O Redis guarda 100 entradas por lista, e a 15 são as catorze páginas que o paginador mostra.
     telemetryPageSize: 15,
-    // Com o «Carregar mais» do telemóvel a lista acumula: a página seguinte junta-se às
-    // anteriores em vez de as substituir.
+    // Com o «Carregar mais» do telemóvel, a página seguinte junta-se às anteriores.
     telemetryCumulative: false,
     downlinkPage: 1,
     downlinkPageSize: 15,
     downlinkCumulative: false,
 };
 
-// Guarda contra gralhas, não uma tranca: um `state.selectedDetial = x` passa a atirar em vez
-// de criar uma chave nova que ninguém lê. Os objectos aninhados continuam a mudar.
+// Uma gralha como `state.selectedDetial = x` passa a atirar em vez de criar uma chave nova.
 Object.seal(state);
 
 /** Mexer num filtro ou trocar de aparelho leva as duas listas ao princípio, e desfaz o «Carregar mais». */
@@ -177,8 +165,7 @@ const blankDetailFilters = () => ({ from: "", to: "", type: "all", severity: "al
 export function selectImei(imei) {
     if (state.selectedImei !== imei) {
         resetActivityPaging();
-        // Os filtros são do histórico do aparelho anterior: herdados, escondem as leituras do
-        // novo e o painel passa a dizer que não há nenhumas.
+        // Os filtros eram do aparelho anterior: herdados, escondiam as leituras do novo.
         state.detailFilters = blankDetailFilters();
         state.detailFiltersDraft = blankDetailFilters();
     }
@@ -204,10 +191,7 @@ export function setDownlinkPage(page, totalPages) {
     state.downlinkPage = clampPage(page, totalPages);
 }
 
-/**
- * Mexer no catálogo -- gravar ou apagar um modelo -- invalida a cópia em memória: a lista
- * vazia é o sinal de "pede outra vez", que é o que o carregador em `devices/list.js` lê.
- */
+/** Mexer no catálogo invalida a cópia em memória: a lista vazia é o sinal de pedir outra vez. */
 export function invalidateDeviceTypeSuppliersModels() {
     state.deviceTypeSuppliersModels = [];
 }
@@ -225,10 +209,7 @@ export function refreshSelectedDetail(detail) {
     state.selectedDetail.recent = recent;
 }
 
-/**
- * A pré-visualização da imagem do modelo. Revoga o URL anterior aqui dentro, senão o blob
- * fica em memória até a página fechar. Sem argumento, limpa.
- */
+/** A pré-visualização da imagem do modelo; revoga o URL anterior, senão o blob fica em memória. */
 export function setModelPreviewObjectUrl(url = null) {
     if (state.modelPreviewObjectUrl) {
         URL.revokeObjectURL(state.modelPreviewObjectUrl);
@@ -257,12 +238,11 @@ export function setDeviceFilters(filters) {
     state.deviceListPage = 1;
 }
 
-/** O rascunho volta ao que está aplicado, por cópia: a mesma referência aplicava o filtro sem o botão. */
+/** O rascunho volta ao aplicado, por cópia: a mesma referência aplicava o filtro sem o botão. */
 export function resetDetailFiltersDraft() {
     state.detailFiltersDraft = { ...state.detailFilters };
 }
 
-/** Campos do rascunho a mudar, sem tocar no que está aplicado. */
 export function updateDetailFiltersDraft(changes) {
     state.detailFiltersDraft = { ...state.detailFiltersDraft, ...changes };
 }

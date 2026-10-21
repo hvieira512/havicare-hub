@@ -1,10 +1,6 @@
-/**
- * O que está colado ao topo, em pixéis, para quem cola por baixo. Mede-se, porque a barra quebra
- * num ecrã estreito e a régua só existe enquanto os painéis não cabem lado a lado.
- */
+/** A altura do que está colado ao topo, medida, porque a barra quebra num ecrã estreito. */
 export function trackStickyTop({ navbar, tabs = [] }) {
-    // São duas réguas, e nunca as duas ao mesmo tempo: a do telemóvel e a do cartão. A que
-    // está escondida mede zero, e somá-las dá sempre a que está no ecrã.
+    // As duas réguas nunca estão à vista ao mesmo tempo: a escondida mede zero.
     const strips = [tabs].flat().filter(Boolean);
     const targets = [navbar, ...strips].filter(Boolean);
     if (targets.length === 0) return;

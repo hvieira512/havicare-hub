@@ -1,7 +1,4 @@
-/**
- * A raiz de composição da dashboard, e o único sítio que conhece toda a gente: uma
- * funcionalidade nunca importa outra, e é isso que mantém o grafo sem ciclos.
- */
+/** A raiz de composição da dashboard: uma funcionalidade nunca importa outra. */
 import { getDevice as apiGetDevice } from "./api/index.js";
 import { getDashboardApiToken } from "./api/http.js";
 import { refreshSelectedDetail, setDeviceFilters, state } from "./state.js";
@@ -35,7 +32,6 @@ import { initNotifications } from "./notifications.js";
 import { initRadarMapModal } from "./devices/radar-map-modal.js";
 import { initSettings } from "./settings/index.js";
 
-/** De quanto em quanto tempo se relê o dispositivo escolhido. */
 const DEVICE_REFRESH_MS = 30000;
 
 let els = {};
@@ -45,10 +41,7 @@ let deviceSelectorModal = null;
 let settingsModal = null;
 let radarMapModal = null;
 
-/**
- * Falhar o arranque devolve o ecrã de entrada e deixa tentar outra vez; a fiação é que não se
- * repete, porque os modais, o `ResizeObserver` e os temporizadores não se desligam.
- */
+/** A fiação não se repete num segundo arranque: modais, observadores e temporizadores não se desligam. */
 let wired = false;
 
 export async function startDashboard() {
@@ -99,8 +92,7 @@ function wireDashboard() {
     initRadarMapModal({ els, modals: { radarMap: radarMapModal } });
     initEditWizard({
         els,
-        // A autorização de um gateway é por empresa e licença: mudar de licença muda quais
-        // são os elegíveis, e os que estavam marcados eram de outro cliente.
+        // Os gateways elegíveis são da mesma empresa e licença do sensor.
         onLicenseChange: () => void refreshGatewayOptions([]),
     });
     initCreateWizard({ els, wizardModal: deviceWizardModal });
@@ -108,15 +100,13 @@ function wireDashboard() {
     initSettings({ els, ui });
     initDeviceStream({
         renderSelection,
-        // Esta chamada também escreve o estado de entrega de cada comando; sem modal aberto não há
-        // onde o aplicar, e o `editDevice` relê tudo.
+        // Sem modal aberto não há onde aplicar o estado de entrega; o `editDevice` relê tudo.
         onCommandsUpdated: (imei, commands) => {
             const loaded = configPanelIfLoaded();
             if (loaded) {
                 loaded.panel.syncDeviceModalCommandStates(imei, commands);
                 return;
             }
-            // A mesma condição que o painel usa para decidir se a mensagem lhe diz respeito.
             if (String(state.deviceModal.imei || "") !== String(imei || "")) return;
             void loadConfigPanel()
                 .then(({ panel }) => panel.syncDeviceModalCommandStates(imei, commands))
@@ -128,17 +118,13 @@ function wireDashboard() {
         openAddDevice: openWizard,
     });
 
-    // Um ouvinte só e não um por formulário: os campos marcados vivem em cinco formulários,
-    // uns servidos pelo PHP e outros desenhados em JS.
+    // Um ouvinte só para os campos marcados de todos os formulários.
     bindInvalidClearing(document);
     bindDeviceEvents({ els, ui });
     bindSettingsEvents({ els });
 }
 
-/**
- * Relê o registo do dispositivo e não o histórico, que só o stream traz. Um separador
- * escondido não sonda, e ao voltar relê-se já.
- */
+/** Relê o registo do dispositivo, e não o histórico, que só o stream traz; escondido, não sonda. */
 export function startSelectedDevicePolling() {
     const refreshWhenVisible = () => {
         if (!document.hidden) {

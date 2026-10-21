@@ -15,10 +15,7 @@ export const CAPABILITY_SECTION_ICONS = {
     settings_system: "fa-gear",
 };
 
-/**
- * O catálogo de capacidades de cada tipo e o nome de cada uma, que vem da `label` do
- * `/api/capabilities`. Aqui só ficam os eventos de protocolo, como `device.connected`.
- */
+/** Os nomes dos eventos de protocolo; os das capacidades vêm da `label` do `/api/capabilities`. */
 const PROTOCOL_EVENT_LABELS = {
     alarm: "Alarme",
     "device.connected": "Ligado",
@@ -30,10 +27,7 @@ const PROTOCOL_EVENT_LABELS = {
     unknown: "Desconhecida",
 };
 
-/**
- * O catálogo de um tipo de dispositivo, com cache por tipo e não global: são seis tipos e
- * cada ecrã só olha para um. Quem chama garante que está lá antes de desenhar.
- */
+/** O catálogo de um tipo, com cache por tipo. */
 const inFlightByType = new Map();
 
 export async function ensureCapabilityCatalog(deviceType) {
@@ -43,7 +37,6 @@ export async function ensureCapabilityCatalog(deviceType) {
         return cached;
     }
 
-    // Um pedido por tipo, partilhado por quem pede ao mesmo tempo.
     if (!inFlightByType.has(normalized)) {
         inFlightByType.set(
             normalized,
@@ -63,10 +56,7 @@ export async function ensureCapabilityCatalog(deviceType) {
 
 const modelTemplates = new Map();
 
-/**
- * O template de capacidades de um par fornecedor×tipo. Fica em cache toda a sessão: sai das
- * definições do fornecedor que vivem em código, e nada na dashboard o escreve.
- */
+/** O template de capacidades de um par fornecedor×tipo, em cache toda a sessão. */
 export async function ensureModelTemplate(supplierId, deviceType) {
     const normalized = normalizeDeviceType(deviceType || "watch");
     const key = `${supplierId}|${normalized}`;
@@ -83,15 +73,11 @@ export async function ensureModelTemplate(supplierId, deviceType) {
     return pending;
 }
 
-/** O catálogo já carregado de um tipo, ou vazio se ninguém o pediu ainda. */
 function capabilityCatalogFor(deviceType) {
     return state.capabilityCatalogByType[normalizeDeviceType(deviceType || "watch")] || [];
 }
 
-/**
- * O nome de uma capacidade ou de um evento, para o dispositivo escolhido: o catálogo do tipo,
- * os eventos de protocolo, e por fim a chave humanizada.
- */
+/** O nome de uma capacidade ou de um evento; sem nenhum, a chave humanizada. */
 export function capabilityLabel(key) {
     const deviceType = state.selectedDetail?.model?.deviceType;
     const catalog = deviceType ? capabilityCatalogFor(deviceType) : [];

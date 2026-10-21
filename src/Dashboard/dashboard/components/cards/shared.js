@@ -1,8 +1,6 @@
 import { fieldLabel, fieldValue } from "../../format.js";
 import { html, raw } from "../../html.js";
 
-/** O que mais do que uma família de cartões precisa. */
-
 export function compactDetails(data, keys) {
     return joinMarkup(
         keys

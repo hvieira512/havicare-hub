@@ -15,10 +15,7 @@ import {
 import { initSettingsModels } from "./models/shell.js";
 import { loadSettingsModelsSection } from "./models/list.js";
 
-/**
- * A raiz de composição do modal de definições, o único módulo que conhece as quatro secções;
- * nenhuma importa daqui. O que partilham vive no `shell.js`.
- */
+/** A raiz de composição do modal de definições; nenhuma secção importa daqui. */
 export function initSettings(context) {
     initSettingsShell(context);
     initSettingsApiUsers(context);
@@ -28,10 +25,7 @@ export function initSettings(context) {
     initSettingsModels(context);
 }
 
-/**
- * Abre o modal numa secção. Carrega-se aqui e não só pelo `shown.bs.tab`, porque esse
- * evento não dispara quando o separador pedido já é o activo.
- */
+/** Abre o modal numa secção; o `shown.bs.tab` não dispara quando o separador já é o activo. */
 export async function loadSettingsModal(
     section = state.settingsModal.section,
 ) {

@@ -1,7 +1,5 @@
 import { html, raw } from "../../html.js";
 
-/** Os cartões do sensor de fralda: humidade, bandas e canais afetados. */
-
 // O limiar vem no payload, por sensor; 12 é o preset normal, para leituras sem o campo.
 const DIAPER_WET_DELTA_FALLBACK = 12;
 

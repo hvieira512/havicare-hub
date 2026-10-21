@@ -1,7 +1,4 @@
-/**
- * Script clássico no `<head>`, antes das folhas de estilo, para pôr o `data-bs-theme` antes da
- * primeira pintura. A chave é a do `storage.js`, escrita à mão porque aqui não há módulos.
- */
+/** Põe o `data-bs-theme` antes da primeira pintura; a chave é a do `storage.js`, escrita à mão. */
 (function () {
     try {
         const stored = localStorage.getItem("hub-dashboard-theme");

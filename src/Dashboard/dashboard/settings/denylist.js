@@ -6,10 +6,7 @@ import { apiError, toast } from "../dialogs.js";
 import { emptyPanel } from "../components/empty-panel.js";
 import { setSettingsNavCount } from "./shell.js";
 
-/**
- * O separador da denylist: os aparelhos estranhos bloqueados de propósito. Bloquear é gesto da
- * notificação; aqui só se vê a lista e se desbloqueia.
- */
+/** A denylist: só se vê e se desbloqueia; bloquear faz-se na notificação. */
 let els;
 let current = [];
 let blockedCount = 0;
@@ -41,8 +38,6 @@ function denylistRow(entry) {
     const whoLine = who === ""
         ? ""
         : html`<span class="d-block small text-secondary">${who}</span>`;
-    // Num telefone o botão desce para baixo do texto: uma identidade de quinze dígitos em
-    // monoespaçada e um botão de 96px não cabem os dois numa calha de 300px.
     return html`
         <div class="list-group-item d-flex flex-column flex-sm-row align-items-start align-items-sm-center gap-2">
             <div class="min-w-0 flex-grow-1">
@@ -58,8 +53,7 @@ function renderDenylistSection() {
     const total = blockedCount;
     setSettingsNavCount("Denylist", total);
 
-    // Sem bloqueados, o vazio é um estado só: o título di-lo e a frase por baixo explica de
-    // onde vêm os bloqueios, que é o único separador onde não se acrescenta nada daqui.
+    // Sem bloqueados, a frase por baixo do título diz de onde vêm os bloqueios.
     if (els.denylistTabTitle) {
         els.denylistTabTitle.textContent = total === 0
             ? "Nenhum aparelho bloqueado"
@@ -87,7 +81,6 @@ async function unblock(identity) {
     renderDenylistSection();
 }
 
-/** Os cliques da lista: só o «Desbloquear» de cada linha. */
 export function handleDenylistListClick(event) {
     const button = event.target.closest("button");
     if (!button) return;

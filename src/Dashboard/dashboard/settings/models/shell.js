@@ -1,7 +1,4 @@
-/**
- * O contexto e a navegação do separador do catálogo: os três painéis -- a lista, o
- * formulário e a ficha -- num módulo que não importa nenhum deles.
- */
+/** O contexto e a navegação do catálogo: a lista, o formulário e a ficha. */
 let els;
 let ui;
 

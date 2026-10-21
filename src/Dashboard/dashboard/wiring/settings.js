@@ -1,7 +1,4 @@
-/**
- * A ligação dos ouvintes do modal de definições. É raiz de composição, como o `devices.js`, e
- * pode importar de toda a gente.
- */
+/** Os ouvintes do modal de definições; raiz de composição, pode importar de toda a gente. */
 import { state } from "../state.js";
 import { loadSettingsModal } from "../settings/index.js";
 import { handleSettingsPaginationClick } from "../settings/shell.js";
@@ -131,8 +128,7 @@ function bindModels() {
         const button = event.target.closest("[data-action=\"backToModelList\"]");
         if (button) backToModelList();
     });
-    // A árvore do catálogo abre e fecha pelo `collapse` do Bootstrap: aqui escuta-se só a
-    // folha. O `keydown` está ao lado do `click` porque a folha não é um `<button>`.
+    // O `keydown` ao lado do `click` porque a folha do catálogo não é um `<button>`.
     els.modelCatalog.addEventListener("click", handleModelListClick);
     els.modelCatalog.addEventListener("keydown", handleModelListClick);
     els.modelsListSearch.addEventListener("input", handleModelsListSearchInput);
@@ -167,8 +163,7 @@ function bindCapabilities() {
 
 function bindApiUsers() {
     els.newApiUserBtn?.addEventListener("click", newApiUser);
-    // O invólucro e não a lista: apanha os cliques do formulário de criar, os verbos do menu
-    // de cada linha e os filtros por cima dela.
+    // No invólucro e não na lista: apanha o formulário de criar, os menus das linhas e os filtros.
     els.apiUserList.addEventListener("click", handleApiUserListClick);
     els.apiUserList.addEventListener("change", handleApiUserListChange);
     els.apiUserList.addEventListener("input", handleApiUserListInput);

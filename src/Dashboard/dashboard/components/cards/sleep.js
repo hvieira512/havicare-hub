@@ -1,11 +1,6 @@
 import { html } from "../../html.js";
 import { joinMarkup } from "./shared.js";
 
-/**
- * Os cartões do sono. A noite é um relatório, com fronteiras, duração e os troços de cada
- * fase: na linha cabe quanto se dormiu, e o resto abre na gaveta.
- */
-
 const PHASE_LABEL = {
     deep_sleep: "Profundo",
     light_sleep: "Leve",
@@ -25,10 +20,7 @@ const duration = (minutes) =>
         ? `${Math.floor(minutes / 60)}h ${Math.round(minutes % 60)}m`
         : `${Math.round(minutes)} min`;
 
-/**
- * A hora, ou nada se não se conseguir ler. Difere do `timeOnly`, que mostra o valor em cru
- * quando não o percebe: a frase «Das ... às ...» ou sai inteira ou não sai.
- */
+/** A hora, ou nada: ao contrário do `timeOnly`, a frase «Das ... às ...» ou sai inteira ou não sai. */
 const clock = (value) => {
     const parsed = Date.parse(value ?? "");
     return Number.isNaN(parsed)
@@ -42,7 +34,6 @@ const clock = (value) => {
 const segments = (data) =>
     Array.isArray(data?.segments) ? data.segments : [];
 
-/** Quanto tempo em cada fase, somado dos troços. */
 function phaseMinutes(data) {
     const totals = new Map();
     for (const segment of segments(data)) {
