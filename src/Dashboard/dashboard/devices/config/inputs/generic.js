@@ -98,6 +98,22 @@ function selectInput(entry, desired, meta) {
     return html`<select class="form-select" data-config-field="${name}">${choices}</select>`;
 }
 
+/** O desvio de agora de uma zona da IANA, como o `Intl` o escreve: «GMT+01:00». */
+const zoneOffset = (zone) => new Intl.DateTimeFormat("pt-PT", { timeZone: zone, timeZoneName: "longOffset" })
+    .formatToParts(new Date())
+    .find((part) => part.type === "timeZoneName")?.value ?? "";
+
+function timeZoneInput(entry, desired) {
+    const name = entry.fields?.[0] || "timeZone";
+    const current = String(desired?.[name] ?? "");
+    const zones = (entry.options?.[name] ?? []).map((option) => {
+        const zone = String(option.value);
+        return html`<option value="${zone}"${zone === current ? raw(" selected") : ""}>${zone} — ${zoneOffset(zone)}</option>`;
+    });
+
+    return html`<select class="form-select" data-config-field="${name}">${zones}</select>`;
+}
+
 /** O valor do campo: número quando o parece, que um fuso com nome fica texto. */
 export function readSelect(section) {
     const node = section.querySelector("select[data-config-field]");
@@ -109,6 +125,10 @@ export function readSelect(section) {
 export const INPUTS = {
     select: {
         control: selectInput,
+        read: readSelect,
+    },
+    timeZone: {
+        control: timeZoneInput,
         read: readSelect,
     },
     toggle: {

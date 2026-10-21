@@ -47,7 +47,7 @@ final class ZayataConfigurationDefinitions
             $toggle('auto_clock', 'autoClock', 13, 'system'),
             $toggle('key_tone', 'keyTone', 14, 'system'),
             // As zonas da IANA, que o hub converte para o desvio do aparelho e reescreve quando a hora muda.
-            $choice('time_zone', 'timeZone', 'timeZone', \DateTimeZone::listIdentifiers(), 'system', 11, default: 'Europe/Lisbon'),
+            $choice('time_zone', 'timeZone', 'timeZone', \DateTimeZone::listIdentifiers(), 'system', 11, 'timeZone', 'Europe/Lisbon'),
             $action('sync_configuration', 'readConfiguration', 'system', 5),
             // Sem desligar a cifra: o aparelho recusa o `0x8005`.
             $action('dispense_now', 'dispenseNow', 'health', 40, true),

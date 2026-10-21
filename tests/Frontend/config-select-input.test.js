@@ -39,3 +39,15 @@ test("an option the dictionary does not know says so, never in English", () => {
 test("a setting without options does not throw", () => {
     assert.match(control({ fields: ["volume"] }, {}, META), /<select/);
 });
+
+/** O desvio de cada zona escreve-o o `Intl` com a hora de agora, e por isso não envelhece. */
+test("a time zone is named by its id and its offset now", () => {
+    const html = String(CONFIG_INPUTS.timeZone.control(
+        { capabilityKey: "time_zone", fields: ["timeZone"], options: { timeZone: [{ value: "Europe/Lisbon" }, { value: "Asia/Tokyo" }] } },
+        { timeZone: "Asia/Tokyo" },
+        META,
+    ));
+
+    assert.match(html, />Asia\/Tokyo — GMT\+09:00</);
+    assert.match(html, /value="Asia\/Tokyo"\s+selected/);
+});
