@@ -1,4 +1,5 @@
 import { esc, fieldUnit } from "../../format.js";
+import { configText, verbLabel } from "../../i18n.js";
 import { emptyPanel } from "../../components/empty-panel.js";
 import { stateBadge } from "../../components/state-badge.js";
 import {
@@ -12,10 +13,7 @@ import { CONFIG_INPUTS } from "./inputs/index.js";
 import { loadedCellsRunoutText } from "./loaded-cells-runout.js";
 import { toggleField, toggleValue } from "./inputs/generic.js";
 import { jsonInput, readJson } from "./readers.js";
-import {
-    catalogForProtocol,
-    protocolFieldConstraints,
-} from "./protocol-catalog.js";
+import { catalogForProtocol } from "./protocol-catalog.js";
 
 // O `device-modal.js` chega ao catálogo por aqui, que é a porta do painel tardio.
 export { catalogForProtocol };
@@ -196,25 +194,25 @@ function configRuns(entries) {
     }));
 }
 
-/** A unidade declarada ganha à adivinhada pelo nome; num campo `unit` as opções são escolhas. */
-function unitLabel(entry) {
-    const declared = [entry.options?.label, entry.options?.unit].find((value) => typeof value === "string") ?? "";
-    return declared.trim() || fieldUnit(entry.fields?.[0] || "");
+/** A unidade que o dicionário dá à configuração, a que ela declara, ou a do nome do campo. */
+function unitLabel(entry, protocol) {
+    const unit = typeof entry.options?.unit === "string" ? entry.options.unit : "";
+    return configText(entry.capabilityKey, protocol).unit || unit || fieldUnit(entry.fields?.[0] || "");
 }
 
-function unitGroup(control, entry) {
-    const unit = unitLabel(entry);
+function unitGroup(control, entry, protocol) {
+    const unit = unitLabel(entry, protocol);
     if (control === "") return "";
     return unit === ""
         ? `<div class="config-line-control">${control}</div>`
         : `<div class="input-group flex-nowrap w-auto config-line-control">${control}<span class="input-group-text">${esc(unit)}</span></div>`;
 }
 
-function previousValueSummary(entry, desired, isStored) {
+function previousValueSummary(entry, desired, isStored, protocol) {
     if (!isStored) return "por enviar pela primeira vez";
 
     const value = desired?.[entry.fields?.[0] || ""];
-    const unit = unitLabel(entry);
+    const unit = unitLabel(entry, protocol);
     if (typeof value !== "number" || unit === "") return "alterada e por enviar";
 
     const upper = entry.input === "valueRange" ? desired?.[entry.fields?.[1] || ""] : undefined;
@@ -222,8 +220,8 @@ function previousValueSummary(entry, desired, isStored) {
 }
 
 /** As duas leituras desenhadas juntas: o CSS escolhe pelo `data-config-edited`, sem redesenhar. */
-function settingState(entry, desired, isStored, deliveryMeta, showBadge) {
-    const previous = previousValueSummary(entry, desired, isStored);
+function settingState(entry, desired, isStored, deliveryMeta, showBadge, protocol) {
+    const previous = previousValueSummary(entry, desired, isStored, protocol);
     // A data acompanha o que se escreve, e por isso não entra no par limpo/alterado.
     const runout = entry.key === "loaded_cells"
         ? `<div class="small text-secondary" data-loaded-runout>${esc(loadedCellsRunoutText(desired?.cells))}</div>`
@@ -245,7 +243,7 @@ function settingState(entry, desired, isStored, deliveryMeta, showBadge) {
 /** Tem de bater certo ao caractere com o `readConfigPayload`, contra o qual a fotografia se compara. */
 export function readConfigEntryValue(entry, desired) {
     const field = entry.fields?.[0] || "value";
-    const value = desired?.[field] ?? entry.options?.min ?? 0;
+    const value = desired?.[field] ?? "";
     // Só o que não parece número fica texto, como um fuso com nome.
     return { [field]: Number.isNaN(Number(value)) ? value : Number(value) };
 }
@@ -253,20 +251,21 @@ export function readConfigEntryValue(entry, desired) {
 function renderConfigGroup(protocol, entries, ctx) {
     const { rowsByKey, capabilities, disabled, uiByKey, configurationSync } = ctx;
     // A legenda comum a toda a corrida sobe ao cabeçalho.
-    const shared = entries.length > 1 && entries.every((entry) => configHelp(entry) === configHelp(entries[0]))
-        ? configHelp(entries[0])
+    const help = (entry) => configText(entry.capabilityKey, protocol).help;
+    const shared = entries.length > 1 && entries.every((entry) => help(entry) === help(entries[0]))
+        ? help(entries[0])
         : "";
 
     const rows = entries.map((entry) => {
         const capability = capabilityForEntry(entry, capabilities);
-        const desired = normalizeDesired(entry, resolveConfigRow(entry, rowsByKey), capability ? extractCapabilityValue(capability) : null, protocol);
+        const desired = normalizeDesired(resolveConfigRow(entry, rowsByKey), capability);
         const isToggle = isPlainToggle(entry);
         const field = toggleField(entry);
         const on = toggleValue(entry, desired);
         const stored = resolveConfigStored(entry, rowsByKey);
         const delivery = resolveConfigDelivery(entry, configurationSync);
         const deliveryMeta = configurationDeliveryMeta(stored, delivery);
-        const help = shared === "" ? configHelp(entry) : "";
+        const entryHelp = shared === "" ? help(entry) : "";
         const uiState = uiByKey[entry.key] || null;
         const busy = uiState?.phase === "submitting";
         const control = isToggle
@@ -274,11 +273,11 @@ function renderConfigGroup(protocol, entries, ctx) {
                     <input class="form-check-input" type="checkbox" role="switch"
                            data-config-field="${esc(field)}" ${on ? "checked" : ""}
                            ${disabled || busy ? "disabled" : ""}
-                           aria-label="${esc(entry.label || entry.key)}">
+                           aria-label="${esc(entry.label)}">
                 </div>`
-            : renderConfigControl(entry, desired, { protocol });
+            : renderConfigControl(entry, desired, { ...(capability?._meta || {}), protocol });
         const pristine = isToggle ? { [field]: on } : readConfigEntryValue(entry, desired);
-        const rowState = settingState(entry, desired, stored, deliveryMeta, true);
+        const rowState = settingState(entry, desired, stored, deliveryMeta, true, protocol);
 
         return `
             <div class="config-setting d-flex align-items-center gap-3 px-3 py-2 border-bottom" data-config-row
@@ -287,12 +286,12 @@ function renderConfigGroup(protocol, entries, ctx) {
                  data-config-protocol="${esc(protocol)}"
                  data-config-pristine='${esc(JSON.stringify(pristine))}'>
                 <div class="flex-grow-1 min-w-0">
-                    <div class="fw-semibold">${esc(entry.label || entry.key)}</div>
-                    ${help ? `<div class="small text-secondary">${esc(help)}</div>` : ""}
+                    <div class="fw-semibold">${esc(entry.label)}</div>
+                    ${entryHelp ? `<div class="small text-secondary">${esc(entryHelp)}</div>` : ""}
                     ${rowState.summary}
                 </div>
                 ${rowState.badge}
-                ${isToggle ? control : unitGroup(control, entry)}
+                ${isToggle ? control : unitGroup(control, entry, protocol)}
             </div>`;
     }).join("");
 
@@ -317,60 +316,48 @@ export function renderConfigSection(
     relatedConfigurations = {},
 ) {
     const capability = capabilityForEntry(entry, capabilities);
-    const desired = normalizeDesired(entry, row, capability ? extractCapabilityValue(capability) : null, protocol);
+    const desired = normalizeDesired(row, capability);
     const meta = {
         ...(capability?._meta || {}),
         protocol,
         phonebookContacts: relatedConfigurations.phonebook || [],
     };
-    const help = configHelp(entry);
+    const text = configText(entry.capabilityKey, protocol);
     const verbs = configActionVerbs(entry);
     const isStored = stored ?? (row !== null && Object.keys(row).length > 0);
     const showConfigurationBadge = !entry.requestOnly || delivery !== null;
     // Uma acção nunca guarda valor: a pastilha dela é o estado do último pedido, e não «Padrão».
     const deliveryMeta = configurationDeliveryMeta(isStored || (entry.requestOnly === true && delivery !== null), delivery);
-    // Sem comando nativo, o hub aplica-a sozinho e não há vocabulário de protocolo a mostrar.
-    const hideNativeCommand = (entry.configKind === "capability" && entry.key === "alarm_clock") ||
-        String(entry.command || "") === "";
-
-    const phonebookConstraints = protocolFieldConstraints(protocol).phonebook || {};
-    const isPhonebookLike = String(entry.key || "") === "phonebook" || String(entry.key || "") === "call_whitelist";
-    const phonebookNameMaxLength = isPhonebookLike
-        ? parseInt(String(meta.name?.maxLength ?? phonebookConstraints.name?.maxLength ?? 0), 10) || 0
-        : 0;
-    const phonebookMetaAttrs = phonebookNameMaxLength > 0
-        ? ` data-phonebook-name-max-length="${esc(String(phonebookNameMaxLength))}"`
-        : "";
-    const details = [help || ""].filter((part) => part !== "");
-    // Só as definições destrutivas trazem `confirm`, e é ele que decide se há caixa.
-    const confirmText = String(entry.confirm || "");
+    // Só as destrutivas pedem confirmação, com o efeito que o dicionário dá a este protocolo.
+    const confirmText = entry.risk === "destructive" ? (text.confirm || "Confirma esta ação?") : "";
     const confirmAttrs = confirmText === "" ? "" : ` data-config-confirm="${esc(confirmText)}"`;
     // Sem `render` o cartão cabe numa linha; um tipo desconhecido cai no editor de JSON.
     const descriptor = CONFIG_INPUTS[entry.input || "json"];
     const drawsFields = !descriptor || typeof descriptor.render === "function";
-    const control = drawsFields ? "" : renderConfigControl(entry, desired, { ...meta, protocol });
-    const verb = drawsFields || control !== "" ? "" : String(entry.verb || "");
+    const control = drawsFields ? "" : renderConfigControl(entry, desired, meta);
+    // Sem comando nativo, o hub aplica-a sozinho e o botão guarda em vez de enviar.
+    const idleVerb = verbLabel(entry.verb || (String(entry.command || "") === "" ? "save" : "send"));
     // Uma definição sai no envio da secção; uma acção só no seu botão, e só se já tiver o que enviar.
     const isCommand = (entry.transient === true || entry.requestOnly === true) &&
-        (CONFIG_INPUTS[entry.input || "json"]?.ready?.() ?? true);
+        (descriptor?.ready?.() ?? true);
     const commands = verbs.length > 0
         ? renderConfigActionVerbs(verbs, disabled)
         : isCommand
-            ? renderConfigActionButton(entry.key, row, uiState, disabled, hideNativeCommand, confirmText !== "", verb)
+            ? renderConfigActionButton(entry.key, uiState, disabled, confirmText !== "", idleVerb)
             : "";
-    const state = settingState(entry, desired, isStored, deliveryMeta, showConfigurationBadge);
+    const state = settingState(entry, desired, isStored, deliveryMeta, showConfigurationBadge, protocol);
     const fields = drawsFields
-        ? (verbs.length > 0 ? "" : renderConfigInputs(entry, desired, { ...meta, protocol }))
-        : unitGroup(control, entry);
+        ? (verbs.length > 0 ? "" : renderConfigInputs(entry, desired, meta))
+        : unitGroup(control, entry, protocol);
     // Sem campos, o botão sobe à linha do título.
     const inlineCommands = fields.trim() === "" && commands !== "";
 
     return `
-        <section class="config-setting px-3 py-2 border-bottom" data-config-section data-config-stored="${isStored ? "1" : "0"}" data-config-key="${esc(entry.key)}" data-capability-key="${esc(entry.capabilityKey || entry.key)}" data-config-label="${esc(entry.label || entry.key)}"${confirmAttrs}${phonebookMetaAttrs} data-config-input="${esc(entry.input || "json")}"${verbs.length > 0 ? ` data-config-action-field="${esc(entry.fields?.[0] || "enabled")}"` : ""} data-config-protocol="${esc(protocol)}" data-config-limit="${esc(String(entry.limit ?? ""))}"${entry.transient ? " data-config-transient=\"1\"" : ""} data-config-delivery="${esc(String(delivery?.status || ""))}">
+        <section class="config-setting px-3 py-2 border-bottom" data-config-section data-config-stored="${isStored ? "1" : "0"}" data-config-key="${esc(entry.key)}" data-capability-key="${esc(entry.capabilityKey)}" data-config-label="${esc(entry.label)}"${confirmAttrs} data-config-input="${esc(entry.input || "json")}"${verbs.length > 0 ? ` data-config-action-field="${esc(entry.fields?.[0] || "enabled")}"` : ""} data-config-protocol="${esc(protocol)}" data-config-limit="${esc(String(entry.limit ?? ""))}"${entry.transient ? " data-config-transient=\"1\"" : ""} data-config-delivery="${esc(String(delivery?.status || ""))}">
             <div class="d-flex gap-2 ${inlineCommands ? "align-items-center" : "align-items-start"}">
                 <div class="flex-grow-1 min-w-0">
-                    <div class="fw-semibold">${esc(entry.label || entry.key)}</div>
-                    ${details.length > 0 ? `<div class="small text-secondary">${details.map((part) => esc(part)).join(" · ")}</div>` : ""}
+                    <div class="fw-semibold">${esc(entry.label)}</div>
+                    ${text.help ? `<div class="small text-secondary">${esc(text.help)}</div>` : ""}
                     ${state.summary}
                 </div>
                 ${state.badge === "" ? "" : `<div class="flex-shrink-0">${state.badge}</div>`}
@@ -404,8 +391,8 @@ function configActionVerbs(entry) {
     if (!actions || typeof actions !== "object") return [];
 
     return ["on", "off"]
-        .filter((value) => String(actions[value] || "").trim() !== "")
-        .map((value) => ({ value, label: String(actions[value]).trim() }));
+        .filter((value) => actions[value])
+        .map((value) => ({ value, label: verbLabel(actions[value]) }));
 }
 
 function renderConfigActionVerbs(verbs, disabled) {
@@ -415,14 +402,8 @@ function renderConfigActionVerbs(verbs, disabled) {
                 data-config-phase="idle" ${disabled ? "disabled" : ""}>${esc(verb.label)}</button>`).join("");
 }
 
-function renderConfigActionButton(key, row, uiState, disabled = false, appliedByHub = false, destructive = false, verb = "") {
-    const state = configButtonState(row, uiState);
-    // O verbo declarado ganha; «Guardar» quando nada segue para o dispositivo.
-    const idleLabel = verb !== ""
-        ? verb
-        : appliedByHub
-            ? "Guardar"
-            : (["pushMessage", "push_message"].includes(key) ? "Enviar mensagem" : "Enviar");
+function renderConfigActionButton(key, uiState, disabled, destructive, idleLabel) {
+    const state = configButtonState(uiState);
     const isDisabled = disabled || ["submitting", "sent"].includes(state);
     const meta = CONFIG_ACTION_BUTTON_META[state] || CONFIG_ACTION_BUTTON_META.idle;
     // A partir do clique é a fase que manda na cor.
@@ -447,7 +428,7 @@ function renderConfigFeedback(key, uiState) {
         </div>`;
 }
 
-function configButtonState(_row, uiState) {
+function configButtonState(uiState) {
     if (uiState?.phase === "submitting" || uiState?.phase === "sent") {
         return uiState.phase;
     }
@@ -475,17 +456,10 @@ export function readConfigPayload(section) {
     return CONFIG_INPUTS[input]?.read?.(section) || readJson(section);
 }
 
-export function defaultConfigPayload(entry, protocol = "") {
-    const input = entry.input || "json";
-    return CONFIG_INPUTS[input]?.defaults?.(entry, protocol) || {};
-}
-
-function normalizeDesired(entry, desired, capabilityDesired = null, protocol = "") {
-    const effectiveDesired = desired ?? capabilityDesired;
-    if (effectiveDesired && Object.keys(effectiveDesired).length) {
-        return extractCapabilityValue(effectiveDesired);
-    }
-    return defaultConfigPayload(entry, protocol);
+/** O guardado ganha ao que a API serve na capacidade, que já traz o valor de partida. */
+function normalizeDesired(row, capability) {
+    const desired = row && Object.keys(row).length > 0 ? row : capability?.value;
+    return desired ?? {};
 }
 
 function resolveConfigRow(entry, rowsByKey) {
@@ -504,83 +478,13 @@ function resolveConfigStored(entry, rowsByKey) {
     return false;
 }
 
-function configHelp(entry) {
-    // A legenda declarada ganha à do tipo de campo, que só fala da forma.
-    const declared = String(entry.help || "").trim();
-    if (declared !== "") {
-        return declared;
-    }
-
-    const input = entry.input || "json";
-    const key = entry.key || "";
-    if (CONFIG_INPUTS[input]?.help) {
-        return CONFIG_INPUTS[input].help(entry);
-    }
-    return CONFIG_INPUTS[key]?.help?.(entry) || "";
-}
-
 function capabilityForEntry(entry, capabilities) {
-    const key = entry.capabilityKey || entry.key;
-    if (!key) {
-        return null;
-    }
-
-    const sectionKeys = capabilitySectionCandidates(entry);
-    for (const sectionKey of sectionKeys) {
-        const section = capabilities?.[sectionKey];
-        if (!section || typeof section !== "object") {
-            continue;
-        }
-
-        const capability = section[key];
-        if (capability && typeof capability === "object") {
-            return capability;
-        }
-    }
-
-    for (const sectionKey of ["telemetry", "health", "contacts", "alarms", "reminders", "settings_system"]) {
-        if (sectionKeys.includes(sectionKey)) {
-            continue;
-        }
-        const section = capabilities?.[sectionKey];
-        if (!section || typeof section !== "object") {
-            continue;
-        }
-
-        const capability = section[key];
+    for (const section of Object.values(capabilities || {})) {
+        const capability = section?.[entry.capabilityKey];
         if (capability && typeof capability === "object") {
             return capability;
         }
     }
 
     return null;
-}
-
-function capabilitySectionCandidates(entry) {
-    const category = String(entry.category || "");
-    const configSection = String(entry.configSectionName || "");
-    const sections = [];
-
-    if (configSection !== "") {
-        sections.push(configSection);
-    }
-
-    if (category !== "") {
-        sections.push(category);
-    }
-
-    return [...new Set(sections)];
-}
-
-function extractCapabilityValue(value) {
-    if (
-        value &&
-        typeof value === "object" &&
-        !Array.isArray(value) &&
-        Object.prototype.hasOwnProperty.call(value, "value")
-    ) {
-        return value.value;
-    }
-
-    return value;
 }

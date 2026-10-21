@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Hub\Infrastructure\Persistence;
 
 use Hub\Infrastructure\Persistence\Migration\MigrationRunner;
-use Hub\Log\Logger;
 use PDO;
 
 final class DatabaseMigrator
@@ -30,10 +29,7 @@ final class DatabaseMigrator
         $this->syncReferenceCatalog();
     }
 
-    /**
-     * O catálogo de referência vindo do código, só numa base vazia, para não repor o que a
-     * dashboard apagou. O catálogo de capacidades é a excepção e reconcilia-se sempre.
-     */
+    /** O catálogo de referência vindo do código, só numa base vazia, para não repor o que a dashboard apagou. */
     private function syncReferenceCatalog(): void
     {
         // A linha do modelo guarda o nome de um ficheiro em `var/`, que está no gitignore: sem
@@ -41,20 +37,11 @@ final class DatabaseMigrator
         (new InventorySeeder())->copyMissingModelImages();
 
         $seeder = new ReferenceCatalogSeeder();
-
-        if ((int)$this->pdo->query('SELECT COUNT(*) FROM capabilities')->fetchColumn() === 0) {
+        if ((int)$this->pdo->query('SELECT COUNT(*) FROM device_types')->fetchColumn() === 0) {
             $seeder->seedReferenceData($this->pdo);
-            $seeder->seedMissingModelCapabilities($this->pdo);
-            return;
+        } else {
+            $seeder->seedDeviceTypes($this->pdo);
         }
-
-        $reconciled = $seeder->reconcileCapabilities($this->pdo);
         $seeder->seedMissingModelCapabilities($this->pdo);
-
-        // Calado quando não há nada a dizer, e explícito quando há: uma alteração de catálogo
-        // no arranque não pode ser uma coisa que aconteça sem deixar rasto.
-        if (array_filter($reconciled) !== []) {
-            Logger::channel('hub')->info('Capability catalogue reconciled from code', $reconciled);
-        }
     }
 }

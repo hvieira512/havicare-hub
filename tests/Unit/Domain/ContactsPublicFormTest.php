@@ -43,7 +43,7 @@ final class ContactsPublicFormTest extends TestCase
         $cases = [
             ['vivistar-iw', 'sosContacts', ['numbers' => ['911', '922']]],
             ['four-p-touch', 'sosContacts', ['numbers' => ['911', '922']]],
-            ['wonlex-json', 'SOSNumber', ['sosNumbers' => [
+            ['wonlex-json', 'SOSNumber', ['contacts' => [
                 ['name' => 'Ana', 'phone' => '911'],
                 ['name' => '', 'phone' => '922'],
             ]]],

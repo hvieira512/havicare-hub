@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Hub\Command\Configuration\Definition;
 
-use Hub\Domain\Capability\TimeZoneOffset;
-
 /**
  * O que se configura num dispensador Zayata M228. Os nove alarmes são fixos — preenchem-se e
  * esvaziam-se —, e por isso o plano viaja inteiro de cada vez.
@@ -15,201 +13,49 @@ final class ZayataConfigurationDefinitions
     /** @return list<array<string, mixed>> */
     public static function all(): array
     {
+        $entry = static fn(string $key, string $command, string $input, array $fields, string $category, int $order, mixed ...$named): array
+            => ConfigurationDefinition::make($key, $command, $input, $fields, self::replyTo($command), $category, $order, ...$named);
+        $toggle = static fn(string $key, string $command, int $order, string $category = 'health'): array
+            => $entry($key, $command, 'toggle', ['enabled'], $category, $order);
+        $number = static fn(string $key, string $command, string $field, int $max, int $order): array
+            => $entry($key, $command, 'number', [$field], 'health', $order, options: ['min' => 0, 'max' => $max]);
+        $choice = static fn(string $key, string $command, string $field, array $values, string $category, int $order, string $input = 'select', mixed $default = null): array
+            => $entry($key, $command, $input, [$field], $category, $order, options: array_filter([
+                $field => array_map(static fn(int|string $value): array => ['value' => $value], $values),
+                'default' => $default,
+            ], static fn(mixed $value): bool => $value !== null));
+        $action = static fn(string $key, string $command, string $category, int $order, bool $destructive = false): array
+            => $entry($key, $command, 'action', [], $category, $order, transient: true, destructive: $destructive);
+
         return [
-            ConfigurationDefinition::make(
-                'medication_reminders',
-                'medicationPlan',
-                'Plano de medicação',
-                'pillDispenserAlarms',
-                ['plans'],
-                self::replyTo('medicationPlan'),
-                'reminders',
-                10,
-                9,
-                null,
-                false,
-                'Cada hora preenchida gasta um compartimento; saem pela ordem da hora, não do número.',
-            ),
-            ConfigurationDefinition::make(
-                'medication_period',
-                'medicationPeriod',
-                'Período do plano',
-                'pillDispenserPeriod',
-                ['enabled', 'startDate', 'endDate'],
-                self::replyTo('medicationPeriod'),
-                'reminders',
-                11,
-                null,
-                null,
-                false,
-                'Desligado, vale sempre. Não há escolha de dias da semana.',
-            ),
-            self::toggle('early_dispense', 'earlyRetrieval', 'Toma antecipada', 20, 'Com pressão longa no botão sai já a dose do próximo alarme, dada como tomada.'),
-            self::toggle('child_lock', 'childLock', 'Bloqueio de criança', 21, 'Tranca as teclas do aparelho.'),
-            self::toggle('missed_dispense', 'missedDispense', 'Dispensar depois de falhar', 22, 'Levantada depois de falhada, a toma fica registada como anormal.'),
-            self::toggle(
-                'emergency_call',
-                'emergencyCall',
-                'Chamada de emergência',
-                30,
-                'O aparelho não telefona: o pedido chega ao hub, que o encaminha.',
-                'alerts',
-            ),
-            self::number(
-                'retrieval_warning',
-                'retrievalWarning',
-                'Avisar de atraso ao fim de',
-                'health',
-                30,
-                'minutes',
-                0,
-                1440,
-                'Minutos',
-                '0 usa o valor de fábrica. Levantada depois disto, a toma fica como tardia.',
-            ),
-            self::number(
-                'retrieval_timeout',
-                'retrievalTimeout',
-                'Dar como falhada ao fim de',
-                'health',
-                31,
-                'minutes',
-                0,
-                1440,
-                'Minutos',
-                '0 usa o valor de fábrica.',
-            ),
-            self::number(
-                'loaded_cells',
-                'loadedCells',
-                'Carregado até ao compartimento',
-                'health',
-                32,
-                'cells',
-                0,
-                28,
-                'de 28',
-                'O último compartimento cheio, e não quantos. Levantada a dose desse, o prato volta ao início;'
-                . ' se falhar, segue para os vazios.',
-            ),
+            $entry('medication_reminders', 'medicationPlan', 'pillDispenserAlarms', ['plans'], 'reminders', 10, limit: 9),
+            $entry('medication_period', 'medicationPeriod', 'pillDispenserPeriod', ['enabled', 'startDate', 'endDate'], 'reminders', 11),
+            $toggle('early_dispense', 'earlyRetrieval', 20),
+            $toggle('child_lock', 'childLock', 21),
+            $toggle('missed_dispense', 'missedDispense', 22),
+            $toggle('emergency_call', 'emergencyCall', 30, 'alerts'),
+            $number('retrieval_warning', 'retrievalWarning', 'minutes', 1440, 30),
+            $number('retrieval_timeout', 'retrievalTimeout', 'minutes', 1440, 31),
+            $number('loaded_cells', 'loadedCells', 'cells', 28, 32),
             // Na especificação 0 é o mais alto e 3 é silêncio.
-            self::choice('alarm_volume', 'alarmVolume', 'Volume', 'reminders', 20, 'volume', [
-                [0, 'Alto'],
-                [1, 'Médio'],
-                [2, 'Baixo'],
-                [3, 'Silêncio'],
-            ], input: 'volumeScale'),
-            self::choice('alarm_ringtone', 'alarmRingtone', 'Tipo de toque', 'reminders', 21, 'ringtone', [
-                [0, 'Nenhum'],
-                [1, 'Toque 1'],
-                [2, 'Toque 2'],
-                [3, 'Toque 3'],
-            ]),
-            ConfigurationDefinition::make(
-                'do_not_disturb',
-                'doNotDisturb',
-                'Não incomodar',
-                'pillDispenserQuietHours',
-                ['enabled', 'startHour', 'startMinute', 'endHour', 'endMinute'],
-                self::replyTo('doNotDisturb'),
-                'system',
-                20,
-                null,
-                null,
-                false,
-                'Os alarmes dentro da janela dispensam na mesma, sem som.',
-            ),
-            self::choice('device_language', 'deviceLanguage', 'Idioma do ecrã', 'system', 10, 'language', [
-                [0, 'Do aparelho'],
-                [1, 'Inglês'],
-            ], '«Do aparelho» é a língua instalada de fábrica.'),
-            self::choice('date_format', 'dateFormat', 'Formato da data', 'system', 11, 'format', [
-                [0, 'AAAA-MM-DD'],
-                [1, 'DD-MM-AAAA'],
-                [2, 'MM-DD-AAAA'],
-            ]),
-            self::choice('time_format', 'timeFormat', 'Formato da hora', 'system', 12, 'format', [
-                [0, '24 horas'],
-                [1, '12 horas'],
-            ]),
-            self::toggle(
-                'auto_clock',
-                'autoClock',
-                'Acertar-se sozinho',
-                13,
-                '',
-                'system',
-            ),
-            self::toggle(
-                'key_tone',
-                'keyTone',
-                'Som das teclas',
-                14,
-                '',
-                'system',
-            ),
-            self::choice(
-                'time_zone',
-                'timeZone',
-                'Fuso horário',
-                'system',
-                11,
-                'timeZone',
-                self::timeZones(),
-                default: 'Europe/Lisbon',
-            ),
-            self::action(
-                'sync_configuration',
-                'readConfiguration',
-                'Sincronizar configuração',
-                'system',
-                5,
-                'Relê o que o aparelho tem guardado; não escreve nada.',
-            ),
+            $choice('alarm_volume', 'alarmVolume', 'volume', [0, 1, 2, 3], 'reminders', 20, 'volumeScale'),
+            $choice('alarm_ringtone', 'alarmRingtone', 'ringtone', [0, 1, 2, 3], 'reminders', 21),
+            $entry('do_not_disturb', 'doNotDisturb', 'pillDispenserQuietHours', ['enabled', 'startHour', 'startMinute', 'endHour', 'endMinute'], 'system', 20),
+            $choice('device_language', 'deviceLanguage', 'language', [0, 1], 'system', 10),
+            $choice('date_format', 'dateFormat', 'format', [0, 1, 2], 'system', 11),
+            $choice('time_format', 'timeFormat', 'format', [0, 1], 'system', 12),
+            $toggle('auto_clock', 'autoClock', 13, 'system'),
+            $toggle('key_tone', 'keyTone', 14, 'system'),
+            // As zonas da IANA, que o hub converte para o desvio do aparelho e reescreve quando a hora muda.
+            $choice('time_zone', 'timeZone', 'timeZone', \DateTimeZone::listIdentifiers(), 'system', 11, 'timeZone', 'Europe/Lisbon'),
+            $action('sync_configuration', 'readConfiguration', 'system', 5),
             // Sem desligar a cifra: o aparelho recusa o `0x8005`.
-            self::action(
-                'dispense_now',
-                'dispenseNow',
-                'Dispensar agora',
-                'health',
-                40,
-                'Sem alarme por vir hoje, não faz nada.',
-                'Isto gasta a dose do próximo alarme e dá-a como tomada. Confirma?',
-            ),
+            $action('dispense_now', 'dispenseNow', 'health', 40, true),
             // Sem `0xA124` nem `0xA125`: este firmware recusa-os com «TAG inválida».
-            self::action(
-                'calibrate_clock',
-                'calibrateClock',
-                'Acertar o relógio do aparelho',
-                'system',
-                30,
-                'Os alarmes tocam pelo relógio do aparelho, que deriva.',
-            ),
-            self::action(
-                'mute_alarm',
-                'muteAlarm',
-                'Silenciar o alarme a tocar',
-                'reminders',
-                30,
-                '',
-            ),
-            self::action(
-                'reset_tray',
-                'resetTray',
-                'Repor o prato',
-                'system',
-                50,
-                'Assenta o prato sem mexer na contagem; não limpa a avaria do prato.',
-            ),
-            self::action(
-                'restart_device',
-                'restartDevice',
-                'Reiniciar',
-                'system',
-                60,
-                'Sem nada preso no prato, limpa a avaria do prato à distância.',
-                'Reiniciar o dispensador?',
-            ),
+            $action('calibrate_clock', 'calibrateClock', 'system', 30),
+            $action('mute_alarm', 'muteAlarm', 'reminders', 30),
+            $action('reset_tray', 'resetTray', 'system', 50),
+            $action('restart_device', 'restartDevice', 'system', 60, true),
             // Sem reposição de fábrica: devolve o aparelho ao servidor do fornecedor.
         ];
     }
@@ -228,154 +74,5 @@ final class ZayataConfigurationDefinitions
             'resetTray', 'restartDevice' => 'control_ack',
             default => 'write_config_ack',
         }];
-    }
-
-    /**
-     * Uma escolha de uma lista, com o significado à vista. O aparelho recebe o número; quem
-     * configura vê o que ele quer dizer.
-     *
-     * @param list<array{0: int|string, 1: string}> $choices
-     * @return array<string, mixed>
-     */
-    private static function choice(
-        string $key,
-        string $command,
-        string $label,
-        string $category,
-        int $order,
-        string $field,
-        array $choices,
-        string $help = '',
-        int|string|null $default = null,
-        string $input = 'select',
-    ): array {
-        $options = [$field => array_map(
-            static fn(array $choice): array => ['value' => $choice[0], 'label' => $choice[1]],
-            $choices,
-        )];
-        if ($default !== null) {
-            $options['default'] = $default;
-        }
-
-        return ConfigurationDefinition::make(
-            $key,
-            $command,
-            $label,
-            $input,
-            [$field],
-            self::replyTo($command),
-            $category,
-            $order,
-            null,
-            $options,
-            false,
-            $help,
-        );
-    }
-
-    /**
-     * As zonas da IANA, que o hub converte para o desvio do aparelho e reescreve quando a hora
-     * muda. A etiqueta leva o desvio de agora.
-     *
-     * @return list<array{0: string, 1: string}>
-     */
-    private static function timeZones(): array
-    {
-        $now = new \DateTimeImmutable();
-
-        return array_map(static function (string $zone) use ($now): array {
-            $offset = TimeZoneOffset::hhmm($zone, $now);
-
-            return [$zone, sprintf(
-                '%s — UTC%s%02d:%02d',
-                $zone,
-                $offset < 0 ? '−' : '+',
-                intdiv(abs($offset), 100),
-                abs($offset) % 100,
-            )];
-        }, \DateTimeZone::listIdentifiers());
-    }
-
-    /**
-     * Um número com gama, e a etiqueta e a ajuda que dizem o que ele significa.
-     *
-     * @return array<string, mixed>
-     */
-    private static function number(
-        string $key,
-        string $command,
-        string $label,
-        string $category,
-        int $order,
-        string $field,
-        int $min,
-        int $max,
-        string $fieldLabel,
-        string $help,
-    ): array {
-        return ConfigurationDefinition::make(
-            $key,
-            $command,
-            $label,
-            'number',
-            [$field],
-            self::replyTo($command),
-            $category,
-            $order,
-            null,
-            ['min' => $min, 'max' => $max, 'label' => $fieldLabel],
-            false,
-            $help,
-        );
-    }
-
-    /** @return array<string, mixed> */
-    private static function toggle(
-        string $key,
-        string $command,
-        string $label,
-        int $order,
-        string $help,
-        string $category = 'health',
-    ): array {
-        return ConfigurationDefinition::make(
-            $key,
-            $command,
-            $label,
-            'toggle',
-            ['enabled'],
-            self::replyTo($command),
-            $category,
-            $order,
-            null,
-            null,
-            false,
-            $help,
-        );
-    }
-
-    /** @return array<string, mixed> */
-    private static function action(
-        string $key,
-        string $command,
-        string $label,
-        string $category,
-        int $order,
-        string $help,
-        string $confirm = '',
-    ): array {
-        return ConfigurationDefinition::make(
-            $key,
-            $command,
-            $label,
-            'action',
-            [],
-            self::replyTo($command),
-            $category,
-            $order,
-            transient: true,
-            help: $help,
-            confirm: $confirm,
-        );
     }
 }

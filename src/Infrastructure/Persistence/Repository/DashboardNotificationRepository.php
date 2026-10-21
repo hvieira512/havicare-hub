@@ -116,6 +116,9 @@ final class DashboardNotificationRepository
      */
     private function normalize(array $row): array
     {
+        $reason = (string)($row['reason'] ?? '');
+        $structured = json_decode($reason, true);
+
         return [
             'id' => (int)($row['id'] ?? 0),
             'type' => (string)($row['type'] ?? ''),
@@ -123,7 +126,8 @@ final class DashboardNotificationRepository
             'protocol' => (string)($row['protocol'] ?? ''),
             'model' => (string)($row['model'] ?? ''),
             'ident' => (string)($row['ident'] ?? ''),
-            'reason' => (string)($row['reason'] ?? ''),
+            // Um código para os aparelhos; `{pid, startedAt}` para um reinício do hub.
+            'reason' => is_array($structured) ? $structured : $reason,
             'licenseId' => (int)($row['license_id'] ?? 0),
             'company' => $row['company'] ?? null,
             'occurrenceCount' => (int)($row['occurrence_count'] ?? 0),

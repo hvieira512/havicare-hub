@@ -32,7 +32,7 @@ final class FourPTouchPhonebookFallback
             $fields = [];
             foreach ($batch as $contact) {
                 $fields[] = (string)($contact['phone'] ?? '');
-                $fields[] = self::utf16Hex(self::cutName((string)($contact['name'] ?? '')));
+                $fields[] = ConfigurationPayloadBuilder::utf16Hex(self::cutName((string)($contact['name'] ?? '')));
             }
             $commands[] = [
                 'command' => $position === 0 ? 'PHB' : 'PHB2',
@@ -117,12 +117,5 @@ final class FourPTouchPhonebookFallback
         }
 
         return mb_substr($name, 0, self::NAME_MAX_LENGTH, 'UTF-8');
-    }
-
-    private static function utf16Hex(string $value): string
-    {
-        $encoded = iconv('UTF-8', 'UTF-16BE//IGNORE', $value);
-
-        return $encoded === false ? '' : strtoupper(bin2hex($encoded));
     }
 }

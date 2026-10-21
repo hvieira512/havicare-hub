@@ -13,12 +13,10 @@ const ACTION = {
     key: "find_device",
     capabilityKey: "find_device",
     command: "config:find_device",
-    label: "Encontrar dispositivo",
     input: "toggle",
     fields: ["enabled"],
     transient: true,
-    help: "Faz a pulseira vibrar. Pára sozinha ao fim de cerca de um minuto.",
-    actions: { on: "Fazer vibrar", off: "Parar" },
+    actions: { on: "vibrate", off: "stop" },
 };
 
 const root = (entry) => parseFragment(renderConfigSection("veepoo-ble", entry, null)).firstElementChild;

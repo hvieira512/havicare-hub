@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Hub\Api\Services;
 
 use Hub\Api\Http\ApiError;
-use Hub\Api\Http\ProtocolDashboardMeta;
 use Hub\Command\DeviceConfigurationCatalog;
 use Hub\Domain\Capability\CapabilityCatalog;
 use Hub\Domain\ProtocolRegistry;
@@ -16,14 +15,7 @@ class ProtocolService
     public function list(): array
     {
         return [
-            // O domínio diz o que o protocolo é e a apresentação o que a dashboard precisa; a resposta
-            // junta as duas.
-            'data' => array_map(
-                static fn(string $protocol): array => ProtocolRegistry::describe($protocol) + [
-                    'dashboard' => ProtocolDashboardMeta::forProtocol($protocol),
-                ],
-                ProtocolRegistry::keys()
-            ),
+            'data' => array_map(ProtocolRegistry::describe(...), ProtocolRegistry::keys()),
         ];
     }
 

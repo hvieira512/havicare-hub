@@ -1,41 +1,13 @@
 import { resetPhoneControls } from "../../phone.js";
-import { refreshAlarmLine } from "./alarm-fields.js";
-import {
-    syncTakePillsRows,
-    takePillsReminderGroup,
-} from "./four-p-touch-take-pills.js";
-import { syncAlarmClockCustomVisibility } from "./inputs/capability.js";
+import { refreshAlarmLine, syncAlarmClockCustomVisibility } from "./alarm-fields.js";
+import { nextUid, syncSwitchLabel } from "./inputs/shared.js";
 
-import { nextUid } from "./inputs/shared.js";
-
-/**
- * `render` desenha a linha de novo; sem ele clona-se a última e limpa-se. `keepLast` limpa a
- * última em vez de a apagar, para haver sempre molde.
- */
-const REPEAT_ROW_KINDS = {
-    contacts: { keepLast: true },
-    sos_contacts: { keepLast: true },
-    call_whitelist: { keepLast: true },
-    numbers: { keepLast: true },
-    alarm_clock: { keepLast: true },
-    takePillsReminder: {
-        render: (index) => takePillsReminderGroup(
-            { time: "08:00", enabled: true, frequency: 1, custom: "" },
-            index,
-            [
-                { value: 1, label: "Uma vez" },
-                { value: 2, label: "Diariamente" },
-                { value: 3, label: "Personalizado" },
-            ],
-        ),
-        after: syncTakePillsRows,
-    },
-};
+/** As listas repetíveis: clona-se a última linha e limpa-se; a última limpa-se em vez de sair. */
+const REPEAT_ROW_KINDS = ["contacts", "sos_contacts", "call_whitelist", "numbers", "alarm_clock"];
 
 export function appendRepeatRow(section, kind) {
-    const spec = REPEAT_ROW_KINDS[kind];
     const list = section?.querySelector(`[data-repeat-list="${kind}"]`);
-    if (!spec || !list) return;
+    if (!REPEAT_ROW_KINDS.includes(kind) || !list) return;
 
     const rows = list.querySelectorAll(`[data-repeat-row="${kind}"]`);
     const limit = parseInt(list.dataset.repeatLimit || "", 10);
@@ -43,26 +15,13 @@ export function appendRepeatRow(section, kind) {
 
     // O `restampRowIds` corre com a linha ainda fora do documento: o `resetRowFields` marca
     // rádios, e com os grupos por renomear desmarcaria os da linha irmã.
-    let added = null;
-    if (spec.render) {
-        const holder = document.createElement("template");
-        holder.innerHTML = spec.render(rows.length);
-        for (const fresh of [...holder.content.children]) {
-            restampRowIds(fresh);
-            list.appendChild(fresh);
-            added = fresh;
-        }
-    } else {
-        const template = rows[rows.length - 1];
-        if (!template) return;
-        const clone = template.cloneNode(true);
-        restampRowIds(clone);
-        resetRowFields(clone);
-        list.appendChild(clone);
-        added = clone;
-    }
+    const template = rows[rows.length - 1];
+    if (!template) return;
+    const added = template.cloneNode(true);
+    restampRowIds(added);
+    resetRowFields(added);
+    list.appendChild(added);
 
-    spec.after?.(section);
     syncAddButton(section, kind);
     refreshAlarmLine(added);
     openOnly(list, added);
@@ -101,58 +60,37 @@ function openOnly(list, row) {
 export function removeRepeatRow(button) {
     const row = button?.closest("[data-repeat-row]");
     const kind = row?.dataset.repeatRow || "";
-    const spec = REPEAT_ROW_KINDS[kind];
-    if (!row || !spec) return;
+    if (!row || !REPEAT_ROW_KINDS.includes(kind)) return;
 
     const section = row.closest("[data-config-section]");
-    if (spec.keepLast && row.parentElement?.children.length <= 1) {
+    if (row.parentElement?.children.length <= 1) {
         resetRowFields(row);
         refreshAlarmLine(row);
     } else {
         row.remove();
     }
 
-    spec.after?.(section);
     syncAddButton(section, kind);
 }
 
-/** Os valores saem, e o que tem estado inicial próprio (interruptor, recorrência, indicativo) volta a ele. */
+/** Os valores saem; o interruptor fica ligado e cada grupo de rádios na primeira escolha. */
 function resetRowFields(row) {
+    const firstOfGroup = new Set();
     row.querySelectorAll("input, select").forEach((input) => {
-        if (input.matches("[data-alarm-clock-field=\"enabled\"]")) {
+        if (input.type === "radio") {
+            input.checked = !firstOfGroup.has(input.name);
+            firstOfGroup.add(input.name);
+        } else if (input.matches("[data-alarm-clock-field=\"enabled\"]")) {
             input.checked = true;
-            return;
-        }
-        if (input.matches("[data-alarm-clock-field=\"recurrenceKind\"]")) {
-            input.checked = false;
-            return;
-        }
-        if (input.matches("[data-alarm-clock-field=\"type\"]")) {
-            input.checked = input.value === "1";
-            return;
-        }
-        if (input.type === "checkbox") {
+        } else if (input.type === "checkbox") {
             input.checked = false;
         } else if (input.matches("[data-phone-country]")) {
             input.value = "PT";
         } else {
             input.value = "";
         }
+        if (input.type === "checkbox") syncSwitchLabel(input);
     });
-
-    const recurrenceInputs = Array.from(
-        row.querySelectorAll("[data-alarm-clock-field=\"recurrenceKind\"]"),
-    );
-    const defaultRecurrence = recurrenceInputs.find(
-        (input) => String(input.value || "").trim().toLowerCase() === "once",
-    ) || recurrenceInputs[0];
-    if (defaultRecurrence) defaultRecurrence.checked = true;
-
-    const switchLabel = row.querySelector("[data-alarm-clock-field=\"enabled\"]")
-        ?.parentElement?.querySelector("[data-switch-label]");
-    if (switchLabel) {
-        switchLabel.textContent = "Ligado";
-    }
 
     syncAlarmClockCustomVisibility(row);
     resetPhoneControls(row);

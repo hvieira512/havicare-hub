@@ -181,7 +181,7 @@ final class PillDispenserDownlinkEndToEndTest extends TestCase
     public function testAnIllegalValueStopsAtTheValidationStep(): void
     {
         self::assertSame(
-            'volume must be between 0 and 3',
+            'volume must be an integer between 0 and 3',
             DeviceConfigurationCatalog::validate('zayata-m228', 'alarm_volume', ['volume' => 9]),
         );
     }

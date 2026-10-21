@@ -70,7 +70,7 @@ test("with a position, the value is the coordinates and the details say how and 
 
     // Cinco decimais: ~1 m, e o sexto são dez centímetros num mosaico de 206px.
     assert.match(html, /41\.70684, -8\.79328/);
-    assert.match(html, /GPS · ±5 m · há 2m/);
+    assert.match(html, /GPS · ±5 m · há 2 min/);
 });
 
 test("a position resolved from radio says Rádio, not the raw source", () => {
@@ -78,7 +78,7 @@ test("a position resolved from radio says Rádio, not the raw source", () => {
     // proveniência, não qual das antenas entrou na conta.
     const html = locationCard([{ data: RADIO_FIX }]);
 
-    assert.match(html, /Rádio · ±1 m · há 2m/);
+    assert.match(html, /Rádio · ±1 m · há 2 min/);
     assert.doesNotMatch(html, /Cell Wifi/);
 });
 
@@ -86,7 +86,7 @@ test("without a position, the value is a dash and the details are the radio evid
     const html = locationCard([{ data: UNRESOLVED }]);
 
     assert.match(html, /—/);
-    assert.match(html, /1 antena · 1 rede WiFi · há 2m/);
+    assert.match(html, /1 antena · 1 rede WiFi · há 2 min/);
     assert.doesNotMatch(html, /Atualização de localização/);
     assert.doesNotMatch(html, /GPS válido/);
     assert.doesNotMatch(html, /Velocidade/);
@@ -102,7 +102,7 @@ test("counts are pluralised, and a zero count does not show", () => {
         },
     ]);
 
-    assert.match(html, /3 antenas · há 2m/);
+    assert.match(html, /3 antenas · há 2 min/);
     assert.doesNotMatch(html, /rede/);
 });
 
@@ -110,7 +110,7 @@ test("reporting and seeing nothing is a different failure, and is said in words"
     // Aponta para o aparelho e não para a cobertura: não é "tentou e não resolveu".
     const html = locationCard([{ data: NOTHING_SEEN }]);
 
-    assert.match(html, /Sem dados de rádio · há 2m/);
+    assert.match(html, /Sem dados de rádio · há 2 min/);
 });
 
 test("a report without a position does not erase the last known one", () => {
@@ -121,7 +121,7 @@ test("a report without a position does not erase the last known one", () => {
 
     assert.match(html, /41\.70684, -8\.79328/);
     // A idade é a do fixo que se mostra, e não a da tentativa mais recente.
-    assert.match(html, /Rádio · ±1 m · há 14m/);
+    assert.match(html, /Rádio · ±1 m · há 14 min/);
 });
 
 test("a device that never resolved still shows its last attempt", () => {
@@ -130,7 +130,7 @@ test("a device that never resolved still shows its last attempt", () => {
         { data: UNRESOLVED, minutes: 2 },
     ]);
 
-    assert.match(html, /1 antena · 1 rede WiFi · há 1m/);
+    assert.match(html, /1 antena · 1 rede WiFi · há 1 min/);
 });
 
 test("the chronological list shows no age: the time has its own column", () => {

@@ -72,6 +72,7 @@ final class Vivistar implements AlarmClockHandler
         $meta = $accumulatedMeta;
 
         $recurrenceOptions = $meta['mode']['options'] ?? null;
+        // hitcare: as etiquetas ficam porque o hitCare as mostra do `_meta`; saem quando ele traduzir os valores.
         if (!is_array($recurrenceOptions) || $recurrenceOptions === []) {
             $recurrenceOptions = [
                 ['value' => 'once', 'label' => 'Uma vez'],

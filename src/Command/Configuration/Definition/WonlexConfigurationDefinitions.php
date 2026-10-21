@@ -6,65 +6,64 @@ namespace Hub\Command\Configuration\Definition;
 
 final class WonlexConfigurationDefinitions
 {
+    private const MEASUREMENT_INTERVALS = [
+        'wonlexHeartRateInterval',
+        'wonlexBPInterval',
+        'wonlexBOInterval',
+        'wonlexBodyTemperatureInterval',
+        'wonlexStepInterval',
+        'wonlexBreatheInterval',
+        'wonlexECGInterval',
+        'wonlexHRVInterval',
+        'wonlexPPGInterval',
+        'wonlexRRInterval',
+    ];
+
     /** @return list<array<string, mixed>> */
     public static function all(): array
     {
         $entry = ConfigurationDefinition::make(...);
+        $device = static fn(string $key, string $input, array $fields, string $category, int $order, mixed ...$named): array
+            => ConfigurationDefinition::make($key, 'deviceConfig', $input, $fields, ['deviceConfig'], $category, $order, ...$named);
+        $heartRate = ['enabled', 'thresholdBpm', 'exerciseEnabled', 'exerciseMinBpm', 'exerciseMaxBpm', 'exerciseThresholdBpm'];
+        $heartRateBounds = ['thresholdBpm' => ['min' => 0], 'exerciseMinBpm' => ['min' => 0], 'exerciseMaxBpm' => ['min' => 0], 'exerciseThresholdBpm' => ['min' => 0]];
+
+        $intervals = [];
+        foreach (self::MEASUREMENT_INTERVALS as $index => $key) {
+            $intervals[] = $entry($key, 'deviceMeasuringFrequency', 'number', ['intervalMinutes'], ['deviceMeasuringFrequency'], category: 'measurements', order: ($index + 1) * 10, bounds: ['intervalMinutes' => ['min' => 0]]);
+        }
 
         return [
-            $entry('locationInterval', 'locationInterval', 'Intervalo de localização', 'number', ['intervalTime'], ['locationInterval'], 'intervals', 10, help: '0 desliga o envio da posição.', bounds: ['intervalTime' => ['min' => 0]]),
-            self::measurementInterval('wonlexHeartRateInterval', 'Intervalo de frequência cardíaca', 10),
-            self::measurementInterval('wonlexBPInterval', 'Intervalo de tensão arterial', 20),
-            self::measurementInterval('wonlexBOInterval', 'Intervalo de oxigénio no sangue', 30),
-            self::measurementInterval('wonlexBodyTemperatureInterval', 'Intervalo de temperatura', 40),
-            self::measurementInterval('wonlexStepInterval', 'Intervalo de passos', 50),
-            self::measurementInterval('wonlexBreatheInterval', 'Intervalo de frequência respiratória', 60),
-            self::measurementInterval('wonlexECGInterval', 'Intervalo de ECG', 70),
-            self::measurementInterval('wonlexHRVInterval', 'Intervalo de VFC', 80),
-            self::measurementInterval('wonlexPPGInterval', 'Intervalo de PPG', 90),
-            self::measurementInterval('wonlexRRInterval', 'Intervalo de RR', 100),
-            $entry('wonlexStepTarget', 'deviceConfig', 'Meta de passos', 'number', ['steps'], ['deviceConfig'], 'health', 10, bounds: ['steps' => ['min' => 0]]),
-            $entry('wonlexContinuousBOCheck', 'deviceConfig', 'Oxigénio contínuo em repouso', 'toggle', ['enabled'], ['deviceConfig'], 'health', 20),
-            $entry('wonlexContinuousHRSwitch', 'deviceConfig', 'Frequência cardíaca contínua', 'toggle', ['enabled'], ['deviceConfig'], 'health', 30),
-            $entry('wonlexPPGBPTrend', 'deviceConfig', 'Tendência PPG da pressão arterial', 'toggle', ['enabled'], ['deviceConfig'], 'health', 40),
-            $entry('wonlexContinuousTempSwitch', 'deviceConfig', 'Temperatura automática', 'toggle', ['enabled'], ['deviceConfig'], 'health', 50),
-            $entry('wonlexSleepIntervalOrSwitch', 'deviceConfig', 'Monitorização do sono', 'wonlexSleepSettings', ['enabled', 'sleepStartTime', 'sleepEndTime', 'sleepTarget'], ['deviceConfig'], 'health', 60, help: 'O início conta na véspera e o fim no próprio dia.', bounds: ['sleepTarget' => ['min' => 0]]),
-            $entry('wonlexBloodOxygenWarn', 'deviceConfig', 'Alerta de oxigénio baixo', 'wonlexReminderThreshold', ['enabled', 'reminderValue'], ['deviceConfig'], 'alerts', 40, bounds: ['reminderValue' => ['min' => 0]]),
-            $entry('wonlexTemperatureExceedRemind', 'deviceConfig', 'Alerta de temperatura alta', 'wonlexReminderThreshold', ['enabled', 'RemindValue'], ['deviceConfig'], 'alerts', 50, bounds: ['RemindValue' => ['min' => 0]]),
-            $entry('wonlexTemperatureBelowRemind', 'deviceConfig', 'Alerta de temperatura baixa', 'wonlexReminderThreshold', ['enabled', 'RemindValue'], ['deviceConfig'], 'alerts', 60, bounds: ['RemindValue' => ['min' => 0]]),
-            $entry('wonlexBPEarlyWarning', 'deviceConfig', 'Alerta de pressão arterial', 'wonlexBloodPressureWarning', ['enabled', 'hpWarn', 'LPWarn'], ['deviceConfig'], 'alerts', 70, bounds: ['hpWarn' => ['min' => 0], 'LPWarn' => ['min' => 0]]),
-            $entry('wonlexHeartRateHighRemind', 'deviceConfig', 'Alerta de frequência cardíaca alta', 'wonlexHeartRateRange', ['enabled', 'remindValue', 'exerciseEnabled', 'exerciseHRMin', 'exerciseHRMax', 'exerciseRemindValue'], ['deviceConfig'], 'alerts', 80, bounds: ['remindValue' => ['min' => 0], 'exerciseHRMin' => ['min' => 0], 'exerciseHRMax' => ['min' => 0], 'exerciseRemindValue' => ['min' => 0]]),
-            $entry('wonlexHeartRateLowRemind', 'deviceConfig', 'Alerta de frequência cardíaca baixa', 'wonlexHeartRateRange', ['enabled', 'remindValue', 'exerciseEnabled', 'exerciseHRMin', 'exerciseHRMax', 'exerciseRemindValue'], ['deviceConfig'], 'alerts', 90, bounds: ['remindValue' => ['min' => 0], 'exerciseHRMin' => ['min' => 0], 'exerciseHRMax' => ['min' => 0], 'exerciseRemindValue' => ['min' => 0]]),
-            $entry('wonlexLowPower', 'deviceConfig', 'Limiar de bateria fraca', 'number', ['Battery'], ['deviceConfig'], 'alerts', 10, bounds: ['Battery' => ['min' => 0]]),
-            $entry('wonlexFallWarnSwitch', 'deviceConfig', 'Deteção de queda', 'toggle', ['enabled'], ['deviceConfig'], 'alerts', 20),
-            $entry('wonlexSOSSwitch', 'deviceConfig', 'SMS SOS', 'toggle', ['enabled'], ['deviceConfig'], 'alerts', 30, help: 'Carregar no SOS também envia um SMS.'),
-            $entry('wonlexCallInLimitSwitch', 'deviceConfig', 'Restringir chamadas recebidas', 'toggle', ['enabled'], ['deviceConfig'], 'contacts', 35, help: 'Só a lista telefónica e os números SOS conseguem ligar.'),
-            $entry('alarmClock', 'alarmClock', 'Despertadores', 'alarm_clock', ['alarmClockList'], ['alarmClock'], 'alerts', 10, 10, help: 'Repetem-se por dias da semana; não há alarme de uma só vez.'),
-            $entry('familyNumber', 'familyNumber', 'Contactos familiares', 'phonebook', ['contacts'], ['familyNumber'], 'contacts', 5, 10),
-            $entry('SOSNumber', 'SOSNumber', 'Números SOS', 'sos_contacts', ['numbers'], ['SOSNumber'], 'contacts', 10, 10),
-            $entry('factoryResetCommand', 'reset', 'Reposição de fábrica', 'action', [], ['reset'], 'system', 110, transient: true, confirm: 'Repõe o relógio ao estado de fábrica. Volta a apontar para o servidor do fornecedor e o hub deixa de o comandar até alguém de lá o voltar a configurar.', verb: 'Repor de fábrica'),
-            $entry('restartCommand', 'restart', 'Reiniciar dispositivo', 'action', [], ['restart'], 'system', 120, transient: true, confirm: 'O relógio fica sem comunicar enquanto arranca.'),
-            $entry('powerOffCommand', 'powerOff', 'Desligar dispositivo', 'action', [], ['powerOff'], 'system', 130, transient: true, confirm: 'O relógio desliga-se e só volta a ligar no botão do próprio aparelho.'),
-            $entry('findDeviceCommand', 'find', 'Encontrar dispositivo', 'action', [], ['find'], 'system', 140, transient: true),
-            // A Wonlex documenta o `msgNotice` como notificação de sentido único e não define
-            // resposta nenhuma do dispositivo para ele.
-            $entry('pushMessage', 'msgNotice', 'Enviar mensagem ao relógio', 'pushMessage', ['message'], [], 'system', 145, transient: true, help: 'O relógio não confirma que a recebeu.'),
+            $entry('locationInterval', 'locationInterval', 'number', ['intervalSeconds'], ['locationInterval'], category: 'intervals', order: 10, bounds: ['intervalSeconds' => ['min' => 0]]),
+            ...$intervals,
+            $device('wonlexStepTarget', 'number', ['steps'], 'health', 10, bounds: ['steps' => ['min' => 0]]),
+            $device('wonlexContinuousBOCheck', 'toggle', ['enabled'], 'health', 20),
+            $device('wonlexContinuousHRSwitch', 'toggle', ['enabled'], 'health', 30),
+            $device('wonlexPPGBPTrend', 'toggle', ['enabled'], 'health', 40),
+            $device('wonlexContinuousTempSwitch', 'toggle', ['enabled'], 'health', 50),
+            $device('wonlexSleepIntervalOrSwitch', 'wonlexSleepSettings', ['enabled', 'startTime', 'endTime', 'targetMinutes'], 'health', 60, bounds: ['targetMinutes' => ['min' => 0]]),
+            $device('wonlexBloodOxygenWarn', 'wonlexReminderThreshold', ['enabled', 'thresholdPercent'], 'alerts', 40, bounds: ['thresholdPercent' => ['min' => 0]]),
+            $device('wonlexTemperatureExceedRemind', 'wonlexReminderThreshold', ['enabled', 'thresholdCelsius'], 'alerts', 50, bounds: ['thresholdCelsius' => ['min' => 0]]),
+            $device('wonlexTemperatureBelowRemind', 'wonlexReminderThreshold', ['enabled', 'thresholdCelsius'], 'alerts', 60, bounds: ['thresholdCelsius' => ['min' => 0]]),
+            $device('wonlexBPEarlyWarning', 'wonlexBloodPressureWarning', ['enabled', 'systolicMmHg', 'diastolicMmHg'], 'alerts', 70, bounds: ['systolicMmHg' => ['min' => 0], 'diastolicMmHg' => ['min' => 0]]),
+            $device('wonlexHeartRateHighRemind', 'wonlexHeartRateRange', $heartRate, 'alerts', 80, bounds: $heartRateBounds),
+            // O limite principal fica por preencher: a ficha só dá o exemplo do alerta alto.
+            $device('wonlexHeartRateLowRemind', 'wonlexHeartRateRange', $heartRate, 'alerts', 90, bounds: $heartRateBounds, options: ['default' => [
+                'enabled' => true, 'exerciseEnabled' => true, 'exerciseMinBpm' => 100, 'exerciseMaxBpm' => 140, 'exerciseThresholdBpm' => 140,
+            ]]),
+            $device('wonlexLowPower', 'number', ['thresholdPercent'], 'alerts', 10, bounds: ['thresholdPercent' => ['min' => 0]]),
+            $device('wonlexFallWarnSwitch', 'toggle', ['enabled'], 'alerts', 20),
+            $device('wonlexSOSSwitch', 'toggle', ['enabled'], 'alerts', 30),
+            $device('wonlexCallInLimitSwitch', 'toggle', ['enabled'], 'contacts', 35),
+            $entry('alarmClock', 'alarmClock', 'alarm_clock', ['alarmClockList'], ['alarmClock'], category: 'alerts', order: 10, limit: 10),
+            $entry('familyNumber', 'familyNumber', 'phonebook', ['contacts'], ['familyNumber'], category: 'contacts', order: 5, limit: 10),
+            $entry('SOSNumber', 'SOSNumber', 'sos_contacts', ['numbers'], ['SOSNumber'], category: 'contacts', order: 10, limit: 10),
+            $entry('factoryResetCommand', 'reset', 'action', [], ['reset'], category: 'system', order: 110, transient: true, destructive: true, verb: 'factory_reset'),
+            $entry('restartCommand', 'restart', 'action', [], ['restart'], category: 'system', order: 120, transient: true, destructive: true),
+            $entry('powerOffCommand', 'powerOff', 'action', [], ['powerOff'], category: 'system', order: 130, transient: true, destructive: true),
+            $entry('findDeviceCommand', 'find', 'action', [], ['find'], category: 'system', order: 140, transient: true),
+            // O `msgNotice` é notificação de sentido único: a Wonlex não lhe define resposta.
+            $entry('pushMessage', 'msgNotice', 'pushMessage', ['message'], category: 'system', order: 145, transient: true, verb: 'send_message'),
         ];
-    }
-
-    /** @return array<string, mixed> */
-    private static function measurementInterval(string $key, string $label, int $order): array
-    {
-        return ConfigurationDefinition::make(
-            $key,
-            'deviceMeasuringFrequency',
-            $label,
-            'number',
-            ['interval'],
-            ['deviceMeasuringFrequency'],
-            'measurements',
-            $order,
-            bounds: ['interval' => ['min' => 0]],
-        );
     }
 }

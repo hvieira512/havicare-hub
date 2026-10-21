@@ -8,11 +8,9 @@ use Hub\Domain\Capability\AlarmClock\AlarmClockCapability;
 use Hub\Domain\Capability\AlarmClock\FourPTouch as FourPTouchAlarmClock;
 use Hub\Domain\Capability\AlarmClock\Vivistar as VivistarAlarmClock;
 use Hub\Domain\Capability\AlarmClock\Wonlex as WonlexAlarmClock;
-use Hub\Domain\Capability\Alarms\SosSmsAlertCapability;
 use Hub\Domain\Capability\Contacts\CallWhitelistCapability;
 use Hub\Domain\Capability\Contacts\PhonebookCapability;
 use Hub\Domain\Capability\Contacts\SosContactsCapability;
-use Hub\Domain\Capability\Contacts\WhitelistEnabledCapability;
 use Hub\Domain\Capability\FourPTouch\FourPTouchGenericHandler;
 use Hub\Domain\Capability\Medication\MedicationRemindersCapability;
 
@@ -43,9 +41,16 @@ final class CapabilityRegistry
 
         $this->register(new SosContactsCapability());
         $this->register(new CallWhitelistCapability());
-        $this->register(new WhitelistEnabledCapability());
+        // A 4P Touch tem duas chaves nativas para a mesma restrição.
+        $this->register(new SwitchCapability(
+            'whitelist_enabled',
+            ['vivistar-iw' => 'whitelist_enabled', 'wonlex-json' => 'wonlexCallInLimitSwitch', 'four-p-touch' => 'rejectUnknownCalls'],
+            multipleNativeKeys: true,
+            offByDefault: ['four-p-touch'],
+            meta: ['wonlex-json' => ['allowedContactSources' => ['phonebook', 'sos_contacts']]],
+        ));
         $this->register(new PhonebookCapability());
-        $this->register(new SosSmsAlertCapability());
+        $this->register(new SwitchCapability('sos_sms_alert', ['wonlex-json' => 'wonlexSOSSwitch', 'four-p-touch' => 'sosSmsAlerts']));
         $this->register(new MedicationRemindersCapability());
         $this->register(new DiaperSensitivityCapability());
     }

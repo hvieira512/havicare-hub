@@ -11,9 +11,9 @@ import { CAPABILITY_SECTION_ICONS, ensureCapabilityCatalog, ensureModelTemplate 
 import {
     capabilitiesGroupedBySection,
     deviceTypeOptions,
-    humanizeCapabilityKey,
     normalizeDeviceType,
 } from "../domain.js";
+import { capabilityLabel, countLabel } from "../i18n.js";
 
 /** O catálogo de um tipo de dispositivo, só de leitura; as que o fornecedor não declara ficam esbatidas. */
 let els;
@@ -208,7 +208,7 @@ function renderCapabilitiesCatalogSection() {
                     return html`
                 <div class="capability-row d-grid border rounded-2${entry.supported ? "" : " is-unsupported"}">
                     <span class="d-flex justify-content-center text-secondary"><i class="fa-solid ${capabilityIcon(entry, section)}"></i></span>
-                    <span class="fw-semibold min-w-0">${entry.label || humanizeCapabilityKey(entry.key)}</span>
+                    <span class="fw-semibold min-w-0">${capabilityLabel(entry.key)}</span>
                     <span class="capability-facts text-secondary">${facts.join(" · ")}</span>
                 </div>`;
                 })
@@ -217,7 +217,7 @@ function renderCapabilitiesCatalogSection() {
             // Em telefone cada secção fecha; a partir de `sm`, o `d-sm-block` deixa-as todas abertas.
             const bodyId = `${catalogSectionId(section)}Body`;
             const count = supported === entries.length
-                ? `${supported} ${supported === 1 ? "capacidade" : "capacidades"}`
+                ? countLabel(supported, "capacidade", "capacidades")
                 : `${supported} de ${entries.length}`;
 
             return html`
@@ -312,7 +312,7 @@ function handleCapabilityCatalogSearch() {
 function matchesCapabilityQuery(entry) {
     const needle = String(state.settingsModal.capabilityQuery || "").trim().toLowerCase();
     if (needle === "") return true;
-    const label = String(entry.label || humanizeCapabilityKey(entry.key)).toLowerCase();
+    const label = capabilityLabel(entry.key).toLowerCase();
     return label.includes(needle) || String(entry.key).toLowerCase().includes(needle);
 }
 
@@ -354,7 +354,7 @@ function updateCapabilitySupplierSummary() {
             `${supported} de ${total} capacidades suportadas por ${supplier.name}.`;
     } else {
         els.capabilitySupplierSummary.textContent =
-            `${total} ${total === 1 ? "capacidade" : "capacidades"} no tipo escolhido.`;
+            `${countLabel(total, "capacidade", "capacidades")} no tipo escolhido.`;
     }
 }
 

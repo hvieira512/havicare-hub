@@ -19,9 +19,10 @@ final class ConfigurationDefaultPayloadTest extends TestCase
         'phone',
         'phonebook',
         'pushMessage',
+        'scaleUsers',
         'sos_contacts',
         'takePills',
-        'text',
+        'voiceMonitor',
     ];
 
     /**
@@ -73,35 +74,10 @@ final class ConfigurationDefaultPayloadTest extends TestCase
 
     public function testTheWonlexBloodPressureAlertDefaultCarriesBothThresholds(): void
     {
-        // O valor por omissão leva os dois limiares que o construtor precisa, e não um
-        // `reminderValue` só.
-        $entry = $this->entry('wonlex-json', 'wonlexBPEarlyWarning');
-
         self::assertSame(
-            ['switchState' => true, 'hpWarn' => 135, 'LPWarn' => 90],
-            ConfigurationInputDefaults::forEntry($entry),
+            ['enabled' => true, 'systolicMmHg' => 135, 'diastolicMmHg' => 90],
+            ConfigurationInputDefaults::forEntry($this->entry('wonlex-json', 'wonlexBPEarlyWarning')),
         );
-    }
-
-    public function testTheWonlexBloodPressureAlertAcceptsTheDashboardsEnabledFlag(): void
-    {
-        // A dashboard lê os interruptores como `enabled` em todas as capacidades, e esta não
-        // é excepção.
-        $payload = DeviceConfigurationCatalog::commandPayload('wonlex-json', 'wonlexBPEarlyWarning', [
-            'enabled' => true,
-            'hpWarn' => 140,
-            'LPWarn' => 95,
-        ]);
-
-        self::assertSame([
-            'configs' => [
-                'BPEarlyWarning' => [
-                    'switchState' => 1,
-                    'hpWarn' => 140,
-                    'LPWarn' => 95,
-                ],
-            ],
-        ], $payload['payload']);
     }
 
     /**

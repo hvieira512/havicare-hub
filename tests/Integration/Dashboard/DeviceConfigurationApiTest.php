@@ -545,7 +545,7 @@ final class DeviceConfigurationApiTest extends MysqlDashboardTestCase
         ]);
         $response = $api->updateConfigurations($imei, [
             'configurations' => [
-                'heart_rate_measurement_interval' => ['interval' => 15],
+                'heart_rate_measurement_interval' => ['intervalMinutes' => 15],
                 'alarm_clock' => ['items' => [[
                     'label' => 'Medicine',
                     'time' => '08:00',

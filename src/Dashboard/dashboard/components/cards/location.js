@@ -1,6 +1,7 @@
 import { ago } from "../../format.js";
 import { html } from "../../html.js";
 import { joinMarkup } from "./shared.js";
+import { countLabel } from "../../i18n.js";
 
 export function locationCoordinates(data) {
     return data?.hasCoordinates === true ? { lat: Number(data.lat), lon: Number(data.lon) } : null;
@@ -36,8 +37,8 @@ function locationRadioEvidence(data) {
     if (cells === 0 && wifi === 0) return "Sem dados de rádio";
 
     return [
-        cells ? `${cells} ${cells === 1 ? "antena" : "antenas"}` : "",
-        wifi ? `${wifi} ${wifi === 1 ? "rede WiFi" : "redes WiFi"}` : "",
+        cells ? `${countLabel(cells, "antena", "antenas")}` : "",
+        wifi ? `${countLabel(wifi, "rede WiFi", "redes WiFi")}` : "",
     ]
         .filter(Boolean)
         .join(" · ");

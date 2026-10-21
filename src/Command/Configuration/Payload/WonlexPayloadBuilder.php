@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Hub\Command\Configuration\Payload;
 
+use Hub\Domain\Capability\AlarmClock\Weekdays;
+
 final class WonlexPayloadBuilder extends ConfigurationPayloadBuilder
 {
     private const ALARM_CLOCK_LIMIT = 10;
@@ -19,7 +21,7 @@ final class WonlexPayloadBuilder extends ConfigurationPayloadBuilder
         }
 
         return match ($key) {
-            'locationInterval' => ['intervalTime' => self::nonNegativeInt($payload['intervalTime'] ?? null, 'intervalTime')],
+            'locationInterval' => ['intervalTime' => self::intInRange($payload['intervalSeconds'] ?? null, 'intervalSeconds')],
             'wonlexHeartRateInterval' => self::measurementInterval('upHeartRate', $payload),
             'wonlexBPInterval' => self::measurementInterval('upBP', $payload),
             'wonlexBOInterval' => self::measurementInterval('upBO', $payload),
@@ -37,18 +39,18 @@ final class WonlexPayloadBuilder extends ConfigurationPayloadBuilder
             'wonlexFallWarnSwitch' => self::deviceToggle('FallWarnSwitch', $payload),
             'wonlexSOSSwitch' => self::deviceToggle('SOSSwitch', $payload),
             'wonlexCallInLimitSwitch' => self::deviceToggle('CallInLimitSwitch', $payload),
-            'wonlexStepTarget' => self::deviceNumber('StepTarget', 'steps', $payload),
-            'wonlexLowPower' => self::deviceNumber('LowPower', 'Battery', $payload),
+            'wonlexStepTarget' => ['configs' => ['StepTarget' => ['steps' => self::intInRange($payload['steps'] ?? null, 'steps')]]],
+            'wonlexLowPower' => ['configs' => ['LowPower' => ['Battery' => self::intInRange($payload['thresholdPercent'] ?? null, 'thresholdPercent')]]],
             'wonlexSleepIntervalOrSwitch' => self::sleepSettings($payload),
-            'wonlexBloodOxygenWarn' => self::reminderThreshold('bloodOxygenWarn', $payload),
-            'wonlexTemperatureExceedRemind' => self::reminderThreshold('TemperatureExceedRemind', $payload),
-            'wonlexTemperatureBelowRemind' => self::reminderThreshold('TemperatureBelowRemind', $payload),
+            'wonlexBloodOxygenWarn' => self::reminderThreshold('bloodOxygenWarn', 'reminderValue', 'thresholdPercent', $payload),
+            'wonlexTemperatureExceedRemind' => self::reminderThreshold('TemperatureExceedRemind', 'RemindValue', 'thresholdCelsius', $payload),
+            'wonlexTemperatureBelowRemind' => self::reminderThreshold('TemperatureBelowRemind', 'RemindValue', 'thresholdCelsius', $payload),
             'wonlexHeartRateHighRemind' => self::heartRateRange('HROvertopRemind', $payload),
             'wonlexHeartRateLowRemind' => self::heartRateRange('HeartRateBelowRemind', $payload),
             'wonlexBPEarlyWarning' => self::bloodPressureWarning($payload),
             'alarmClock' => ['alarmClockList' => self::alarmClockList($payload)],
             'familyNumber' => ['familyNumbers' => self::familyNumbers($payload['contacts'] ?? null)],
-            'SOSNumber' => ['sosNumbers' => self::sosNumbers($payload['contacts'] ?? $payload['numbers'] ?? $payload['sosNumbers'] ?? [])],
+            'SOSNumber' => ['sosNumbers' => self::sosNumbers($payload['contacts'] ?? $payload['numbers'] ?? [])],
             'factoryResetCommand', 'restartCommand', 'powerOffCommand', 'findDeviceCommand' => [],
             'pushMessage' => [
                 'msgType' => 'msg',
@@ -64,7 +66,7 @@ final class WonlexPayloadBuilder extends ConfigurationPayloadBuilder
      */
     private static function measurementInterval(string $metric, array $payload): array
     {
-        return ['configs' => [$metric => ['interval' => (string)self::nonNegativeInt($payload['interval'] ?? null, 'interval')]]];
+        return ['configs' => [$metric => ['interval' => (string)self::intInRange($payload['intervalMinutes'] ?? null, 'intervalMinutes')]]];
     }
 
     /**
@@ -73,16 +75,7 @@ final class WonlexPayloadBuilder extends ConfigurationPayloadBuilder
      */
     private static function deviceToggle(string $configName, array $payload): array
     {
-        return ['configs' => [$configName => ['switchState' => self::boolInt($payload['switchState'] ?? $payload['enabled'] ?? null, 'switchState')]]];
-    }
-
-    /**
-     * @param array<string, mixed> $payload
-     * @return array<string, mixed>
-     */
-    private static function deviceNumber(string $configName, string $field, array $payload): array
-    {
-        return ['configs' => [$configName => [$field => self::nonNegativeInt($payload[$field] ?? $payload['value'] ?? null, $field)]]];
+        return ['configs' => [$configName => ['switchState' => self::boolInt($payload['enabled'] ?? null, 'enabled')]]];
     }
 
     /**
@@ -91,11 +84,12 @@ final class WonlexPayloadBuilder extends ConfigurationPayloadBuilder
      */
     private static function sleepSettings(array $payload): array
     {
+        // O relógio quer as horas em `HHmmss`.
         return ['configs' => ['SleepIntervalOrSwitch' => [
-            'switchState' => self::boolInt($payload['switchState'] ?? null, 'switchState'),
-            'sleepStartTime' => self::requiredString($payload['sleepStartTime'] ?? null, 'sleepStartTime'),
-            'sleepEndTime' => self::requiredString($payload['sleepEndTime'] ?? null, 'sleepEndTime'),
-            'sleepTarget' => self::nonNegativeInt($payload['sleepTarget'] ?? null, 'sleepTarget'),
+            'switchState' => self::boolInt($payload['enabled'] ?? null, 'enabled'),
+            'sleepStartTime' => str_replace(':', '', self::hhmm($payload['startTime'] ?? null, 'startTime')) . '00',
+            'sleepEndTime' => str_replace(':', '', self::hhmm($payload['endTime'] ?? null, 'endTime')) . '00',
+            'sleepTarget' => self::intInRange($payload['targetMinutes'] ?? null, 'targetMinutes'),
         ]]];
     }
 
@@ -103,13 +97,11 @@ final class WonlexPayloadBuilder extends ConfigurationPayloadBuilder
      * @param array<string, mixed> $payload
      * @return array<string, mixed>
      */
-    private static function reminderThreshold(string $configName, array $payload): array
+    private static function reminderThreshold(string $configName, string $wireField, string $field, array $payload): array
     {
-        $valueKey = array_key_exists('RemindValue', $payload) ? 'RemindValue' : 'reminderValue';
-
         return ['configs' => [$configName => [
-            'switchState' => self::boolInt($payload['switchState'] ?? null, 'switchState'),
-            $valueKey => self::nonNegativeFloat($payload[$valueKey] ?? null, $valueKey),
+            'switchState' => self::boolInt($payload['enabled'] ?? null, 'enabled'),
+            $wireField => self::nonNegativeFloat($payload[$field] ?? null, $field),
         ]]];
     }
 
@@ -120,12 +112,12 @@ final class WonlexPayloadBuilder extends ConfigurationPayloadBuilder
     private static function heartRateRange(string $configName, array $payload): array
     {
         return ['configs' => [$configName => [
-            'switchState' => self::boolInt($payload['switchState'] ?? null, 'switchState'),
-            'remindValue' => self::nonNegativeInt($payload['remindValue'] ?? null, 'remindValue'),
-            'exerciseSwitchState' => self::boolInt($payload['exerciseSwitchState'] ?? null, 'exerciseSwitchState'),
-            'exerciseHRMin' => self::nonNegativeInt($payload['exerciseHRMin'] ?? null, 'exerciseHRMin'),
-            'exerciseHRMax' => self::nonNegativeInt($payload['exerciseHRMax'] ?? null, 'exerciseHRMax'),
-            'exerciseRemindValue' => self::nonNegativeInt($payload['exerciseRemindValue'] ?? null, 'exerciseRemindValue'),
+            'switchState' => self::boolInt($payload['enabled'] ?? null, 'enabled'),
+            'remindValue' => self::intInRange($payload['thresholdBpm'] ?? null, 'thresholdBpm'),
+            'exerciseSwitchState' => self::boolInt($payload['exerciseEnabled'] ?? null, 'exerciseEnabled'),
+            'exerciseHRMin' => self::intInRange($payload['exerciseMinBpm'] ?? null, 'exerciseMinBpm'),
+            'exerciseHRMax' => self::intInRange($payload['exerciseMaxBpm'] ?? null, 'exerciseMaxBpm'),
+            'exerciseRemindValue' => self::intInRange($payload['exerciseThresholdBpm'] ?? null, 'exerciseThresholdBpm'),
         ]]];
     }
 
@@ -136,10 +128,9 @@ final class WonlexPayloadBuilder extends ConfigurationPayloadBuilder
     private static function bloodPressureWarning(array $payload): array
     {
         return ['configs' => ['BPEarlyWarning' => [
-            // A dashboard envia o `enabled` genérico, como em todos os outros interruptores.
-            'switchState' => self::boolInt($payload['switchState'] ?? $payload['enabled'] ?? null, 'switchState'),
-            'hpWarn' => self::nonNegativeInt($payload['hpWarn'] ?? null, 'hpWarn'),
-            'LPWarn' => self::nonNegativeInt($payload['LPWarn'] ?? null, 'LPWarn'),
+            'switchState' => self::boolInt($payload['enabled'] ?? null, 'enabled'),
+            'hpWarn' => self::intInRange($payload['systolicMmHg'] ?? null, 'systolicMmHg'),
+            'LPWarn' => self::intInRange($payload['diastolicMmHg'] ?? null, 'diastolicMmHg'),
         ]]];
     }
 
@@ -162,13 +153,7 @@ final class WonlexPayloadBuilder extends ConfigurationPayloadBuilder
                 throw new \InvalidArgumentException('alarmClockList items must be objects');
             }
             $label = trim((string)($item['label'] ?? ''));
-            $time = trim((string)($item['startTime'] ?? $item['time'] ?? ''));
-            if ($time === '') {
-                throw new \InvalidArgumentException('alarm startTime is required');
-            }
-            if (preg_match('/^(?:[01]\\d|2[0-3]):[0-5]\\d$/', $time) !== 1) {
-                throw new \InvalidArgumentException('alarm startTime must use 24-hour HH:mm format');
-            }
+            $time = self::hhmm($item['startTime'] ?? $item['time'] ?? null, 'alarm startTime');
             $week = $item['week'] ?? null;
             if ($week === null && is_array($item['recurrence'] ?? null)) {
                 $kind = strtolower(trim((string)($item['recurrence']['kind'] ?? '')));
@@ -181,21 +166,12 @@ final class WonlexPayloadBuilder extends ConfigurationPayloadBuilder
                     if (!is_array($days) || !array_is_list($days) || $days === []) {
                         throw new \InvalidArgumentException('custom recurrence requires at least one day');
                     }
-                    $enabledDays = [];
                     foreach ($days as $day) {
-                        if (!(is_int($day) || (is_string($day) && ctype_digit($day)))) {
+                        if (filter_var($day, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1, 'max_range' => 7]]) === false) {
                             throw new \InvalidArgumentException('custom recurrence days must be integers from 1 to 7');
                         }
-                        $day = (int)$day;
-                        if ($day < 1 || $day > 7) {
-                            throw new \InvalidArgumentException('custom recurrence days must be integers from 1 to 7');
-                        }
-                        $enabledDays[$day] = true;
                     }
-                    $week = implode('', array_map(
-                        static fn(int $day): string => isset($enabledDays[$day]) ? '1' : '0',
-                        range(1, 7)
-                    ));
+                    $week = Weekdays::mask($days, false);
                 } else {
                     throw new \InvalidArgumentException('alarm recurrence must be daily or custom');
                 }

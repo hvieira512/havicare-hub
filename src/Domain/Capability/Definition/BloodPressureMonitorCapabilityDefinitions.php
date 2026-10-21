@@ -22,15 +22,15 @@ final class BloodPressureMonitorCapabilityDefinitions extends CapabilityDefiniti
         return [
             'telemetry' => [
                 'measurement' => [
-                    'blood_pressure' => 'Pressão arterial',
+                    'blood_pressure',
                     // O pulso de cada medição, à parte como nos relógios.
-                    'heart_rate' => 'Frequência cardíaca',
-                    'ecg' => 'ECG',
+                    'heart_rate',
+                    'ecg',
                 ],
             ],
             'health' => [
                 'action' => [
-                    'read_blood_pressure_history' => 'Ler a memória',
+                    'read_blood_pressure_history',
                 ],
             ],
         ];

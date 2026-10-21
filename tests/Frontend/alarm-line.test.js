@@ -10,7 +10,7 @@ import { configSection } from "./support/dom.js";
  * A gramática comum das quatro listas de alarmes: cada entrada é uma linha fechada com
  * interruptor, título e valor à direita, e abre-se para mostrar o resto.
  */
-const ALARM = { input: "alarm_clock", key: "alarm_clock", fields: [] };
+const ALARM = { input: "alarm_clock", key: "alarm_clock", capabilityKey: "alarm_clock", fields: [], limit: 3 };
 const VIVISTAR_META = {
     type: {
         options: [
@@ -21,7 +21,7 @@ const VIVISTAR_META = {
     },
 };
 const WONLEX_META = { label: { supported: true }, url: { supported: true }, limit: 10 };
-const TAKE_PILLS = { input: "takePills", key: "take_pills", fields: [] };
+const TAKE_PILLS = { input: "takePills", key: "medication_reminders", capabilityKey: "medication_reminders", fields: [], limit: 3 };
 
 const rowsOf = (section, kind) =>
     [...section.querySelectorAll(`[data-repeat-row="${kind}"]`)];
@@ -129,10 +129,10 @@ test("none of the five shapes lost a field", () => {
             "[data-alarm-clock-field=\"recurrenceKind\"]",
             "[data-weekday]",
         ]],
-        ["voz 4P Touch", configSection(renderConfigInputs, TAKE_PILLS, { reminderSettings: [{ time: "09:00" }] }), [
-            "[data-takepills-field=\"reminderTime\"]",
-            "[data-takepills-field=\"reminderEnabled\"]",
-            "[data-takepills-field=\"reminderFrequency\"]",
+        ["voz 4P Touch", configSection(renderConfigInputs, TAKE_PILLS, { plans: [{ times: [{ time: "09:00" }] }] }), [
+            "[data-alarm-clock-field=\"time\"]",
+            "[data-alarm-clock-field=\"enabled\"]",
+            "[data-alarm-clock-field=\"recurrenceKind\"]",
             "[data-weekday]",
             "[data-config-field=\"reminderText\"]",
             "[data-config-field=\"voiceEnabled\"]",

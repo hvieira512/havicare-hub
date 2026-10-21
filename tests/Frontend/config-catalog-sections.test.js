@@ -23,19 +23,14 @@ test.afterEach(() => {
     state.protocols = [];
 });
 
-test("grouped capabilities collapse the native keys into one entry", () => {
-    state.protocols = [{
-        protocol: "wonlex-json",
-        dashboard: { groupedCapabilities: { phonebook: { label: "Contactos", limit: 10 } } },
-    }];
-
+test("native entries of one capability collapse into one card, with their limits added", () => {
     const catalog = ["contact1", "contact2", "contact3"].map((key) => ({
         key,
         capabilityKey: "phonebook",
         command: key,
-        label: key,
         input: "json",
         category: "contacts",
+        limit: 5,
     }));
 
     const root = render({
@@ -55,7 +50,7 @@ test("grouped capabilities collapse the native keys into one entry", () => {
     const sections = root.querySelectorAll("[data-config-section]");
     assert.equal(sections.length, 1);
     assert.equal(sections[0].dataset.configKey, "phonebook");
-    assert.equal(sections[0].dataset.configLimit, "10");
+    assert.equal(sections[0].dataset.configLimit, "15");
     assert.equal(sections[0].dataset.configStored, "1");
 
     assert.equal(
@@ -89,11 +84,10 @@ test("sections come out in the order of the section catalog, not the catalog", (
     });
 
     assert.deepEqual(sectionTabs(root), ["health", "contacts", "settings_system"]);
-    // Sem `sectionLabel` na definição, a pastilha fica com o nome cru da secção.
     assert.match(
         root.querySelector("[data-config-section-link][data-section=\"settings_system\"]")
             .textContent.replace(/\s+/g, " ").trim(),
-        /^settings_system 1\b/,
+        /^Sistema 1\b/,
     );
 });
 
@@ -133,7 +127,7 @@ test("what is neither configurable nor requestable drops out, and the requestabl
     );
 });
 
-test("alarm_clock brings its own label, kind and section, whatever the catalog", () => {
+test("a card takes its name from the dictionary, whatever the native key", () => {
     const root = render({
         protocol: "veepoo-ble",
         catalog: [{

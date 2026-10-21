@@ -38,10 +38,10 @@ final class DeviceCommandCatalog
         return [
             // Um pedido só: o `0x07` pede sempre as `STATUS_TAGS` todas, e a resposta enche
             // as sete leituras de uma vez.
-            ['id' => 'pillReadStatus', 'command' => 'readStatus', 'label' => 'Device status', 'icon' => 'fa-arrows-rotate', 'kind' => 'request', 'feature' => 'device_status', 'expectedReplyTypes' => ['read_status_ack']],
-            ['id' => 'pillReadConfiguration', 'command' => 'readConfiguration', 'label' => 'Stored configuration', 'icon' => 'fa-rotate', 'kind' => 'request', 'feature' => 'sync_configuration', 'expectedReplyTypes' => ['read_config_ack']],
+            ['id' => 'pillReadStatus', 'command' => 'readStatus', 'kind' => 'request', 'feature' => 'device_status', 'expectedReplyTypes' => ['read_status_ack']],
+            ['id' => 'pillReadConfiguration', 'command' => 'readConfiguration', 'kind' => 'request', 'feature' => 'sync_configuration', 'expectedReplyTypes' => ['read_config_ack']],
             // A segunda metade da leitura: as TAGs não cabem numa trama de 300 bytes.
-            ['id' => 'pillReadConfiguration2', 'command' => 'readConfiguration2', 'label' => 'Stored configuration (rest)', 'icon' => 'fa-rotate', 'kind' => 'request', 'feature' => 'sync_configuration', 'expectedReplyTypes' => ['read_config_ack']],
+            ['id' => 'pillReadConfiguration2', 'command' => 'readConfiguration2', 'kind' => 'request', 'feature' => 'sync_configuration', 'expectedReplyTypes' => ['read_config_ack']],
         ];
     }
 
@@ -138,26 +138,26 @@ final class DeviceCommandCatalog
     private static function veepooCommands(): array
     {
         return [
-            ['id' => 'measureHeartRate', 'command' => 'measure.heartRate.start', 'label' => 'Heart rate', 'icon' => 'fa-heart-pulse', 'kind' => 'request', 'feature' => 'heart_rate', 'expectedReplyTypes' => ['heart_rate']],
-            ['id' => 'measureBloodPressure', 'command' => 'measure.bloodPressure.start', 'label' => 'Blood pressure', 'icon' => 'fa-stethoscope', 'kind' => 'request', 'feature' => 'blood_pressure', 'expectedReplyTypes' => ['blood_pressure']],
-            ['id' => 'measureOxygen', 'command' => 'measure.oxygen.start', 'label' => 'Blood oxygen', 'icon' => 'fa-droplet', 'kind' => 'request', 'feature' => 'blood_oxygen', 'expectedReplyTypes' => ['blood_oxygen']],
-            ['id' => 'measureBloodGlucose', 'command' => 'measure.bloodGlucose.start', 'label' => 'Blood glucose', 'icon' => 'fa-vial', 'kind' => 'request', 'feature' => 'blood_sugar', 'expectedReplyTypes' => ['blood_sugar']],
-            ['id' => 'measureTemperature', 'command' => 'measure.temperature.start', 'label' => 'Temperature', 'icon' => 'fa-temperature-half', 'kind' => 'request', 'feature' => 'temperature', 'expectedReplyTypes' => ['temperature']],
+            ['id' => 'measureHeartRate', 'command' => 'measure.heartRate.start', 'kind' => 'request', 'feature' => 'heart_rate', 'expectedReplyTypes' => ['heart_rate']],
+            ['id' => 'measureBloodPressure', 'command' => 'measure.bloodPressure.start', 'kind' => 'request', 'feature' => 'blood_pressure', 'expectedReplyTypes' => ['blood_pressure']],
+            ['id' => 'measureOxygen', 'command' => 'measure.oxygen.start', 'kind' => 'request', 'feature' => 'blood_oxygen', 'expectedReplyTypes' => ['blood_oxygen']],
+            ['id' => 'measureBloodGlucose', 'command' => 'measure.bloodGlucose.start', 'kind' => 'request', 'feature' => 'blood_sugar', 'expectedReplyTypes' => ['blood_sugar']],
+            ['id' => 'measureTemperature', 'command' => 'measure.temperature.start', 'kind' => 'request', 'feature' => 'temperature', 'expectedReplyTypes' => ['temperature']],
             // Mede-se pelos elétrodos do ECG e exige o dedo encostado, como ele. Leva cerca
             // de meio minuto e devolve catorze grandezas de uma vez.
-            ['id' => 'measureBodyComposition', 'command' => 'measure.bodyComposition.start', 'label' => 'Body composition', 'icon' => 'fa-weight-scale', 'kind' => 'request', 'feature' => 'body_composition', 'expectedReplyTypes' => ['body_composition']],
-            ['id' => 'measureStress', 'command' => 'measure.stress.start', 'label' => 'Stress', 'icon' => 'fa-gauge-high', 'kind' => 'request', 'feature' => 'stress', 'expectedReplyTypes' => ['stress']],
+            ['id' => 'measureBodyComposition', 'command' => 'measure.bodyComposition.start', 'kind' => 'request', 'feature' => 'body_composition', 'expectedReplyTypes' => ['body_composition']],
+            ['id' => 'measureStress', 'command' => 'measure.stress.start', 'kind' => 'request', 'feature' => 'stress', 'expectedReplyTypes' => ['stress']],
             // A bateria é o único pedido que não depende do sensor ótico: responde sempre,
             // e em menos de um segundo.
-            ['id' => 'readBattery', 'command' => 'read.battery', 'label' => 'Battery', 'icon' => 'fa-battery-half', 'kind' => 'request', 'feature' => 'battery', 'expectedReplyTypes' => ['battery']],
+            ['id' => 'readBattery', 'command' => 'read.battery', 'kind' => 'request', 'feature' => 'battery', 'expectedReplyTypes' => ['battery']],
             // É uma leitura e não uma medição: a pulseira já tem o sono calculado.
-            ['id' => 'readSleep', 'command' => 'read.sleep', 'label' => 'Sleep', 'icon' => 'fa-bed', 'kind' => 'request', 'feature' => 'sleep', 'expectedReplyTypes' => ['sleep', 'sleep_quality']],
+            ['id' => 'readSleep', 'command' => 'read.sleep', 'kind' => 'request', 'feature' => 'sleep', 'expectedReplyTypes' => ['sleep', 'sleep_quality']],
             // O acumulado do dia responde no instante, como a bateria: é um contador que a
             // pulseira já tem, e não uma medição a fazer.
-            ['id' => 'readDailyTotals', 'command' => 'read.dailyTotals', 'label' => 'Daily totals', 'icon' => 'fa-shoe-prints', 'kind' => 'request', 'feature' => 'activity', 'expectedReplyTypes' => ['activity']],
+            ['id' => 'readDailyTotals', 'command' => 'read.dailyTotals', 'kind' => 'request', 'feature' => 'activity', 'expectedReplyTypes' => ['activity']],
             // O ECG exige que quem a usa encoste o dedo ao elétrodo: sem isso o aparelho
             // envia dezenas de tramas com `wearNotPass` e tudo a zero.
-            ['id' => 'measureEcg', 'command' => 'measure.ecg.start', 'label' => 'ECG', 'icon' => 'fa-wave-square', 'kind' => 'request', 'feature' => 'ecg', 'expectedReplyTypes' => ['ecg']],
+            ['id' => 'measureEcg', 'command' => 'measure.ecg.start', 'kind' => 'request', 'feature' => 'ecg', 'expectedReplyTypes' => ['ecg']],
         ];
     }
 
@@ -165,17 +165,17 @@ final class DeviceCommandCatalog
     private static function wonlexCommands(): array
     {
         return [
-            ['id' => 'dnHeartRate', 'command' => 'dnHeartRate', 'label' => 'Heart rate', 'icon' => 'fa-heart-pulse', 'kind' => 'request', 'feature' => 'heart_rate', 'expectedReplyTypes' => ['upHeartRate', 'upBatch']],
-            ['id' => 'dnBP', 'command' => 'dnBP', 'label' => 'Blood pressure', 'icon' => 'fa-stethoscope', 'kind' => 'request', 'feature' => 'blood_pressure', 'expectedReplyTypes' => ['upBP', 'upBatch']],
-            ['id' => 'dnBO', 'command' => 'dnBO', 'label' => 'Blood oxygen', 'icon' => 'fa-droplet', 'kind' => 'request', 'feature' => 'blood_oxygen', 'expectedReplyTypes' => ['upBO', 'upBatch']],
-            ['id' => 'dnTemperature', 'command' => 'dnTemperature', 'label' => 'Temperature', 'icon' => 'fa-temperature-half', 'kind' => 'request', 'feature' => 'temperature', 'expectedReplyTypes' => ['upBodyTemperature', 'upBatch']],
-            ['id' => 'dnBreathe', 'command' => 'dnBreathe', 'label' => 'Breath rate', 'icon' => 'fa-lungs', 'kind' => 'request', 'feature' => 'breath_rate', 'expectedReplyTypes' => ['upBreathe', 'upBatch']],
-            ['id' => 'dnLocation', 'command' => 'dnLocation', 'label' => 'Location', 'icon' => 'fa-location-dot', 'kind' => 'request', 'feature' => 'location', 'expectedReplyTypes' => ['upLocation']],
-            ['id' => 'dnUpSleep', 'command' => 'dnUpSleep', 'label' => 'Sleep data', 'icon' => 'fa-bed', 'kind' => 'data', 'feature' => 'sleep', 'expectedReplyTypes' => ['dnUpSleep']],
-            ['id' => 'dnECG', 'command' => 'dnECG', 'label' => 'ECG', 'icon' => 'fa-wave-square', 'kind' => 'request', 'feature' => 'ecg', 'expectedReplyTypes' => ['upECG']],
-            ['id' => 'dnHRV', 'command' => 'dnHRV', 'label' => 'HRV', 'icon' => 'fa-chart-line', 'kind' => 'request', 'feature' => 'hrv', 'expectedReplyTypes' => ['upHRV']],
-            ['id' => 'dnPPG', 'command' => 'dnPPG', 'label' => 'PPG', 'icon' => 'fa-circle-nodes', 'kind' => 'request', 'feature' => 'ppg', 'expectedReplyTypes' => ['upPPG']],
-            ['id' => 'dnRR', 'command' => 'dnRR', 'label' => 'RR interval', 'icon' => 'fa-stopwatch', 'kind' => 'request', 'feature' => 'rr_interval', 'expectedReplyTypes' => ['upRR']],
+            ['id' => 'dnHeartRate', 'command' => 'dnHeartRate', 'kind' => 'request', 'feature' => 'heart_rate', 'expectedReplyTypes' => ['upHeartRate', 'upBatch']],
+            ['id' => 'dnBP', 'command' => 'dnBP', 'kind' => 'request', 'feature' => 'blood_pressure', 'expectedReplyTypes' => ['upBP', 'upBatch']],
+            ['id' => 'dnBO', 'command' => 'dnBO', 'kind' => 'request', 'feature' => 'blood_oxygen', 'expectedReplyTypes' => ['upBO', 'upBatch']],
+            ['id' => 'dnTemperature', 'command' => 'dnTemperature', 'kind' => 'request', 'feature' => 'temperature', 'expectedReplyTypes' => ['upBodyTemperature', 'upBatch']],
+            ['id' => 'dnBreathe', 'command' => 'dnBreathe', 'kind' => 'request', 'feature' => 'breath_rate', 'expectedReplyTypes' => ['upBreathe', 'upBatch']],
+            ['id' => 'dnLocation', 'command' => 'dnLocation', 'kind' => 'request', 'feature' => 'location', 'expectedReplyTypes' => ['upLocation']],
+            ['id' => 'dnUpSleep', 'command' => 'dnUpSleep', 'kind' => 'data', 'feature' => 'sleep', 'expectedReplyTypes' => ['dnUpSleep']],
+            ['id' => 'dnECG', 'command' => 'dnECG', 'kind' => 'request', 'feature' => 'ecg', 'expectedReplyTypes' => ['upECG']],
+            ['id' => 'dnHRV', 'command' => 'dnHRV', 'kind' => 'request', 'feature' => 'hrv', 'expectedReplyTypes' => ['upHRV']],
+            ['id' => 'dnPPG', 'command' => 'dnPPG', 'kind' => 'request', 'feature' => 'ppg', 'expectedReplyTypes' => ['upPPG']],
+            ['id' => 'dnRR', 'command' => 'dnRR', 'kind' => 'request', 'feature' => 'rr_interval', 'expectedReplyTypes' => ['upRR']],
         ];
     }
 
@@ -185,12 +185,12 @@ final class DeviceCommandCatalog
     private static function vivistarCommands(): array
     {
         return [
-            ['id' => 'BPXL', 'command' => 'BPXL', 'label' => 'Heart rate', 'icon' => 'fa-heart-pulse', 'kind' => 'request', 'feature' => 'heart_rate', 'expectedReplyTypes' => ['APXL']],
-            ['id' => 'BPXY', 'command' => 'BPXY', 'label' => 'Blood pressure', 'icon' => 'fa-stethoscope', 'kind' => 'request', 'feature' => 'blood_pressure', 'expectedReplyTypes' => ['APXY']],
-            ['id' => 'BPXZ', 'command' => 'BPXZ', 'label' => 'Blood oxygen', 'icon' => 'fa-droplet', 'kind' => 'request', 'feature' => 'blood_oxygen', 'expectedReplyTypes' => ['APXZ']],
-            ['id' => 'BPXT', 'command' => 'BPXT', 'label' => 'Temperature', 'icon' => 'fa-temperature-half', 'kind' => 'request', 'feature' => 'temperature', 'expectedReplyTypes' => ['APXT']],
-            ['id' => 'BP16', 'command' => 'BP16', 'label' => 'Location', 'icon' => 'fa-location-dot', 'kind' => 'request', 'feature' => 'location', 'expectedReplyTypes' => ['AP16', 'AP01']],
-            ['id' => 'BP87', 'command' => 'BP87', 'label' => 'Temperature variant', 'icon' => 'fa-temperature-half', 'kind' => 'request', 'feature' => 'temperature', 'expectedReplyTypes' => ['AP87']],
+            ['id' => 'BPXL', 'command' => 'BPXL', 'kind' => 'request', 'feature' => 'heart_rate', 'expectedReplyTypes' => ['APXL']],
+            ['id' => 'BPXY', 'command' => 'BPXY', 'kind' => 'request', 'feature' => 'blood_pressure', 'expectedReplyTypes' => ['APXY']],
+            ['id' => 'BPXZ', 'command' => 'BPXZ', 'kind' => 'request', 'feature' => 'blood_oxygen', 'expectedReplyTypes' => ['APXZ']],
+            ['id' => 'BPXT', 'command' => 'BPXT', 'kind' => 'request', 'feature' => 'temperature', 'expectedReplyTypes' => ['APXT']],
+            ['id' => 'BP16', 'command' => 'BP16', 'kind' => 'request', 'feature' => 'location', 'expectedReplyTypes' => ['AP16', 'AP01']],
+            ['id' => 'BP87', 'command' => 'BP87', 'kind' => 'request', 'feature' => 'temperature', 'expectedReplyTypes' => ['AP87']],
         ];
     }
 
@@ -200,12 +200,12 @@ final class DeviceCommandCatalog
     private static function fourPTouchCommands(): array
     {
         return [
-            ['id' => 'CR', 'command' => 'CR', 'label' => 'Location', 'icon' => 'fa-location-dot', 'kind' => 'request', 'feature' => 'location', 'expectedReplyTypes' => ['CR', ...FourPTouchAdapter::LOCATION_FRAME_TYPES, ...FourPTouchAdapter::ALARM_FRAME_TYPES]],
-            ['id' => 'fourPHeartRate', 'command' => 'hrtstart', 'label' => 'Heart rate', 'icon' => 'fa-heart-pulse', 'kind' => 'request', 'feature' => 'heart_rate', 'expectedReplyTypes' => ['hrtstart', 'bphrt'], 'data' => ['1']],
-            ['id' => 'fourPBloodPressure', 'command' => 'hrtstart', 'label' => 'Blood pressure', 'icon' => 'fa-stethoscope', 'kind' => 'request', 'feature' => 'blood_pressure', 'expectedReplyTypes' => ['hrtstart', 'bphrt'], 'data' => ['1']],
-            ['id' => 'fourPBodyTemperature', 'command' => 'bodytemp2', 'label' => 'Temperature', 'icon' => 'fa-temperature-half', 'kind' => 'request', 'feature' => 'temperature', 'expectedReplyTypes' => ['bodytemp2', 'btemp2']],
-            ['id' => 'fourPFirmwareVersion', 'command' => 'VERNO', 'label' => 'Firmware version', 'icon' => 'fa-microchip', 'kind' => 'request', 'feature' => 'firmware_version', 'expectedReplyTypes' => ['VERNO']],
-            ['id' => 'fourPDeviceStatus', 'command' => 'TS', 'label' => 'Device status', 'icon' => 'fa-arrows-rotate', 'kind' => 'request', 'feature' => 'device_status', 'expectedReplyTypes' => ['TS']],
+            ['id' => 'CR', 'command' => 'CR', 'kind' => 'request', 'feature' => 'location', 'expectedReplyTypes' => ['CR', ...FourPTouchAdapter::LOCATION_FRAME_TYPES, ...FourPTouchAdapter::ALARM_FRAME_TYPES]],
+            ['id' => 'fourPHeartRate', 'command' => 'hrtstart', 'kind' => 'request', 'feature' => 'heart_rate', 'expectedReplyTypes' => ['hrtstart', 'bphrt'], 'data' => ['1']],
+            ['id' => 'fourPBloodPressure', 'command' => 'hrtstart', 'kind' => 'request', 'feature' => 'blood_pressure', 'expectedReplyTypes' => ['hrtstart', 'bphrt'], 'data' => ['1']],
+            ['id' => 'fourPBodyTemperature', 'command' => 'bodytemp2', 'kind' => 'request', 'feature' => 'temperature', 'expectedReplyTypes' => ['bodytemp2', 'btemp2']],
+            ['id' => 'fourPFirmwareVersion', 'command' => 'VERNO', 'kind' => 'request', 'feature' => 'firmware_version', 'expectedReplyTypes' => ['VERNO']],
+            ['id' => 'fourPDeviceStatus', 'command' => 'TS', 'kind' => 'request', 'feature' => 'device_status', 'expectedReplyTypes' => ['TS']],
         ];
     }
 }

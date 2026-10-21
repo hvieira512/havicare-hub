@@ -45,18 +45,15 @@ final class CrashWatchTest extends TestCase
         self::assertNull((new CrashWatch($this->marker))->claimBoot());
     }
 
-    /**
-     * O marcador que sobrevive é a prova: ninguém passou pelo `SIGTERM` para o apagar.
-     */
+    /** A queda sai como dados, e o texto que a conta é da dashboard. */
     public function testABootOverASurvivingMarkerReportsThePreviousRun(): void
     {
         (new CrashWatch($this->marker))->claimBoot();
 
         $reported = (new CrashWatch($this->marker))->claimBoot();
 
-        self::assertIsString($reported);
-        self::assertStringContainsString((string)getmypid(), $reported, 'devia nomear o processo que caiu');
-        self::assertStringContainsString('sem se desligar em condições', $reported);
+        self::assertSame(getmypid(), $reported['pid'] ?? null);
+        self::assertMatchesRegularExpression('/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/', (string)($reported['startedAt'] ?? ''));
     }
 
     /** Duas quedas seguidas continuam a ser quedas: o marcador novo substitui o antigo. */
@@ -64,8 +61,8 @@ final class CrashWatchTest extends TestCase
     {
         (new CrashWatch($this->marker))->claimBoot();
 
-        self::assertIsString((new CrashWatch($this->marker))->claimBoot());
-        self::assertIsString((new CrashWatch($this->marker))->claimBoot());
+        self::assertIsArray((new CrashWatch($this->marker))->claimBoot());
+        self::assertIsArray((new CrashWatch($this->marker))->claimBoot());
     }
 
     public function testAMarkerWithoutTheExpectedShapeStillReportsACrash(): void
@@ -73,8 +70,6 @@ final class CrashWatchTest extends TestCase
         mkdir($this->directory, 0755, true);
         file_put_contents($this->marker, 'lixo');
 
-        $reported = (new CrashWatch($this->marker))->claimBoot();
-
-        self::assertSame('o processo anterior terminou sem se desligar em condições', $reported);
+        self::assertSame(['pid' => null, 'startedAt' => null], (new CrashWatch($this->marker))->claimBoot());
     }
 }

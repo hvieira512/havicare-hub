@@ -1,160 +1,61 @@
 import { html } from "../../../html.js";
 import { field } from "../../../components/form-field.js";
 import { boolValue } from "../normalizers.js";
-import { numberField } from "./shared.js";
-import {
-    readCheckbox,
-    readNumber,
-} from "../readers.js";
+import { choiceField, entryFieldLabel, fieldChoices, numberField, readChoice, switchField } from "./shared.js";
+import { readCheckbox, readNumber } from "../readers.js";
 
-function fallSensitivityInput(desired) {
-    const current = parseInt(String(desired.sensitivity ?? 2), 10) || 2;
-    const options = [
-        {
-            value: 1,
-            label: "Baixa",
-            icon: "fa-feather-pointed",
-            className: "btn-outline-success",
-        },
-        {
-            value: 2,
-            label: "Normal",
-            icon: "fa-shield-heart",
-            className: "btn-outline-warning",
-        },
-        {
-            value: 3,
-            label: "Alta",
-            icon: "fa-triangle-exclamation",
-            className: "btn-outline-danger",
-        },
-    ];
+/** O tom de cada sensibilidade, da mais tolerante à mais exigente. */
+const SENSITIVITY_TONES = { 1: "success", 2: "warning", 3: "danger" };
 
-    return html`
-        <div>
-            <input type="hidden" data-config-field="sensitivity" value="${String(current)}">
-            <div class="btn-group w-100" role="group" aria-label="Sensibilidade de queda" data-config-choice-group="sensitivity">
-                ${options
-                    .map(
-                        (option) => html`
-                    <button
-                        type="button"
-                        class="btn ${option.className} ${option.value === current ? "active" : ""}"
-                        data-action="selectConfigChoice"
-                        data-config-field="sensitivity"
-                        data-config-value="${option.value}"
-                        aria-pressed="${option.value === current ? "true" : "false"}">
-                        <i class="fa-solid ${option.icon} me-2"></i>${option.label}
-                    </button>
-                `,
-                    )}
-            </div>
-        </div>`;
+function fallSensitivityInput(entry, desired, meta) {
+    return choiceField({
+        field: "sensitivity",
+        value: desired.sensitivity,
+        options: fieldChoices(entry, meta, "sensitivity").map((option) => ({ ...option, tone: SENSITIVITY_TONES[option.value] })),
+        label: entryFieldLabel(entry, meta, "sensitivity"),
+    });
 }
 
-function workingModeInput(desired) {
-    const mode = parseInt(String(desired.mode ?? 1), 10) || 1;
-    const intervalSeconds = desired.intervalSeconds ?? 60;
-    const gpsEnabled = boolValue(desired.gpsEnabled, true);
-    const options = [
-        {
-            value: 1,
-            title: "A cada 15 min",
-            icon: "fa-clock",
-            className: "btn-outline-primary",
-        },
-        {
-            value: 2,
-            title: "A cada 60 min",
-            icon: "fa-battery-half",
-            className: "btn-outline-success",
-        },
-        {
-            value: 3,
-            title: "A cada minuto, com GPS",
-            icon: "fa-bolt",
-            className: "btn-outline-danger",
-        },
-        {
-            value: 8,
-            title: "Personalizado",
-            description: "Intervalo à escolha, a partir de 30 s, com ou sem GPS",
-            icon: "fa-sliders",
-            className: "btn-outline-dark",
-        },
-    ];
+/** Uma opção que declara `fields` pede-os quando escolhida: o modo personalizado leva intervalo e GPS. */
+function workingModeInput(entry, desired, meta) {
+    const options = fieldChoices(entry, meta, "mode");
+    const custom = options.find((option) => option.fields);
+    const intervalBounds = custom?.fields?.intervalSeconds ?? {};
 
     return html`
         <div class="vstack gap-3">
-            <div>
-                <div class="row g-2" role="radiogroup" aria-label="Envio da localização">
-                    ${options
-                        .map(
-                            (option) => html`
-                        <div class="col-12 col-md-6">
-                            <input
-                                class="btn-check"
-                                type="radio"
-                                name="workingMode"
-                                id="workingMode${option.value}"
-                                data-config-field="mode"
-                                value="${option.value}"
-                                ${option.value === mode ? "checked" : ""}>
-                            <label class="btn ${option.className} w-100 h-100 text-start d-flex gap-3 align-items-start p-3" for="workingMode${option.value}">
-                                <i class="fa-solid ${option.icon} mt-1"></i>
-                                <span>
-                                    <span class="d-block fw-semibold">${option.title}</span>
-                                    ${option.description ? html`<span class="d-block small">${option.description}</span>` : ""}
-                                </span>
-                            </label>
-                        </div>
-                    `,
-                        )}
-                </div>
-            </div>
-            <div class="${mode === 8 ? "" : "d-none"}" data-working-mode-extra>
-                <div class="row g-3">
-                    ${field(
-                        "Intervalo de envio",
-                        numberField("intervalSeconds", intervalSeconds, { min: 30, unit: "s" }),
-                        { cls: "col-md-6" },
-                    )}
-                    <div class="col-md-6">
-                        <div class="form-check form-switch mt-4">
-                            <input class="form-check-input" type="checkbox" role="switch" data-config-field="gpsEnabled" ${gpsEnabled ? "checked" : ""}>
-                            <label class="form-check-label">GPS ativo</label>
-                        </div>
+            ${choiceField({ field: "mode", value: desired.mode, options, cards: true, label: entryFieldLabel(entry, meta, "mode") })}
+            ${custom
+                ? html`
+                <div class="${String(desired.mode) === String(custom.value) ? "" : "d-none"}" data-working-mode-extra="${custom.value}">
+                    <div class="row g-3">
+                        ${field(entryFieldLabel(entry, meta, "intervalSeconds"), numberField("intervalSeconds", desired.intervalSeconds ?? intervalBounds.min ?? "", { min: intervalBounds.min ?? 0 }), { cls: "col-md-6" })}
+                        <div class="col-md-6">${switchField("gpsEnabled", boolValue(desired.gpsEnabled, true), { on: "GPS ativo", off: "GPS desligado", cls: "mt-4" })}</div>
                     </div>
-                </div>
-            </div>
+                </div>`
+                : ""}
         </div>`;
 }
 
-/** O intervalo e o GPS só se escolhem no modo 8, que é o personalizado. */
+/** O intervalo e o GPS só se escolhem na opção que os declara. */
 export function syncWorkingModeExtra(section, mode) {
     const extra = section.querySelector("[data-working-mode-extra]");
-    if (!extra) return;
-
-    extra.classList.toggle("d-none", String(mode) !== "8");
+    extra?.classList.toggle("d-none", String(mode) !== extra.dataset.workingModeExtra);
 }
 
 export const INPUTS = {
     fallSensitivity: {
-        render: (_entry, desired) => fallSensitivityInput(desired),
-        read: (section) => ({ sensitivity: readNumber(section, "sensitivity") }),
-        defaults: () => ({ sensitivity: 2 }),
+        render: fallSensitivityInput,
+        read: (section) => ({ sensitivity: readChoice(section, "sensitivity") }),
     },
     workingMode: {
-        render: (_entry, desired) => workingModeInput(desired),
+        render: workingModeInput,
         read: (section) => {
-            const mode = readNumber(section, "mode");
-            const payload = { mode };
-            if (mode === 8) {
-                payload.intervalSeconds = readNumber(section, "intervalSeconds");
-                payload.gpsEnabled = readCheckbox(section, "gpsEnabled");
-            }
-            return payload;
+            const mode = readChoice(section, "mode");
+            const extra = section.querySelector("[data-working-mode-extra]");
+            return extra && String(mode) === extra.dataset.workingModeExtra
+                ? { mode, intervalSeconds: readNumber(section, "intervalSeconds"), gpsEnabled: readCheckbox(section, "gpsEnabled") }
+                : { mode };
         },
-        defaults: () => ({ mode: 1 }),
     },
 };

@@ -41,7 +41,7 @@ final class ApiDataAccess
             new SupplierRepository($pdo),
             new ModelRepository($pdo),
             new ModelCapabilityRepository($pdo),
-            new GenericCapabilityRepository($pdo),
+            new GenericCapabilityRepository(),
             new WhitelistRepository($pdo),
             new DeviceConfigurationRepository($pdo),
             new DeviceConfigurationLifecycleRepository($pdo),

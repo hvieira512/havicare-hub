@@ -19,20 +19,16 @@ final class MonitConfigurationDefinitions
             ConfigurationDefinition::make(
                 'diaper_sensitivity',
                 '',
-                'Sensibilidade dos alertas',
                 'diaperSensitivity',
                 ['pollutionRange', 'pollutionValue'],
-                [],
-                'alerts',
-                10,
-                null,
-                [
+                category: 'alerts',
+                order: 10,
+                options: [
                     'profile' => array_map(
-                        static fn(string $name): array => ['value' => $name, 'label' => $name],
+                        static fn(string $name): array => ['value' => $name],
                         array_keys(DiaperSensitivity::PRESETS),
                     ),
                 ],
-                help: 'Alta avisa com menos humidade; Baixa espera por mais.',
             ),
         ];
     }

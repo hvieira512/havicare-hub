@@ -11,19 +11,17 @@ const ENTRY = {
     key: "heart_rate_continuous",
     capabilityKey: "heart_rate_continuous",
     command: "config:heart_rate_continuous",
-    label: "Frequência cardíaca contínua",
     input: "toggle",
     fields: ["enabled"],
-    help: "Mede ao longo do dia, um valor por minuto.",
 };
 
 const render = (entry) => renderConfigSection("veepoo-ble", entry, null);
 
-test("the setting's caption appears on the card", () => {
+test("the dictionary's caption for the setting appears on the card", () => {
     const html = render(ENTRY);
 
     assert.ok(
-        html.includes("Mede ao longo do dia"),
+        html.includes("Um valor por minuto."),
         "o cartão devia explicar o que a definição faz",
     );
 });

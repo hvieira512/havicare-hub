@@ -66,7 +66,7 @@ const scheduleTokenRefresh = (delayOverrideMs = null) => {
     }, delayMs);
 };
 
-// O texto de cada código está no `api/errors.js`; a frase do browser fica no `detail`.
+// O texto de cada código está no `pt-PT.json`; a frase do browser fica no `detail`.
 const networkError = (error) => ({
     error: {
         code: "network_error",

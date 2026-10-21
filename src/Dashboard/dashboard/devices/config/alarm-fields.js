@@ -1,94 +1,51 @@
 import { html } from "../../html.js";
+import { field } from "../../components/form-field.js";
+import { optionLabel, weekdayLabel } from "../../i18n.js";
+import { boolValue } from "./normalizers.js";
+import { choiceField, nextUid } from "./inputs/shared.js";
 
-/** De segunda a domingo; a posição do domingo é de cada fabricante e converte-se na fronteira. */
-const WEEKDAYS = [
-    { value: 1, label: "Seg" },
-    { value: 2, label: "Ter" },
-    { value: 3, label: "Qua" },
-    { value: 4, label: "Qui" },
-    { value: 5, label: "Sex" },
-    { value: 6, label: "Sáb" },
-    { value: 7, label: "Dom" },
-];
+/** A recorrência de que a API fala em todos os alarmes e lembretes. */
+export const RECURRENCES = ["once", "daily", "custom"];
+
+const DAYS = [1, 2, 3, 4, 5, 6, 7];
+
+const recurrenceLabel = (kind) => optionLabel("alarm_clock", "", "recurrence", kind);
 
 export function weekdayPicker(days, rowId) {
-    const checked = new Set(
-        (Array.isArray(days) ? days : [])
-            .map((day) => parseInt(String(day), 10))
-            .filter((day) => Number.isFinite(day)),
-    );
+    const checked = new Set((Array.isArray(days) ? days : []).map(Number));
 
     return html`
         <label class="form-label-sm required">Dias</label>
         <div class="d-flex flex-wrap gap-1" role="group" aria-label="Dias da semana">
-            ${WEEKDAYS.map((day) => html`
-                <input
-                    class="btn-check"
-                    type="checkbox"
-                    id="${rowId}-day-${day.value}"
-                    data-weekday
-                    value="${day.value}"
-                    ${checked.has(day.value) ? "checked" : ""}>
-                <label class="btn btn-outline-secondary btn-sm" for="${rowId}-day-${day.value}">${day.label}</label>
+            ${DAYS.map((day) => html`
+                <input class="btn-check" type="checkbox" id="${rowId}-day-${day}" data-weekday value="${day}" ${checked.has(day) ? "checked" : ""}>
+                <label class="btn btn-outline-secondary btn-sm" for="${rowId}-day-${day}">${weekdayLabel(day)}</label>
             `)}
         </div>`;
 }
 
 export function readWeekdays(row) {
     return Array.from(row.querySelectorAll("[data-weekday]:checked"))
-        .map((input) => parseInt(String(input.value || ""), 10))
-        .filter((day) => Number.isFinite(day) && day >= 1 && day <= 7)
+        .map((input) => Number(input.value))
+        .filter((day) => day >= 1 && day <= 7)
         .sort((a, b) => a - b);
-}
-
-/** A máscara de sete posições do 4P Touch, com o domingo na posição 0. */
-export function weekdaysToFourPTouchMask(days) {
-    const positions = new Set(
-        (Array.isArray(days) ? days : [])
-            .map((day) => parseInt(String(day), 10))
-            .filter((day) => day >= 1 && day <= 7)
-            .map((day) => (day === 7 ? 0 : day)),
-    );
-
-    return Array.from({ length: 7 }, (_, index) => (positions.has(index) ? "1" : "0")).join("");
-}
-
-/** Da máscara do 4P Touch para os dias de 1 a 7. */
-export function fourPTouchMaskToWeekdays(mask) {
-    const raw = String(mask || "").trim();
-    if (!/^[01]{7}$/.test(raw)) {
-        return [];
-    }
-
-    const days = [];
-    for (let index = 0; index < 7; index += 1) {
-        if (raw[index] === "1") {
-            days.push(index === 0 ? 7 : index);
-        }
-    }
-
-    return days.sort((a, b) => a - b);
 }
 
 export function recurrenceWords(kind, days) {
     if (kind !== "custom") {
-        return kind === "daily" ? "todos os dias" : "uma vez";
+        return recurrenceLabel(kind).toLowerCase();
     }
 
-    const names = (Array.isArray(days) ? days : [])
-        .map((day) => WEEKDAYS.find((weekday) => weekday.value === Number(day))?.label)
-        .filter(Boolean)
-        .map((label) => label.toLowerCase());
-
+    const names = (Array.isArray(days) ? days : []).map((day) => weekdayLabel(day).toLowerCase());
     return names.length > 0 ? names.join(", ") : "dias por escolher";
 }
 
 /** O `name` agrupa as linhas da mesma lista, e o browser fecha as outras. */
-export function alarmDisclosure({ kind, group, control = "", summary: given, body, attrs = "" }) {
+export function alarmDisclosure({ kind, group, control = "", summary: given, body }) {
     const summary = alarmLineSlots(given);
 
     return html`
-        <div class="border rounded bg-body d-flex align-items-start gap-2 p-2" data-repeat-row="${kind}" ${attrs}>
+        <div class="border rounded bg-body d-flex align-items-start gap-2 p-2" data-repeat-row="${kind}">
             ${control === "" ? "" : html`<div class="flex-shrink-0 pt-1">${control}</div>`}
             <details class="flex-grow-1 min-w-0 alarm-line-body" name="${group}">
                 <summary class="alarm-line d-flex align-items-center gap-2">
@@ -124,59 +81,111 @@ export function addAlarmButton(kind, label, count, limit) {
         </div>`;
 }
 
-function checkedLabel(row, selector) {
-    const checked = row.querySelector(selector);
-    if (!checked) return "";
-    return row.querySelector(`label[for="${checked.id}"]`)?.textContent.trim() ?? "";
+const value = (row, name) => String(row.querySelector(`[data-alarm-clock-field="${name}"]`)?.value || "").trim();
+const checkedValue = (row, name) => String(row.querySelector(`[data-alarm-clock-field="${name}"]:checked`)?.value || "");
+
+function checkedLabel(row, name) {
+    const checked = row.querySelector(`[data-alarm-clock-field="${name}"]:checked`);
+    return checked ? row.querySelector(`label[for="${checked.id}"]`)?.textContent.trim() ?? "" : "";
 }
 
-const fieldValue = (row, selector) => String(row.querySelector(selector)?.value || "").trim();
+/**
+ * Uma linha de alarme ou de lembrete: hora, recorrência, e o que a capacidade declarar de seu --
+ * nome, tipo, som. O que não couber desce.
+ */
+export function alarmClockRow(item = {}, { recurrences = RECURRENCES, types = [], label = false, url = false, group = "alarm-clock", emptyTitle = "Alarme por preencher" } = {}) {
+    const rowId = nextUid("alarm-clock");
+    const kind = recurrences.includes(item.recurrence?.kind) ? item.recurrence.kind : recurrences[0];
+    const days = item.recurrence?.days ?? [];
+    const typeLabel = types.find((type) => String(type.value) === String(item.type))?.label ?? "";
+    const control = html`
+        <div class="form-check form-switch m-0">
+            <input class="form-check-input" type="checkbox" role="switch" aria-label="Ligado" data-alarm-clock-field="enabled" ${boolValue(item.enabled, true) ? "checked" : ""}>
+        </div>`;
+    const body = html`
+        <div class="d-flex flex-wrap align-items-end gap-3">
+            ${field("Hora", html`<input class="form-control" type="text" inputmode="numeric" maxlength="5" pattern="[0-9]{2}:[0-9]{2}" placeholder="HH:MM" data-time-format="24h" data-alarm-clock-field="time" value="${String(item.time ?? "")}" required>`, { cls: "alarm-field-time", required: true })}
+            ${label ? field("Nome", html`<input class="form-control" type="text" data-alarm-clock-field="label" value="${String(item.label || "")}">`, { cls: "alarm-field-grow" }) : ""}
+            ${field("Recorrência", choiceField({
+                field: "recurrenceKind",
+                value: kind,
+                options: recurrences.map((recurrence) => ({ value: recurrence, label: recurrenceLabel(recurrence) })),
+                attr: "data-alarm-clock-field",
+                label: "Recorrência",
+            }), { required: true })}
+            ${types.length > 0 ? field("Tipo", choiceField({ field: "type", value: item.type ?? types[0].value, options: types, attr: "data-alarm-clock-field", label: "Tipo" }), { cls: "flex-shrink-0" }) : ""}
+            <div class="w-100 ${kind === "custom" ? "" : "d-none"}" data-alarm-clock-custom-wrapper>${weekdayPicker(days, rowId)}</div>
+            ${url ? field("Som", html`<input class="form-control" type="url" inputmode="url" placeholder="https://" data-alarm-clock-field="url" value="${String(item.url || "")}">`, { cls: "w-100" }) : ""}
+            <div class="w-100 d-flex justify-content-end">
+                <button type="button" class="btn btn-outline-danger btn-quiet-danger btn-sm" data-action="removeRepeatRow">
+                    <i class="fa-solid fa-trash-can me-2"></i>Remover
+                </button>
+            </div>
+        </div>`;
 
-const TAKE_PILLS_FREQUENCIES = { 1: "once", 2: "daily", 3: "custom" };
+    return alarmDisclosure({
+        kind: "alarm_clock",
+        group,
+        control,
+        body,
+        summary: {
+            title: String(item.label || "") || typeLabel || String(item.time || "") || emptyTitle,
+            subtitle: recurrenceWords(kind, days),
+            trailing: String(item.time || ""),
+            badges: String(item.url || "").trim() === "" ? "" : "♪",
+        },
+    });
+}
 
-/** O que enche cada encaixe da linha fechada, por tipo de lista e não por fornecedor. */
-const ALARM_LINE_SUMMARIES = {
-    alarm_clock: (row) => {
-        const time = fieldValue(row, "[data-alarm-clock-field=\"time\"]");
-        const kind = normalizeAlarmClockRecurrenceKind(
-            fieldValue(row, "[data-alarm-clock-field=\"recurrenceKind\"]:checked") || "once",
-        );
+/** As linhas preenchidas na forma pública; uma linha sem hora nunca chegou a ser preenchida. */
+export function readAlarmRows(section) {
+    return Array.from(section.querySelectorAll("[data-repeat-row=\"alarm_clock\"]"))
+        .map((row) => {
+            const kind = checkedValue(row, "recurrenceKind") || "once";
+            const item = {
+                time: value(row, "time"),
+                enabled: row.querySelector("[data-alarm-clock-field=\"enabled\"]")?.checked || false,
+                recurrence: { kind },
+            };
+            for (const name of ["label", "url"]) {
+                if (value(row, name) !== "") item[name] = value(row, name);
+            }
+            if (checkedValue(row, "type") !== "") item.type = Number(checkedValue(row, "type"));
+            if (kind === "custom") {
+                item.recurrence.days = readWeekdays(row);
+                if (item.recurrence.days.length === 0) {
+                    throw new Error("Selecione pelo menos um dia para a recorrência personalizada");
+                }
+            }
 
-        return {
-            title: fieldValue(row, "[data-alarm-clock-field=\"label\"]") ||
-                checkedLabel(row, "[data-alarm-clock-field=\"type\"]:checked") ||
-                time ||
-                "Alarme por preencher",
-            subtitle: recurrenceWords(kind, readWeekdays(row)),
-            trailing: time,
-            badges: fieldValue(row, "[data-alarm-clock-field=\"url\"]") === "" ? "" : "♪",
-        };
-    },
-    takePillsReminder: (row) => {
-        const section = row.closest("[data-config-section], [data-config-input]");
-        const time = fieldValue(row, "[data-takepills-field=\"reminderTime\"]");
-        const frequency = fieldValue(row, "[data-takepills-field=\"reminderFrequency\"]:checked") || "1";
-        const text = section ? fieldValue(section, "[data-config-field=\"reminderText\"]") : "";
+            return item;
+        })
+        .filter((item) => item.time !== "");
+}
 
-        // Sem sinal de voz: a gravação é uma só do aparelho, e não de cada lembrete.
-        return {
-            title: text || time || "Lembrete por preencher",
-            subtitle: recurrenceWords(TAKE_PILLS_FREQUENCIES[frequency] || "once", readWeekdays(row)),
-            trailing: time,
-            badges: "",
-        };
-    },
-};
-
+/** O título da linha fechada, refeito a cada tecla. */
 export function refreshAlarmLine(row) {
-    const summarize = ALARM_LINE_SUMMARIES[row?.dataset?.repeatRow || ""];
-    if (!summarize) return;
+    if (row?.dataset?.repeatRow !== "alarm_clock") return;
 
-    const summary = alarmLineSlots(summarize(row));
+    const time = value(row, "time");
+    const kind = checkedValue(row, "recurrenceKind") || "once";
+    const reminderText = String(row.closest("[data-config-section]")?.querySelector("[data-config-field=\"reminderText\"]")?.value || "").trim();
+    const summary = alarmLineSlots({
+        title: value(row, "label") || checkedLabel(row, "type") || reminderText || time || "Alarme por preencher",
+        subtitle: recurrenceWords(kind, readWeekdays(row)),
+        trailing: time,
+        badges: value(row, "url") === "" ? "" : "♪",
+    });
     for (const slot of ["title", "subtitle", "trailing", "badges"]) {
         const target = row.querySelector(`[data-alarm-line-${slot}]`);
         if (target) target.textContent = summary[slot];
     }
+}
+
+/** Os dias da semana só se escolhem na recorrência personalizada. */
+export function syncAlarmClockCustomVisibility(row) {
+    row?.querySelector("[data-alarm-clock-custom-wrapper]")
+        ?.classList.toggle("d-none", checkedValue(row, "recurrenceKind") !== "custom");
 }
 
 function refreshAlarmLineFrom(event) {
@@ -187,22 +196,4 @@ function refreshAlarmLineFrom(event) {
 if (typeof document !== "undefined") {
     document.addEventListener("input", refreshAlarmLineFrom, true);
     document.addEventListener("change", refreshAlarmLineFrom, true);
-}
-
-export function normalizeAlarmClockRecurrenceKind(value) {
-    const raw = String(value || "").trim().toLowerCase();
-    if (raw === "daily" || raw === "2") {
-        return "daily";
-    }
-    if (raw === "custom" || raw === "3") {
-        return "custom";
-    }
-    if (raw === "once" || raw === "1" || raw === "") {
-        return "once";
-    }
-    return "once";
-}
-
-export function readFourPTouchAlarmDays(row) {
-    return weekdaysToFourPTouchMask(readWeekdays(row));
 }

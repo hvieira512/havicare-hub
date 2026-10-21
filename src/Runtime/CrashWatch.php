@@ -25,16 +25,16 @@ final class CrashWatch
     {
         $watch = new self($markerPath);
 
-        $uncleanShutdown = $watch->claimBoot();
-        if ($uncleanShutdown !== null) {
-            Logger::channel('hub')->error("Previous run ended abruptly: {$uncleanShutdown}");
+        $previousRun = $watch->claimBoot();
+        if ($previousRun !== null) {
+            Logger::channel('hub')->error('Previous run ended abruptly', $previousRun);
             $services->dataAccess->dashboardNotifications->record(
                 'hub_unclean_restart',
                 'hub',
                 '',
                 '',
                 (string)gethostname(),
-                $uncleanShutdown,
+                (string)json_encode($previousRun),
             );
         }
 
@@ -49,10 +49,12 @@ final class CrashWatch
     }
 
     /**
-     * Toma posse deste arranque e descreve o anterior, se tiver morrido a meio; lê antes de
+     * Toma posse deste arranque e devolve o anterior, se tiver morrido a meio; lê antes de
      * escrever. Devolve `null` também no primeiro arranque, indistinguível de um normal.
+     *
+     * @return array{pid: ?int, startedAt: ?string}|null
      */
-    public function claimBoot(): ?string
+    public function claimBoot(): ?array
     {
         $previous = is_file($this->markerPath)
             ? trim((string)file_get_contents($this->markerPath))
@@ -70,9 +72,9 @@ final class CrashWatch
 
         [$pid, $startedAt] = array_pad(explode(' ', $previous, 2), 2, '');
 
-        return $pid === '' || $startedAt === ''
-            ? 'o processo anterior terminou sem se desligar em condições'
-            : sprintf('o processo %s, arrancado em %s, terminou sem se desligar em condições', $pid, $startedAt);
+        return $pid === '' || $startedAt === '' || !ctype_digit($pid)
+            ? ['pid' => null, 'startedAt' => null]
+            : ['pid' => (int)$pid, 'startedAt' => $startedAt];
     }
 
     /** Chamado quando o processo se desliga a pedido, e é isto que distingue as duas coisas. */

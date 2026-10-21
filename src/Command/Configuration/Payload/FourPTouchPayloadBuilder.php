@@ -4,8 +4,24 @@ declare(strict_types=1);
 
 namespace Hub\Command\Configuration\Payload;
 
+use Hub\Domain\Capability\AlarmClock\Weekdays;
+
 final class FourPTouchPayloadBuilder extends ConfigurationPayloadBuilder
 {
+    /** O código do `profile` de cada perfil de som. */
+    public const SOUND_PROFILES = ['ring_and_vibrate' => 1, 'ring' => 2, 'vibrate' => 3, 'silent' => 4];
+
+    /**
+     * O código do `LZ` de cada idioma, pela etiqueta BCP 47. A ficha dá o 29 como «Polski»,
+     * repetido do 17, e fica de fora.
+     */
+    public const LANGUAGES = [
+        'en' => 0, 'zh-Hans' => 1, 'pt' => 3, 'es' => 4, 'de' => 5, 'tr' => 7, 'vi' => 8, 'ru' => 9,
+        'fr' => 10, 'el' => 11, 'it' => 12, 'sv' => 13, 'zh-Hant' => 14, 'bg' => 15, 'nl' => 16, 'pl' => 17,
+        'fi' => 18, 'th' => 19, 'he' => 22, 'da' => 23, 'hi' => 25, 'ro' => 26, 'cs' => 27, 'ar' => 28,
+        'hu' => 34, 'sk' => 36,
+    ];
+
     /**
      * O tecto do áudio aceite, antes de descodificar. É generoso porque a dashboard não limita a
      * gravação, e o `ffmpeg`, que corre síncrono no event loop, já a corta aos 15 segundos.
@@ -50,13 +66,14 @@ final class FourPTouchPayloadBuilder extends ConfigurationPayloadBuilder
         }
 
         $fields = match ($key) {
-            'uploadInterval' => [self::rangeInt($payload['intervalSeconds'] ?? null, 60, 65535, 'intervalSeconds')],
+            'uploadInterval' => [self::intInRange($payload['intervalSeconds'] ?? null, 'intervalSeconds', 60, 65535)],
             'sosContacts' => self::sosNumbers($payload['numbers'] ?? []),
             'monitorNumber' => [self::requiredString($payload['phone'] ?? null, 'phone')],
             'whitelistGroup1', 'whitelistGroup2' => self::stringList($payload['numbers'] ?? [], 5, 'numbers'),
             'languageTimezone' => [
-                self::zeroBasedRangeInt($payload['language'] ?? null, 0, 36, 'language'),
-                self::requiredString($payload['timeZone'] ?? null, 'timeZone'),
+                self::LANGUAGES[(string)($payload['language'] ?? '')]
+                    ?? throw new \InvalidArgumentException('language must be one of ' . implode(', ', array_keys(self::LANGUAGES))),
+                self::utcOffsetHours($payload['utcOffsetHours'] ?? null),
             ],
             'sosSmsAlerts', 'lowBatterySmsAlerts', 'removeWatchAlarm', 'removeWatchSmsAlerts' => [
                 self::boolInt($payload['enabled'] ?? null, 'enabled'),
@@ -73,14 +90,17 @@ final class FourPTouchPayloadBuilder extends ConfigurationPayloadBuilder
             'fallDownSensitivity' => [self::fallDownSensitivity($payload)],
             'bodyTemperatureInterval' => [
                 self::boolInt($payload['enabled'] ?? null, 'enabled'),
-                self::rangeInt($payload['intervalHours'] ?? null, 1, 12, 'intervalHours'),
+                self::intInRange($payload['intervalHours'] ?? null, 'intervalHours', 1, 12),
             ],
             'makeCall', 'centerNumber' => [self::requiredString($payload['phone'] ?? null, 'phone')],
             'pushMessage' => [self::utf16Hex(self::requiredString($payload['message'] ?? null, 'message'))],
             'restartCommand', 'powerOffCommand', 'findDeviceCommand' => [],
             'rejectUnknownCalls' => [self::boolInt($payload['enabled'] ?? null, 'enabled')],
             'alarmClock' => self::alarmClock($payload),
-            'profile' => [self::soundProfileMode($payload['mode'] ?? null)],
+            'profile' => [
+                self::SOUND_PROFILES[(string)($payload['mode'] ?? '')]
+                    ?? throw new \InvalidArgumentException('mode must be one of ' . implode(', ', array_keys(self::SOUND_PROFILES))),
+            ],
             default => throw new \InvalidArgumentException("Unsupported 4P Touch configuration {$key}"),
         };
 
@@ -265,17 +285,14 @@ final class FourPTouchPayloadBuilder extends ConfigurationPayloadBuilder
         return [$exitCode, trim(implode("\n", $output))];
     }
 
-    private static function soundProfileMode(mixed $value): int
+    /** O desvio do fuso em horas, que o `LZ` aceita com meia hora. */
+    private static function utcOffsetHours(mixed $value): string
     {
-        if (!is_numeric((string)$value)) {
-            throw new \InvalidArgumentException('mode must be an integer');
-        }
-        $mode = (int)$value;
-        if ($mode < 1 || $mode > 4) {
-            throw new \InvalidArgumentException('mode must be between 1 and 4');
+        if (!is_numeric($value) || (float)$value < -12 || (float)$value > 14 || fmod((float)$value * 2, 1.0) !== 0.0) {
+            throw new \InvalidArgumentException('utcOffsetHours must be a half-hour step between -12 and 14');
         }
 
-        return $mode;
+        return (string)(0 + $value);
     }
 
     /**
@@ -311,7 +328,7 @@ final class FourPTouchPayloadBuilder extends ConfigurationPayloadBuilder
     private static function healthAutoMeasurement(array $payload): array
     {
         $enabled = self::boolInt($payload['enabled'] ?? null, 'enabled');
-        $interval = self::nonNegativeInt($payload['intervalMinutes'] ?? null, 'intervalMinutes');
+        $interval = self::intInRange($payload['intervalMinutes'] ?? null, 'intervalMinutes');
         // Spec HEALTHAUTOSET: mínimo de 5 minutos; desligado, o intervalo não conta.
         if ($enabled === 1 && $interval < 5) {
             throw new \InvalidArgumentException('intervalMinutes must be at least 5');
@@ -322,23 +339,12 @@ final class FourPTouchPayloadBuilder extends ConfigurationPayloadBuilder
 
     private static function timeRange(mixed $value, string $field): string
     {
-        $value = trim((string)$value);
-        if (!preg_match('/^\d{1,2}:\d{2}-\d{1,2}:\d{2}$/', $value)) {
+        $range = explode('-', trim((string)$value));
+        if (count($range) !== 2) {
             throw new \InvalidArgumentException("{$field} must use HH:MM-HH:MM");
         }
-        [$start, $end] = explode('-', $value, 2);
-        self::validateClockTime($start, $field);
-        self::validateClockTime($end, $field);
 
-        return $value;
-    }
-
-    private static function validateClockTime(string $value, string $field): void
-    {
-        [$hour, $minute] = array_map('intval', explode(':', $value, 2));
-        if ($hour < 0 || $hour > 23 || $minute < 0 || $minute > 59) {
-            throw new \InvalidArgumentException("{$field} must use valid 24h times");
-        }
+        return self::hhmm($range[0], $field) . '-' . self::hhmm($range[1], $field);
     }
 
     /**
@@ -360,39 +366,22 @@ final class FourPTouchPayloadBuilder extends ConfigurationPayloadBuilder
 
     private static function alarmClockEntry(mixed $value): string
     {
-        if (is_string($value)) {
-            $value = trim($value);
-            if ($value === '') {
-                throw new \InvalidArgumentException('alarm entry must not be empty');
-            }
-            if (preg_match('/^(\d{1,2}:\d{2}|\d{4})-(0|1)-(1|2|3)(?:-([01]{7}))?$/', $value, $matches) === 1) {
-                $time = self::alarmClockTime($matches[1]);
-                $enabled = $matches[2];
-                $frequency = $matches[3];
-                $custom = $matches[4] ?? '';
-
-                return $frequency === '3'
-                    ? "{$time}-{$enabled}-{$frequency}-" . self::alarmClockDays($custom, 'custom')
-                    : "{$time}-{$enabled}-{$frequency}";
-            }
-            throw new \InvalidArgumentException('alarm entry must use HH:MM-switch-frequency[-days]');
-        }
         if (!is_array($value)) {
-            throw new \InvalidArgumentException('each alarm item must be an object or string');
+            throw new \InvalidArgumentException('each alarm item must be an object');
         }
         if (array_key_exists('type', $value) && trim((string)($value['type'] ?? '')) !== '') {
             throw new \InvalidArgumentException('type is not supported for four-p-touch alarm_clock');
         }
 
-        $time = self::alarmClockTime(self::requiredString($value['time'] ?? $value['alarmTime'] ?? null, 'alarm time'));
-        $enabled = self::boolInt($value['enabled'] ?? $value['switchState'] ?? null, 'alarm enabled');
+        $time = self::hhmm($value['time'] ?? null, 'alarm time');
+        $enabled = self::boolInt($value['enabled'] ?? null, 'alarm enabled');
         $recurrence = is_array($value['recurrence'] ?? null) ? $value['recurrence'] : [];
         $kind = strtolower(trim((string)($recurrence['kind'] ?? '')));
         $frequency = match ($kind) {
             'daily' => 2,
             'custom' => 3,
             'once' => 1,
-            default => self::rangeInt($value['frequency'] ?? $value['mode'] ?? $value['reminderFrequency'] ?? null, 1, 3, 'alarm frequency'),
+            default => self::intInRange($value['frequency'] ?? $value['mode'] ?? $value['reminderFrequency'] ?? null, 'alarm frequency', 1, 3),
         };
         if ($frequency === 3) {
             $custom = self::alarmClockDays(
@@ -406,60 +395,9 @@ final class FourPTouchPayloadBuilder extends ConfigurationPayloadBuilder
         return "{$time}-{$enabled}-{$frequency}";
     }
 
-    private static function alarmClockTime(string $value): string
-    {
-        $value = trim($value);
-        if (
-            preg_match('/^(\d{1,2}):(\d{2})$/', $value, $matches) === 1
-            || preg_match('/^(\d{2})(\d{2})$/', $value, $matches) === 1
-        ) {
-            $hour = (int)$matches[1];
-            $minute = (int)$matches[2];
-            if ($hour < 0 || $hour > 23 || $minute < 0 || $minute > 59) {
-                throw new \InvalidArgumentException('alarm time must use valid 24h times');
-            }
-
-            return sprintf('%02d:%02d', $hour, $minute);
-        }
-
-        throw new \InvalidArgumentException('alarm time must use HH:MM or HHmm');
-    }
-
     private static function alarmClockDays(mixed $value, string $field): string
     {
-        if (is_array($value)) {
-            $days = self::alarmClockDayMaskFromList($value);
-            if ($days !== '') {
-                return $days;
-            }
-        }
-        $days = trim((string)$value);
-        if (preg_match('/^[01]{7}$/', $days) !== 1) {
-            if (preg_match('/^[1-7]+$/', $days) === 1) {
-                return self::alarmClockDayMaskFromList(str_split($days));
-            }
-            throw new \InvalidArgumentException("{$field} must be a 7-digit 0/1 mask");
-        }
-
-        return $days;
-    }
-
-    /**
-     * @param array<array-key, mixed> $days
-     */
-    private static function alarmClockDayMaskFromList(array $days): string
-    {
-        $mask = array_fill(0, 7, '0');
-        foreach ($days as $day) {
-            $value = (int)$day;
-            if ($value === 7) {
-                $mask[0] = '1';
-            } elseif ($value >= 1 && $value <= 6) {
-                $mask[$value] = '1';
-            }
-        }
-
-        return implode('', $mask);
+        return Weekdays::mask($value, true) ?? throw new \InvalidArgumentException("{$field} must be a 7-digit 0/1 mask");
     }
 
     /**
@@ -530,10 +468,10 @@ final class FourPTouchPayloadBuilder extends ConfigurationPayloadBuilder
     /** @param array<string, mixed> $payload */
     private static function fallDownSensitivity(array $payload): string
     {
-        $level = self::positiveInt($payload['sensitivity'] ?? $payload['sensitivityLevel'] ?? null, 'sensitivity');
+        $level = self::intInRange($payload['sensitivity'] ?? $payload['sensitivityLevel'] ?? null, 'sensitivity', 1);
         $totalLevelsValue = $payload['levels'] ?? $payload['totalLevels'] ?? 8;
         $totalLevelsValue = $totalLevelsValue === '' ? 8 : $totalLevelsValue;
-        $totalLevels = self::rangeInt($totalLevelsValue, 6, 8, 'levels');
+        $totalLevels = self::intInRange($totalLevelsValue, 'levels', 6, 8);
         if (!in_array($totalLevels, [6, 8], true)) {
             throw new \InvalidArgumentException('levels must be 6 or 8');
         }

@@ -11,12 +11,16 @@ final class VivistarConfigurationDefinitions
     {
         $entry = ConfigurationDefinition::make(...);
 
+        // hitcare: as etiquetas das opções do modo, da sensibilidade e dos lembretes ficam porque o
+        // hitCare as mostra do `_meta`; saem quando ele traduzir os valores.
+        // hitcare: o modo fica em inteiros, e não numa enumeração, porque o hitCare envia o número e
+        // testa o `8`; muda quando o `ajax/custom.php` mandar o nome.
         return [
-            $entry('sosContacts', 'BP12', 'Contactos SOS', 'sos_contacts', ['numbers'], ['AP12'], 'contacts', 10, 3),
-            $entry('call_whitelist', 'BP14', 'Lista de chamadas autorizadas', 'call_whitelist', ['contacts'], ['AP14'], 'contacts', 20, 10, help: 'É também a agenda do relógio.'),
-            $entry('whitelist_enabled', 'BP84', 'Restringir chamadas recebidas', 'toggle', ['enabled'], ['AP84'], 'contacts', 25, help: 'Só a lista de chamadas autorizadas consegue ligar.'),
-            $entry('pushMessage', 'BP40', 'Enviar mensagem ao relógio', 'pushMessage', ['message'], ['AP40'], 'system', 5, transient: true),
-            $entry('workingMode', 'BP33', 'Envio da localização', 'workingMode', ['mode'], ['AP33'], 'system', 10, null, [
+            $entry('sosContacts', 'BP12', 'sos_contacts', ['numbers'], ['AP12'], category: 'contacts', order: 10, limit: 3),
+            $entry('call_whitelist', 'BP14', 'call_whitelist', ['contacts'], ['AP14'], category: 'contacts', order: 20, limit: 10),
+            $entry('whitelist_enabled', 'BP84', 'toggle', ['enabled'], ['AP84'], category: 'contacts', order: 25),
+            $entry('pushMessage', 'BP40', 'pushMessage', ['message'], ['AP40'], category: 'system', order: 5, transient: true, verb: 'send_message'),
+            $entry('workingMode', 'BP33', 'workingMode', ['mode'], ['AP33'], category: 'system', order: 10, options: [
                 'mode' => [
                     ['value' => 1, 'label' => 'A cada 15 min'],
                     ['value' => 2, 'label' => 'A cada 60 min'],
@@ -27,15 +31,15 @@ final class VivistarConfigurationDefinitions
                     ]],
                 ],
             ]),
-            $entry('fallDetection', 'BP76', 'Deteção de queda', 'toggle', ['enabled'], ['AP76'], 'alerts', 10),
-            $entry('fallSensitivity', 'BP77', 'Sensibilidade de queda', 'fallSensitivity', ['sensitivity'], ['AP77'], 'alerts', 20, null, [
+            $entry('fallDetection', 'BP76', 'toggle', ['enabled'], ['AP76'], category: 'alerts', order: 10),
+            $entry('fallSensitivity', 'BP77', 'fallSensitivity', ['sensitivity'], ['AP77'], category: 'alerts', order: 20, options: [
                 'sensitivity' => [
                     ['value' => 1, 'label' => 'Baixa'],
                     ['value' => 2, 'label' => 'Normal'],
                     ['value' => 3, 'label' => 'Alta'],
                 ],
             ]),
-            $entry('reminders', 'BP85', 'Lembretes / Alarmes', 'alarm_clock', ['masterEnabled', 'items'], ['AP85'], 'alerts', 30, null, [
+            $entry('reminders', 'BP85', 'alarm_clock', ['masterEnabled', 'items'], ['AP85'], category: 'alerts', order: 30, options: [
                 'days' => [
                     ['value' => 1, 'label' => 'Seg'],
                     ['value' => 2, 'label' => 'Ter'],
@@ -51,7 +55,7 @@ final class VivistarConfigurationDefinitions
                     ['value' => 3, 'label' => 'Sedentarismo'],
                 ],
             ]),
-            $entry('autoHealthMeasurement', 'BP86', 'Medição automática de saúde', 'intervalToggle', ['enabled', 'intervalMinutes'], ['AP86'], 'health', 10, help: 'Mede todos os sinais vitais de uma vez e envia-os.', bounds: ['intervalMinutes' => ['min' => 0]]),
+            $entry('autoHealthMeasurement', 'BP86', 'intervalToggle', ['enabled', 'intervalMinutes'], ['AP86'], category: 'health', order: 10, bounds: ['intervalMinutes' => ['min' => 0]]),
         ];
     }
 }

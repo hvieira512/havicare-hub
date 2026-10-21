@@ -1,5 +1,4 @@
-import { titleize } from "../../format.js";
-import { protocolGroupedCapabilities } from "./protocol-catalog.js";
+import { configText, sectionLabel } from "../../i18n.js";
 
 const CONFIG_SECTION_ORDER = [
     "health",
@@ -9,109 +8,57 @@ const CONFIG_SECTION_ORDER = [
     "settings_system",
 ];
 
-/** As secções do painel, já filtradas, agrupadas, ordenadas e etiquetadas. */
+/** As secções do painel, já filtradas, agrupadas, ordenadas e com nome. */
 export function configCatalogSections(protocol, catalog, capabilityCatalog) {
-    const groups = groupedCatalog(
-        normalizedCatalogForProtocol(protocol, catalog, capabilityCatalog),
-    );
-
-    groups.sort((a, b) => {
-        const ai = CONFIG_SECTION_ORDER.indexOf(a.key);
-        const bi = CONFIG_SECTION_ORDER.indexOf(b.key);
-        if (ai !== bi) {
-            return (ai === -1 ? 99 : ai) - (bi === -1 ? 99 : bi);
+    const groups = new Map();
+    for (const entry of mergedByCapability(protocol, catalog)) {
+        const placed = withSection(entry, capabilityCatalog);
+        if (!placed) continue;
+        if (!groups.has(placed.category)) {
+            groups.set(placed.category, { key: placed.category, label: sectionLabel(placed.category), entries: [] });
         }
-        return a.key.localeCompare(b.key);
-    });
-
-    for (const group of groups) {
-        group.label = group.entries[0]?.sectionLabel || titleize(group.key);
+        groups.get(placed.category).entries.push(placed);
     }
 
-    return groups;
+    return [...groups.values()].sort((a, b) =>
+        CONFIG_SECTION_ORDER.indexOf(a.key) - CONFIG_SECTION_ORDER.indexOf(b.key));
 }
 
-function groupedCatalog(catalog) {
-    const groups = [];
-    const index = new Map();
-
+/**
+ * Uma capacidade escrita em várias entradas nativas -- a lista de chamadas do 4P Touch vem em dois
+ * grupos de cinco -- é um cartão só, com os limites somados.
+ */
+function mergedByCapability(protocol, catalog) {
+    const merged = new Map();
     for (const entry of catalog) {
-        const key = entry.category || "general";
-        if (!index.has(key)) {
-            index.set(key, { key, label: "", entries: [] });
-            groups.push(index.get(key));
-        }
-        index.get(key).entries.push(entry);
-    }
-
-    return groups;
-}
-
-function normalizedCatalogForProtocol(protocol, catalog, capabilityCatalog) {
-    const groupedCapabilities = protocolGroupedCapabilities(protocol);
-    if (Object.keys(groupedCapabilities).length === 0) {
-        return catalog
-            .map((entry) => normalizeConfigEntry(entry))
-            .map((entry) => assignCapabilitySection(entry, capabilityCatalog))
-            .filter(Boolean);
-    }
-
-    const grouped = new Map();
-    const normalized = [];
-
-    for (const entry of catalog) {
-        const nativeKey = String(entry.key || "");
-        const normalizedEntry = normalizeConfigEntry(entry);
-        const capabilityKey = normalizedEntry.capabilityKey || "";
-        const groupedCapability = groupedCapabilities[capabilityKey] || null;
-        const label = groupedCapability?.label || "";
-
-        if (label === "") {
-            normalized.push(normalizedEntry);
+        const capabilityKey = String(entry.capabilityKey || entry.key || "");
+        const existing = merged.get(capabilityKey);
+        if (existing) {
+            existing.configKeys.push(entry.key);
+            existing.limit = (existing.limit ?? 0) + (entry.limit ?? 0);
             continue;
         }
-
-        if (!grouped.has(capabilityKey)) {
-            grouped.set(capabilityKey, {
-                ...normalizedEntry,
-                key: capabilityKey,
-                capabilityKey,
-                label,
-                input: capabilityKey,
-                category: normalizedEntry.category || "contacts",
-                limit: groupedCapability?.limit || 0,
-                transient: false,
-                configKind: "capability",
-                configSectionName: "contacts",
-                configKeys: [],
-            });
-            normalized.push(grouped.get(capabilityKey));
-        }
-
-        const groupedEntry = grouped.get(capabilityKey);
-        groupedEntry.configKeys.push(nativeKey);
-        groupedEntry.command = groupedEntry.configKeys.join(" · ");
+        merged.set(capabilityKey, {
+            ...entry,
+            key: capabilityKey,
+            capabilityKey,
+            label: configText(capabilityKey, protocol).label,
+            configKeys: [entry.key],
+        });
     }
 
-    return normalized
-        .map((entry) => assignCapabilitySection(entry, capabilityCatalog))
-        .filter(Boolean);
+    return [...merged.values()];
 }
 
-function assignCapabilitySection(entry, capabilityCatalog) {
-    const capabilityKey = String(entry.capabilityKey || entry.key || "");
-    const definition = capabilityDefinitionForKey(
-        capabilityCatalog,
-        capabilityKey,
-    );
+function withSection(entry, capabilityCatalog) {
+    const definition = (capabilityCatalog || []).find((candidate) => candidate?.key === entry.capabilityKey);
     if (!definition?.isConfigurable && !definition?.isRequestable) {
         return null;
     }
 
     // Uma grandeza pedível de `telemetry` não tem secção de configuração: cabe em Sistema.
-    const declared = String(definition.section || "");
-    const section = CONFIG_SECTION_ORDER.includes(declared)
-        ? declared
+    const section = CONFIG_SECTION_ORDER.includes(definition.section)
+        ? definition.section
         : (definition.isRequestable ? "settings_system" : "");
     if (section === "") {
         return null;
@@ -120,40 +67,6 @@ function assignCapabilitySection(entry, capabilityCatalog) {
     return {
         ...entry,
         category: section,
-        configSectionName: section,
-        sectionLabel: String(definition.sectionLabel || section),
         requestOnly: definition.isRequestable && !definition.isConfigurable,
-    };
-}
-
-function capabilityDefinitionForKey(capabilityCatalog, capabilityKey) {
-    if (capabilityKey === "") {
-        return null;
-    }
-
-    return (capabilityCatalog || []).find(
-        (definition) => String(definition?.key || "") === capabilityKey,
-    ) || null;
-}
-
-function normalizeConfigEntry(entry) {
-    const capabilityKey = String(entry.capabilityKey || "");
-    const key = capabilityKey || String(entry.key || "");
-    const input = String(entry.input || "json");
-    const label = capabilityKey === "alarm_clock"
-        ? "Despertadores"
-        : String(entry.label || key || "");
-    const configKind = capabilityKey === "alarm_clock"
-        ? "capability"
-        : String(entry.configKind || "configuration");
-
-    return {
-        ...entry,
-        key,
-        input,
-        label,
-        capabilityKey: capabilityKey || key,
-        configKind,
-        configSectionName: capabilityKey === "alarm_clock" ? "reminders" : entry.configSectionName,
     };
 }

@@ -16,38 +16,38 @@ final class ScaleCapabilityDefinitions extends CapabilityDefinitions
         return [
             'telemetry' => [
                 'measurement' => [
-                    'battery' => 'Bateria',
-                    'weight' => 'Peso',
+                    'battery',
+                    'weight',
                     // A mesma da pulseira e do relógio: a balança mede-a pelos elétrodos.
-                    'heart_rate' => 'Frequência cardíaca',
-                    'body_impedance' => 'Impedância corporal',
-                    'body_impedance_channel' => 'Impedância por canal',
+                    'heart_rate',
+                    'body_impedance',
+                    'body_impedance_channel',
                     // Calculada no hub pela impedância e pelo perfil de quem está em linha.
-                    'body_composition' => 'Composição corporal',
-                    'weighing_status' => 'Estado da pesagem',
+                    'body_composition',
+                    'weighing_status',
                 ],
             ],
             'health' => [
                 'setting' => [
-                    'heart_rate_measurement' => 'Medir a frequência cardíaca',
-                    'impedance_measurement' => 'Medir a impedância',
+                    'heart_rate_measurement',
+                    'impedance_measurement',
                     // O mesmo registo que os «Dados para cálculo» da pulseira, em lista.
-                    'scale_users' => 'Utilizadores da balança',
+                    'scale_users',
                 ],
                 // Pôr em linha é o que atribui a pesagem seguinte, e sem ele a FC não é medida.
                 'action' => [
-                    'select_scale_user' => 'Pôr utilizador em linha',
-                    'read_scale_history' => 'Ler o histórico',
+                    'select_scale_user',
+                    'read_scale_history',
                 ],
             ],
             'settings_system' => [
                 'setting' => [
-                    'weight_unit' => 'Unidade do visor',
+                    'weight_unit',
                 ],
                 'action' => [
-                    'sync_configuration' => 'Sincronizar configuração',
-                    'calibrate_clock' => 'Acertar o relógio do aparelho',
-                    'restart_device' => 'Reiniciar dispositivo',
+                    'sync_configuration',
+                    'calibrate_clock',
+                    'restart_device',
                 ],
             ],
         ];

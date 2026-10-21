@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Hub\Infrastructure\Persistence\Repository;
 
+use Hub\Domain\Capability\CapabilityCatalog;
 use Hub\Domain\SupplierCapabilityTemplate;
 use PDO;
 
@@ -79,17 +80,12 @@ final class ModelCapabilityRepository
      */
     private function requestableFeaturesForModelIdFiltered(int $modelId, bool $telemetryOnly): array
     {
-        $telemetryCondition = $telemetryOnly ? "AND c.section = 'telemetry'" : '';
         $stmt = $this->pdo->prepare('
-            SELECT mc.capability_key, m.device_type, m.internal_model, s.name AS supplier_name
+            SELECT mc.capability_key, mc.is_requestable, m.device_type, m.internal_model, s.name AS supplier_name
             FROM model_capabilities mc
-            JOIN capabilities c ON c.device_type = mc.device_type AND c.capability_key = mc.capability_key
             JOIN models m ON m.id = mc.model_id
             JOIN suppliers s ON s.id = m.supplier_id
-            WHERE mc.model_id = ?
-              AND mc.enabled = 1
-              AND COALESCE(mc.is_requestable, c.is_requestable) = 1
-              ' . $telemetryCondition . '
+            WHERE mc.model_id = ? AND mc.enabled = 1
             ORDER BY mc.capability_key
         ');
         $stmt->execute([$modelId]);
@@ -100,32 +96,46 @@ final class ModelCapabilityRepository
         }
 
         $allowed = $this->allowedFeaturesForModelRow($rows[0]);
+        $catalogue = self::catalogue((string)$rows[0]['device_type']);
         $requestable = [];
         foreach ($rows as $row) {
             $key = trim((string)($row['capability_key'] ?? ''));
-            if ($key === '' || !isset($allowed[$key])) {
+            $definition = $catalogue[$key] ?? null;
+            if ($definition === null || !isset($allowed[$key])) {
                 continue;
             }
-            $requestable[$key] = true;
+            if ($telemetryOnly && $definition['section'] !== 'telemetry') {
+                continue;
+            }
+            $flag = $row['is_requestable'] === null ? !empty($definition['isRequestable']) : (bool)$row['is_requestable'];
+            if ($flag) {
+                $requestable[$key] = true;
+            }
         }
 
         return array_keys($requestable);
     }
 
-    /**
-     * @param list<int|string> $capabilityIds
-     */
-    public function replaceTelemetryRequestabilityForModelId(int $modelId, array $capabilityIds): void
+    /** @return array<string, array<string, mixed>> */
+    private static function catalogue(string $deviceType): array
     {
-        $capabilityKeys = $this->normalizeCapabilityKeys($modelId, $capabilityIds);
+        $byKey = [];
+        foreach (CapabilityCatalog::definitionsForDeviceType($deviceType) as $definition) {
+            $byKey[(string)$definition['key']] = $definition;
+        }
+
+        return $byKey;
+    }
+
+    /**
+     * @param list<string> $capabilityKeys
+     */
+    public function replaceTelemetryRequestabilityForModelId(int $modelId, array $capabilityKeys): void
+    {
+        $capabilityKeys = $this->normalizeCapabilityKeys($modelId, $capabilityKeys);
         $selected = array_fill_keys($capabilityKeys, true);
         $rows = $this->pdo->prepare('
-            SELECT mc.device_type, mc.capability_key, c.is_requestable AS catalog_requestable
-            FROM model_capabilities mc
-            JOIN capabilities c ON c.device_type = mc.device_type AND c.capability_key = mc.capability_key
-            WHERE mc.model_id = ?
-              AND mc.enabled = 1
-              AND c.section = \'telemetry\'
+            SELECT device_type, capability_key FROM model_capabilities WHERE model_id = ? AND enabled = 1
         ');
         $rows->execute([$modelId]);
 
@@ -136,7 +146,11 @@ final class ModelCapabilityRepository
         ');
         foreach ($rows->fetchAll(PDO::FETCH_ASSOC) ?: [] as $row) {
             $key = (string)($row['capability_key'] ?? '');
-            $catalogRequestable = (bool)($row['catalog_requestable'] ?? false);
+            $definition = self::catalogue((string)$row['device_type'])[$key] ?? null;
+            if (($definition['section'] ?? '') !== 'telemetry') {
+                continue;
+            }
+            $catalogRequestable = !empty($definition['isRequestable']);
             $override = $catalogRequestable ? (isset($selected[$key]) ? 1 : 0) : null;
             $update->execute([$override, $modelId, (string)($row['device_type'] ?? ''), $key]);
         }
@@ -192,11 +206,11 @@ final class ModelCapabilityRepository
     }
 
     /**
-     * @param list<int|string> $capabilityIds
+     * @param list<string> $capabilityKeys
      */
-    public function replaceForModelId(int $modelId, array $capabilityIds): void
+    public function replaceForModelId(int $modelId, array $capabilityKeys): void
     {
-        $capabilityKeys = $this->normalizeCapabilityKeys($modelId, $capabilityIds);
+        $capabilityKeys = $this->normalizeCapabilityKeys($modelId, $capabilityKeys);
         $deviceType = $this->modelContextForModelId($modelId)['device_type'];
 
         // Desligar tudo e religar o que ficou são uma só operação. O PDO não aninha
@@ -235,32 +249,25 @@ final class ModelCapabilityRepository
     }
 
     /**
-     * As chaves que este modelo pode ter, a partir do que o chamador pediu: a chave ou o
-     * `capabilities.id` da API. O que não esteja no template do modelo é descartado.
+     * As chaves pedidas que estão no template do modelo; o resto é descartado.
      *
-     * @param list<int|string> $capabilityIds
+     * @param list<string> $capabilityKeys
      * @return list<string>
      */
-    private function normalizeCapabilityKeys(int $modelId, array $capabilityIds): array
+    private function normalizeCapabilityKeys(int $modelId, array $capabilityKeys): array
     {
-        $allowed = $this->allowedCapabilityIdsForModelId($modelId);
-        $keyById = array_flip($allowed['keys']);
-        $normalized = [];
-        foreach ($capabilityIds as $capabilityId) {
-            if (is_string($capabilityId) && !ctype_digit($capabilityId)) {
-                $key = trim($capabilityId);
-                if ($key === '' || !isset($allowed['keys'][$key])) {
-                    continue;
-                }
-                $normalized[$key] = $key;
-                continue;
-            }
+        $context = $this->modelContextForModelId($modelId);
+        $allowed = array_flip(array_intersect(
+            SupplierCapabilityTemplate::keysForModel($context['supplier_name'], $context['internal_model'], $context['device_type']),
+            CapabilityCatalog::keysForDeviceType($context['device_type']),
+        ));
 
-            $value = (int)$capabilityId;
-            if ($value <= 0 || !isset($keyById[$value])) {
-                continue;
+        $normalized = [];
+        foreach ($capabilityKeys as $key) {
+            $key = trim((string)$key);
+            if (isset($allowed[$key])) {
+                $normalized[$key] = $key;
             }
-            $normalized[$keyById[$value]] = $keyById[$value];
         }
 
         return array_values($normalized);
@@ -288,32 +295,6 @@ final class ModelCapabilityRepository
     }
 
     /**
-     * @return array{ids: array<int, int>, keys: array<string, int>}
-     */
-    private function allowedCapabilityIdsForModelId(int $modelId): array
-    {
-        $context = $this->modelContextForModelId($modelId);
-        $allowedKeys = SupplierCapabilityTemplate::keysForModel(
-            $context['supplier_name'],
-            $context['internal_model'],
-            $context['device_type']
-        );
-
-        $ids = [];
-        $keys = [];
-        foreach ($allowedKeys as $key) {
-            $capabilityId = $this->capabilityIdForDeviceTypeAndKey($context['device_type'], $key);
-            if ($capabilityId === null) {
-                continue;
-            }
-            $ids[$capabilityId] = $capabilityId;
-            $keys[$key] = $capabilityId;
-        }
-
-        return ['ids' => $ids, 'keys' => $keys];
-    }
-
-    /**
      * @param array<string, mixed> $row
      * @return array<string, true>
      */
@@ -326,14 +307,5 @@ final class ModelCapabilityRepository
         );
 
         return array_fill_keys($allowed, true);
-    }
-
-    private function capabilityIdForDeviceTypeAndKey(string $deviceType, string $key): ?int
-    {
-        $stmt = $this->pdo->prepare('SELECT id FROM capabilities WHERE device_type = ? AND capability_key = ?');
-        $stmt->execute([$deviceType, $key]);
-        $value = $stmt->fetchColumn();
-
-        return $value === false ? null : (int)$value;
     }
 }

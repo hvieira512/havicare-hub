@@ -7,6 +7,7 @@ import {
 } from "../domain.js";
 import { deviceTypeIcon } from "../components/device-type-tiles.js";
 import { modelPreviewHtml } from "../components/model-image.js";
+import { countLabel } from "../i18n.js";
 
 /** Tipo, modelo e licença do assistente de adicionar e do modal de editar: só HTML, sem estado. */
 
@@ -216,7 +217,7 @@ export function deviceTypeCardsHtml({ attrsFor, selected = "", countFor = null }
                 label: option.label,
                 sub: count === null
                     ? ""
-                    : `${count} ${count === 1 ? "modelo" : "modelos"}`,
+                    : `${countLabel(count, "modelo", "modelos")}`,
             };
         }),
     );
@@ -252,7 +253,7 @@ export function supplierCardsHtml({ suppliers, attrsFor, selected = "", countFor
                 label: name,
                 sub: count === null
                     ? ""
-                    : `${count} ${count === 1 ? "modelo" : "modelos"}`,
+                    : `${countLabel(count, "modelo", "modelos")}`,
             };
         }),
     );

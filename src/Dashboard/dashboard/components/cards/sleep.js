@@ -1,13 +1,6 @@
 import { html } from "../../html.js";
 import { joinMarkup } from "./shared.js";
-
-const PHASE_LABEL = {
-    deep_sleep: "Profundo",
-    light_sleep: "Leve",
-    rem: "REM",
-    insomnia: "Insónia",
-    awake: "Acordado",
-};
+import { valueLabel, countLabel } from "../../i18n.js";
 
 /** As fases pela ordem em que se lêem, e não pela ordem em que a noite as traz. */
 const PHASE_ORDER = ["deep_sleep", "light_sleep", "rem", "insomnia", "awake"];
@@ -67,13 +60,13 @@ export function sleepDetails(data) {
     const totals = phaseMinutes(data);
     for (const phase of PHASE_ORDER) {
         if (totals.has(phase)) {
-            parts.push(html`${PHASE_LABEL[phase]}: ${duration(totals.get(phase))}`);
+            parts.push(html`${valueLabel("sleepPhase", phase)}: ${duration(totals.get(phase))}`);
         }
     }
 
     const count = segments(data).length;
     if (count > 0) {
-        parts.push(html`${count} ${count === 1 ? "troço" : "troços"}`);
+        parts.push(html`${countLabel(count, "troço", "troços")}`);
     }
 
     return joinMarkup(parts);

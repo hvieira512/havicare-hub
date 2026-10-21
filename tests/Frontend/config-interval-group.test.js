@@ -9,8 +9,6 @@ import { changedConfigEntries } from "../../src/Dashboard/dashboard/devices/conf
  * As dez medições da Wonlex são a mesma decisão dita dez vezes e juntam-se num grupo; o que as
  * identifica é o mesmo comando nativo e a mesma legenda, e sem isso ficam cartões.
  */
-const HELP = "Periodicidade de envio desta medição, em minutos. Use 0 para desativar.";
-
 const interval = (key, label) => ({
     key,
     capabilityKey: key,
@@ -19,7 +17,6 @@ const interval = (key, label) => ({
     input: "number",
     fields: ["interval"],
     category: "health",
-    help: HELP,
 });
 
 const CAPABILITIES = (keys) => keys.map((key) => ({
@@ -60,17 +57,18 @@ test("the repeated measurements share one card", () => {
     assert.equal(root.querySelectorAll("[data-config-section]").length, 0);
 });
 
-test("without a caption the measurements still share one card", () => {
-    const root = render(INTERVALS.map((entry) => ({ ...entry, help: "" })));
+test("a help sentence shared by the whole group is said once", () => {
+    const help = "Só em relógios com sensor de luz.";
+    const toggles = ["remove_watch_alarm", "remove_watch_sms_alert"].map((key) => ({
+        key,
+        capabilityKey: key,
+        command: key,
+        input: "toggle",
+        fields: ["enabled"],
+        category: "health",
+    }));
 
-    assert.equal(root.querySelectorAll("[data-config-group]").length, 1);
-    assert.equal(root.querySelectorAll("[data-config-row]").length, 3);
-});
-
-test("the help sentence is said once, not once per measurement", () => {
-    const occurrences = render(INTERVALS).textContent.split(HELP).length - 1;
-
-    assert.equal(occurrences, 1);
+    assert.equal(render(toggles).textContent.split(help).length - 1, 1);
 });
 
 test("one send for the three, not three", () => {
@@ -135,9 +133,8 @@ test("a group of never-sent switches can still be sent", () => {
         key,
         capabilityKey: key,
         command: "deviceConfig",
-        label: key,
         input: "toggle",
-        fields: ["switchState"],
+        fields: ["enabled"],
         category: "health",
     }));
 
@@ -153,7 +150,6 @@ test("numbers from different commands stay as separate cards", () => {
             ...interval("step_goal", "Meta de passos"),
             command: "deviceConfig",
             fields: ["steps"],
-            help: "",
         },
     ]);
 

@@ -3,15 +3,19 @@ import assert from "node:assert/strict";
 
 import { configSection, parseFragment } from "./support/dom.js";
 import {
-    defaultConfigPayload,
     readConfigPayload,
     renderConfigInputs,
     renderConfigSection,
 } from "../../src/Dashboard/dashboard/devices/config/index.js";
 
 const PROTOCOL = "qinglanst-radar";
+/** O valor de partida é o que a API serve, e o da API é o `options.default` da definição. */
+const starting = (entry) => {
+    const declared = entry.options?.default;
+    return declared !== null && typeof declared === "object" ? declared : { [entry.fields[0]]: declared };
+};
 const section = (entry, desired) =>
-    configSection(renderConfigInputs, entry, desired ?? defaultConfigPayload(entry, PROTOCOL), { protocol: PROTOCOL });
+    configSection(renderConfigInputs, entry, desired ?? starting(entry), { protocol: PROTOCOL });
 const field = (root, name) => root.querySelector(`[data-config-field="${name}"]`);
 
 const sensitivity = {
@@ -73,7 +77,12 @@ const boundary = {
     key: "detection_boundary",
     input: "radarBoundary",
     fields: ["leftM", "rightM", "frontM", "backM"],
-    options: { step: 0.1, ceiling: { leftM: 3, rightM: 3, frontM: 2, backM: 2 }, wall: { leftM: 3, rightM: 3, frontM: 4, backM: 0 } },
+    options: {
+        step: 0.1,
+        ceiling: { leftM: 3, rightM: 3, frontM: 2, backM: 2 },
+        wall: { leftM: 3, rightM: 3, frontM: 4, backM: 0 },
+        default: { leftM: 3, rightM: 3, frontM: 2, backM: 2 },
+    },
 };
 
 const areas = { key: "radar_areas", input: "radarAreas", fields: ["items"] };
@@ -119,7 +128,8 @@ test("the switch sits left and the value right", () => {
 });
 
 test("the fall alarm number shows the definition's unit and step", () => {
-    const root = parseFragment(renderConfigSection(PROTOCOL, fallAlarm, null));
+    const capabilities = { alarms: { fall_alarm: { value: { afterSeconds: 60 } } } };
+    const root = parseFragment(renderConfigSection(PROTOCOL, { ...fallAlarm, capabilityKey: "fall_alarm" }, null, capabilities));
 
     assert.equal(root.querySelector(".input-group-text")?.textContent.trim(), "s");
     assert.equal(field(root, "afterSeconds").step, "10");

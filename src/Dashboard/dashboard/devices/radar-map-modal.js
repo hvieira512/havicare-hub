@@ -13,6 +13,7 @@ import { createAreaEditor } from "./radar-area-editor.js";
 import { renderVitals } from "./radar-vitals.js";
 import { loadScript } from "../load-script.js";
 import { state } from "../state.js";
+import { countLabel } from "../i18n.js";
 
 /**
  * A planta de um radar com os sinais vitais ao lado. Posições e leituras vêm do stream que o
@@ -162,7 +163,7 @@ async function toggleEditing() {
     if (pending > 0) {
         const { isConfirmed } = await confirmDestructive(
             "Fechar sem enviar?",
-            `${pending} ${pending === 1 ? "área fica" : "áreas ficam"} por enviar ao radar.`,
+            `${countLabel(pending, "área fica", "áreas ficam")} por enviar ao radar.`,
             "Fechar sem enviar",
         );
         if (!isConfirmed) return;

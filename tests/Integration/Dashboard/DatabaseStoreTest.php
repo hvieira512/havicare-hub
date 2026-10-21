@@ -159,30 +159,6 @@ final class DatabaseStoreTest extends MysqlDashboardTestCase
         self::assertSame(1, (int)$stored->fetchColumn());
     }
 
-    /** A chave estrangeira da `model_capabilities` é o par natural, com `ON UPDATE CASCADE`. */
-    public function testRenamingACapabilityCarriesItsModelLinks(): void
-    {
-        $database = $this->createDashboardDatabase();
-        $pdo = $database->pdo();
-        $db = ApiDataAccess::fromDatabase($database);
-        $model = $db->models->find('Vivistar', 'L08 Pro');
-        self::assertIsArray($model);
-
-        $links = $pdo->prepare('
-            SELECT COUNT(*) FROM model_capabilities WHERE model_id = ? AND capability_key = ?
-        ');
-        $links->execute([(int)$model['id'], 'heart_rate']);
-        self::assertSame(1, (int)$links->fetchColumn(), 'o L08 Pro devia ter o heart_rate ligado');
-
-        $pdo->prepare("UPDATE capabilities SET capability_key = ? WHERE device_type = 'watch' AND capability_key = ?")
-            ->execute(['pulse_rate', 'heart_rate']);
-
-        $links->execute([(int)$model['id'], 'pulse_rate']);
-        self::assertSame(1, (int)$links->fetchColumn(), 'a ligação devia ter seguido o nome novo');
-        $links->execute([(int)$model['id'], 'heart_rate']);
-        self::assertSame(0, (int)$links->fetchColumn(), 'e não devia ter ficado nenhuma com o antigo');
-    }
-
     public function testRestartPreservesCustomizedFourPTouchModelCapabilities(): void
     {
         $database = $this->createDashboardDatabase();
@@ -221,7 +197,6 @@ final class DatabaseStoreTest extends MysqlDashboardTestCase
 
         $pdo->exec("DELETE FROM model_capabilities WHERE model_id IN (SELECT id FROM models WHERE device_type = 'radar')");
         $pdo->exec("DELETE FROM whitelist WHERE supplier = 'Qinglanst' OR device_type = 'radar'");
-        $pdo->exec("DELETE FROM capabilities WHERE device_type = 'radar'");
         $pdo->exec("DELETE FROM models WHERE device_type = 'radar'");
         $pdo->exec("DELETE FROM suppliers WHERE name = 'Qinglanst'");
 

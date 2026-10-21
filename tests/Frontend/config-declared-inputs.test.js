@@ -1,60 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { readdirSync, readFileSync } from "node:fs";
 
 import { CONFIG_INPUTS } from "../../src/Dashboard/dashboard/devices/config/inputs/index.js";
-
-/**
- * Um tipo de campo que o registo não conhece não rebenta: degrada para o editor de JSON em cru,
- * e só se veria no ecrã.
- */
-
-/**
- * O `json` é o recuo declarado de propósito por duas entradas da Wonlex que o painel nem
- * chega a mostrar -- não têm capacidade associada. É o único nome sem renderizador próprio.
- */
-const FALLBACK = "json";
-
-const DEFINITIONS_DIR = new URL("../../src/Command/Configuration/Definition/", import.meta.url);
-
-/**
- * Os tipos de campo declarados nas definições, lidos do PHP: o quarto argumento do `$entry(…)`
- * e o `input:` nomeado. Falhar a encontrar um nome tira cobertura, nunca inventa um alarme.
- */
-function declaredInputs() {
-    const names = new Set();
-
-    for (const file of readdirSync(DEFINITIONS_DIR).filter((name) => name.endsWith(".php"))) {
-        const source = readFileSync(new URL(file, DEFINITIONS_DIR), "utf8");
-
-        for (const [, type] of source.matchAll(/input:\s*'([^']+)'/g)) {
-            names.add(type);
-        }
-        for (const [, type] of source.matchAll(
-            /\$entry\(\s*'[^']*',\s*'[^']*',\s*'[^']*',\s*'([^']+)'/g,
-        )) {
-            names.add(type);
-        }
-        for (const [, type] of source.matchAll(
-            /make\(\s*'[^']*',\s*\n\s*'[^']*',\s*\n\s*'[^']*',\s*\n\s*'([^']+)'/g,
-        )) {
-            names.add(type);
-        }
-    }
-
-    return names;
-}
-
-test("the definitions declare field types that something draws", () => {
-    const declared = declaredInputs();
-    assert.ok(declared.size > 10, "o leitor das definições não encontrou tipos suficientes");
-
-    const orphans = [...declared].filter(
-        (type) => !CONFIG_INPUTS[type] && type !== FALLBACK,
-    );
-
-    assert.deepEqual(orphans, [], "estes tipos caem no editor de JSON em cru");
-});
 
 test("no registered renderer is left without a render or a read", () => {
     for (const [name, descriptor] of Object.entries(CONFIG_INPUTS)) {

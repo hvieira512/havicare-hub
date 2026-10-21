@@ -9,8 +9,8 @@ import { renderConfigInputs } from "../../src/Dashboard/dashboard/devices/config
 import { configSection, parseFragment } from "./support/dom.js";
 
 /**
- * O motor das linhas repetíveis, a clonar a última linha ou a desenhar uma de raiz; numa lista
- * que se clona, a única linha que resta não se remove, porque é o molde.
+ * O motor das linhas repetíveis, a clonar a última linha; a única linha que resta não se
+ * remove, porque é o molde.
  */
 const phoneList = (rowCount, limit) =>
     parseFragment(`
@@ -20,18 +20,6 @@ const phoneList = (rowCount, limit) =>
                     <div data-repeat-row="numbers">
                         <select data-phone-country><option value="PT">PT</option><option value="GB">GB</option></select>
                         <input data-phone-local value="91234567${index}">
-                        <button data-action="removeRepeatRow"></button>
-                    </div>`).join("")}
-            </div>
-        </section>`).firstElementChild;
-
-const reminderList = (rowCount) =>
-    parseFragment(`
-        <section data-config-section>
-            <div data-repeat-list="takePillsReminder">
-                ${Array.from({ length: rowCount }, () => `
-                    <div data-repeat-row="takePillsReminder">
-                        <span data-takepills-reminder-number>?</span>
                         <button data-action="removeRepeatRow"></button>
                     </div>`).join("")}
             </div>
@@ -61,24 +49,13 @@ test("cloning: the dialling code goes back to the initial one instead of inherit
     assert.equal(rowsIn(section, "numbers")[1].querySelector("[data-phone-country]").value, "PT");
 });
 
-test("drawing: the new row is built from scratch", () => {
-    const section = reminderList(1);
-
-    appendRepeatRow(section, "takePillsReminder");
-
-    const rows = rowsIn(section, "takePillsReminder");
-    assert.equal(rows.length, 2);
-    // A linha do molde não tem campo nenhum: clonada, a nova também não teria.
-    assert.ok(rows[1].querySelector("[data-takepills-field=\"reminderTime\"]"));
-});
-
 test("without a declared limit a row is always added", () => {
-    const section = reminderList(1);
+    const section = phoneList(1, "");
 
-    appendRepeatRow(section, "takePillsReminder");
-    appendRepeatRow(section, "takePillsReminder");
+    appendRepeatRow(section, "numbers");
+    appendRepeatRow(section, "numbers");
 
-    assert.equal(rowsIn(section, "takePillsReminder").length, 3);
+    assert.equal(rowsIn(section, "numbers").length, 3);
 });
 
 test("an unknown kind is ignored instead of throwing", () => {
@@ -108,44 +85,11 @@ test("in a cloned list, removing the last row clears it instead of deleting it",
     assert.equal(rows[0].querySelector("[data-phone-country]").value, "PT");
 });
 
-test("in a drawn list, removing the last row deletes it", () => {
-    const section = reminderList(1);
-
-    removeRepeatRow(removeButtonIn(rowsIn(section, "takePillsReminder")[0]));
-
-    assert.equal(rowsIn(section, "takePillsReminder").length, 0);
-});
-
 test("removing from a stray button is harmless", () => {
     assert.doesNotThrow(() => removeRepeatRow(null));
     assert.doesNotThrow(() =>
         removeRepeatRow(parseFragment("<button></button>").firstElementChild),
     );
-});
-
-/**
- * O sync é genérico -- corre para qualquer tipo repetível -- e por isso vale também para os
- * `keepLast`, como os contactos SOS e a whitelist.
- */
-test("the add-item button tracks the limit for a rendered kind (takePillsReminder)", () => {
-    const section = parseFragment(`
-        <div data-config-section>
-            <button data-action="addRepeatRow" data-repeat-kind="takePillsReminder">Adicionar item</button>
-            <div data-repeat-list="takePillsReminder" data-repeat-limit="2"></div>
-        </div>
-    `).firstElementChild;
-    const button = section.querySelector("[data-action=\"addRepeatRow\"]");
-
-    appendRepeatRow(section, "takePillsReminder");
-    assert.equal(button.disabled, false, "abaixo do limite o botão fica ligado");
-
-    appendRepeatRow(section, "takePillsReminder");
-    assert.equal(button.disabled, true, "no limite o botão desativa");
-
-    const removeButton = section.querySelector("[data-action=\"removeRepeatRow\"]");
-    assert.ok(removeButton, "a linha traz um botão de remover");
-    removeRepeatRow(removeButton);
-    assert.equal(button.disabled, false, "ao remover uma linha o botão volta a ligar");
 });
 
 test("the sync is generic: a keepLast kind (sos_contacts) also tracks its limit", () => {

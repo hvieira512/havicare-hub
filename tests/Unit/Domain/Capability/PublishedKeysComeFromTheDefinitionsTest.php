@@ -93,7 +93,7 @@ final class DefinitionsDeclaringAnUndefinedKey extends CapabilityDefinitions
 
     protected static function rows(): array
     {
-        return ['telemetry' => ['measurement' => ['battery' => 'Bateria']]];
+        return ['telemetry' => ['measurement' => ['battery']]];
     }
 }
 
@@ -111,6 +111,6 @@ final class DefinitionsDeclaringAForeignProtocol extends CapabilityDefinitions
 
     protected static function rows(): array
     {
-        return ['telemetry' => ['measurement' => ['battery' => 'Bateria']]];
+        return ['telemetry' => ['measurement' => ['battery']]];
     }
 }

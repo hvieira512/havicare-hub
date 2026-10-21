@@ -1,3 +1,5 @@
+import { sectionLabel } from "./i18n.js";
+
 /** O que cada tipo de dispositivo tem, da ilha JSON `#hub-device-types`; sem ela o módulo não carrega. */
 const deviceTypesIsland = globalThis.document?.getElementById("hub-device-types");
 const DEVICE_TYPES = deviceTypesIsland ? JSON.parse(deviceTypesIsland.textContent) : null;
@@ -153,12 +155,6 @@ export function modelsForSupplierAndType(
     );
 }
 
-export function humanizeCapabilityKey(value) {
-    return String(value || "")
-        .replace(/_/g, " ")
-        .replace(/\b\w/g, (char) => char.toUpperCase());
-}
-
 export function flattenedCapabilityKeys(capabilities) {
     const enabled = [];
     for (const entries of Object.values(capabilities || {})) {
@@ -187,22 +183,6 @@ export function suppliersForDeviceType(deviceType, models = []) {
     return allSuppliers.filter((name) => deviceTypeSuppliers.includes(name));
 }
 
-function capabilityCatalogEntryByKey(
-    key,
-    catalog = [],
-) {
-    return (catalog || []).find((entry) => entry.key === key) || null;
-}
-
-export function capabilityLabelByKey(key, catalog = []) {
-    return capabilityCatalogEntryByKey(key, catalog)?.label || humanizeCapabilityKey(key);
-}
-
-function capabilitySectionLabel(section, catalog = []) {
-    const label = (catalog || []).find((entry) => entry.section === section)?.sectionLabel;
-    return label || humanizeCapabilityKey(section);
-}
-
 export function capabilitiesGroupedBySection(catalog) {
     const grouped = new Map();
     for (const entry of catalog || []) {
@@ -218,18 +198,10 @@ export function capabilitiesGroupedBySection(catalog) {
 
     return [...grouped.entries()].map(([section, entries]) => ({
         section,
-        label: capabilitySectionLabel(section, catalog),
+        label: sectionLabel(section),
         entries,
     }));
 }
-
-/** Os modos de toque de um botão de ajuda, em minúsculas porque se lêem como sufixo. */
-export const PRESS_TYPE_LABEL = {
-    single: "toque simples",
-    double: "toque duplo",
-    triple: "toque triplo",
-    long: "toque longo",
-};
 
 /** O que uma queda diz: confirmada ou suspeita, e como a pessoa ficou. Sem postura é a do relógio. */
 export function fallLabel(data) {

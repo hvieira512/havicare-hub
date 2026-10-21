@@ -29,16 +29,13 @@ final class CapabilitySchemas
             'CapabilityItem' => [
                 'type' => 'object',
                 'properties' => [
-                    'id' => ['type' => 'integer', 'example' => 1],
                     'deviceType' => ['type' => 'string', 'example' => 'watch'],
                     'section' => [
                         'type' => 'string',
                         'enum' => ['telemetry', 'health', 'contacts', 'alarms', 'reminders', 'settings_system'],
                         'example' => 'telemetry',
                     ],
-                    'sectionLabel' => ['type' => 'string', 'example' => 'Telemetria'],
                     'key' => ['type' => 'string', 'example' => 'heart_rate'],
-                    'label' => ['type' => 'string', 'example' => 'Heart rate telemetry'],
                     'isTelemetry' => ['type' => 'boolean', 'example' => true],
                     'isConfigurable' => ['type' => 'boolean', 'example' => false],
                     'isRequestable' => ['type' => 'boolean', 'example' => true],

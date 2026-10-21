@@ -79,9 +79,7 @@ final class GenericCapability implements CapabilityContract
             return $this->fourPTouch->fromNative($this->genericKey, $nativeKey, $desired);
         }
 
-        return $protocol === 'wonlex-json'
-            ? $this->wonlexFromNative($desired)
-            : $desired;
+        return $desired;
     }
 
     public function defaultValue(string $protocol): mixed
@@ -134,60 +132,8 @@ final class GenericCapability implements CapabilityContract
             'power_off' => ['powerOffCommand' => []],
             'find_device' => ['findDeviceCommand' => []],
             'push_message' => ['pushMessage' => ['message' => self::requireStringField($value, 'message')]],
-            default => [
-                $this->resolveWonlexNativeKey() => $this->wonlexToNative(
-                    self::requireObjectValue($value, $this->genericKey)
-                ),
-            ],
+            default => [$this->resolveWonlexNativeKey() => self::requireObjectValue($value, $this->genericKey)],
         };
-    }
-
-    /**
-     * Mantém os nomes de transporte da Wonlex fora do contrato genérico da API.
-     *
-     * @param array<string, mixed> $value
-     * @return array<string, mixed>
-     */
-    private function wonlexFromNative(array $value): array
-    {
-        if (array_key_exists('switchState', $value)) {
-            $value['enabled'] = self::wonlexBool($value['switchState'], 'switchState');
-            unset($value['switchState']);
-        }
-        if (array_key_exists('exerciseSwitchState', $value)) {
-            $value['exerciseEnabled'] = self::wonlexBool($value['exerciseSwitchState'], 'exerciseSwitchState');
-            unset($value['exerciseSwitchState']);
-        }
-
-        return $value;
-    }
-
-    /**
-     * Traduz os nomes da API para os nativos da Wonlex; um nativo que já venha passa como está.
-     *
-     * @param array<string, mixed> $value
-     * @return array<string, mixed>
-     */
-    private function wonlexToNative(array $value): array
-    {
-        if (array_key_exists('enabled', $value) && !array_key_exists('switchState', $value)) {
-            $value['switchState'] = self::wonlexBool($value['enabled'], 'enabled');
-        }
-        unset($value['enabled']);
-
-        if (array_key_exists('exerciseEnabled', $value) && !array_key_exists('exerciseSwitchState', $value)) {
-            $value['exerciseSwitchState'] = self::wonlexBool($value['exerciseEnabled'], 'exerciseEnabled');
-        }
-        unset($value['exerciseEnabled']);
-
-        return $value;
-    }
-
-    private static function wonlexBool(mixed $value, string $field): bool
-    {
-        $normalized = self::requireBoolLikeValue($value, $field);
-
-        return in_array($normalized, [true, 1, '1'], true);
     }
 
     private function resolveWonlexNativeKey(): string

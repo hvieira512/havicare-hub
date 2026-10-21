@@ -1,0 +1,1121 @@
+{
+    "sections": {
+        "telemetry": "Telemetria",
+        "health": "Saúde",
+        "contacts": "Contactos",
+        "alarms": "Alarmes e alertas",
+        "reminders": "Lembretes",
+        "settings_system": "Sistema"
+    },
+    "capabilities": {
+        "activity": "Atividade",
+        "alarm_clock": "Despertadores",
+        "alarm_ringtone": "Tipo de toque",
+        "alarm_volume": "Volume",
+        "ambient_humidity": "Humidade ambiente",
+        "ambient_temperature": "Temperatura ambiente",
+        "apnea": "Apneia",
+        "auto_clock": "Acertar-se sozinho",
+        "auto_vitals_interval": "Medição automática de saúde",
+        "battery": "Bateria",
+        "blood_lipids": "Lípidos no sangue",
+        "blood_lipids_continuous": "Lípidos e ácido úrico contínuos",
+        "blood_oxygen": "Oxigénio no sangue",
+        "blood_oxygen_alert": "Alerta de oxigénio no sangue",
+        "blood_oxygen_continuous": "Oxigénio no sangue contínuo",
+        "blood_oxygen_measurement_interval": "Intervalo de medição do oxigénio no sangue",
+        "blood_oxygen_window": "Oxigénio de dia inteiro",
+        "blood_pressure": "Pressão arterial",
+        "blood_pressure_alert": "Alerta de pressão arterial",
+        "blood_pressure_measurement_interval": "Intervalo de medição da pressão arterial",
+        "blood_pressure_trend": "Tendência da pressão arterial",
+        "blood_sugar": "Glicemia",
+        "blood_sugar_continuous": "Glicemia contínua",
+        "body_composition": "Composição corporal",
+        "body_impedance": "Impedância corporal",
+        "body_impedance_channel": "Impedância por canal",
+        "breath_rate": "Frequência respiratória",
+        "breath_rate_alert": "Respiração fora do intervalo",
+        "breath_rate_high": "Frequência respiratória alta",
+        "breath_rate_low": "Frequência respiratória baixa",
+        "breath_rate_measurement_interval": "Intervalo de medição da frequência respiratória",
+        "calibrate_clock": "Acertar o relógio do aparelho",
+        "call_whitelist": "Lista de chamadas autorizadas",
+        "cardiac_load": "Carga cardíaca",
+        "cells_remaining": "Células restantes",
+        "center_number": "Número da central",
+        "change_required": "Mudança necessária",
+        "check_required": "Verificação recomendada",
+        "child_lock": "Bloqueio de criança",
+        "connectivity": "Conectividade",
+        "date_format": "Formato da data",
+        "detection_boundary": "Limites de deteção",
+        "device_fault": "Avaria",
+        "device_language": "Idioma do ecrã",
+        "device_removed": "Dispositivo retirado",
+        "device_state": "Estado do dispositivo",
+        "device_status": "Estado do dispositivo",
+        "diaper_condition": "Estado da fralda",
+        "diaper_moisture": "Humidade da fralda",
+        "diaper_moisture_level": "Nível de humidade",
+        "diaper_sensitivity": "Sensibilidade dos alertas",
+        "dispense_now": "Dispensar agora",
+        "do_not_disturb": "Não incomodar",
+        "early_dispense": "Toma antecipada",
+        "ecg": "ECG",
+        "ecg_measurement_interval": "Intervalo de medição do ECG",
+        "emergency_call": "Chamada de emergência",
+        "fall": "Queda",
+        "fall_alarm": "Queda",
+        "fall_detection": "Deteção de queda",
+        "fall_sensitivity": "Sensibilidade de queda",
+        "find_device": "Encontrar dispositivo",
+        "firmware_version": "Versão do firmware",
+        "heart_rate": "Frequência cardíaca",
+        "heart_rate_abnormal": "Frequência cardíaca anormal",
+        "heart_rate_alert": "Alerta de frequência cardíaca",
+        "heart_rate_continuous": "Frequência cardíaca contínua",
+        "heart_rate_high": "Frequência cardíaca alta",
+        "heart_rate_high_alert": "Alerta de frequência cardíaca alta",
+        "heart_rate_low": "Frequência cardíaca baixa",
+        "heart_rate_low_alert": "Alerta de frequência cardíaca baixa",
+        "heart_rate_measurement": "Medir a frequência cardíaca",
+        "heart_rate_measurement_interval": "Intervalo de medição da frequência cardíaca",
+        "help_call": "Chamada de ajuda",
+        "hrv": "VFC",
+        "hrv_continuous": "Variabilidade cardíaca contínua",
+        "hrv_measurement_interval": "Intervalo de medição da VFC",
+        "impedance_measurement": "Medir a impedância",
+        "key_tone": "Som das teclas",
+        "language_timezone": "Idioma e fuso horário",
+        "loaded_cells": "Carregado até ao compartimento",
+        "location": "Localização",
+        "location_reporting_interval": "Intervalo de envio da localização",
+        "low_battery": "Bateria fraca",
+        "low_battery_alert": "Alerta de bateria fraca",
+        "make_call": "Fazer chamada",
+        "measure_boundary": "Medir os limites",
+        "medication_alarm_change": "Alteração de dose",
+        "medication_alarm_status": "Estado dos alarmes",
+        "medication_intake": "Toma de medicação",
+        "medication_period": "Período do plano",
+        "medication_reminders": "Plano de medicação",
+        "met": "MET",
+        "missed_dispense": "Dispensar depois de falhar",
+        "monitor_number": "Escuta remota",
+        "motion": "Movimento",
+        "mute_alarm": "Silenciar o alarme a tocar",
+        "pedometer_schedule": "Horário de contagem de passos",
+        "personal_info": "Dados para cálculo",
+        "phonebook": "Lista telefónica",
+        "position_minute_stats": "Estatísticas de posições por minuto",
+        "power_off": "Desligar dispositivo",
+        "ppg": "PPG",
+        "ppg_measurement_interval": "Intervalo de medição da PPG",
+        "presence": "Presença",
+        "proximity": "Proximidade",
+        "push_message": "Enviar mensagem ao relógio",
+        "radar_areas": "Áreas",
+        "radar_installation": "Montagem e altura",
+        "read_blood_pressure_history": "Ler a memória",
+        "read_device_state": "Ler do radar",
+        "read_scale_history": "Ler o histórico",
+        "remove_watch_alarm": "Alarme ao retirar o relógio",
+        "remove_watch_sms_alert": "SMS ao retirar o relógio",
+        "reset": "Chamada reposta",
+        "reset_device": "Reposição de fábrica",
+        "reset_tray": "Repor o prato",
+        "restart_device": "Reiniciar dispositivo",
+        "retrieval_timeout": "Dar como falhada ao fim de",
+        "retrieval_warning": "Avisar de atraso ao fim de",
+        "rr_interval": "Intervalo R-R",
+        "rr_interval_measurement_interval": "Intervalo de medição do RR",
+        "scale_users": "Utilizadores da balança",
+        "select_scale_user": "Pôr utilizador em linha",
+        "sitting_on_floor_alarm": "Sentado no chão",
+        "skin_tone": "Tom de pele",
+        "sleep": "Sono",
+        "sleep_apnea": "Apneia do sono",
+        "sleep_monitoring": "Monitorização do sono",
+        "sleep_quality": "Qualidade do sono",
+        "sleep_state": "Estado do sono",
+        "sos_contacts": "Contactos SOS",
+        "sos_sms_alert": "SMS em alarme SOS",
+        "sound_profile": "Perfil de som",
+        "step_goal": "Meta de passos",
+        "step_reporting_interval": "Intervalo de envio dos passos",
+        "steps": "Passos por período",
+        "storage_environment": "Medicação mal conservada",
+        "stress": "Stress",
+        "stress_continuous": "Stress contínuo",
+        "sync_configuration": "Sincronizar configuração",
+        "temperature": "Temperatura corporal",
+        "temperature_continuous": "Temperatura contínua",
+        "temperature_high_alert": "Alerta de temperatura alta",
+        "temperature_low_alert": "Alerta de temperatura baixa",
+        "temperature_measurement_interval": "Intervalo de medição da temperatura",
+        "tilt": "Inclinação",
+        "time_format": "Formato da hora",
+        "time_zone": "Fuso horário",
+        "uric_acid": "Ácido úrico",
+        "vital_sign_sensitivity": "Sensibilidade dos sinais vitais",
+        "vitals_minute_stats": "Estatísticas de sinais vitais por minuto",
+        "weak_vital_signs": "Sinais vitais fracos",
+        "weak_vital_signs_alarm": "Sinais vitais fracos",
+        "wear_state": "Estado de uso",
+        "weighing_status": "Estado da pesagem",
+        "weight": "Peso",
+        "weight_unit": "Unidade do visor",
+        "whitelist_enabled": "Restringir chamadas recebidas",
+        "working_mode": "Modo de funcionamento",
+        "zone_entry": "Entrada numa zona",
+        "zone_exit": "Saída de uma zona"
+    },
+    "events": {
+        "alarm": "Alarme",
+        "device.connected": "Ligado",
+        "device.disconnected": "Desligado",
+        "device_config": "Configuração",
+        "heartbreath": "Sinais vitais",
+        "position": "Posições",
+        "unknown": "Desconhecida"
+    },
+    "commands": {
+        "BP87": "Temperatura (variante)",
+        "pillReadConfiguration": "Configuração guardada",
+        "pillReadConfiguration2": "Configuração guardada (resto)",
+        "dnUpSleep": "Dados do sono"
+    },
+    "verbs": {
+        "send": "Enviar",
+        "save": "Guardar",
+        "read": "Ler",
+        "factory_reset": "Repor de fábrica",
+        "send_message": "Enviar mensagem",
+        "start": "Começar",
+        "stop": "Parar",
+        "vibrate": "Fazer vibrar"
+    },
+    "configurations": {
+        "alarm_clock": {
+            "options": {
+                "recurrence": {
+                    "once": "Uma vez",
+                    "daily": "Todos os dias",
+                    "custom": "Personalizado"
+                },
+                "type": {
+                    "1": "Medicação",
+                    "2": "Água",
+                    "3": "Sedentarismo"
+                }
+            }
+        },
+        "auto_vitals_interval": {
+            "help": "Mede todos os sinais vitais de uma vez e envia-os."
+        },
+        "blood_lipids_continuous": {
+            "help": "Estima colesterol, triglicéridos e ácido úrico."
+        },
+        "blood_oxygen_alert": {
+            "label": "Alerta de oxigénio baixo"
+        },
+        "blood_oxygen_window": {
+            "help": "Daqui saem a apneia, a hipóxia e a carga cardíaca."
+        },
+        "blood_sugar_continuous": {
+            "help": "Estimativa ótica, sem picada."
+        },
+        "breath_rate_alert": {
+            "help": "Com a pessoa deitada e sozinha na cama, alarme ao fim de 1 minuto fora do intervalo."
+        },
+        "calibrate_clock": {
+            "help": "Os alarmes e o histórico datam-se pelo relógio do aparelho, que deriva."
+        },
+        "call_whitelist": {
+            "help": "É também a agenda do relógio."
+        },
+        "center_number": {
+            "help": "Recebe os SMS de alarme e pode configurar o relógio por SMS sem palavra-passe."
+        },
+        "child_lock": {
+            "help": "Tranca as teclas do aparelho."
+        },
+        "date_format": {
+            "options": {
+                "format": {
+                    "0": "AAAA-MM-DD",
+                    "1": "DD-MM-AAAA",
+                    "2": "MM-DD-AAAA"
+                }
+            }
+        },
+        "detection_boundary": {
+            "help": "Distância do radar à parede de cada lado. Mudar a montagem repõe os valores de fábrica."
+        },
+        "device_language": {
+            "help": "«Do aparelho» é a língua instalada de fábrica.",
+            "options": {
+                "language": {
+                    "0": "Do aparelho",
+                    "1": "Inglês"
+                }
+            }
+        },
+        "diaper_sensitivity": {
+            "help": "Alta avisa com menos humidade; Baixa espera por mais.",
+            "options": {
+                "profile": {
+                    "low": "Baixa",
+                    "normal": "Normal",
+                    "high": "Alta"
+                }
+            }
+        },
+        "dispense_now": {
+            "help": "Sem alarme por vir hoje, não faz nada.",
+            "confirm": "Isto gasta a dose do próximo alarme e dá-a como tomada. Confirma?"
+        },
+        "do_not_disturb": {
+            "help": "Os alarmes dentro da janela dispensam na mesma, sem som."
+        },
+        "early_dispense": {
+            "help": "Com pressão longa no botão sai já a dose do próximo alarme, dada como tomada."
+        },
+        "emergency_call": {
+            "help": "O aparelho não telefona: o pedido chega ao hub, que o encaminha."
+        },
+        "fall_alarm": {
+            "help": "Tempo no chão até haver alarme. Abaixo de 60 s há mais falsos alarmes."
+        },
+        "fall_sensitivity": {
+            "options": {
+                "sensitivity": {
+                    "1": "Baixa",
+                    "2": "Normal",
+                    "3": "Alta"
+                }
+            }
+        },
+        "find_device": {
+            "help": "Toca durante 1 minuto; pára ao carregar no botão."
+        },
+        "heart_rate_alert": {
+            "help": "Com a pessoa deitada e sozinha na cama, alarme ao fim de 1 minuto fora do intervalo."
+        },
+        "heart_rate_continuous": {
+            "help": "Um valor por minuto."
+        },
+        "heart_rate_measurement": {
+            "help": "Só é medida com um utilizador em linha."
+        },
+        "impedance_measurement": {
+            "help": "Desligar na gravidez: a balança passa a só pesar."
+        },
+        "language_timezone": {
+            "help": "O idioma só muda se o firmware o tiver."
+        },
+        "loaded_cells": {
+            "help": "O último compartimento cheio, e não quantos. Levantada a dose desse, o prato volta ao início; se falhar, segue para os vazios.",
+            "unit": "de 28"
+        },
+        "location_reporting_interval": {
+            "help": "0 desliga o envio da posição."
+        },
+        "low_battery_alert": {
+            "label": "Limiar de bateria fraca"
+        },
+        "measure_boundary": {
+            "help": "Alguém percorre as paredes e acaba à porta, em menos de 60 s."
+        },
+        "medication_period": {
+            "help": "Desligado, vale sempre. Não há escolha de dias da semana."
+        },
+        "medication_reminders": {
+            "help": "Cada hora preenchida gasta um compartimento; saem pela ordem da hora, não do número."
+        },
+        "missed_dispense": {
+            "help": "Levantada depois de falhada, a toma fica registada como anormal."
+        },
+        "monitor_number": {
+            "help": "Liga para este número e abre o microfone sem aviso no relógio.",
+            "confirm": "Abrir a escuta remota agora?"
+        },
+        "personal_info": {
+            "help": "Entram no cálculo das calorias e da composição corporal.",
+            "options": {
+                "sex": {
+                    "female": "Feminino",
+                    "male": "Masculino"
+                }
+            }
+        },
+        "power_off": {
+            "confirm": "O relógio desliga-se e só volta a ligar no botão do próprio aparelho."
+        },
+        "push_message": {
+            "help": "Aparece no ecrã do relógio."
+        },
+        "radar_areas": {
+            "help": "A cama de monitorização, a porta e as outras áreas. Editam-se na planta."
+        },
+        "radar_installation": {
+            "help": "Medir a altura com uma margem de ±5 cm. No modo Sono o radar assume parede a 1,5 m.",
+            "options": {
+                "mounting": {
+                    "ceiling": "Teto",
+                    "wall": "Parede"
+                }
+            },
+            "descriptions": {
+                "mounting": {
+                    "ceiling": "Recomendado entre 2 e 3 m.",
+                    "wall": "Entre 1,5 e 2,3 m, conforme o modo."
+                }
+            }
+        },
+        "read_blood_pressure_history": {
+            "help": "As medições que o aparelho guardou; as que o hub já tem não se repetem. Também se lê a cada ligação."
+        },
+        "read_device_state": {
+            "help": "Sinal, inclinação, firmware e os valores que o radar tem."
+        },
+        "read_scale_history": {
+            "help": "As pesagens que a balança guardou deste utilizador; chegam com a data em que foram feitas."
+        },
+        "remove_watch_alarm": {
+            "help": "Só em relógios com sensor de luz."
+        },
+        "remove_watch_sms_alert": {
+            "help": "Só em relógios com sensor de luz."
+        },
+        "reset_device": {
+            "confirm": "Repõe o relógio ao estado de fábrica. Volta a apontar para o servidor do fornecedor e o hub deixa de o comandar até alguém de lá o voltar a configurar."
+        },
+        "reset_tray": {
+            "help": "Assenta o prato sem mexer na contagem; não limpa a avaria do prato."
+        },
+        "restart_device": {
+            "confirm": "O relógio fica sem comunicar enquanto arranca."
+        },
+        "retrieval_timeout": {
+            "help": "0 usa o valor de fábrica.",
+            "unit": "min"
+        },
+        "retrieval_warning": {
+            "help": "0 usa o valor de fábrica. Levantada depois disto, a toma fica como tardia.",
+            "unit": "min"
+        },
+        "scale_users": {
+            "help": "Quem se pesa nesta balança. O utilizador em linha fica com a pesagem seguinte, e é o que deixa medir a FC."
+        },
+        "sitting_on_floor_alarm": {
+            "help": "Só com o radar no teto, a menos de 1,5 m da vertical. Abaixo de 100 s há mais falsos alarmes."
+        },
+        "skin_tone": {
+            "help": "Calibra o sensor ótico, de 1 (mais claro) a 6 (mais escuro).",
+            "unit": "Nível"
+        },
+        "sleep_monitoring": {
+            "help": "O início conta na véspera e o fim no próprio dia."
+        },
+        "sos_contacts": {
+            "help": "Num SOS liga a um de cada vez, por esta ordem, até alguém atender."
+        },
+        "sos_sms_alert": {
+            "help": "Carregar no SOS também envia um SMS."
+        },
+        "sound_profile": {
+            "options": {
+                "mode": {
+                    "ring_and_vibrate": "Vibração e toque",
+                    "ring": "Só toque",
+                    "vibrate": "Só vibração",
+                    "silent": "Silêncio"
+                }
+            }
+        },
+        "stress_continuous": {
+            "help": "Índice de 0 a 100."
+        },
+        "sync_configuration": {
+            "help": "Relê o que o aparelho tem guardado; não escreve nada."
+        },
+        "time_format": {
+            "options": {
+                "format": {
+                    "0": "24 horas",
+                    "1": "12 horas"
+                }
+            }
+        },
+        "vital_sign_sensitivity": {
+            "help": "Mais alta deteta mais e dá mais falsos alarmes."
+        },
+        "weak_vital_signs_alarm": {
+            "help": "Alarme quando não há respiração nem batimento durante este tempo."
+        },
+        "weight_unit": {
+            "help": "Só muda o visor: o peso é publicado sempre em quilogramas.",
+            "options": {
+                "unit": {
+                    "kg": "Quilogramas",
+                    "lb": "Libras",
+                    "jin": "Jin",
+                    "st": "Stones",
+                    "st_lb": "Stones e libras"
+                }
+            }
+        },
+        "whitelist_enabled": {
+            "help": "Só a lista de chamadas autorizadas consegue ligar."
+        },
+        "working_mode": {
+            "options": {
+                "mode": {
+                    "people_tracking": "Trajetos",
+                    "fall_detection": "Quedas",
+                    "sleep_monitoring": "Sono",
+                    "full_function": "Completo"
+                }
+            },
+            "descriptions": {
+                "mode": {
+                    "people_tracking": "Segue várias pessoas e os percursos delas.",
+                    "fall_detection": "Postura, quedas e permanência.",
+                    "sleep_monitoring": "À cabeceira: respiração, ritmo cardíaco e sono.",
+                    "full_function": "Tudo o que os outros três fazem."
+                }
+            }
+        },
+        "alarm_volume": {
+            "options": {
+                "volume": {
+                    "0": "Alto",
+                    "1": "Médio",
+                    "2": "Baixo",
+                    "3": "Silêncio"
+                }
+            }
+        },
+        "alarm_ringtone": {
+            "options": {
+                "ringtone": {
+                    "0": "Nenhum",
+                    "1": "Toque 1",
+                    "2": "Toque 2",
+                    "3": "Toque 3"
+                }
+            }
+        },
+        "blood_pressure_alert": {
+            "fields": {
+                "systolicMmHg": "Sistólica máxima",
+                "diastolicMmHg": "Diastólica máxima"
+            }
+        }
+    },
+    "protocols": {
+        "four-p-touch": {
+            "auto_vitals_interval": {
+                "help": "Ritmo cardíaco e tensão arterial; mínimo 5 minutos."
+            },
+            "do_not_disturb": {
+                "label": "Não perturbar",
+                "help": "Rejeita chamadas e bloqueia o ecrã nestes horários; o SOS continua a funcionar."
+            },
+            "fall_detection": {
+                "label": "Alerta de queda"
+            },
+            "fall_sensitivity": {
+                "help": "1 é a mais sensível. Android usa 6 níveis e RTOS 8; o fabricante sugere 4–5 e 5–6.",
+                "options": {
+                    "sensitivity": {
+                        "1": "Máxima",
+                        "2": "Muito alta",
+                        "3": "Alta",
+                        "4": "Moderada",
+                        "5": "Baixa",
+                        "6": "Muito baixa",
+                        "7": "Quase mínima",
+                        "8": "Mínima"
+                    },
+                    "levels": {
+                        "6": "6 níveis",
+                        "8": "8 níveis"
+                    }
+                }
+            },
+            "find_device": {
+                "label": "Fazer tocar"
+            },
+            "location_reporting_interval": {
+                "help": "Só envia com o relógio em movimento: parado 2 minutos, deixa de enviar."
+            },
+            "low_battery_alert": {
+                "label": "SMS em bateria fraca",
+                "help": "Vai para o número da central abaixo de 20%."
+            },
+            "medication_reminders": {
+                "label": "Lembrete de medicação com voz",
+                "help": "A gravação é cortada aos 15 segundos."
+            },
+            "pedometer_schedule": {
+                "help": "Fora destes horários não conta passos."
+            },
+            "restart_device": {
+                "help": "Reinicia sem mostrar nada a quem o usa."
+            },
+            "sleep_monitoring": {
+                "label": "Horário de sono",
+                "help": "Pode passar a meia-noite."
+            },
+            "sos_sms_alert": {
+                "help": "Vai para os contactos SOS, sem a localização."
+            },
+            "temperature_measurement_interval": {
+                "label": "Temperatura periódica",
+                "help": "Só em relógios com sensor de temperatura; não mede em modo noturno."
+            },
+            "whitelist_enabled": {
+                "help": "Recusa números desconhecidos; só atua com contactos SOS e lista telefónica preenchidos."
+            }
+        },
+        "wonlex-json": {
+            "alarm_clock": {
+                "help": "Repetem-se por dias da semana; não há alarme de uma só vez."
+            },
+            "push_message": {
+                "help": "O relógio não confirma que a recebeu."
+            },
+            "sos_contacts": {
+                "help": "Escolhem-se da lista telefónica."
+            },
+            "whitelist_enabled": {
+                "help": "Só a lista telefónica e os números SOS conseguem ligar."
+            }
+        },
+        "vivistar-iw": {
+            "alarm_clock": {
+                "label": "Lembretes"
+            },
+            "working_mode": {
+                "label": "Envio da localização",
+                "options": {
+                    "mode": {
+                        "1": "A cada 15 min",
+                        "2": "A cada 60 min",
+                        "3": "A cada minuto, com GPS",
+                        "8": "Personalizado"
+                    }
+                },
+                "descriptions": {
+                    "mode": {
+                        "8": "Intervalo à escolha, a partir de 30 s, com ou sem GPS"
+                    }
+                }
+            }
+        },
+        "qinglanst-radar": {
+            "working_mode": {
+                "help": "Um modelo que não aceite o modo escolhido recusa-o."
+            }
+        },
+        "veepoo-ble": {
+            "blood_oxygen_alert": {
+                "label": "Alerta de oxigénio no sangue",
+                "help": "Acorda quem a usa com a saturação baixa; o hub não recebe o alerta."
+            },
+            "blood_pressure_trend": {
+                "help": "Um par sistólica/diastólica a cada cinco minutos."
+            },
+            "find_device": {
+                "help": "Pára sozinha ao fim de cerca de um minuto."
+            },
+            "heart_rate_alert": {
+                "help": "O aviso fica na pulseira; o hub não é avisado."
+            },
+            "temperature_continuous": {
+                "help": "Corporal e de superfície, a cada cinco minutos."
+            }
+        },
+        "lefu-torre": {
+            "calibrate_clock": {
+                "help": "O hub também o acerta a cada ligação: o histórico é datado por ele."
+            },
+            "restart_device": {
+                "label": "Reiniciar",
+                "confirm": "Reiniciar a balança?"
+            },
+            "sync_configuration": {
+                "help": "Relê a unidade e os dois interruptores; não escreve nada."
+            }
+        },
+        "zayata-m228": {
+            "restart_device": {
+                "label": "Reiniciar",
+                "help": "Sem nada preso no prato, limpa a avaria do prato à distância.",
+                "confirm": "Reiniciar o dispensador?"
+            }
+        },
+        "joytech-bp-ecg": {
+            "read_blood_pressure_history": {
+                "help": "Abre a memória no aparelho (MEM) antes de pedir. As medições que o hub já tem não se repetem."
+            }
+        }
+    },
+    "fields": {
+        "accuracyMeters": "Precisão",
+        "affectedChannelCount": "Canais afetados",
+        "afterMinutes": "Tempo",
+        "afterSeconds": "Tempo",
+        "age": "Idade",
+        "alarm": "Alarme",
+        "alarms": "Alarmes",
+        "alarmSlot": "Alarme",
+        "appId": "ID da aplicação",
+        "appSecret": "Segredo da aplicação",
+        "avgBreathsPerMinute": "Respiração média",
+        "avgHeartRateBpm": "FC média",
+        "awakeningCount": "Despertares",
+        "backM": "Trás",
+        "basalMetabolicRateKcal": "Metabolismo basal",
+        "baseUrl": "Endereço da API",
+        "batteryPercent": "Bateria",
+        "bmi": "IMC",
+        "bodyCelsius": "Temperatura",
+        "bodyFatPercent": "Gordura",
+        "bodyWaterPercent": "Água",
+        "boneMassKg": "Massa óssea",
+        "bpm": "Frequência cardíaca",
+        "breathing": "Respiração",
+        "breathingActive": "Respiração ativa",
+        "breathingStatus": "Estado respiratório",
+        "breathsPerMinute": "Frequência respiratória",
+        "buttonId": "Botão",
+        "callCenterOnFall": "Liga para a central",
+        "caloriesKcal": "Calorias",
+        "cardiacLoad": "Carga cardíaca",
+        "ccid": "CCID",
+        "cellNumber": "Compartimento",
+        "channel": "Canal",
+        "charging": "A carregar",
+        "commercialName": "Nome comercial",
+        "communicationVersion": "Firmware de comunicação",
+        "company": "Empresa",
+        "companyId": "Empresa",
+        "configurations": "Configurações",
+        "contacts": "Contactos",
+        "count": "Contagem",
+        "current": "Atual",
+        "deepSleepScore": "Pontuação do sono profundo",
+        "deviceId": "ID do dispositivo",
+        "deviceType": "Tipo",
+        "diastolicMmHg": "Diastólica",
+        "distanceMeters": "Distância",
+        "durationMinutes": "Duração",
+        "durationScore": "Pontuação da duração",
+        "efficiencyScore": "Pontuação de eficiência",
+        "endDate": "Fim",
+        "endTime": "Fim",
+        "environmentAlarm": "Ambiente fora da gama",
+        "environmentCelsius": "Temperatura ambiente",
+        "event": "Evento",
+        "exerciseEnabled": "Usar limites de exercício",
+        "exerciseMaxBpm": "Máximo em exercício",
+        "exerciseMinBpm": "Mínimo em exercício",
+        "exerciseSeconds": "Exercício",
+        "exerciseThresholdBpm": "Alerta em exercício",
+        "fallAsleepScore": "Pontuação do adormecer",
+        "fatControlKg": "Controlo de gordura",
+        "fatMassKg": "Massa gorda",
+        "fault": "Avaria",
+        "feature": "Pedido",
+        "firstDeepSleepMinutes": "Primeiro sono profundo",
+        "frequencyHz": "Amostragem",
+        "from": "Gateway",
+        "fromHistory": "Da memória",
+        "frontM": "Frente",
+        "gatewayId": "Gateway",
+        "glucoseMgDl": "Glicemia",
+        "gpsEnabled": "GPS ativo",
+        "gpsValid": "GPS válido",
+        "gsmSignal": "Sinal GSM",
+        "gsmSignalDbm": "Sinal GSM",
+        "hdlMmolPerL": "HDL",
+        "headingDegrees": "Direção",
+        "heartRateBpm": "Frequência cardíaca",
+        "heartRateStatus": "Estado da FC",
+        "heightCm": "Altura",
+        "help_call": "Chamada de ajuda",
+        "highCelsius": "Máxima",
+        "hrvMilliseconds": "VFC",
+        "humidityPercent": "Humidade",
+        "idealWeightKg": "Peso ideal",
+        "identity": "Identidade",
+        "imei": "IMEI",
+        "impedance100KhzOhm": "Impedância a 100 kHz",
+        "impedance50KhzOhm": "Impedância a 50 kHz",
+        "impedanceOhm": "Impedância",
+        "inBedTimeS": "Tempo na cama",
+        "insomniaScore": "Pontuação de insónia",
+        "interface": "Interface",
+        "internalModel": "Modelo interno",
+        "intervalHours": "Intervalo",
+        "intervalMinutes": "Intervalo",
+        "intervals": "Intervalos",
+        "intervalSeconds": "Intervalo",
+        "irregularHeartbeat": "Batimento irregular",
+        "key": "Tecla",
+        "language": "Idioma",
+        "lastEvent": "Último evento",
+        "ldlMmolPerL": "LDL",
+        "leanMassKg": "Massa magra",
+        "leftM": "Esquerda",
+        "level": "Nível",
+        "levels": "Escala do firmware",
+        "licenseId": "Licença",
+        "licenseRefId": "Licença",
+        "lidOpen": "Tampa aberta",
+        "lowCelsius": "Mínima",
+        "magnitudeMg": "Intensidade",
+        "mainsPowered": "Ligado à corrente",
+        "maxBpm": "Máximo",
+        "maximumDelta": "Delta máximo",
+        "measuredAt": "Medido em",
+        "meditationTimeS": "Tempo em meditação",
+        "memoryGroup": "Grupo de memória",
+        "message": "Mensagem",
+        "messageType": "Tipo",
+        "met": "MET",
+        "method": "Método",
+        "minBpm": "Mínimo",
+        "missedCount": "Falhadas",
+        "mode": "Modo",
+        "model": "Modelo",
+        "mounting": "Montagem",
+        "multiplayerTimeS": "Tempo em atividade",
+        "muscleControlKg": "Controlo muscular",
+        "muscleMassKg": "Massa muscular",
+        "musclePercent": "Músculo",
+        "name": "Nome",
+        "networkType": "Rede",
+        "nightAwakeMinutes": "Tempo levantado",
+        "nightWakingScore": "Pontuação das idas à casa de banho",
+        "numbers": "Números",
+        "pagerId": "Pager",
+        "password": "Palavra-passe",
+        "peopleCount": "Pessoas",
+        "percent": "Percentagem",
+        "periodSeconds": "Janela",
+        "personIndex": "Pessoa",
+        "phone": "Telefone",
+        "pollutionRange": "Canais para muda",
+        "pollutionValue": "Limiar por canal",
+        "presses": "Toques",
+        "pressType": "Tipo de toque",
+        "proteinMassKg": "Massa proteica",
+        "proteinPercent": "Proteína",
+        "qtcMilliseconds": "QTc",
+        "qualityStars": "Estrelas",
+        "radioType": "Rede",
+        "range": "Intervalo",
+        "ranges": "Intervalo",
+        "realTimeBreathsPerMinute": "Respiração agora",
+        "realTimeHeartRateBpm": "FC agora",
+        "recurrence": "Recorrência",
+        "remaining": "Restantes",
+        "reminderText": "Texto do lembrete",
+        "reportedAt": "Reportado em",
+        "reportReason": "Motivo do envio",
+        "reset": "Tecla acionada",
+        "result": "Resultado",
+        "returnToDeepSleepMeanMinutes": "Média até voltar ao sono profundo",
+        "rightM": "Direita",
+        "role": "Perfil",
+        "rollFrequency": "Frequência de rotação",
+        "rrIntervalMilliseconds": "Intervalo RR",
+        "sampleCount": "Amostras",
+        "satelliteCount": "Satélites",
+        "scaleUserId": "Utilizador",
+        "scheduledAt": "Hora prevista",
+        "segments": "Troços",
+        "sensitivity": "Sensibilidade",
+        "settings": "Definições",
+        "sex": "Sexo",
+        "signalQuality": "Qualidade do sinal",
+        "signalStrengthDbm": "Intensidade do sinal",
+        "simNumber": "Número do SIM",
+        "site": "Local",
+        "skeletalMusclePercent": "Músculo esquelético",
+        "sleep_state": "Estado do sono",
+        "sleepGoalMinutes": "Meta de sono",
+        "source": "Origem",
+        "speedKmh": "Velocidade",
+        "spo2Percent": "Oxigénio no sangue",
+        "standingTimeS": "Tempo em pé",
+        "standMinutes": "Tempo em pé",
+        "startDate": "Início",
+        "startTime": "Início",
+        "state": "Estado",
+        "stepGoal": "Meta de passos",
+        "steps": "Passos",
+        "stressScore": "Stress",
+        "subcutaneousFatPercent": "Gordura subcutânea",
+        "summary": "Resumo",
+        "supplier": "Fornecedor",
+        "supplierId": "Fornecedor",
+        "surfaceCelsius": "Temperatura da superfície",
+        "systolicMmHg": "Sistólica",
+        "takenAt": "Hora da toma",
+        "takenCount": "Tomadas",
+        "targetMinutes": "Meta",
+        "temperatureCelsius": "Temperatura",
+        "thresholdBpm": "Limite principal",
+        "thresholdCelsius": "Limiar",
+        "thresholdPercent": "Limiar",
+        "time": "Hora",
+        "timestamp": "Instante",
+        "timingValid": "Instantes de confiança",
+        "topicSourceId": "Origem",
+        "total": "Total",
+        "totalCholesterolMmolPerL": "Colesterol total",
+        "totalDurationMinutes": "Duração",
+        "transparent": "Transparente",
+        "triggerCount": "Total de toques",
+        "triglyceridesMmolPerL": "Triglicéridos",
+        "type": "Tipo",
+        "umolPerL": "Concentração",
+        "userId": "Utilizador",
+        "username": "Utilizador",
+        "utcOffsetHours": "Fuso horário",
+        "value": "Valor",
+        "version": "Versão",
+        "vitalSignsStatus": "Estado dos sinais vitais",
+        "walkingDistanceMeters": "Distância a andar",
+        "walkingTimeS": "Tempo a andar",
+        "waterMassKg": "Massa de água",
+        "weekdays": "Dias",
+        "weightControlKg": "Controlo de peso",
+        "weightKg": "Peso",
+        "wifiSignalDbm": "Sinal WiFi",
+        "workMode": "Modo de trabalho",
+        "xMg": "Eixo X",
+        "yMg": "Eixo Y",
+        "zMg": "Eixo Z"
+    },
+    "values": {
+        "site": {
+            "forehead": "Testa",
+            "ear": "Ouvido"
+        },
+        "result": {
+            "on_time": "A horas",
+            "late": "Tardia",
+            "abnormal": "Anormal",
+            "missed": "Falhada"
+        },
+        "method": {
+            "on_time": "A horas",
+            "early": "Antecipada",
+            "late": "Atrasada"
+        },
+        "level": {
+            "ok": "Normal",
+            "low": "A acabar",
+            "empty": "Sem medicação"
+        },
+        "fault": {
+            "rotation": "Rotação do prato",
+            "tray_reset": "Reposição do prato",
+            "pusher": "Empurrador",
+            "cell_door": "Porta do compartimento",
+            "keys": "Teclas"
+        },
+        "state": {
+            "idle": "Sem toma marcada",
+            "preparing": "A preparar",
+            "waiting": "À espera de sair",
+            "awaiting_retrieval": "À espera de ser levantada",
+            "timed_out": "Não chegou a sair",
+            "retrieval_timed_out": "Saiu e não foi levantada",
+            "missed": "Toma falhada",
+            "taken": "Tomada"
+        },
+        "sleep_state": {
+            "awake": "Acordado",
+            "light_sleep": "Sono leve",
+            "deep_sleep": "Sono profundo",
+            "undefined": "Indefinido"
+        },
+        "posture": {
+            "initialization": "A iniciar",
+            "walking": "A andar",
+            "suspected_fall": "Suspeita de queda",
+            "sitting": "Sentado",
+            "standing": "De pé",
+            "fallen": "Queda confirmada",
+            "lying_down": "Deitado",
+            "suspected_sitting_on_ground": "Suspeita de estar sentado no chão",
+            "sitting_on_ground": "Sentado no chão",
+            "sitting_up_in_bed": "Sentado na cama",
+            "suspected_sitting_up_in_bed": "Suspeita de estar sentado na cama",
+            "unknown": "Desconhecida"
+        },
+        "lastEvent": {
+            "no_event": "Sem eventos",
+            "enter_room": "Entrou na divisão",
+            "leave_room": "Saiu da divisão",
+            "enter_area": "Entrou na área",
+            "leave_area": "Saiu da área",
+            "unknown": "Desconhecido"
+        },
+        "breathingStatus": {
+            "normal": "Normal",
+            "hypopnea": "Hipopneia",
+            "hyperpnea": "Hiperpneia",
+            "apnea": "Apneia"
+        },
+        "heartRateStatus": {
+            "normal": "Normal",
+            "low": "Baixa",
+            "high": "Alta",
+            "undefined": "Indefinida"
+        },
+        "vitalSignsStatus": {
+            "normal": "Normal",
+            "weak": "Fraco",
+            "undefined": "Indefinido"
+        },
+        "sleepState": {
+            "awake": "Acordado",
+            "light_sleep": "Sono leve",
+            "deep_sleep": "Sono profundo",
+            "undefined": "Indefinido"
+        },
+        "sleepPhase": {
+            "deep_sleep": "Profundo",
+            "light_sleep": "Leve",
+            "rem": "REM",
+            "insomnia": "Insónia",
+            "awake": "Acordado"
+        },
+        "interface": {
+            "wifi": "Wi-Fi",
+            "ethernet": "Ethernet",
+            "ethernet_wifi": "Ethernet + Wi-Fi",
+            "cellular": "Rede móvel"
+        },
+        "pressType": {
+            "single": "toque simples",
+            "double": "toque duplo",
+            "triple": "toque triplo",
+            "long": "toque longo"
+        },
+        "ncsEvent": {
+            "help_call": "Chamada de ajuda",
+            "reset": "Cancelado"
+        },
+        "weightPhase": {
+            "idle": "Balança vazia",
+            "settling": "A estabilizar",
+            "stable": "Peso estável",
+            "overload": "Excesso de peso"
+        },
+        "impedancePhase": {
+            "measuring": "A medir a impedância",
+            "measured": "Impedância medida",
+            "failed": "Impedância falhou"
+        },
+        "heartRatePhase": {
+            "measuring": "A medir a FC",
+            "measured": "FC medida",
+            "failed": "FC falhou"
+        },
+        "downlinkStatus": {
+            "queued": "em fila",
+            "sent": "enviado",
+            "waiting": "à espera",
+            "acked": "confirmado",
+            "failed": "falhou",
+            "dropped": "descartado",
+            "superseded": "substituído",
+            "unknown": "desconhecido"
+        },
+        "lowBattery": {
+            "true": "Bateria fraca"
+        },
+        "reportReason": {
+            "power_on": "Ao ligar",
+            "power_off": "Ao desligar",
+            "periodic": "Envio periódico",
+            "low_battery": "Bateria fraca"
+        }
+    },
+    "errors": {
+        "invalid_request": "O pedido tem valores em falta ou inválidos.",
+        "invalid_config": "A configuração tem valores inválidos.",
+        "invalid_link": "Um gateway só se liga a uma fralda ou pulseira da mesma empresa e licença.",
+        "unsupported_feature": "O aparelho não suporta este pedido.",
+        "unknown_protocol": "Não se conhece o protocolo deste fornecedor.",
+        "device_already_associated": "O aparelho já está associado a uma licença.",
+        "invalid_association": "A empresa e a licença não correspondem a uma licença registada.",
+        "invalid_role": "Perfil inválido.",
+        "invalid_license": "Escolha a licença do cliente.",
+        "feature_not_requestable": "Este pedido não se pode fazer a este aparelho.",
+        "unsupported_capability": "Uma ou mais capacidades não são deste tipo de aparelho.",
+        "invalid_requestable_capability": "Só se pede o que o modelo suporta e o catálogo deixa pedir.",
+        "upload_failed": "O envio da imagem falhou.",
+        "image_too_large": "A imagem tem de ter 5 MB ou menos.",
+        "image_dimensions_too_large": "A imagem tem de ter 25 megapíxeis ou menos.",
+        "gd_missing": "O servidor não consegue comprimir imagens.",
+        "gd_jpeg_missing": "O servidor não consegue comprimir imagens.",
+        "invalid_image": "O ficheiro não é uma imagem válida.",
+        "image_save_failed": "Não foi possível guardar a imagem.",
+        "device_is_not_a_radar": "Este aparelho não é um radar.",
+        "license_has_no_radar_credentials": "A licença deste radar não tem credenciais da cloud do fabricante.",
+        "invalid_credentials": "Utilizador ou palavra-passe errados.",
+        "invalid_refresh_token": "A sessão expirou. Volte a entrar.",
+        "unauthorized": "A sessão expirou. Volte a entrar.",
+        "forbidden": "Não tem permissão para isto.",
+        "association_not_found": "O aparelho não está associado.",
+        "company_not_found": "Empresa não encontrada.",
+        "denylist_not_found": "Este aparelho não está bloqueado.",
+        "license_not_found": "Licença não encontrada.",
+        "model_not_found": "Modelo não encontrado.",
+        "not_found": "Não encontrado.",
+        "notification_not_found": "Notificação não encontrada.",
+        "protocol_not_found": "Protocolo não encontrado.",
+        "supplier_not_found": "Fornecedor não encontrado.",
+        "user_not_found": "Utilizador não encontrado.",
+        "device_exists": "Já existe um aparelho com este IMEI.",
+        "model_exists": "Já existe um modelo com este nome neste fornecedor.",
+        "user_exists": "Já existe um utilizador com este nome.",
+        "duplicate": "Já existe uma empresa com este nome.",
+        "incomplete_owner": "A empresa e a licença vão juntas: escolha as duas, ou nenhuma.",
+        "invalid_radar_areas": "As áreas não cumprem as regras do radar.",
+        "too_many_attempts": "Demasiadas tentativas. Espere um pouco e volte a tentar.",
+        "server_error": "Erro no servidor. Volte a tentar.",
+        "too_many_streams": "Há demasiadas ligações abertas. Feche um separador e volte a tentar.",
+        "login_failed": "Não foi possível autenticar na cloud do fabricante.",
+        "network_error": "Não foi possível falar com o servidor. Verifique a ligação.",
+        "empty_body": "O servidor deu uma resposta inválida.",
+        "invalid_json": "O servidor deu uma resposta inválida."
+    },
+    "commandErrors": {
+        "no_response": "O aparelho não respondeu",
+        "not_worn": "A pulseira não estava ao pulso",
+        "low_battery": "Bateria fraca para medir",
+        "sensor_fault": "Leitura inválida do sensor",
+        "response_timeout": "Sem resposta dentro do prazo",
+        "delivery_failed": "Não foi possível entregar",
+        "device_rejected": "O aparelho recusou",
+        "retry_exhausted": "Tentativas esgotadas",
+        "never_reported": "O aparelho nunca o reportou",
+        "diverged": "O aparelho tem outro valor",
+        "disconnected": "O aparelho desligou-se do gateway",
+        "not_connected": "O aparelho não estava ligado ao gateway",
+        "await_timeout": "O aparelho não respondeu a tempo",
+        "write_failed": "O gateway não conseguiu escrever no aparelho"
+    }
+}

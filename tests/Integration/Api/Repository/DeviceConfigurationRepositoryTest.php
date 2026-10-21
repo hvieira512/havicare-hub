@@ -39,6 +39,23 @@ final class DeviceConfigurationRepositoryTest extends MysqlDashboardTestCase
         self::assertSame(['enabled' => true], $rows[0]['reported_payload'] ?? null);
     }
 
+    /** A chave pública resolve-se pela tabela do catálogo, a mesma da escrita: na Wonlex é `alarmClock`. */
+    #[\PHPUnit\Framework\Attributes\DataProvider('alarmClockNativeKeys')]
+    public function testSaveReportedResolvesTheAlarmClockNativeKey(string $protocol, string $nativeKey): void
+    {
+        $this->repository->saveReported('861265061009822', 'alarm_clock', $protocol, 'alarm', ['items' => []]);
+
+        self::assertSame($nativeKey, $this->repository->allForImei('861265061009822')[0]['native_key'] ?? null);
+    }
+
+    /** @return iterable<string, array{string, string}> */
+    public static function alarmClockNativeKeys(): iterable
+    {
+        yield 'wonlex' => ['wonlex-json', 'alarmClock'];
+        yield 'vivistar' => ['vivistar-iw', 'reminders'];
+        yield 'four-p-touch' => ['four-p-touch', 'alarmClock'];
+    }
+
     public function testSaveReportedUpsertsOntoAnExistingDesiredRow(): void
     {
         $imei = '861265061009822';

@@ -420,9 +420,9 @@ catálogo:
 Os relógios não publicam sinal de vida: o que o `heartbeat` deles traz sai como
 `battery` e `activity`, e o estado da ligação é o canal `status`.
 
-O catálogo na base de dados segue o código a cada arranque: uma capacidade que o
-código declare passa a existir na tabela `capabilities`, e é associada aos
-modelos cujo protocolo a publica (ver a [persistência](14-persistencia.md)).
+O catálogo vive só no código: uma capacidade que ele declare é associada, a cada
+`migrate`, aos modelos cujo protocolo a publica (ver a
+[persistência](14-persistencia.md)).
 
 ## Implementação
 

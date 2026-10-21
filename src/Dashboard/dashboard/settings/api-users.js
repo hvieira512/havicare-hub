@@ -12,6 +12,7 @@ import { clearInvalid } from "../validation.js";
 import { setSettingsNavCount } from "./shell.js";
 import { renderPagination } from "../pagination.js";
 import { editorOf, focusEditor, whileBusy } from "./row-editor.js";
+import { countLabel } from "../i18n.js";
 
 /** Os utilizadores da API; a busca, os filtros e a paginação são do servidor. */
 let els;
@@ -225,7 +226,7 @@ function renderApiUsersPage(pagination) {
     if (els.apiUsersTabSummary) {
         els.apiUsersTabSummary.textContent = total === 0
             ? "Nenhum utilizador"
-            : `${total} ${total === 1 ? "utilizador" : "utilizadores"}` +
+            : `${countLabel(total, "utilizador", "utilizadores")}` +
                 (adminCount ? ` · ${adminCount} com acesso a todas as licenças` : "");
     }
 

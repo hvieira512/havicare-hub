@@ -1,192 +1,83 @@
 import { html } from "../../../html.js";
 import { field } from "../../../components/form-field.js";
 import { boolValue } from "../normalizers.js";
-import { enabledSwitch, numberField } from "./shared.js";
-import {
-    readCheckbox,
-    readNumber,
-    readText,
-} from "../readers.js";
+import { boundedNumber, enabledSwitch, entryFieldLabel, switchField } from "./shared.js";
+import { readCheckbox, readNumber, readText } from "../readers.js";
 
-/** Os painéis Wonlex trazem o estado em `enabled` ou em `switchState`, conforme a geração. */
-const wonlexEnabled = (desired) => boolValue(desired.enabled ?? desired.switchState, true);
-
-function wonlexBloodPressureWarningInput(desired) {
+/** O interruptor e, por baixo, os campos numéricos com os limites e rótulos do catálogo. */
+function switchWithNumbers(entry, desired, meta, fields, extra = "") {
     return html`
         <div class="vstack gap-3">
-            ${enabledSwitch(wonlexEnabled(desired))}
+            ${enabledSwitch(boolValue(desired.enabled, false))}
             <div class="row g-3">
-                ${field(
-                    "Sistólica máxima (mmHg)",
-                    numberField("hpWarn", desired.hpWarn ?? 135),
-                    { cls: "col-md-6" },
-                )}
-                ${field(
-                    "Diastólica máxima (mmHg)",
-                    numberField("LPWarn", desired.LPWarn ?? 90),
-                    { cls: "col-md-6" },
-                )}
+                ${extra}
+                ${fields.map((name) => field(entryFieldLabel(entry, meta, name), boundedNumber(entry, meta, name, desired, { step: name === "thresholdCelsius" ? 0.1 : 1 }), { cls: `col-md-${12 / Math.min(fields.length, 3)}` }))}
             </div>
         </div>`;
 }
 
-/** O relógio quer as horas do sono em HHmmss. */
-const fromWireTime = (value) => String(value ?? "").replace(/^(\d{2})(\d{2})\d{2}$/, "$1:$2");
-const toWireTime = (value) => value.replace(/^(\d{2}):(\d{2})$/, "$1$200");
+function sleepSettingsInput(entry, desired, meta) {
+    const time = (name) => field(entryFieldLabel(entry, meta, name), html`<input class="form-control" type="time" data-config-field="${name}" value="${String(desired[name] ?? "")}">`, { cls: "col-md-4" });
 
-function wonlexSleepSettingsInput(desired) {
     return html`
         <div class="vstack gap-3">
-            ${enabledSwitch(wonlexEnabled(desired))}
+            ${enabledSwitch(boolValue(desired.enabled, false))}
             <div class="row g-3">
-                ${field(
-                    "Início",
-                    html`<input class="form-control" type="time" data-config-field="sleepStartTime" value="${fromWireTime(desired.sleepStartTime ?? "220000")}">`,
-                    { cls: "col-md-4" },
-                )}
-                ${field(
-                    "Fim",
-                    html`<input class="form-control" type="time" data-config-field="sleepEndTime" value="${fromWireTime(desired.sleepEndTime ?? "100000")}">`,
-                    { cls: "col-md-4" },
-                )}
-                ${field(
-                    "Meta",
-                    numberField("sleepTarget", desired.sleepTarget ?? 480, { unit: "min" }),
-                    { cls: "col-md-4" },
-                )}
+                ${time("startTime")}${time("endTime")}
+                ${field(entryFieldLabel(entry, meta, "targetMinutes"), boundedNumber(entry, meta, "targetMinutes", desired), { cls: "col-md-4" })}
             </div>
         </div>`;
 }
 
-/** O `RemindValue` é o da temperatura, em °C; o `reminderValue` é o do oxigénio, em %. */
-const isTemperatureThreshold = (entry) => (entry.fields || []).includes("RemindValue");
-
-function wonlexReminderThresholdInput(entry, desired) {
-    const temperature = isTemperatureThreshold(entry);
-    const valueField = temperature ? "RemindValue" : "reminderValue";
-    const value =
-        desired[valueField] ??
-        desired.reminderValue ??
-        desired.RemindValue ??
-        (temperature ? 38.5 : 90);
-    return html`
-        <div class="vstack gap-3">
-            ${enabledSwitch(wonlexEnabled(desired))}
-            ${field(
-                temperature ? "Valor (°C)" : "Valor (%)",
-                numberField(valueField, value, { step: temperature ? 0.1 : 1 }),
-            )}
-        </div>`;
-}
-
-/** O 120 da spec é o exemplo da alta; o alerta baixo fica por preencher. */
-const isLowHeartRate = (entry) => entry.key === "wonlexHeartRateLowRemind";
-
-function wonlexHeartRateRangeInput(entry, desired) {
-    const exerciseEnabled = boolValue(
-        desired.exerciseEnabled ?? desired.exerciseSwitchState,
-        true,
-    );
-    return html`
-        <div class="vstack gap-3">
-            ${enabledSwitch(wonlexEnabled(desired))}
-            <div class="row g-3">
-                ${field(
-                    "Limite principal (bpm)",
-                    numberField("remindValue", desired.remindValue ?? (isLowHeartRate(entry) ? "" : 120)),
-                    { cls: "col-md-6" },
-                )}
-                <div class="col-md-6">
-                    <div class="form-check form-switch mt-4">
-                        <input class="form-check-input" type="checkbox" role="switch" data-config-field="exerciseEnabled" ${exerciseEnabled ? "checked" : ""}>
-                        <label class="form-check-label">Usar limites de exercício</label>
-                    </div>
-                </div>
-                ${field(
-                    "Mínimo exercício (bpm)",
-                    numberField("exerciseHRMin", desired.exerciseHRMin ?? 100),
-                    { cls: "col-md-4" },
-                )}
-                ${field(
-                    "Máximo exercício (bpm)",
-                    numberField("exerciseHRMax", desired.exerciseHRMax ?? 140),
-                    { cls: "col-md-4" },
-                )}
-                ${field(
-                    "Alerta em exercício (bpm)",
-                    numberField("exerciseRemindValue", desired.exerciseRemindValue ?? 140),
-                    { cls: "col-md-4" },
-                )}
-            </div>
-        </div>`;
-}
+/** O segundo campo da definição é o limiar: em % no oxigénio, em °C na temperatura. */
+const thresholdField = (entry) => entry.fields?.[1] ?? "thresholdPercent";
 
 export const INPUTS = {
     wonlexBloodPressureWarning: {
-        render: (_entry, desired) =>
-            wonlexBloodPressureWarningInput(desired),
+        render: (entry, desired, meta) => switchWithNumbers(entry, desired, meta, ["systolicMmHg", "diastolicMmHg"]),
         read: (section) => ({
-            // A `BPEarlyWarning` da Wonlex leva um limiar sistólico e um diastólico.
             enabled: readCheckbox(section, "enabled"),
-            hpWarn: readNumber(section, "hpWarn"),
-            LPWarn: readNumber(section, "LPWarn"),
+            systolicMmHg: readNumber(section, "systolicMmHg"),
+            diastolicMmHg: readNumber(section, "diastolicMmHg"),
         }),
-        defaults: () => ({ enabled: true, hpWarn: 135, LPWarn: 90 }),
     },
     wonlexSleepSettings: {
-        render: (_entry, desired) => wonlexSleepSettingsInput(desired),
+        render: sleepSettingsInput,
         read: (section) => ({
             enabled: readCheckbox(section, "enabled"),
-            sleepStartTime: toWireTime(readText(section, "sleepStartTime")),
-            sleepEndTime: toWireTime(readText(section, "sleepEndTime")),
-            sleepTarget: readNumber(section, "sleepTarget"),
-        }),
-        defaults: () => ({
-            enabled: true,
-            sleepStartTime: "220000",
-            sleepEndTime: "100000",
-            sleepTarget: 480,
+            startTime: readText(section, "startTime"),
+            endTime: readText(section, "endTime"),
+            targetMinutes: readNumber(section, "targetMinutes"),
         }),
     },
     wonlexReminderThreshold: {
-        render: wonlexReminderThresholdInput,
+        render: (entry, desired, meta) => switchWithNumbers(entry, desired, meta, [thresholdField(entry)]),
         read: (section) => {
-            const valueField = section.querySelector(
-                "[data-config-field=\"RemindValue\"]",
-            )
-                ? "RemindValue"
-                : "reminderValue";
-            return {
-                enabled: readCheckbox(section, "enabled"),
-                [valueField]: Number.parseFloat(readText(section, valueField)) || 0,
-            };
+            const name = section.querySelector("input[type=\"number\"][data-config-field]")?.dataset.configField ?? "thresholdPercent";
+            return { enabled: readCheckbox(section, "enabled"), [name]: readNumber(section, name) };
         },
-        defaults: (entry) => isTemperatureThreshold(entry)
-            ? { enabled: true, RemindValue: 38.5 }
-            : { enabled: true, reminderValue: 90 },
     },
     wonlexHeartRateRange: {
-        render: wonlexHeartRateRangeInput,
+        render: (entry, desired, meta) => switchWithNumbers(
+            entry,
+            desired,
+            meta,
+            ["exerciseMinBpm", "exerciseMaxBpm", "exerciseThresholdBpm"],
+            html`${field(entryFieldLabel(entry, meta, "thresholdBpm"), boundedNumber(entry, meta, "thresholdBpm", desired), { cls: "col-md-6" })}
+                <div class="col-md-6">${switchField("exerciseEnabled", boolValue(desired.exerciseEnabled, false), { on: "Com limites de exercício", off: "Sem limites de exercício", cls: "mt-4" })}</div>`,
+        ),
         read: (section) => {
-            if (readText(section, "remindValue") === "") {
+            if (readText(section, "thresholdBpm") === "") {
                 throw new Error("Indique o limite principal");
             }
             return {
                 enabled: readCheckbox(section, "enabled"),
-                remindValue: readNumber(section, "remindValue"),
+                thresholdBpm: readNumber(section, "thresholdBpm"),
                 exerciseEnabled: readCheckbox(section, "exerciseEnabled"),
-                exerciseHRMin: readNumber(section, "exerciseHRMin"),
-                exerciseHRMax: readNumber(section, "exerciseHRMax"),
-                exerciseRemindValue: readNumber(section, "exerciseRemindValue"),
+                exerciseMinBpm: readNumber(section, "exerciseMinBpm"),
+                exerciseMaxBpm: readNumber(section, "exerciseMaxBpm"),
+                exerciseThresholdBpm: readNumber(section, "exerciseThresholdBpm"),
             };
         },
-        defaults: (entry) => ({
-            enabled: true,
-            ...(isLowHeartRate(entry) ? {} : { remindValue: 120 }),
-            exerciseEnabled: true,
-            exerciseHRMin: 100,
-            exerciseHRMax: 140,
-            exerciseRemindValue: 140,
-        }),
     },
 };

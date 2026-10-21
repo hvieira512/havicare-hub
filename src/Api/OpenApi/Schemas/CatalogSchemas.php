@@ -187,7 +187,7 @@ final class CatalogSchemas
                     'label' => ['type' => 'string', 'example' => '4P Touch'],
                     'deviceType' => ['type' => 'string', 'example' => 'watch'],
                     'supportsConfigCatalog' => ['type' => 'boolean'],
-                    'dashboard' => ['type' => 'object'],
+                    'helpCallPressModes' => ['type' => 'array', 'items' => ['type' => 'string'], 'example' => ['single', 'double', 'long']],
                 ],
             ],
             'ProtocolListResponse' => CommonSchemas::list('ProtocolItem'),
@@ -196,21 +196,17 @@ final class CatalogSchemas
                 'properties' => [
                     'key' => ['type' => 'string', 'example' => 'fallDetection'],
                     'command' => ['type' => 'string', 'example' => 'BP76'],
-                    'label' => ['type' => 'string', 'example' => 'Deteção de queda'],
                     'kind' => ['type' => 'string', 'example' => 'config'],
                     'risk' => ['type' => 'string', 'enum' => ['normal', 'destructive'], 'example' => 'normal'],
-                    // Presente só nas destrutivas: o que a acção faz ao aparelho neste
-                    // protocolo, que é o que a confirmação tem de mostrar.
-                    'confirm' => ['type' => 'string', 'nullable' => true, 'example' => 'O relógio fica sem comunicar enquanto arranca.'],
-                    // Só onde o rótulo é um nome e não serve de botão.
-                    'verb' => ['type' => 'string', 'nullable' => true, 'example' => 'Repor de fábrica'],
+                    'verb' => ['type' => 'string', 'nullable' => true, 'enum' => ['read', 'factory_reset', 'send_message'], 'example' => 'read'],
+                    'actions' => ['type' => 'object', 'nullable' => true, 'example' => ['on' => 'start', 'off' => 'stop']],
                     'input' => ['type' => 'string', 'example' => 'toggle'],
                     'fields' => ['type' => 'array', 'items' => ['type' => 'string'], 'example' => ['enabled']],
                     'expectedReplyTypes' => ['type' => 'array', 'items' => ['type' => 'string'], 'example' => ['AP76']],
                     'category' => ['type' => 'string', 'example' => 'alerts'],
                     'order' => ['type' => 'integer', 'example' => 10],
                     'limit' => ['type' => 'integer', 'nullable' => true, 'example' => 3],
-                    'options' => ['type' => 'object', 'nullable' => true, 'example' => ['sensitivity' => [['value' => 1, 'label' => 'Baixa']]]],
+                    'options' => ['type' => 'object', 'nullable' => true, 'example' => ['unit' => [['value' => 'kg'], ['value' => 'lb']]]],
                     'capabilityKey' => ['type' => 'string', 'nullable' => true, 'example' => 'fall_detection'],
                 ],
             ],

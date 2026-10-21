@@ -63,7 +63,7 @@ final class SchemaCompletenessTest extends MysqlDashboardTestCase
         sort($expected);
         self::assertSame($expected, $stored, 'a device_types tem de reproduzir o device-types.json');
 
-        foreach (['capabilities', 'models', 'whitelist'] as $table) {
+        foreach (['model_capabilities', 'models', 'whitelist'] as $table) {
             $stmt = $pdo->prepare('
                 SELECT COUNT(*) FROM information_schema.key_column_usage
                 WHERE table_schema = DATABASE() AND table_name = ?

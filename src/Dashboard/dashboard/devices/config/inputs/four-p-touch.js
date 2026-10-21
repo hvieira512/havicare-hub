@@ -1,364 +1,146 @@
-import { html } from "../../../html.js";
-import { renderPhoneControl } from "../../../phone.js";
+import { html, raw } from "../../../html.js";
+import { field } from "../../../components/form-field.js";
+import { languageLabel } from "../../../i18n.js";
 import { boolValue } from "../normalizers.js";
-import { readTakePills, takePillsInput } from "../four-p-touch-take-pills.js";
-import { intervalToggle } from "./shared.js";
-import {
-    readCheckbox,
-    readNumber,
-    readPhone,
-    readText,
-    readTextArray,
-} from "../readers.js";
+import { takePillsInput, readTakePills } from "../four-p-touch-take-pills.js";
+import { boundedNumber, choiceField, entryFieldLabel, fieldChoices, readChoice, switchField } from "./shared.js";
+import { readCheckbox, readNumber, readText, readTextArray } from "../readers.js";
 
-function makeCallInput(entry, desired) {
-    return html`
-        <div>
-            <label class="form-label-sm">Número de telefone</label>
-            <div class="d-flex gap-2">
-                <div class="flex-grow-1">
-                    ${renderPhoneControl({
-                        value: String(desired.phone || ""),
-                        configField: "phone",
-                    })}
-                </div>
-            </div>
-        </div>`;
-}
+/** O tom e o ícone de cada perfil, do mais audível ao silêncio. */
+const PROFILE_STYLE = {
+    ring_and_vibrate: { icon: "fa-volume-high", tone: "primary" },
+    ring: { icon: "fa-bell", tone: "secondary" },
+    vibrate: { icon: "fa-mobile-screen-button", tone: "warning" },
+    silent: { icon: "fa-volume-xmark", tone: "danger" },
+};
 
-function voiceMonitorInput(entry, desired) {
-    return html`
-        <div>
-            <label class="form-label-sm">Número de telefone</label>
-            ${renderPhoneControl({
-                value: String(desired.phone || ""),
-                configField: "phone",
-            })}
-        </div>`;
-}
-
-function soundProfileInput(desired) {
-    const current = parseInt(String(desired.mode ?? 1), 10) || 1;
-    const options = [
-        {
-            value: 1,
-            label: "Vibração e toque",
-            icon: "fa-volume-high",
-            className: "btn-outline-primary",
-        },
-        {
-            value: 2,
-            label: "Só toque",
-            icon: "fa-bell",
-            className: "btn-outline-secondary",
-        },
-        {
-            value: 3,
-            label: "Só vibração",
-            icon: "fa-mobile-screen-button",
-            className: "btn-outline-warning",
-        },
-        {
-            value: 4,
-            label: "Silêncio",
-            icon: "fa-volume-xmark",
-            className: "btn-outline-danger",
-        },
-    ];
-
-    return html`
-        <div class="vstack gap-2">
-            <div class="row row-cols-2 g-2" role="radiogroup" aria-label="Perfil de som">
-                ${options
-                        .map(
-                            (option) => html`
-                    <div class="col">
-                        <input
-                            class="btn-check"
-                            type="radio"
-                            name="soundProfile"
-                            id="soundProfile${option.value}"
-                            data-config-field="mode"
-                            value="${option.value}"
-                            ${option.value === current ? "checked" : ""}>
-                        <label class="btn ${option.className} w-100 h-100 text-start d-flex align-items-center gap-2 py-3 px-3" for="soundProfile${option.value}">
-                            <i class="fa-solid ${option.icon}"></i>
-                            <span class="small fw-semibold">${option.label}</span>
-                        </label>
-                    </div>
-                `,
-                        )
-                }
-            </div>
-        </div>`;
-}
-
-function intervalHoursToggleInput(desired) {
-    return intervalToggle(desired, "intervalHours", {
-        fallback: 2,
-        unit: "h",
-        bounds: { min: 1, max: 12 },
+function soundProfileInput(entry, desired, meta) {
+    return choiceField({
+        field: "mode",
+        value: desired.mode,
+        options: fieldChoices(entry, meta, "mode").map((option) => ({ ...option, ...(PROFILE_STYLE[option.value] ?? {}) })),
+        label: entryFieldLabel(entry, meta, "mode"),
     });
 }
 
-const languageTimezonePresetOptions = [
-    { language: 0, timeZone: "0", label: "English (UTC+0)" },
-    { language: 1, timeZone: "8", label: "简体中文 (UTC+8)" },
-    { language: 3, timeZone: "1", label: "Português (UTC+1)" },
-    { language: 4, timeZone: "1", label: "Español (UTC+1)" },
-    { language: 5, timeZone: "1", label: "Deutsch (UTC+1)" },
-    { language: 10, timeZone: "1", label: "Français (UTC+1)" },
-];
-
-function languageTimezoneInput(desired) {
-    const preset = languageTimezonePresetOptions.find(
-        (option) =>
-            String(desired.language ?? 3) === String(option.language) &&
-            String(desired.timeZone ?? "0") === String(option.timeZone),
-    ) || languageTimezonePresetOptions[0];
-
-    return html`
-        <div class="vstack gap-2">
-            <select class="form-select" data-config-field="preset">
-                ${languageTimezonePresetOptions
-                        .map(
-                            (option) => html`
-                        <option value="${option.language}|${(String(option.timeZone))}" ${
-                            option.language === preset.language &&
-                            String(option.timeZone) === String(preset.timeZone)
-                                ? "selected"
-                                : ""
-                        }>${option.label}</option>
-                    `,
-                        )
-                }
-            </select>
-        </div>`;
-}
-
-function dualToggleInput(desired) {
-    const enabled = boolValue(desired.enabled, true);
-    const callCenterOnFall = boolValue(desired.callCenterOnFall, false);
-    return html`
-        <div class="vstack gap-3">
-            <div class="form-check form-switch">
-                <input class="form-check-input" type="checkbox" role="switch" data-config-field="enabled" ${enabled ? "checked" : ""}>
-                <label class="form-check-label" data-switch-label>${enabled ? "Ligado" : "Desligado"}</label>
-            </div>
-            <div class="form-check form-switch">
-                <input class="form-check-input" type="checkbox" role="switch" data-config-field="callCenterOnFall" ${callCenterOnFall ? "checked" : ""}>
-                <label class="form-check-label" data-switch-label data-switch-on="Liga para a central" data-switch-off="Não liga para a central">${callCenterOnFall ? "Liga para a central" : "Não liga para a central"}</label>
-            </div>
-        </div>`;
-}
-
-function fallSensitivityLevelsInput(desired) {
-    const sensitivityLevel =
-        parseInt(String(desired.sensitivity ?? 5), 10) || 5;
-    const parsedTotalLevels = parseInt(String(desired.levels ?? ""), 10);
-    const totalLevels = [6, 8].includes(parsedTotalLevels)
-        ? parsedTotalLevels
-        : 8;
-
-    const levels = [
-        { label: "Máxima", icon: "fa-bolt", btnClass: "btn-outline-danger" },
-        { label: "Muito Alta", icon: "fa-circle-exclamation", btnClass: "btn-outline-danger" },
-        { label: "Alta", icon: "fa-triangle-exclamation", btnClass: "btn-outline-warning" },
-        { label: "Moderada", icon: "fa-equals", btnClass: "btn-outline-warning" },
-        { label: "Baixa", icon: "fa-arrow-down", btnClass: "btn-outline-primary" },
-        { label: "Muito Baixa", icon: "fa-angles-down", btnClass: "btn-outline-primary" },
-        { label: "Quase Mínima", icon: "fa-feather", btnClass: "btn-outline-secondary" },
-        { label: "Mínima", icon: "fa-snowflake", btnClass: "btn-outline-secondary" },
-    ];
+/** O idioma e o fuso são dois campos: o construtor junta-os no `LZ`. */
+function languageTimezoneInput(entry, desired, meta) {
+    const languages = (entry.options?.language ?? [])
+        .map((option) => ({ value: String(option.value), label: languageLabel(option.value) }))
+        .sort((left, right) => left.label.localeCompare(right.label, "pt-PT"));
+    const current = String(desired.language ?? "");
 
     return html`
         <div class="row g-3">
-            <div class="col-12 col-md-9">
-                <label class="form-label-sm">Nível de sensibilidade</label>
-                <input type="hidden" data-config-field="sensitivity" value="${(String(sensitivityLevel))}">
-                <div class="d-flex flex-wrap gap-1 w-100" role="group" aria-label="Nível de sensibilidade" data-config-choice-group="sensitivity">
-                    ${levels
-                            .map(
-                                ({ label, icon, btnClass }, i) => {
-                                    const level = i + 1;
-                                    return html`
-                        <button
-                            type="button"
-                            class="btn ${btnClass} sens-level-btn d-flex flex-column align-items-center justify-content-center ${level === sensitivityLevel ? "active" : ""} ${level > totalLevels ? "d-none" : ""}"
-                            style="flex: 1 0 0; min-width: 4rem; min-height: 4rem"
-                            data-action="selectConfigChoice"
-                            data-config-field="sensitivity"
-                            data-config-value="${level}"
-                            aria-pressed="${level === sensitivityLevel ? "true" : "false"}"
-                            ${level > totalLevels ? "disabled" : ""}>
-                            <div class="d-flex align-items-center gap-1 fw-medium">
-                                <i class="fa-solid ${icon}"></i>
-                                <span>${level}</span>
-                            </div>
-                            <div class="small opacity-75">${label}</div>
-                        </button>
-                    `;
-                                },
-                            )
-                    }
-                </div>
-            </div>
-            <div class="col-12 col-md-3">
-                <label class="form-label-sm">Escala do firmware</label>
-                <select class="form-select" data-config-field="levels" data-action="fallTotalLevels" required>
-                    <option value="" ${totalLevels === null ? "selected" : ""} disabled>Selecione…</option>
-                    <option value="6" ${totalLevels === 6 ? "selected" : ""}>6 níveis</option>
-                    <option value="8" ${totalLevels === 8 ? "selected" : ""}>8 níveis</option>
-                </select>
-            </div>
+            ${field(entryFieldLabel(entry, meta, "language"), html`<select class="form-select" data-config-field="language">
+                ${languages.map((option) => html`<option value="${option.value}"${raw(option.value === current ? " selected" : "")}>${option.label}</option>`)}
+            </select>`, { cls: "col-md-6" })}
+            ${field(entryFieldLabel(entry, meta, "utcOffsetHours"), boundedNumber(entry, meta, "utcOffsetHours", desired, { unit: "UTC" }), { cls: "col-md-6" })}
         </div>`;
 }
 
-/** Os níveis acima da escala do firmware saem da vista, e um valor fora dela volta a um que existe. */
-export function syncFallSensitivityLevels(section, levels) {
-    const totalLevels = parseInt(levels, 10);
-    const buttons = section.querySelectorAll(
-        "[data-config-choice-group=\"sensitivity\"] .sens-level-btn",
-    );
-    const currentInput = section.querySelector(
-        "[data-config-field=\"sensitivity\"]",
-    );
-    buttons.forEach((button, index) => {
-        const visible = index + 1 <= totalLevels;
-        button.classList.toggle("d-none", !visible);
-        button.disabled = !visible;
-    });
+function dualToggleInput(_entry, desired) {
+    return html`
+        <div class="vstack gap-3">
+            ${switchField("enabled", boolValue(desired.enabled, false))}
+            ${switchField("callCenterOnFall", boolValue(desired.callCenterOnFall, false), { on: "Liga para a central", off: "Não liga para a central" })}
+        </div>`;
+}
 
-    // Com a escala por escolher o `totalLevels` é `NaN`, e o valor fica como está.
-    if (!(parseInt(currentInput?.value, 10) > totalLevels)) {
-        return;
+/** Os níveis acima da escala do firmware ficam escondidos; 1 é a sensibilidade máxima. */
+function fallSensitivityLevelsInput(entry, desired, meta) {
+    const total = Number(desired.levels) || 0;
+    const levels = fieldChoices(entry, meta, "levels");
+    const sensitivity = fieldChoices(entry, meta, "sensitivity").map((option) => ({
+        ...option,
+        label: `${option.value} · ${option.label}`,
+    }));
+
+    return html`
+        <div class="row g-3">
+            <div class="col-12 col-md-9" data-fall-levels="${total}">
+                ${field(entryFieldLabel(entry, meta, "sensitivity"), choiceField({ field: "sensitivity", value: desired.sensitivity, options: sensitivity }))}
+            </div>
+            ${field(entryFieldLabel(entry, meta, "levels"), html`<select class="form-select" data-config-field="levels" data-action="fallTotalLevels">
+                ${levels.map((option) => html`<option value="${option.value}"${raw(Number(option.value) === total ? " selected" : "")}>${option.label}</option>`)}
+            </select>`, { cls: "col-12 col-md-3" })}
+        </div>`;
+}
+
+/** Os níveis acima da escala do firmware saem da vista, e um valor fora dela passa ao maior que existe. */
+export function syncFallSensitivityLevels(section) {
+    const total = Number(section.querySelector("[data-config-field=\"levels\"]")?.value) || 0;
+    const radios = [...section.querySelectorAll("input[type=\"radio\"][data-config-field=\"sensitivity\"]")];
+    for (const radio of radios) {
+        const hidden = Number(radio.value) > total;
+        radio.disabled = hidden;
+        section.querySelector(`label[for="${CSS.escape(radio.id)}"]`)?.classList.toggle("d-none", hidden);
     }
 
-    // O maior que ainda existe: o nível 1 é a sensibilidade máxima, o oposto de quem estava no 8.
-    const lastEnabled = Array.from(buttons).findLast(
-        (button) => !button.classList.contains("d-none") && !button.disabled,
-    );
-    if (!lastEnabled) return;
-
-    currentInput.value = String(
-        parseInt(lastEnabled.dataset.configValue || "1", 10) || 1,
-    );
-    buttons.forEach((button) => {
-        const selected = button.dataset.configValue === currentInput.value;
-        button.classList.toggle("active", selected);
-        button.setAttribute("aria-pressed", selected ? "true" : "false");
-    });
+    const checked = radios.find((radio) => radio.checked);
+    if (checked?.disabled) {
+        checked.checked = false;
+        radios.filter((radio) => !radio.disabled).pop()?.click();
+    }
 }
 
-function timeRangesInput(entry, desired) {
-    const limit = Math.max(1, parseInt(String(entry.limit ?? 3), 10) || 3);
+function timeRangesInput(entry, desired, meta) {
+    const limit = Math.max(1, Number(entry.limit) || 1);
     const ranges = Array.isArray(desired.ranges) ? desired.ranges : [];
-    const values = Array.from(
-        { length: limit },
-        (_, index) => ranges[index] ?? "",
-    );
+
     return html`
-        <div class="vstack gap-2">
-            <div class="row row-cols-1 row-cols-sm-auto g-3">
-                ${values
-                        .map(
-                            (value, index) => html`
-                    <div class="col">
-                        <label class="form-label-sm">Intervalo ${index + 1}</label>
-                        <input class="form-control" type="text" data-config-field="ranges" value="${(String(value))}" placeholder="08:10-09:30" size="11">
-                    </div>
-                `,
-                        )
-                }
-            </div>
+        <div class="row row-cols-1 row-cols-sm-auto g-3">
+            ${Array.from({ length: limit }, (_, index) => html`
+                <div class="col">
+                    <label class="form-label-sm">${entryFieldLabel(entry, meta, "ranges")} ${index + 1}</label>
+                    <input class="form-control" type="text" data-config-field="ranges" value="${String(ranges[index] ?? "")}" placeholder="HH:MM-HH:MM" size="11">
+                </div>`)}
         </div>`;
 }
 
-function timeRangeInput(desired) {
+function timeRangeInput(entry, desired, meta) {
     return html`
         <div class="d-flex justify-content-end">
-            <input class="form-control w-auto" type="text" data-config-field="range" value="${(String(desired.range ?? "21:10-07:30"))}" placeholder="21:10-07:30" size="11" aria-label="Intervalo">
+            <input class="form-control w-auto" type="text" data-config-field="range" value="${String(desired.range ?? "")}" placeholder="HH:MM-HH:MM" size="11" aria-label="${entryFieldLabel(entry, meta, "range")}">
         </div>`;
 }
 
 export const INPUTS = {
-    makeCall: {
-        render: makeCallInput,
-        read: (section) => ({ phone: readPhone(section, "phone") }),
-    },
-    voiceMonitor: {
-        render: voiceMonitorInput,
-        read: (section) => ({ phone: readPhone(section, "phone") }),
-    },
     soundProfile: {
-        render: (_entry, desired) => soundProfileInput(desired),
-        read: (section) => ({ mode: readNumber(section, "mode") }),
-        defaults: () => ({ mode: 1 }),
-    },
-    intervalHoursToggle: {
-        render: (_entry, desired) => intervalHoursToggleInput(desired),
-        read: (section) => ({
-            enabled: readCheckbox(section, "enabled"),
-            intervalHours: readNumber(section, "intervalHours"),
-        }),
-        defaults: () => ({ enabled: true, intervalHours: 2 }),
+        render: soundProfileInput,
+        read: (section) => ({ mode: readChoice(section, "mode") }),
     },
     languageTimezone: {
-        render: (_entry, desired) => languageTimezoneInput(desired),
-        read: (section) => {
-            const value = readText(section, "preset");
-            const [language, timeZone] = value.split("|", 2);
-            return {
-                language: parseInt(language, 10),
-                timeZone: String(timeZone || "0"),
-            };
-        },
-        // A forma do `read` e não a do `<select>`: é por ela que o render procura o par.
-        defaults: () => ({ language: 3, timeZone: "1" }),
+        render: languageTimezoneInput,
+        read: (section) => ({
+            language: readText(section, "language"),
+            utcOffsetHours: readNumber(section, "utcOffsetHours"),
+        }),
     },
     dualToggle: {
-        render: (_entry, desired) => dualToggleInput(desired),
+        render: dualToggleInput,
         read: (section) => ({
             enabled: readCheckbox(section, "enabled"),
             callCenterOnFall: readCheckbox(section, "callCenterOnFall"),
         }),
-        defaults: () => ({ enabled: true, callCenterOnFall: false }),
     },
     fallSensitivityLevels: {
-        render: (_entry, desired) => fallSensitivityLevelsInput(desired),
-        read: (section) => {
-            const levels = readNumber(section, "levels");
-            if (![6, 8].includes(levels)) {
-                throw new Error("Selecione a escala de sensibilidade suportada pelo firmware (6 ou 8 níveis).");
-            }
-            return {
-                sensitivity: readNumber(section, "sensitivity"),
-                levels,
-            };
-        },
-        defaults: () => ({ sensitivity: 5, levels: 8 }),
+        render: fallSensitivityLevelsInput,
+        read: (section) => ({
+            sensitivity: readChoice(section, "sensitivity"),
+            levels: readNumber(section, "levels"),
+        }),
     },
     timeRanges: {
         render: timeRangesInput,
         read: (section) => ({ ranges: readTextArray(section, "ranges") }),
-        // Um horário de silêncio pré-preenchido recusava chamadas a quem nunca o pediu.
-        defaults: (entry) => ({ ranges: entry?.key === "doNotDisturb" ? [] : ["08:10-09:30"] }),
     },
     timeRange: {
-        render: (_entry, desired) => timeRangeInput(desired),
+        render: timeRangeInput,
         read: (section) => ({ range: readText(section, "range") }),
-        // No formato `HH:MM-HH:MM` que o construtor valida.
-        defaults: () => ({ range: "21:10-07:30" }),
     },
     takePills: {
-        render: (_entry, desired, meta) => takePillsInput(desired, meta),
-        read: (section) => readTakePills(section),
-        defaults: () => ({
-            plans: [],
-            number: 0,
-            reminderText: "",
-            voiceData: "",
-            voiceMimeType: "audio/webm",
-        }),
+        render: takePillsInput,
+        read: readTakePills,
     },
 };

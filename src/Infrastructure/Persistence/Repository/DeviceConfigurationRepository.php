@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Hub\Infrastructure\Persistence\Repository;
 
+use Hub\Command\DeviceConfigurationCatalog;
 use Hub\Domain\Capability\CapabilityCatalog;
 use Hub\Infrastructure\Persistence\TimestampFormatter;
 use PDO;
@@ -79,7 +80,7 @@ final class DeviceConfigurationRepository
         string $command,
         array $payload
     ): void {
-        $nativeKey = $this->normalizeNativeKey(trim($protocol), trim($key));
+        $nativeKey = DeviceConfigurationCatalog::nativeKey(trim($protocol), $key);
         $key = $this->normalizeConfigKey($nativeKey);
         $now = gmdate('Y-m-d H:i:s');
         $encoded = json_encode($payload, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) ?: '{}';
@@ -108,19 +109,6 @@ final class DeviceConfigurationRepository
         }
 
         return CapabilityCatalog::normalizeStoredCapabilityKey($key) ?? $key;
-    }
-
-    private function normalizeNativeKey(string $protocol, string $key): string
-    {
-        if ($key !== 'alarm_clock') {
-            return $key;
-        }
-
-        return match ($protocol) {
-            'vivistar-iw' => 'reminders',
-            'four-p-touch' => 'alarmClock',
-            default => $key,
-        };
     }
 
     /**

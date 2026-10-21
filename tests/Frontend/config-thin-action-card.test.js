@@ -39,11 +39,11 @@ test("a label that is a name takes the verb declared in the setting", () => {
         key: "factoryResetCommand",
         capabilityKey: "reset_device",
         label: "Reposição de fábrica",
-        verb: "Repor de fábrica",
+        verb: "factory_reset",
+        risk: "destructive",
         input: "action",
         fields: [],
         transient: true,
-        confirm: "Repõe o relógio ao estado de fábrica.",
     });
 
     const button = section.querySelector("[data-action=\"saveConfig\"]");

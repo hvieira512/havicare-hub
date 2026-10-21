@@ -11,7 +11,7 @@ use PHPUnit\Framework\TestCase;
 final class FourPTouchVoiceDataLimitTest extends TestCase
 {
     /** Um lembrete válido, para o payload não falhar por outra razão. */
-    private const REMINDER = ['reminderSettings' => ['08:00-1-1'], 'reminderText' => 'Tomar'];
+    private const REMINDER = ['reminderSettings' => [['time' => '08:00', 'enabled' => true, 'frequency' => 1]], 'reminderText' => 'Tomar'];
 
     public function testRejectsVoiceDataAboveTheLimitBeforeDecodingIt(): void
     {

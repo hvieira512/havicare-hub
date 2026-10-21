@@ -78,6 +78,7 @@ final class AlarmClockCapability implements CapabilityContract
         $meta = ($this->handlers[$protocol] ?? null)?->meta($accumulatedMeta) ?? $accumulatedMeta;
 
         $recurrenceOptions = $meta['mode']['options'] ?? null;
+        // hitcare: as etiquetas ficam porque o hitCare as mostra do `_meta`; saem quando ele traduzir os valores.
         if (!is_array($recurrenceOptions) || $recurrenceOptions === []) {
             $recurrenceOptions = [
                 ['value' => 'once', 'label' => 'Uma vez'],

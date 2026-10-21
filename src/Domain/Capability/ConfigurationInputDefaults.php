@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Hub\Domain\Capability;
 
 /**
- * O payload de que uma capacidade parte quando o dispositivo nunca guardou nenhum, por tipo de
- * campo, para a dashboard desenhar um formulário utilizável.
+ * O payload de que uma configuração parte quando o dispositivo nunca guardou nenhum. É a única
+ * fonte: a dashboard desenha o que a API lhe serve, e não tem valores de partida seus.
  */
 final class ConfigurationInputDefaults
 {
@@ -16,48 +16,30 @@ final class ConfigurationInputDefaults
      */
     public static function forEntry(array $entry): array
     {
-        $input = (string)($entry['input'] ?? 'json');
-        $field = static fn(int $index = 0): string => (string)($entry['fields'][$index] ?? '');
+        $fields = array_map('strval', (array)($entry['fields'] ?? []));
+        $field = $fields[0] ?? 'value';
+        $options = is_array($entry['options'] ?? null) ? $entry['options'] : [];
 
-        return match ($input) {
-            'toggle' => [($field(0) ?: 'enabled') => true],
-            // Zero só serve quando está dentro da escala: um tom de pele vai de 1 a 6, e o
-            // formulário partia de um valor que o aparelho recusa.
-            'number' => [($field(0) ?: 'value') => (int)($entry['options']['default'] ?? $entry['options']['min'] ?? 0)],
-            // A primeira opção que a definição declara: é a que o `select` mostra escolhida
-            // antes de alguém mexer, e um número inventado aqui podia nem existir na lista.
-            'select' => (static function () use ($entry, $field): array {
-                $name = $field(0) ?: 'value';
-                $options = $entry['options'][$name] ?? [];
-                // A definição pode dizer de onde parte; senão é a primeira da lista, que numa
-                // lista ordenada por valor é a ponta e não o meio.
-                $default = $entry['options']['default']
-                    ?? (is_array($options) && $options !== [] ? ($options[0]['value'] ?? 0) : 0);
+        // A definição que declara de onde parte ganha a tudo; com um campo só, o valor é desse campo.
+        if (array_key_exists('default', $options)) {
+            return is_array($options['default']) ? $options['default'] : [$field => $options['default']];
+        }
 
-                return [$name => $default];
-            })(),
-            'phone' => [($field(0) ?: 'phone') => ''],
-            'text' => [($field(0) ?: 'value') => ''],
+        $firstOption = is_array($options[$field] ?? null) && array_is_list($options[$field])
+            ? ($options[$field][0]['value'] ?? null)
+            : null;
+
+        return match ((string)($entry['input'] ?? 'json')) {
+            'toggle' => [$field => true],
+            // Do mínimo: um tom de pele vai de 1 a 6, e zero seria recusado pelo aparelho.
+            'number', 'sensitivitySlider' => [$field => $options['min'] ?? $entry['bounds'][$field]['min'] ?? 0],
+            'select', 'optionCards', 'volumeScale', 'soundProfile', 'fallSensitivity' => [$field => $firstOption],
+            'workingMode' => ['mode' => $firstOption],
+            'phone', 'makeCall', 'voiceMonitor' => [$field => ''],
             'pushMessage' => ['message' => ''],
-            'makeCall' => ['phone' => ''],
-            'action' => [],
             'intervalToggle' => ['enabled' => true, 'intervalMinutes' => 60],
-            // A janela leva o número que a definição declarar -- o intervalo de um lembrete, o brilho --,
-            // com o nome e o ponto de partida que ela der.
-            'windowToggle' => (static function () use ($entry): array {
-                $default = $entry['options']['default'] ?? [];
-                $payload = [
-                    'enabled' => (bool)($default['enabled'] ?? true),
-                    'range' => (string)($default['range'] ?? '22:00-08:00'),
-                ];
-                $number = $entry['options']['number']['field'] ?? null;
-                if ($number !== null) {
-                    $payload[(string)$number] = (int)($default[(string)$number]
-                        ?? $entry['options']['number']['min'] ?? 1);
-                }
-
-                return $payload;
-            })(),
+            'intervalHoursToggle' => ['enabled' => true, 'intervalHours' => 2],
+            'windowToggle' => ['enabled' => true, 'range' => '22:00-08:00'],
             'heartRateThresholds' => ['enabled' => true, 'maxBpm' => 150, 'minBpm' => 50],
             'personalInfo' => [
                 'heightCm' => 170,
@@ -67,72 +49,33 @@ final class ConfigurationInputDefaults
                 'stepGoal' => 8000,
                 'sleepGoalMinutes' => 480,
             ],
-            'intervalHoursToggle' => ['enabled' => true, 'intervalHours' => 2],
-            // O dispensador. O plano parte vazio de propósito: vazio quer dizer os nove
-            // alarmes desligados, que é um estado legítimo e não um formulário por preencher.
+            // Vazio quer dizer os nove alarmes desligados, que é um estado legítimo.
             'pillDispenserAlarms' => ['plans' => []],
-            // Sem período por omissão: o plano vale sempre até alguém dizer o contrário.
+            // Sem período: o plano vale sempre até alguém dizer o contrário.
             'pillDispenserPeriod' => ['enabled' => false, 'startDate' => '', 'endDate' => ''],
-            'pillDispenserQuietHours' => [
-                'enabled' => false,
-                'startHour' => 22,
-                'startMinute' => 0,
-                'endHour' => 7,
-                'endMinute' => 0,
-            ],
-            'pillDispenserDispenseMode' => ['earlyRetrieval' => false, 'childLock' => false],
-            'workingMode' => ['mode' => 1],
-            'bloodPressure' => ['systolic' => 120, 'diastolic' => 80],
-            // O `BPEarlyWarning` leva um limiar sistólico e um diastólico, e o construtor de
-            // payloads exige os dois.
-            'wonlexBloodPressureWarning' => ['switchState' => true, 'hpWarn' => 135, 'LPWarn' => 90],
-            'languageTimezone' => ['language' => 0, 'timeZone' => '0'],
+            'pillDispenserQuietHours' => ['enabled' => false, 'startHour' => 22, 'startMinute' => 0, 'endHour' => 7, 'endMinute' => 0],
+            'wonlexBloodPressureWarning' => ['enabled' => true, 'systolicMmHg' => 135, 'diastolicMmHg' => 90],
             'dualToggle' => ['enabled' => true, 'callCenterOnFall' => false],
             'fallSensitivityLevels' => ['sensitivity' => 5, 'levels' => 8],
             // Um horário de silêncio pré-preenchido recusava chamadas a quem nunca o pediu.
-            'timeRanges' => ['ranges' => ($entry['key'] ?? '') === 'doNotDisturb' ? [] : ['08:10-09:30']],
+            'timeRanges' => ['ranges' => []],
             'timeRange' => ['range' => '21:10-07:30'],
-            'wonlexSleepSettings' => [
-                'switchState' => true,
-                'sleepStartTime' => '220000',
-                'sleepEndTime' => '100000',
-                'sleepTarget' => 480,
+            'wonlexSleepSettings' => ['enabled' => true, 'startTime' => '22:00', 'endTime' => '10:00', 'targetMinutes' => 480],
+            'wonlexReminderThreshold' => $fields[1] === 'thresholdCelsius'
+                ? ['enabled' => true, 'thresholdCelsius' => 38.5]
+                : ['enabled' => true, 'thresholdPercent' => 90],
+            'wonlexHeartRateRange' => [
+                'enabled' => true,
+                'thresholdBpm' => 120,
+                'exerciseEnabled' => true,
+                'exerciseMinBpm' => 100,
+                'exerciseMaxBpm' => 140,
+                'exerciseThresholdBpm' => 140,
             ],
-            // O `RemindValue` é o da temperatura, em °C; o `reminderValue` é o do oxigénio, em %.
-            'wonlexReminderThreshold' => $field(1) === 'RemindValue'
-                ? ['switchState' => true, 'RemindValue' => 38.5]
-                : ['switchState' => true, ($field(1) ?: 'reminderValue') => 90],
-            // O limite do alerta baixo fica por preencher: a spec só dá o exemplo da alta.
-            'wonlexHeartRateRange' => array_filter([
-                'switchState' => true,
-                'remindValue' => ($entry['key'] ?? '') === 'wonlexHeartRateLowRemind' ? null : 120,
-                'exerciseSwitchState' => true,
-                'exerciseHRMin' => 100,
-                'exerciseHRMax' => 140,
-                'exerciseRemindValue' => 140,
-            ], static fn(mixed $value): bool => $value !== null),
-            // As capacidades de um cartão só declaram o campo dele, e a forma vem do campo nativo: números
-            // soltos no 4P Touch, contactos com nome na Vivistar.
-            'sos_contacts', 'phonebook', 'call_whitelist' => $field(0) === 'numbers'
-                ? ['numbers' => array_fill(0, max(1, (int)($entry['limit'] ?? 3)), '')]
-                : ['contacts' => [['name' => '', 'phone' => '']]],
-            'takePills' => [
-                'reminderSettings' => [
-                    ['time' => '08:00', 'enabled' => true, 'frequency' => 1, 'custom' => ''],
-                    ['time' => '09:00', 'enabled' => true, 'frequency' => 1, 'custom' => ''],
-                    ['time' => '10:00', 'enabled' => true, 'frequency' => 1, 'custom' => ''],
-                ],
-                'number' => 1,
-                'reminderText' => '',
-                'voiceData' => '',
-                'voiceMimeType' => 'audio/webm',
-            ],
-            'soundProfile' => ['mode' => 1],
-            // Os campos do radar declaram o ponto de partida na definição, com os valores de fábrica da API.
-            'valueRange', 'switchWithValue', 'radarInstallation', 'radarBoundary' => (array)($entry['options']['default'] ?? []),
-            'sensitivitySlider' => [($field(0) ?: 'sensitivity') => (int)($entry['options']['default'] ?? 5)],
-            'optionCards' => [($field(0) ?: 'value') => $entry['options']['default'] ?? ''],
-            'radarAreas' => ['items' => []],
+            // A forma vem do campo nativo: números soltos no 4P Touch, contactos com nome na Vivistar.
+            'sos_contacts', 'phonebook', 'call_whitelist' => $field === 'numbers' ? ['numbers' => []] : ['contacts' => []],
+            'takePills' => ['plans' => [], 'reminderText' => ''],
+            'radarAreas', 'scaleUsers' => ['items' => []],
             default => [],
         };
     }

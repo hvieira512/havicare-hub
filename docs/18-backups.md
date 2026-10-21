@@ -34,7 +34,7 @@ Da base de dados de produção, o que não se recupera de mais lado nenhum:
 | `radar_api_credentials` | As credenciais da cloud do fabricante do radar, uma linha por licença. Recuperá-las obriga a pedi-las outra vez ao fornecedor |
 | `denylist` | As identidades postas de parte à mão, que voltariam todas a ser aceites |
 
-O catálogo — `suppliers`, `models`, `capabilities`, `model_capabilities` — é
+O catálogo — `suppliers`, `models`, `model_capabilities` — é
 semeado pelo código e recupera-se com o `ReferenceCatalogSeeder`. As plantas dos
 radares — `radar_layouts` e `radar_layout_areas` — voltam a sincronizar-se da
 cloud do fabricante. Ambos estão incluídos nas cópias por ser mais barato

@@ -1,6 +1,7 @@
 import { html, raw } from "../html.js";
 import { ago, displayPersonIndex, eventTime, rowPayload, when } from "../format.js";
-import { PRESS_TYPE_LABEL, fallLabel } from "../domain.js";
+import { fallLabel } from "../domain.js";
+import { valueLabel } from "../i18n.js";
 
 /** Cartões que resumem o histórico de eventos inteiro, fora do catálogo de cartões. */
 
@@ -46,7 +47,7 @@ export function helpCallSummaryCard(events = [], pressModes = []) {
     const columns = pressModes.map((mode) => {
         const call = latest[mode];
         // A etiqueta partilhada é um sufixo; aqui titula, e vai capitalizada.
-        const suffix = PRESS_TYPE_LABEL[mode];
+        const suffix = valueLabel("pressType", mode);
         const label = suffix.charAt(0).toUpperCase() + suffix.slice(1);
         const icon = HELP_CALL_PRESS_ICON[mode];
         const called = call !== undefined;

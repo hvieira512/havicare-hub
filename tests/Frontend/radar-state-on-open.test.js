@@ -38,8 +38,8 @@ test("opening a radar's settings requests its state once", async () => {
     assert.equal(requests[0].body.capability, "read_device_state");
 });
 
-test("another protocol requests nothing", async () => {
-    state.deviceModal.protocol = "four-p-touch";
+test("a device without a state reading requests nothing", async () => {
+    initDeviceConfigPanel({ els: { deviceConfigRoot: parseFragment("<section data-config-section data-config-key=\"find_device\"></section>") } });
 
     requestRadarStateOnOpen();
     await flush();

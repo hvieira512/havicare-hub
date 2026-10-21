@@ -136,7 +136,7 @@ test("the factory reset box does not promise a restart", () => {
     assert.doesNotMatch(prompt.text, /arranca/);
 });
 
-test("the card carries the sentence the setting declared", () => {
+test("a destructive card carries the dictionary's sentence for its protocol", () => {
     const html = renderConfigSection("wonlex-json", {
         key: "factoryResetCommand",
         capabilityKey: "reset_device",
@@ -144,10 +144,10 @@ test("the card carries the sentence the setting declared", () => {
         input: "action",
         fields: [],
         transient: true,
-        confirm: "Repõe o relógio ao estado de fábrica.",
+        risk: "destructive",
     }, null);
 
-    assert.match(html, /data-config-confirm="Repõe o relógio ao estado de fábrica\."/);
+    assert.match(html, /data-config-confirm="Repõe o relógio ao estado de fábrica\./);
     assert.match(html, /data-config-label="Reposição de fábrica"/);
 });
 

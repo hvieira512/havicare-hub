@@ -40,15 +40,7 @@ final class Wonlex implements AlarmClockHandler
                 return $item;
             }
 
-            $week = trim((string)($item['week'] ?? '0000000'));
-            $days = [];
-            if (preg_match('/^[01]{7}$/', $week)) {
-                for ($index = 0; $index < 7; $index++) {
-                    if ($week[$index] === '1') {
-                        $days[] = $index + 1;
-                    }
-                }
-            }
+            $days = Weekdays::days(trim((string)($item['week'] ?? '')), false);
             $recurrence = count($days) === 7
                 ? ['kind' => 'daily']
                 : ['kind' => 'custom', 'days' => $days];
@@ -74,19 +66,16 @@ final class Wonlex implements AlarmClockHandler
     {
         return array_replace_recursive([
             'limit' => 10,
-            'label' => [
-                'supported' => true,
-                'label' => 'Nome do alarme',
-            ],
+            'label' => ['supported' => true],
             'url' => [
                 'supported' => true,
-                'label' => 'Áudio do lembrete',
                 'format' => 'uri',
                 'schemes' => ['http', 'https'],
             ],
             'week' => [
                 'order' => ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'],
             ],
+            // hitcare: as etiquetas ficam porque o hitCare as mostra do `_meta`; saem quando ele traduzir os valores.
             'mode' => [
                 'options' => [
                     ['value' => 'daily', 'label' => 'Todos os dias'],

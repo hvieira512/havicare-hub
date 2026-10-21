@@ -27,6 +27,7 @@ import { loadCapabilityCatalog } from "../capabilities.js";
 import { getSettingsModelsRuntime, showModelsPane } from "./shell.js";
 import { backToModelList } from "./list.js";
 import { renderCapabilitiesSection } from "./capabilities-editor.js";
+import { countLabel } from "../../i18n.js";
 
 /** A ficha de um modelo: a identidade em cima e o editor de capacidades em baixo, cada um com o seu Guardar. */
 
@@ -235,7 +236,7 @@ async function renderModelDetailDeleteHint(model) {
         ? "Os dispositivos que o usam ficam sem template de capacidades."
         : total === 0
             ? "Nenhum dispositivo usa este modelo."
-            : `${total} ${total === 1 ? "dispositivo usa" : "dispositivos usam"} o ${internal}.` +
+            : `${countLabel(total, "dispositivo usa", "dispositivos usam")} o ${internal}.` +
                 ` Apagar o modelo deixa-${total === 1 ? "o" : "os"} sem template de capacidades.`;
 }
 

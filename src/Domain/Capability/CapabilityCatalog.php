@@ -36,23 +36,14 @@ final class CapabilityCatalog
         return DeviceTypeCatalog::keys();
     }
 
-    /**
-     * @return array<string, string>
-     */
+    /** @return list<string> */
     public static function sections(): array
     {
-        return [
-            'telemetry' => 'Telemetria',
-            'health' => 'Saúde',
-            'contacts' => 'Contactos',
-            'alarms' => 'Alarmes e alertas',
-            'reminders' => 'Lembretes',
-            'settings_system' => 'Sistema',
-        ];
+        return ['telemetry', 'health', 'contacts', 'alarms', 'reminders', 'settings_system'];
     }
 
     /**
-     * @return list<array{deviceType: string, section: string, key: string, label: string, isTelemetry: bool, isConfigurable: bool, isRequestable: bool, isEvent?: bool}>
+     * @return list<array{deviceType: string, section: string, key: string, isTelemetry: bool, isConfigurable: bool, isRequestable: bool, isEvent?: bool}>
      */
     public static function definitions(): array
     {
@@ -114,7 +105,7 @@ final class CapabilityCatalog
     }
 
     /**
-     * @return list<array{deviceType: string, section: string, key: string, label: string, isTelemetry: bool, isConfigurable: bool, isRequestable: bool, isEvent?: bool}>
+     * @return list<array{deviceType: string, section: string, key: string, isTelemetry: bool, isConfigurable: bool, isRequestable: bool, isEvent?: bool}>
      */
     public static function definitionsForDeviceType(string $deviceType): array
     {
@@ -258,7 +249,7 @@ final class CapabilityCatalog
     {
         $supported = array_fill_keys(self::normalizeKeys($supportedKeys), true);
         $matrix = [];
-        foreach (self::sections() as $section => $_label) {
+        foreach (self::sections() as $section) {
             $matrix[$section] = [];
         }
 

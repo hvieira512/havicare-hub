@@ -11,6 +11,7 @@ import {
 
 const ENTRY = {
     key: "diaper_sensitivity",
+    capabilityKey: "diaper_sensitivity",
     input: "diaperSensitivity",
     fields: ["pollutionRange", "pollutionValue"],
     label: "Sensibilidade dos alertas",
@@ -42,7 +43,7 @@ test("the three presets show, and the one matching the values is lit", () => {
     const buttons = [...section.querySelectorAll("[data-config-preset]")];
 
     assert.equal(buttons.length, 3);
-    const active = buttons.filter((button) => button.classList.contains("active"));
+    const active = buttons.filter((button) => button.checked);
     assert.equal(active.length, 1);
     assert.deepEqual(JSON.parse(active[0].dataset.configPreset), META.presets.normal);
 });
@@ -51,7 +52,7 @@ test("values that match no preset light no button", () => {
     // Sem botão «Personalizado»: nenhum preset activo já diz que os números são à medida.
     const { section } = sectionFor({ pollutionRange: 6, pollutionValue: 20 });
 
-    assert.equal(section.querySelectorAll("[data-config-preset].active").length, 0);
+    assert.equal(section.querySelectorAll("[data-config-preset]:checked").length, 0);
 });
 
 test("the ranges come from the server, not from a frontend copy", () => {

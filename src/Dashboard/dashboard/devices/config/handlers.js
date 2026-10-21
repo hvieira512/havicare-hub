@@ -9,12 +9,12 @@ import {
 } from "./panel.js";
 import { appendRepeatRow, removeRepeatRow } from "./row-editing.js";
 import { syncLoadedCellsRunout } from "./loaded-cells-runout.js";
-import { syncAlarmClockCustomVisibility } from "./inputs/capability.js";
+import { syncAlarmClockCustomVisibility } from "./alarm-fields.js";
 import { syncFallSensitivityLevels } from "./inputs/four-p-touch.js";
 import {
+    applyConfigPreset,
     normalizeTwentyFourHourTimeInput,
     syncSwitchLabel,
-    updateConfigChoice,
 } from "./inputs/shared.js";
 import { syncWorkingModeExtra } from "./inputs/vivistar.js";
 import { handleScaleUserAction } from "./inputs/scale.js";
@@ -25,7 +25,6 @@ import {
     loadTakePillsAudio,
     startTakePillsRecording,
     stopTakePillsRecording,
-    syncTakePillsCustomVisibility,
     syncTakePillsVoiceVisibility,
 } from "./take-pills-audio.js";
 
@@ -83,11 +82,6 @@ function dispatchConfigClick(event) {
 
     if (button.dataset.action === "openRadarAreas") {
         void openRadarMap(String(state.deviceModal.imei || ""), { editAreas: true });
-        return;
-    }
-
-    if (button.dataset.action === "selectConfigChoice") {
-        updateConfigChoice(section, button);
         return;
     }
 
@@ -149,8 +143,8 @@ function dispatchConfigChange(event) {
         syncTakePillsVoiceVisibility(section);
     }
 
-    if (event.target.matches("[data-takepills-field=\"reminderFrequency\"]")) {
-        syncTakePillsCustomVisibility(section);
+    if (event.target.matches("[data-config-preset]")) {
+        applyConfigPreset(section, event.target);
     }
 
     if (event.target.matches("[data-config-field=\"mode\"]")) {
@@ -178,7 +172,7 @@ function dispatchConfigChange(event) {
     }
 
     if (event.target.matches("[data-action=\"fallTotalLevels\"]")) {
-        syncFallSensitivityLevels(section, event.target.value);
+        syncFallSensitivityLevels(section);
     }
 }
 

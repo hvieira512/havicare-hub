@@ -30,11 +30,11 @@ const capabilityCatalog = (catalog) => catalog.map((entry) => ({
     isRequestable: false,
 }));
 
-const render = (configurations) => parseFragment(renderDeviceConfigurationRoot({
+const render = (configurations, capabilities = {}) => parseFragment(renderDeviceConfigurationRoot({
     protocol: "wonlex-json",
     catalog: CATALOG,
     configurations,
-    capabilities: {},
+    capabilities,
     capabilityCatalog: capabilityCatalog(CATALOG),
 }));
 
@@ -64,9 +64,9 @@ test("the value snapshot follows what the switch shows", () => {
     assert.equal(JSON.parse(heartRate.pristine).enabled, false);
 });
 
-/** Sem valor guardado o interruptor nasce ligado, que é o que o aparelho traz de fábrica. */
-test("without a stored value the switch is on", () => {
-    const [heartRate] = rowsOf(render({}));
+/** Sem valor guardado o interruptor mostra o valor de partida que a API serve na capacidade. */
+test("without a stored value the switch shows the starting value the API serves", () => {
+    const [heartRate] = rowsOf(render({}, { health: { wonlexContinuousHRSwitch: { value: { enabled: true } } } }));
 
     assert.equal(heartRate.checked, true);
 });

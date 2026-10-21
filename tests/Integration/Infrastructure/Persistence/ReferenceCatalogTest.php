@@ -13,43 +13,10 @@ use Tests\Support\MysqlDashboardTestCase;
  */
 final class ReferenceCatalogTest extends MysqlDashboardTestCase
 {
-    /** Dentro de cada secção as capacidades vêm por ordem alfabética da etiqueta. */
-    public function testCapabilitiesComeBackAlphabeticalWithinTheirSection(): void
-    {
-        $capabilities = new \Hub\Infrastructure\Persistence\Repository\GenericCapabilityRepository(
-            $this->createDashboardDatabase()->pdo(),
-        );
-
-        $labels = array_values(array_map(
-            static fn(array $row): string => (string)$row['label'],
-            array_filter(
-                $capabilities->all('watch'),
-                static fn(array $row): bool => $row['section'] === 'telemetry',
-            ),
-        ));
-
-        $sorted = $labels;
-        usort($sorted, static fn(string $left, string $right): int => strcmp(
-            iconv('UTF-8', 'ASCII//TRANSLIT', mb_strtolower($left, 'UTF-8')) ?: $left,
-            iconv('UTF-8', 'ASCII//TRANSLIT', mb_strtolower($right, 'UTF-8')) ?: $right,
-        ));
-
-        self::assertSame($sorted, $labels, 'a telemetria de um relógio sai fora de ordem');
-        self::assertSame('Atividade', $labels[0] ?? null);
-        // Em bytes o «VFC» viria antes da «Versão», por a maiúscula pesar menos: é o caso que
-        // distingue a ordem portuguesa da ordem ASCII.
-        self::assertGreaterThan(
-            array_search('Versão do firmware', $labels, true),
-            array_search('VFC', $labels, true),
-        );
-    }
-
     /** A ordem das secções é escolhida, e não alfabética: a telemetria vem antes da saúde. */
     public function testSectionsKeepTheirDeliberateOrder(): void
     {
-        $capabilities = new \Hub\Infrastructure\Persistence\Repository\GenericCapabilityRepository(
-            $this->createDashboardDatabase()->pdo(),
-        );
+        $capabilities = new \Hub\Infrastructure\Persistence\Repository\GenericCapabilityRepository();
 
         $sections = array_values(array_unique(array_map(
             static fn(array $row): string => (string)$row['section'],
@@ -69,11 +36,10 @@ final class ReferenceCatalogTest extends MysqlDashboardTestCase
 
         self::assertSame(
             ['diaper_condition', 'diaper_moisture', 'diaper_moisture_level'],
-            $pdo->query("
-                SELECT capability_key FROM capabilities
-                WHERE device_type = 'diaper_sensor' AND section = 'telemetry' AND capability_key LIKE 'diaper_%'
-                ORDER BY capability_key
-            ")->fetchAll(\PDO::FETCH_COLUMN)
+            array_values(array_filter(
+                array_map(static fn(array $row): string => $row['capability_key'], $this->catalogue('diaper_sensor', 'telemetry')),
+                static fn(string $key): bool => str_starts_with($key, 'diaper_'),
+            ))
         );
         self::assertContains('gateway_device_links', $pdo->query('SHOW TABLES')->fetchAll(\PDO::FETCH_COLUMN));
     }
@@ -82,7 +48,6 @@ final class ReferenceCatalogTest extends MysqlDashboardTestCase
     public function testThePillDispenserCatalogueIsComplete(): void
     {
         $database = $this->createDashboardDatabase();
-        $pdo = $database->pdo();
 
         $expected = [
             'alarm_ringtone',
@@ -155,28 +120,19 @@ final class ReferenceCatalogTest extends MysqlDashboardTestCase
 
         self::assertSame(
             $expected,
-            array_values(array_unique(array_map('strval', $pdo->query(
-                "SELECT capability_key FROM capabilities WHERE device_type = 'pill_dispenser' ORDER BY capability_key"
-            )->fetchAll(\PDO::FETCH_COLUMN))))
+            array_column($this->catalogue('pill_dispenser'), 'capability_key')
         );
 
         // Dezoito configuráveis e sete pedíveis, nunca as duas ao mesmo tempo; as leituras que o
         // `0x07` enche pede-as todas o `device_status`, que é a sétima pedível.
+        $catalogue = $this->catalogue('pill_dispenser');
         self::assertSame(
-            ['18', '7'],
-            array_map('strval', $pdo->query("
-                SELECT
-                    SUM(is_configurable = 1) AS configuraveis,
-                    SUM(is_requestable = 1) AS pediveis
-                FROM capabilities WHERE device_type = 'pill_dispenser'
-            ")->fetch(\PDO::FETCH_NUM))
-        );
-        self::assertSame(
-            0,
-            (int)$pdo->query("
-                SELECT COUNT(*) FROM capabilities
-                WHERE device_type = 'pill_dispenser' AND is_configurable = 1 AND is_requestable = 1
-            ")->fetchColumn()
+            [18, 7, 0],
+            [
+                count(array_filter($catalogue, static fn(array $row): bool => $row['is_configurable'])),
+                count(array_filter($catalogue, static fn(array $row): bool => $row['is_requestable'])),
+                count(array_filter($catalogue, static fn(array $row): bool => $row['is_configurable'] && $row['is_requestable'])),
+            ],
         );
 
         $db = ApiDataAccess::fromDatabase($database);
@@ -224,5 +180,17 @@ final class ReferenceCatalogTest extends MysqlDashboardTestCase
         self::assertIsArray($button);
         self::assertSame('bracelet', $button['device_type']);
         self::assertSame(['battery', 'help_call'], $db->modelCapabilities->enabledFeaturesForModelId((int)$button['id']));
+    }
+
+    /** @return list<array<string, mixed>> */
+    private function catalogue(string $deviceType, ?string $section = null): array
+    {
+        $rows = array_values(array_filter(
+            (new \Hub\Infrastructure\Persistence\Repository\GenericCapabilityRepository())->all($deviceType),
+            static fn(array $row): bool => $section === null || $row['section'] === $section,
+        ));
+        usort($rows, static fn(array $left, array $right): int => strcmp($left['capability_key'], $right['capability_key']));
+
+        return $rows;
     }
 }

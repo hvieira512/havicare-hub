@@ -39,7 +39,7 @@ abstract class CapabilityDefinitions
     abstract protected static function deviceType(): string;
 
     /**
-     * @return array<string, array<string, array<string, string>>> secção => papel => chave => etiqueta
+     * @return array<string, array<string, list<string>>> secção => papel => chaves
      */
     abstract protected static function rows(): array;
 
@@ -76,7 +76,7 @@ abstract class CapabilityDefinitions
         $roles = [];
         foreach (static::rows() as $entriesByRole) {
             foreach ($entriesByRole as $role => $entries) {
-                foreach (array_keys($entries) as $key) {
+                foreach ($entries as $key) {
                     $roles[(string)$key] = (string)$role;
                 }
             }
@@ -135,7 +135,7 @@ abstract class CapabilityDefinitions
     }
 
     /**
-     * @return list<array{deviceType: string, section: string, key: string, label: string, isTelemetry: bool, isConfigurable: bool, isRequestable: bool, isEvent?: bool}>
+     * @return list<array{deviceType: string, section: string, key: string, isTelemetry: bool, isConfigurable: bool, isRequestable: bool, isEvent?: bool}>
      */
     final public static function all(): array
     {
@@ -161,12 +161,11 @@ abstract class CapabilityDefinitions
                     ));
                 }
 
-                foreach ($entries as $key => $label) {
+                foreach ($entries as $key) {
                     $definitions[] = [
                         'deviceType' => static::deviceType(),
                         'section' => $section,
                         'key' => $key,
-                        'label' => $label,
                         'isTelemetry' => $section === 'telemetry',
                     ] + self::FLAGS[$role];
                 }

@@ -4,20 +4,20 @@ declare(strict_types=1);
 
 namespace Hub\Command\Configuration\Definition;
 
+/** Uma entrada do catálogo de configuração de um protocolo; o texto que a acompanha é da dashboard. */
 final class ConfigurationDefinition
 {
     /**
      * @param list<string> $fields
      * @param list<string> $expectedReplyTypes
      * @param array<string, mixed>|null $options
-     * @param array<string, mixed>|null $actions
+     * @param array{on: string, off: string}|null $actions os verbos de uma acção com dois sentidos
      * @param array<string, array{min: int, max?: int}>|null $bounds
      * @return array<string, mixed>
      */
     public static function make(
         string $key,
         string $command,
-        string $label,
         string $input,
         array $fields,
         array $expectedReplyTypes = [],
@@ -26,60 +26,28 @@ final class ConfigurationDefinition
         ?int $limit = null,
         ?array $options = null,
         bool $transient = false,
-        string $help = '',
+        bool $destructive = false,
+        ?string $verb = null,
         ?array $actions = null,
-        string $confirm = '',
-        string $verb = '',
         ?array $bounds = null,
     ): array {
-        $entry = [
+        // Transiente e acção são a mesma coisa: o que a `PATCH` recusa é o que a `/requests` aceita.
+        return array_filter([
             'key' => $key,
             'command' => $command,
-            'label' => $label,
-            // Transiente e acção são a mesma coisa: o que a `PATCH` recusa é o que a `/requests` aceita.
             'kind' => $transient ? 'request' : 'config',
-            // Derivado da confirmação: uma acção que precisa de ser confirmada é destrutiva.
-            'risk' => $confirm === '' ? 'normal' : 'destructive',
+            'risk' => $destructive ? 'destructive' : 'normal',
             'input' => $input,
             'fields' => $fields,
             'expectedReplyTypes' => $expectedReplyTypes,
             'category' => $category,
             'order' => $order,
-        ];
-
-        if ($limit !== null) {
-            $entry['limit'] = $limit;
-        }
-        if ($options !== null) {
-            $entry['options'] = $options;
-        }
-        if ($transient) {
-            $entry['transient'] = true;
-        }
-        // O que a definição faz ao aparelho, em português. Vive aqui e não no ecrã porque é
-        // conhecimento de protocolo, tal como o rótulo.
-        if ($help !== '') {
-            $entry['help'] = $help;
-        }
-        // Os verbos de uma acção com dois sentidos, «Fazer vibrar» e «Parar».
-        if ($actions !== null) {
-            $entry['actions'] = $actions;
-        }
-        // O que o utilizador autoriza, dito pelo efeito no aparelho deste protocolo: o mesmo
-        // `restart_device` deixa um relógio sem comunicar e limpa a avaria do prato no dispensador.
-        if ($confirm !== '') {
-            $entry['confirm'] = $confirm;
-        }
-        // O texto do botão de uma acção. Só se declara onde o rótulo é um nome, como «Reposição de
-        // fábrica», que num botão não diz o que o clique faz.
-        if ($verb !== '') {
-            $entry['verb'] = $verb;
-        }
-        // Os limites de cada campo numérico, os mesmos que o construtor do protocolo aplica.
-        if ($bounds !== null) {
-            $entry['bounds'] = $bounds;
-        }
-
-        return $entry;
+            'limit' => $limit,
+            'options' => $options,
+            'transient' => $transient ? true : null,
+            'verb' => $verb,
+            'actions' => $actions,
+            'bounds' => $bounds,
+        ], static fn(mixed $value): bool => $value !== null);
     }
 }

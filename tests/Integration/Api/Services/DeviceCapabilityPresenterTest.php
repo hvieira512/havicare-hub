@@ -93,7 +93,7 @@ final class DeviceCapabilityPresenterTest extends MysqlDashboardTestCase
         $limits = ['min' => 60, 'max' => 65535];
         self::assertSame($limits, $default['health']['location_reporting_interval']['_meta']['intervalSeconds'] ?? null);
         self::assertSame($limits, $saved['health']['location_reporting_interval']['_meta']['intervalSeconds'] ?? null);
-        self::assertSame(['min' => 0], $wonlex['alarms']['low_battery_alert']['_meta']['Battery'] ?? null);
+        self::assertSame(['min' => 0], $wonlex['alarms']['low_battery_alert']['_meta']['thresholdPercent'] ?? null);
     }
 
     public function testRowsWhoseKeyResolvesToNoCapabilityAreIgnored(): void

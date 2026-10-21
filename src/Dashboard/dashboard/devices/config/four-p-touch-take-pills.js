@@ -1,195 +1,64 @@
 import { html } from "../../html.js";
-import {
-    addAlarmButton,
-    alarmDisclosure,
-    fourPTouchMaskToWeekdays,
-    readFourPTouchAlarmDays,
-    recurrenceWords,
-    weekdayPicker,
-    weekdaysToFourPTouchMask,
-} from "./alarm-fields.js";
-import { nextUid } from "./inputs/shared.js";
+import { addAlarmButton, alarmClockRow, readAlarmRows } from "./alarm-fields.js";
+import { nextUid, switchField } from "./inputs/shared.js";
 import { boolValue } from "./normalizers.js";
 import { readCheckbox, readText } from "./readers.js";
-import { syncTakePillsCustomVisibility } from "./take-pills-audio.js";
 
-export function takePillsInput(desired, meta = {}) {
+/** Os lembretes são linhas de alarme, com um texto e uma gravação comuns a todos. */
+export function takePillsInput(entry, desired, meta = {}) {
     const reminderText = String(desired.reminderText || "");
     const voiceData = String(desired.voiceData || "");
-    const voiceMimeType = String(desired.voiceMimeType || "audio/webm");
-    const hasVoiceData = voiceData.trim() !== "" || desired.voiceDataAvailable === true;
-    const voiceEnabled = normalizeVoiceEnabled(desired, hasVoiceData);
-    const previewSrc = voicePreviewSrc(voiceData, voiceMimeType);
-    const frequencyOptions = frequencyOptionsFor(meta);
-    const numberLimit = Math.max(1, parseInt(String(meta.limit ?? 3), 10) || 3);
-    const reminders = normalizeReminderSettings(desired).slice(0, numberLimit);
-    const group = nextUid("take-pills-group");
+    const voiceMimeType = String(desired.voiceMimeType || "");
+    const hasVoiceData = voiceData.trim() !== "";
+    const voiceEnabled = boolValue(desired.voiceEnabled, hasVoiceData);
+    const limit = Math.max(1, Number(meta.limit ?? entry.limit) || 1);
+    const reminders = (Array.isArray(desired.plans) ? desired.plans : [])
+        .map((plan) => plan?.times?.[0])
+        .filter(Boolean)
+        .slice(0, limit);
+    const shown = reminders.length > 0 ? reminders : [{}];
+    const options = { group: nextUid("take-pills-group"), emptyTitle: reminderText || "Lembrete por preencher" };
+    const previewSrc = voiceData === "" || voiceData.startsWith("data:") ? voiceData : `data:${voiceMimeType};base64,${voiceData}`;
+
     return html`<div class="vstack gap-3">
-        <div class="vstack gap-2" data-repeat-list="takePillsReminder" data-repeat-limit="${(String(numberLimit))}">${reminders.map((settings, index) => takePillsReminderGroup(settings, index, frequencyOptions, group, desired))}</div>
-        ${addAlarmButton("takePillsReminder", "Acrescentar lembrete", reminders.length, numberLimit)}
+        <div class="vstack gap-2" data-repeat-list="alarm_clock" data-repeat-limit="${limit}">${shown.map((item) => alarmClockRow(item, options))}</div>
+        ${addAlarmButton("alarm_clock", "Acrescentar lembrete", shown.length, limit)}
         <div class="border rounded-3 p-3 vstack gap-3">
-        <div><label class="form-label-sm">Texto do lembrete</label><input class="form-control" type="text" data-config-field="reminderText" value="${reminderText}"><div class="form-text">O mesmo texto em todos os lembretes.</div></div>
-        <div class="vstack gap-2"><div class="form-label-sm mb-0">Voz dos lembretes <span class="text-secondary">· uma gravação, vale para os ${(String(numberLimit))}</span></div>
-        <div class="form-check form-switch"><input class="form-check-input" type="checkbox" role="switch" data-config-field="voiceEnabled" ${voiceEnabled ? "checked" : ""}><label class="form-check-label" data-switch-label data-switch-on="Áudio ligado" data-switch-off="Áudio desligado">${voiceEnabled ? "Áudio ligado" : "Áudio desligado"}</label></div>
-        <fieldset class="vstack gap-2" data-takepills-audio-controls ${voiceEnabled ? "" : "disabled"}><input type="hidden" data-config-field="voiceData" value="${voiceData}"><input type="hidden" data-config-field="voiceMimeType" value="${voiceMimeType}"><div class="d-flex flex-wrap align-items-center gap-2">
-        <button type="button" class="btn btn-outline-primary btn-sm" data-action="takePillsRecord"><i class="fa-solid fa-microphone me-2"></i>${hasVoiceData ? "Regravar" : "Gravar"}</button><button type="button" class="btn btn-outline-secondary btn-sm d-none" data-action="takePillsStop"><i class="fa-solid fa-stop me-2"></i>Parar</button><button type="button" class="btn btn-outline-danger btn-sm" data-action="takePillsClear"><i class="fa-solid fa-trash-can me-2"></i>Limpar</button><label class="btn btn-outline-secondary btn-sm mb-0"><i class="fa-solid fa-file-audio me-2"></i>Carregar<input type="file" class="d-none" accept="audio/*" data-action="takePillsFile"></label><span class="small text-secondary" data-takepills-status>${voiceEnabled ? (hasVoiceData ? "Áudio carregado" : "Sem áudio") : "Áudio desligado"}</span></div>
-        <audio class="w-100" controls preload="none" data-takepills-preview ${hasVoiceData ? `src="${previewSrc}"` : ""}></audio></fieldset></div></div></div>`;
-}
-
-export function takePillsReminderGroup(settings, index, frequencyOptions, group = "take-pills", desired = {}) {
-    const frequency = parseInt(String(settings.frequency ?? 1), 10) || 1;
-    const reminderText = String(desired.reminderText || "").trim();
-    const control = html`<div class="form-check form-switch m-0"><input class="form-check-input" type="checkbox" role="switch" aria-label="Lembrete ligado" data-takepills-field="reminderEnabled" data-takepills-index="${index}" ${settings.enabled ? "checked" : ""}></div>`;
-    const body = html`<div class="d-flex flex-wrap align-items-end gap-3">
-        <div class="alarm-field-time"><label class="form-label-sm required">Hora</label><input class="form-control" type="text" inputmode="numeric" maxlength="5" pattern="[0-9]{2}:[0-9]{2}" placeholder="HH:MM" data-time-format="24h" data-takepills-field="reminderTime" data-takepills-index="${index}" value="${settings.time}" required></div>
-        <div><label class="form-label-sm required">Recorrência</label><div class="btn-group" role="group" aria-label="Recorrência do lembrete">${frequencyOptions.map((option) => {
-            const inputId = `takepills-${index}-freq-${option.value}`;
-            return html`<input class="btn-check" type="radio" name="takepills-${index}-freq" id="${inputId}" value="${(String(option.value))}" data-takepills-field="reminderFrequency" data-takepills-index="${index}" ${parseInt(String(option.value), 10) === frequency ? "checked" : ""}><label class="btn btn-outline-secondary btn-sm" for="${inputId}">${(String(option.label))}</label>`;
-        })}</div></div>
-        <div class="w-100 ${frequency === 3 ? "" : "d-none"}" data-takepills-custom-wrapper="${index}">${weekdayPicker(fourPTouchMaskToWeekdays(settings.custom), `takepills-${index}`)}</div>
-        <div class="w-100 d-flex justify-content-end"><button type="button" class="btn btn-outline-danger btn-quiet-danger btn-sm" data-action="removeRepeatRow" aria-label="Remover lembrete"><i class="fa-solid fa-trash-can me-2"></i>Remover</button></div></div>`;
-
-    return alarmDisclosure({
-        kind: "takePillsReminder",
-        group,
-        control,
-        body,
-        attrs: `data-takepills-reminder-group="${index}"`,
-        summary: {
-            title: reminderText || settings.time || "Lembrete por preencher",
-            subtitle: recurrenceWords(
-                TAKE_PILLS_RECURRENCE[frequency] || "once",
-                fourPTouchMaskToWeekdays(settings.custom),
-            ),
-            trailing: settings.time,
-        },
-    });
-}
-
-/** A frequência nativa do 4P Touch, na mesma gramática de recorrência dos outros alarmes. */
-const TAKE_PILLS_RECURRENCE = { 1: "once", 2: "daily", 3: "custom" };
-
-/** Os lembretes levam o seu número em cinco sítios, e removê-los desalinha-os todos. */
-export function syncTakePillsRows(section) {
-    const list = section?.querySelector("[data-repeat-list=\"takePillsReminder\"]");
-    if (!list) return;
-
-    list.querySelectorAll("[data-repeat-row=\"takePillsReminder\"]").forEach((row, index) => {
-        row.dataset.takepillsReminderGroup = String(index);
-        const number = row.querySelector("[data-takepills-reminder-number]");
-        if (number) {
-            number.textContent = `Lembrete ${index + 1}`;
-        }
-        row.querySelectorAll("[data-takepills-index]").forEach((field) => {
-            field.dataset.takepillsIndex = String(index);
-        });
-        const custom = row.querySelector("[data-takepills-custom-wrapper]");
-        if (custom) {
-            custom.dataset.takepillsCustomWrapper = String(index);
-        }
-    });
-
-    syncTakePillsCustomVisibility(section);
+            <div><label class="form-label-sm">Texto do lembrete</label><input class="form-control" type="text" data-config-field="reminderText" value="${reminderText}"><div class="form-text">O mesmo texto em todos os lembretes.</div></div>
+            <div class="vstack gap-2">
+                <div class="form-label-sm mb-0">Voz dos lembretes <span class="text-secondary">· uma gravação para todos</span></div>
+                ${switchField("voiceEnabled", voiceEnabled, { on: "Áudio ligado", off: "Áudio desligado" })}
+                <fieldset class="vstack gap-2" data-takepills-audio-controls ${voiceEnabled ? "" : "disabled"}>
+                    <input type="hidden" data-config-field="voiceData" value="${voiceData}">
+                    <input type="hidden" data-config-field="voiceMimeType" value="${voiceMimeType}">
+                    <div class="d-flex flex-wrap align-items-center gap-2">
+                        <button type="button" class="btn btn-outline-primary btn-sm" data-action="takePillsRecord"><i class="fa-solid fa-microphone me-2"></i>${hasVoiceData ? "Regravar" : "Gravar"}</button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm d-none" data-action="takePillsStop"><i class="fa-solid fa-stop me-2"></i>Parar</button>
+                        <button type="button" class="btn btn-outline-danger btn-sm" data-action="takePillsClear"><i class="fa-solid fa-trash-can me-2"></i>Limpar</button>
+                        <label class="btn btn-outline-secondary btn-sm mb-0"><i class="fa-solid fa-file-audio me-2"></i>Carregar<input type="file" class="d-none" accept="audio/*" data-action="takePillsFile"></label>
+                        <span class="small text-secondary" data-takepills-status>${voiceEnabled ? (hasVoiceData ? "Áudio carregado" : "Sem áudio") : "Áudio desligado"}</span>
+                    </div>
+                    <audio class="w-100" controls preload="none" data-takepills-preview ${hasVoiceData ? `src="${previewSrc}"` : ""}></audio>
+                </fieldset>
+            </div>
+        </div>
+    </div>`;
 }
 
 export function readTakePills(section) {
-    const groups = Array.from(
-        section.querySelectorAll("[data-takepills-reminder-group]"),
-    );
-
-    const voiceEnabled = readCheckbox(section, "voiceEnabled");
-    const voiceData = readText(section, "voiceData");
-    const voiceMimeType = readText(section, "voiceMimeType");
-
-    const plans = groups.map((group) => {
-        const frequency =
-            parseInt(
-                String(
-                    group.querySelector(
-                        "[data-takepills-field=\"reminderFrequency\"]:checked",
-                    )?.value ?? "1",
-                ),
-                10,
-            ) || 1;
-        const days = frequency === 3 ? fourPTouchMaskToWeekdays(readFourPTouchAlarmDays(group)) : [];
-        const kind = frequency === 2 ? "daily" : (frequency === 3 ? "custom" : "once");
-
-        return {
-            times: [{
-                time:
-                        group.querySelector(
-                            "[data-takepills-field=\"reminderTime\"]",
-                        )?.value || "",
-                enabled:
-                        group.querySelector(
-                            "[data-takepills-field=\"reminderEnabled\"]",
-                        )?.checked || false,
-                recurrence: days.length > 0 ? { kind, days } : { kind },
-            }],
-        };
-    });
-
     const payload = {
-        plans,
+        plans: readAlarmRows(section).map((item) => ({ times: [item] })),
         reminderText: readText(section, "reminderText"),
     };
+    const voiceData = readText(section, "voiceData");
 
-    if (voiceEnabled && voiceData !== "") {
-        payload.voiceData = voiceData;
-        if (voiceMimeType !== "") {
-            payload.voiceMimeType = voiceMimeType;
-        }
-    } else if (!voiceEnabled) {
+    if (!readCheckbox(section, "voiceEnabled")) {
         payload.voiceData = "";
+    } else if (voiceData !== "") {
+        payload.voiceData = voiceData;
+        const voiceMimeType = readText(section, "voiceMimeType");
+        if (voiceMimeType !== "") payload.voiceMimeType = voiceMimeType;
     }
 
     return payload;
-}
-
-function normalizeVoiceEnabled(desired, hasVoiceData) {
-    if (typeof desired?.voiceEnabled === "boolean") return desired.voiceEnabled;
-    if (typeof desired?.voiceEnabled === "string") return boolValue(desired.voiceEnabled, hasVoiceData);
-    return hasVoiceData;
-}
-
-function normalizeReminderSettings(desired) {
-    if (Array.isArray(desired?.plans)) {
-        return desired.plans
-            .map((plan) => (Array.isArray(plan?.times) ? plan.times[0] : plan))
-            .filter(Boolean)
-            .map(normalizeReminder);
-    }
-
-    const base = desired?.reminderSettings;
-    return Array.isArray(base) ? base.map(normalizeReminder) : [];
-}
-
-function normalizeReminder(item) {
-    const custom = Array.isArray(item.recurrence?.days)
-        ? weekdaysToFourPTouchMask(item.recurrence.days)
-        : String(item.custom ?? item.reminderCustom ?? "");
-
-    // Sem `frequency`, o modo nativo sai do `kind`: a forma pública só tem a recorrência.
-    const kind = String(item.recurrence?.kind ?? "");
-    const fromKind = kind === "daily" ? 2 : (kind === "custom" ? 3 : 1);
-    const frequency = item.frequency ?? item.frequencies;
-
-    return {
-        time: String(item.time ?? item.reminderTime ?? "08:00"),
-        enabled: boolValue(item.enabled ?? item.switchState, true),
-        frequency: frequency === undefined ? fromKind : (parseInt(String(frequency), 10) || 1),
-        custom,
-    };
-}
-
-function voicePreviewSrc(voiceData, voiceMimeType) {
-    const value = String(voiceData || "").trim();
-    if (value === "" || value.startsWith("data:")) return value;
-    return `data:${String(voiceMimeType || "audio/webm").trim() || "audio/webm"};base64,${value}`;
-}
-
-function frequencyOptionsFor(meta) {
-    return Array.isArray(meta?.frequency?.options) && meta.frequency.options.length
-        ? meta.frequency.options
-        : [{ value: 1, label: "Uma vez" }, { value: 2, label: "Diariamente" }, { value: 3, label: "Personalizado" }];
 }

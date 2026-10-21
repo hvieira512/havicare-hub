@@ -1,23 +1,22 @@
 import { html } from "../../../html.js";
 import { field } from "../../../components/form-field.js";
 import { renderPhoneControl } from "../../../phone.js";
-import {
-    addAlarmButton,
-    alarmDisclosure,
-    normalizeAlarmClockRecurrenceKind,
-    readWeekdays,
-    recurrenceWords,
-    weekdayPicker,
-} from "../alarm-fields.js";
-import {
-    boolValue,
-    defaultAlarmClockItem,
-    formatReminderTime,
-    normalizeAlarmClockDaySelection,
-    normalizeAlarmClockItems,
-} from "../normalizers.js";
+import { optionLabel } from "../../../i18n.js";
+import { addAlarmButton, alarmClockRow, readAlarmRows, RECURRENCES } from "../alarm-fields.js";
+import { boolValue } from "../normalizers.js";
 import { contactsInput } from "./generic.js";
-import { enabledSwitch, nextUid, numberField } from "./shared.js";
+import {
+    boundedNumber,
+    choiceField,
+    enabledSwitch,
+    entryFieldLabel,
+    entryText,
+    fieldChoices,
+    nextUid,
+    numberField,
+    readChoice,
+    switchField,
+} from "./shared.js";
 import {
     readCheckbox,
     readContacts,
@@ -26,447 +25,150 @@ import {
     readUniquePhoneArray,
 } from "../readers.js";
 
-function diaperSensitivityInput(desired, meta = {}) {
-    const presets = meta.presets || {};
-    const bounds = meta.bounds || {};
-    const [rangeMin, rangeMax] = bounds.pollutionRange || [2, 10];
-    const [valueMin, valueMax] = bounds.pollutionValue || [5, 25];
-    const range = desired.pollutionRange ?? "";
-    const value = desired.pollutionValue ?? "";
+/** O tom de cada perfil, do mais tolerante ao mais exigente. */
+const DIAPER_TONES = { low: "success", normal: "warning", high: "danger" };
 
-    const levels = [
-        { profile: "low", label: "Baixa", icon: "fa-feather-pointed", className: "btn-outline-success" },
-        { profile: "normal", label: "Normal", icon: "fa-shield-heart", className: "btn-outline-warning" },
-        { profile: "high", label: "Alta", icon: "fa-triangle-exclamation", className: "btn-outline-danger" },
-    ].filter((level) => presets[level.profile]);
-
-    const buttons = levels
-        .map((level) => {
-            const preset = presets[level.profile];
-            const active = Number(preset.pollutionRange) === Number(range) &&
-                Number(preset.pollutionValue) === Number(value);
-            return html`
-            <button type="button" class="btn ${level.className}${active ? " active" : ""}"
-                data-action="selectConfigChoice"
-                data-config-preset="${JSON.stringify(preset)}"
-                aria-pressed="${active ? "true" : "false"}">
-                <i class="fa-solid ${level.icon} me-2"></i>${level.label}
-            </button>`;
-        });
+function diaperSensitivityInput(entry, desired, meta) {
+    const presets = meta.presets ?? {};
+    const bounds = meta.bounds ?? {};
+    const current = Object.entries(presets).find(([, preset]) =>
+        Number(preset.pollutionRange) === Number(desired.pollutionRange) &&
+        Number(preset.pollutionValue) === Number(desired.pollutionValue))?.[0] ?? "";
+    const name = nextUid("diaper-profile");
+    const profiles = Object.entries(presets).map(([profile, preset], index) => html`
+        <input type="radio" class="btn-check" name="${name}" id="${name}-${index}" value="${profile}" data-config-preset="${JSON.stringify(preset)}" ${profile === current ? "checked" : ""}>
+        <label class="btn btn-outline-${DIAPER_TONES[profile] ?? "secondary"}" for="${name}-${index}">${optionLabel(entry.capabilityKey, meta.protocol, "profile", profile)}</label>`);
+    const number = (fieldName) => field(
+        entryFieldLabel(entry, meta, fieldName),
+        numberField(fieldName, desired[fieldName] ?? "", { min: bounds[fieldName]?.[0] ?? 0, max: bounds[fieldName]?.[1] ?? "" }),
+        { cls: "col" },
+    );
 
     return html`
         <div>
-            ${buttons.length === 0 ? "" : html`<div class="btn-group w-100 mb-2" role="group" aria-label="Sensibilidade dos alertas" data-config-choice-group="diaperSensitivity">${buttons}</div>`}
-            <div class="row g-2">
-                <div class="col">
-                    <label class="form-label-sm mb-1" for="diaperPollutionRange">Canais para muda</label>
-                    <input type="number" class="form-control" id="diaperPollutionRange" data-config-field="pollutionRange"
-                        min="${(String(rangeMin))}" max="${(String(rangeMax))}" step="1" value="${(String(range))}">
-                </div>
-                <div class="col">
-                    <label class="form-label-sm mb-1" for="diaperPollutionValue">Limiar por canal</label>
-                    <input type="number" class="form-control" id="diaperPollutionValue" data-config-field="pollutionValue"
-                        min="${(String(valueMin))}" max="${(String(valueMax))}" step="1" value="${(String(value))}">
-                    <div class="form-text">Mais baixo, um canal conta como molhado mais cedo e a fralda deixa antes de estar seca.</div>
-                </div>
-            </div>
+            ${profiles.length === 0 ? "" : html`<div class="btn-group w-100 mb-2" role="radiogroup" aria-label="${entryText(entry, meta).label}">${profiles}</div>`}
+            <div class="row g-2">${number("pollutionRange")}${number("pollutionValue")}</div>
             <div class="form-text">Muda só como o hub lê o sensor; vale a partir da leitura seguinte.</div>
         </div>`;
 }
 
-function windowToggleInput(_entry, desired) {
-    const [start = "22:00", end = "08:00"] = String(desired.range ?? "22:00-08:00").split("-");
+function windowToggleInput(entry, desired) {
+    const [start = "", end = ""] = String(desired.range ?? "").split("-");
     return html`
         <div class="row g-3 align-items-end">
-            <div class="col-md-4">${enabledSwitch(boolValue(desired.enabled, true), "mt-4")}</div>
+            <div class="col-md-4">${enabledSwitch(boolValue(desired.enabled, false), "mt-4")}</div>
             ${field("Início", html`<input class="form-control" type="time" data-config-field="rangeStart" value="${start}">`, { cls: "col-md-4" })}
             ${field("Fim", html`<input class="form-control" type="time" data-config-field="rangeEnd" value="${end}">`, { cls: "col-md-4" })}
         </div>`;
 }
 
 /** Os limiares que o aparelho avalia sobre a medição dele. */
-function heartRateThresholdsInput(_entry, desired) {
+function heartRateThresholdsInput(entry, desired, meta) {
     return html`
         <div class="row g-3 align-items-end">
-            <div class="col-md-4">${enabledSwitch(boolValue(desired.enabled, true), "mt-4")}</div>
-            ${field("Máximo (bpm)", numberField("maxBpm", desired.maxBpm ?? 150, { min: 40, max: 220 }), { cls: "col-md-4" })}
-            ${field("Mínimo (bpm)", numberField("minBpm", desired.minBpm ?? 50, { min: 30, max: 200 }), { cls: "col-md-4" })}
+            <div class="col-md-4">${enabledSwitch(boolValue(desired.enabled, false), "mt-4")}</div>
+            ${["maxBpm", "minBpm"].map((name) => field(entryFieldLabel(entry, meta, name), boundedNumber(entry, meta, name, desired), { cls: "col-md-4" }))}
         </div>`;
 }
 
 /** O corpo com que a pulseira calcula calorias e composição corporal. */
-function personalInfoInput(_entry, desired) {
-    const sex = desired.sex === "male" ? "male" : "female";
+function personalInfoInput(entry, desired, meta) {
+    const number = (name) => field(entryFieldLabel(entry, meta, name), boundedNumber(entry, meta, name, desired), { cls: "col-md-4" });
     return html`
         <div class="row g-3">
-            ${field("Altura (cm)", numberField("heightCm", desired.heightCm ?? 170, { min: 50, max: 250 }), { cls: "col-md-4" })}
-            ${field("Peso (kg)", numberField("weightKg", desired.weightKg ?? 70, { min: 10, max: 300 }), { cls: "col-md-4" })}
-            ${field("Idade", numberField("age", desired.age ?? 40, { min: 1, max: 120 }), { cls: "col-md-4" })}
-            ${field(
-                "Sexo",
-                html`<select class="form-select" data-config-field="sex">
-                    <option value="female"${sex === "female" ? " selected" : ""}>Feminino</option>
-                    <option value="male"${sex === "male" ? " selected" : ""}>Masculino</option>
-                </select>`,
-                { cls: "col-md-4" },
-            )}
-            ${field("Meta de passos", numberField("stepGoal", desired.stepGoal ?? 8000, { min: 100, max: 100000, step: 100 }), { cls: "col-md-4" })}
-            ${field("Meta de sono (min)", numberField("sleepGoalMinutes", desired.sleepGoalMinutes ?? 480, { min: 60, max: 900, step: 15 }), { cls: "col-md-4" })}
+            ${number("heightCm")}${number("weightKg")}${number("age")}
+            ${field(entryFieldLabel(entry, meta, "sex"), choiceField({ field: "sex", value: desired.sex, options: fieldChoices(entry, meta, "sex") }), { cls: "col-md-4" })}
+            ${number("stepGoal")}${number("sleepGoalMinutes")}
         </div>`;
 }
 
+/** Os números SOS escolhem-se da lista telefónica quando o protocolo assim o declara. */
 function sosContactsInput(entry, desired, meta = {}) {
     if (meta.sourceCapability === "phonebook") {
         const selected = new Set(Array.isArray(desired) ? desired.map(String) : []);
-        const contacts = Array.isArray(meta.phonebookContacts)
-            ? meta.phonebookContacts.filter((contact) => contact?.phone)
-            : [];
+        const contacts = (meta.phonebookContacts ?? []).filter((contact) => contact?.phone);
         if (contacts.length === 0) {
-            return html`
-                <div class="alert alert-warning small mb-0">
-                    Adicione primeiro os contactos à Lista telefónica. Os contactos SOS do Wonlex são selecionados dessa lista.
-                </div>`;
+            return html`<div class="alert alert-warning small mb-0">Acrescente primeiro os contactos à lista telefónica.</div>`;
         }
 
         return html`
-            <div>
-                <div class="form-label-sm">Selecionar da lista telefónica</div>
-                <div class="vstack gap-2">
-                    ${contacts.map((contact, index) => {
-                        const phone = String(contact.phone || "");
-                        const name = String(contact.name || "").trim();
-                        const id = `${nextUid("sos-phonebook")}-${index}`;
-                        return html`
-                            <label class="border rounded bg-body p-3 d-flex align-items-center gap-3" for="${id}">
-                                <input
-                                    id="${id}"
-                                    class="form-check-input mt-0"
-                                    type="checkbox"
-                                    data-sos-contact-phone
-                                    value="${phone}"
-                                    ${selected.has(phone) ? "checked" : ""}>
-                                <span>
-                                    <span class="d-block fw-semibold">${name || phone}</span>
-                                    ${name ? html`<span class="small text-secondary">${phone}</span>` : ""}
-                                </span>
-                            </label>`;
-                    })}
-                </div>
-                <div class="form-text">Apenas contactos existentes na lista telefónica podem ser usados como SOS.</div>
+            <div class="vstack gap-2">
+                ${contacts.map((contact, index) => {
+                    const phone = String(contact.phone);
+                    const name = String(contact.name || "").trim();
+                    const id = `${nextUid("sos-phonebook")}-${index}`;
+                    return html`
+                        <label class="border rounded bg-body p-3 d-flex align-items-center gap-3" for="${id}">
+                            <input id="${id}" class="form-check-input mt-0" type="checkbox" data-sos-contact-phone value="${phone}" ${selected.has(phone) ? "checked" : ""}>
+                            <span>
+                                <span class="d-block fw-semibold">${name || phone}</span>
+                                ${name ? html`<span class="small text-secondary">${phone}</span>` : ""}
+                            </span>
+                        </label>`;
+                })}
             </div>`;
     }
 
-    const phoneMaxLength = Math.max(0, parseInt(String(meta.phone?.maxLength ?? 0), 10) || 0);
-    return phoneRepeaterInput(entry, desired, {
-        kind: "sos_contacts",
-        limit: Math.max(1, parseInt(String(entry.limit ?? 3), 10) || 3),
-        label: "Contactos SOS",
-        emptyLabel: "Adicionar contacto SOS",
-        phoneMaxLength,
-    });
+    return phoneRepeaterInput(entry, desired, meta, "sos_contacts");
 }
 
+/** A lista de chamadas leva nomes quando o campo nativo é `contacts`, e só números quando é `numbers`. */
 function callWhitelistInput(entry, desired, meta = {}) {
-    if ((meta.protocol || "") === "vivistar-iw") {
-        return contactsInput(entry, desired, meta);
-    }
-
-    return phoneRepeaterInput(entry, desired, {
-        kind: "call_whitelist",
-        limit: Math.max(1, parseInt(String(entry.limit ?? 10), 10) || 10),
-        label: "Lista de chamadas autorizadas",
-        emptyLabel: "Adicionar número",
-    });
+    return entry.fields?.[0] === "contacts"
+        ? contactsInput(entry, desired, meta)
+        : phoneRepeaterInput(entry, desired, meta, "call_whitelist");
 }
 
-function phoneRepeaterInput(entry, desired, options) {
-    const limit = Math.max(1, parseInt(String(options.limit ?? entry.limit ?? 3), 10) || 3);
-    const values = Array.isArray(desired)
-        ? desired
-        : Array.isArray(desired.numbers)
-            ? desired.numbers
-            : [];
+function phoneRepeaterInput(entry, desired, meta, kind) {
+    const limit = Math.max(1, Number(meta.limit ?? entry.limit) || 1);
+    const values = Array.isArray(desired) ? desired : Array.isArray(desired.numbers) ? desired.numbers : [];
     const rows = values.length ? values.slice(0, limit) : [""];
-    const kind = String(options.kind || "numbers");
-    const label = String(options.label || entry.label || "Lista");
-    const emptyLabel = String(options.emptyLabel || "Adicionar");
-    const phoneMaxLength = Math.max(0, parseInt(String(options.phoneMaxLength ?? 0), 10) || 0);
+    const phoneMaxLength = Number(meta.phone?.maxLength) || 0;
 
     return html`
         <div class="vstack gap-3">
-            <div class="d-flex justify-content-between align-items-center gap-2">
-                <label class="form-label-sm mb-0">${label}</label>
-                <button type="button" class="btn btn-outline-secondary btn-sm" data-action="addRepeatRow" data-repeat-kind="${kind}" ${rows.length >= limit ? "disabled" : ""}>${emptyLabel}</button>
+            <div class="d-flex justify-content-end">
+                <button type="button" class="btn btn-outline-secondary btn-sm" data-action="addRepeatRow" data-repeat-kind="${kind}" ${rows.length >= limit ? "disabled" : ""}>Adicionar número <span data-repeat-count>(${rows.length} de ${limit})</span></button>
             </div>
             <div class="vstack gap-2" data-repeat-list="${kind}" data-repeat-limit="${limit}">
-                ${rows
-                        .map(
-                            (value, index) => html`
+                ${rows.map((value) => html`
                     <div class="row g-2 align-items-end" data-repeat-row="${kind}">
-                        <div class="col">
-                            ${renderPhoneControl({
-                                value: String(value || ""),
-                                configField: "numbers",
-                                maxLength: phoneMaxLength,
-                            })}
-                        </div>
-                        <div class="col-auto">
-                            <button type="button" class="btn btn-outline-danger btn-quiet-danger btn-sm" data-action="removeRepeatRow">-</button>
-                        </div>
-                    </div>
-                `,
-                        )
-                }
+                        <div class="col">${renderPhoneControl({ value: String(value || ""), configField: "numbers", maxLength: phoneMaxLength })}</div>
+                        <div class="col-auto"><button type="button" class="btn btn-outline-danger btn-quiet-danger btn-sm" data-action="removeRepeatRow">-</button></div>
+                    </div>`)}
             </div>
         </div>`;
 }
 
-/** O interruptor que desliga os lembretes todos sem os apagar, para quem o declara. */
-function alarmClockMasterSwitch(desired) {
-    const enabled = boolValue(desired?.masterEnabled, true);
-
-    return html`
-        <div class="form-check form-switch">
-            <input class="form-check-input" type="checkbox" role="switch" data-alarm-clock-field="masterEnabled" ${enabled ? "checked" : ""}>
-            <label class="form-check-label" data-switch-label data-switch-on="Lembretes ligados" data-switch-off="Lembretes desligados">${enabled ? "Lembretes ligados" : "Lembretes desligados"}</label>
-        </div>`;
-}
-
+/** As escolhas de recorrência e de tipo vêm do `_meta` da capacidade; o nome delas, do dicionário. */
 function alarmClockInput(entry, desired, meta = {}) {
-    const hasMaster = Array.isArray(entry?.fields) && entry.fields.includes("masterEnabled");
-    const items = normalizeAlarmClockItems(desired);
-    const limit = Math.max(1, parseInt(String(meta.limit ?? 3), 10) || 3);
-    const typeOptions = Array.isArray(meta.type?.options) ? meta.type.options : [];
-    const recurrenceOptions = Array.isArray(meta.recurrence?.options) && meta.recurrence.options.length
-        ? meta.recurrence.options
-        : [
-                { value: "once", label: "Uma vez" },
-                { value: "daily", label: "Todos os dias" },
-                { value: "custom", label: "Personalizado" },
-            ];
-    const wonlexFields = {
+    const items = Array.isArray(desired) ? desired : desired?.items ?? [];
+    const limit = Math.max(1, Number(meta.limit ?? entry.limit) || 1);
+    const recurrences = (meta.recurrence?.options ?? []).map((option) => option.value);
+    const options = {
+        recurrences: recurrences.length > 0 ? recurrences : RECURRENCES,
+        types: fieldChoices(entry, meta, "type"),
         label: meta.label?.supported === true,
         url: meta.url?.supported === true,
+        group: nextUid("alarm-clock-group"),
     };
-    if (items.length === 0) {
-        items.push(defaultAlarmClockItem(
-            typeOptions.length > 0,
-            recurrenceOptions[0]?.value ?? "once",
-        ));
-    }
-
-    const group = nextUid("alarm-clock-group");
-    const shown = items.slice(0, limit);
+    const shown = (items.length > 0 ? items : [{}]).slice(0, limit);
 
     return html`
         <div class="vstack gap-3">
-            ${hasMaster ? alarmClockMasterSwitch(desired) : ""}
+            ${entry.fields?.includes("masterEnabled")
+                ? switchField("masterEnabled", boolValue(desired?.masterEnabled, true), { on: "Lembretes ligados", off: "Lembretes desligados", attr: "data-alarm-clock-field" })
+                : ""}
             <div class="vstack gap-2" data-repeat-list="alarm_clock" data-repeat-limit="${limit}">
-                ${shown.map((item) => alarmClockRow(item, typeOptions, recurrenceOptions, wonlexFields, group))}
+                ${shown.map((item) => alarmClockRow(item, options))}
             </div>
             ${addAlarmButton("alarm_clock", "Acrescentar alarme", shown.length, limit)}
         </div>`;
 }
 
-/** Hora, nome, recorrência, e depois o que cada fornecedor declarar de seu; o que não couber desce. */
-function alarmClockRow(item = {}, typeOptions = [], recurrenceOptions = [], wonlexFields = {}, group = "alarm-clock") {
-    const rowId = nextUid("alarm-clock");
-    const recurrenceKind = normalizeAlarmClockRecurrenceKind(
-        item.recurrence?.kind ?? item.kind ?? recurrenceOptions[0]?.value ?? "once",
-    );
-    const recurrenceValue = recurrenceKind;
-    const dayMask = normalizeAlarmClockDaySelection(
-        item.recurrence?.days ?? "",
-    );
-    const hasTypeSelector = Array.isArray(typeOptions) && typeOptions.length > 0;
-    const typeValue = hasTypeSelector
-        ? parseInt(String(item.type ?? typeOptions[0]?.value ?? 1), 10) || 1
-        : 0;
-    const customVisible = recurrenceKind === "custom";
-    const recurrenceButtonOptions = Array.isArray(recurrenceOptions) && recurrenceOptions.length
-        ? recurrenceOptions
-        : [
-                { value: "once", label: "Uma vez" },
-                { value: "daily", label: "Todos os dias" },
-                { value: "custom", label: "Personalizado" },
-            ];
-    const time = formatReminderTime(item.time);
-    const typeLabel = hasTypeSelector
-        ? String(typeOptions.find((option) => (parseInt(String(option.value), 10) || 1) === typeValue)?.label || "")
-        : "";
-    const control = html`
-        <div class="form-check form-switch m-0">
-            <input class="form-check-input" type="checkbox" role="switch" aria-label="Alarme ligado" data-alarm-clock-field="enabled" ${boolValue(item.enabled, true) ? "checked" : ""}>
-        </div>`;
-    const body = html`
-            <div class="d-flex flex-wrap align-items-end gap-3">
-                ${field(
-                    "Hora",
-                    html`<input class="form-control" type="text" inputmode="numeric" maxlength="5" pattern="[0-9]{2}:[0-9]{2}" placeholder="HH:MM" data-time-format="24h" data-alarm-clock-field="time" value="${time}" required>`,
-                    { cls: "alarm-field-time", required: true },
-                )}
-                ${wonlexFields.label
-                    ? field(
-                            "Nome do alarme",
-                            html`<input class="form-control" type="text" placeholder="Ex.: Tomar medicação" data-alarm-clock-field="label" value="${(String(item.label || ""))}">`,
-                            { cls: "alarm-field-grow" },
-                        )
-                    : ""}
-                ${field(
-                    "Recorrência",
-                    html`<div class="btn-group" role="group" aria-label="Recorrência do alarme">
-                        ${recurrenceButtonOptions
-                                .map((option) => {
-                                    const optionValue = normalizeAlarmClockRecurrenceKind(option.value);
-                                    const inputId = `${rowId}-recurrence-${optionValue}`;
-                                    return html`
-                            <input
-                                class="btn-check"
-                                type="radio"
-                                name="${rowId}-recurrence"
-                                id="${inputId}"
-                                value="${optionValue}"
-                                data-alarm-clock-field="recurrenceKind"
-                                ${optionValue === recurrenceValue ? "checked" : ""}>
-                            <label class="btn btn-outline-secondary btn-sm" for="${inputId}">${(String(option.label))}</label>
-                        `;
-                                })
-                        }
-                    </div>`,
-                    { required: true },
-                )}
-                ${hasTypeSelector
-                    ? field(
-                            "Tipo",
-                            html`<div class="btn-group" role="group" aria-label="Tipo de alarme">
-                        ${typeOptions.map((option) => {
-                            const optionValue = parseInt(String(option.value), 10) || 1;
-                            const inputId = `${rowId}-type-${optionValue}`;
-                            return html`
-                            <input
-                                class="btn-check"
-                                type="radio"
-                                name="${rowId}-type"
-                                id="${inputId}"
-                                value="${(String(optionValue))}"
-                                data-alarm-clock-field="type"
-                                ${optionValue === typeValue ? "checked" : ""}>
-                            <label class="btn btn-outline-primary btn-sm" for="${inputId}">${(String(option.label || option.value))}</label>
-                        `;
-                        })}
-                    </div>`,
-                            { cls: "flex-shrink-0" },
-                        )
-                    : ""}
-                <div class="w-100 ${customVisible ? "" : "d-none"}" data-alarm-clock-custom-wrapper>
-                    ${weekdayPicker(dayMask, rowId)}
-                </div>
-                ${wonlexFields.url
-                    ? field(
-                            "Som do lembrete",
-                            html`<input class="form-control" type="url" inputmode="url" placeholder="https://exemplo.pt/lembrete.mp3" data-alarm-clock-field="url" value="${(String(item.url || ""))}">`,
-                            {
-                                cls: "w-100",
-                                help: "Endereço HTTP ou HTTPS opcional para o ficheiro de voz do lembrete.",
-                            },
-                        )
-                    : ""}
-                <div class="w-100 d-flex justify-content-end">
-                    <button type="button" class="btn btn-outline-danger btn-quiet-danger btn-sm" data-action="removeRepeatRow" title="Remover" aria-label="Remover">
-                        <i class="fa-solid fa-trash-can me-2"></i>Remover
-                    </button>
-                </div>
-            </div>`;
-
-    return alarmDisclosure({
-        kind: "alarm_clock",
-        group,
-        control,
-        body,
-        summary: {
-            title: String(item.label || "") || typeLabel || time || "Alarme por preencher",
-            subtitle: recurrenceWords(recurrenceKind, dayMask),
-            trailing: time,
-            badges: String(item.url || "").trim() === "" ? "" : "♪",
-        },
-    });
-}
-
-/** Os dias da semana só se escolhem na recorrência personalizada. */
-export function syncAlarmClockCustomVisibility(row) {
-    const customWrapper = row?.querySelector("[data-alarm-clock-custom-wrapper]");
-    if (!customWrapper) return;
-
-    const recurrence = row.querySelector("[data-alarm-clock-field=\"recurrenceKind\"]:checked");
-    customWrapper.classList.toggle(
-        "d-none",
-        String(recurrence?.value || "").trim().toLowerCase() !== "custom",
-    );
-}
-
-/** Uma linha sem hora nunca chegou a ser preenchida, e por isso não vai no payload. */
-function readAlarmClock(section) {
-    const items = Array.from(
-        section.querySelectorAll("[data-repeat-row=\"alarm_clock\"]"),
-    )
-        .map((row) => {
-            const recurrenceKind = normalizeAlarmClockRecurrenceKind(
-                row.querySelector("[data-alarm-clock-field=\"recurrenceKind\"]:checked")?.value || "once",
-            );
-            const item = {
-                time: String(
-                    row.querySelector("[data-alarm-clock-field=\"time\"]")?.value || "",
-                ).trim(),
-                enabled:
-                    row.querySelector("[data-alarm-clock-field=\"enabled\"]")?.checked ||
-                    false,
-                recurrence: { kind: recurrenceKind },
-            };
-
-            const labelField = row.querySelector("[data-alarm-clock-field=\"label\"]");
-            if (labelField) {
-                const label = String(labelField.value || "").trim();
-                if (label !== "") {
-                    item.label = label;
-                }
-            }
-
-            const urlField = row.querySelector("[data-alarm-clock-field=\"url\"]");
-            if (urlField) {
-                const url = String(urlField.value || "").trim();
-                if (url !== "") {
-                    item.url = url;
-                }
-            }
-
-            const typeField = row.querySelector("[data-alarm-clock-field=\"type\"]:checked");
-            if (typeField) {
-                const type = parseInt(String(typeField.value || "1"), 10);
-                if (Number.isFinite(type)) {
-                    item.type = type;
-                }
-            }
-
-            if (item.recurrence.kind === "custom") {
-                const days = readWeekdays(row);
-                item.recurrence.days = days;
-                if (!Array.isArray(days) || days.length === 0) {
-                    throw new Error("Selecione pelo menos um dia para a recorrência personalizada");
-                }
-            }
-
-            return item;
-        })
-        .filter((item) => item.time !== "");
-
-    const master = section.querySelector("[data-alarm-clock-field=\"masterEnabled\"]");
-
-    return master === null ? { items } : { masterEnabled: master.checked, items };
-}
-
 export const INPUTS = {
     diaperSensitivity: {
-        render: (_entry, desired, meta) => diaperSensitivityInput(desired, meta),
+        render: diaperSensitivityInput,
         read: (section) => ({
             pollutionRange: readNumber(section, "pollutionRange"),
             pollutionValue: readNumber(section, "pollutionValue"),
@@ -474,7 +176,6 @@ export const INPUTS = {
     },
     windowToggle: {
         render: windowToggleInput,
-        // As horas voltam a juntar-se no formato que o construtor valida.
         read: (section) => ({
             enabled: readCheckbox(section, "enabled"),
             range: `${readText(section, "rangeStart")}-${readText(section, "rangeEnd")}`,
@@ -486,7 +187,7 @@ export const INPUTS = {
             heightCm: readNumber(section, "heightCm"),
             weightKg: readNumber(section, "weightKg"),
             age: readNumber(section, "age"),
-            sex: readText(section, "sex"),
+            sex: readChoice(section, "sex"),
             stepGoal: readNumber(section, "stepGoal"),
             sleepGoalMinutes: readNumber(section, "sleepGoalMinutes"),
         }),
@@ -505,40 +206,27 @@ export const INPUTS = {
         read: (section) => {
             const selector = section.querySelectorAll("[data-sos-contact-phone]");
             if (selector.length > 0) {
-                return Array.from(selector)
-                    .filter((input) => input.checked)
-                    .map((input) => String(input.value || "").trim())
-                    .filter(Boolean);
+                return Array.from(selector).filter((input) => input.checked).map((input) => input.value);
             }
-            const limit = parseInt(section.dataset.configLimit || "3", 10) || 3;
-            return readUniquePhoneArray(section, "numbers", "Contactos SOS").slice(0, limit);
+            return readUniquePhoneArray(section, "numbers", "Contactos SOS");
         },
-        defaults: () => [],
-        help: () => "",
     },
     call_whitelist: {
         render: callWhitelistInput,
-        read: (section) => {
-            const limit = parseInt(section.dataset.configLimit || "10", 10) || 10;
-            if ((section.dataset.configProtocol || "") === "vivistar-iw") {
-                return { contacts: readContacts(section).slice(0, limit) };
-            }
-            return readUniquePhoneArray(section, "numbers", "Lista de chamadas autorizadas").slice(0, limit);
-        },
-        defaults: (entry, protocol) => protocol === "vivistar-iw"
-            ? { contacts: [{ name: "", phone: "" }] }
-            : ["", "", "", "", "", "", "", "", "", ""],
-        help: () => "",
+        read: (section) => (section.querySelector("[data-repeat-row=\"contacts\"]")
+            ? { contacts: readContacts(section) }
+            : readUniquePhoneArray(section, "numbers", "Lista de chamadas autorizadas")),
     },
     phonebook: {
         render: contactsInput,
         read: (section) => ({ contacts: readContacts(section) }),
-        defaults: () => ({ contacts: [] }),
     },
     alarm_clock: {
-        render: (entry, desired, meta) => alarmClockInput(entry, desired, meta),
-        read: (section) => readAlarmClock(section),
-        // Sem `help`: o limite real e a nota da recorrência já estão no topo do bloco.
-        defaults: () => ({ items: [] }),
+        render: alarmClockInput,
+        read: (section) => {
+            const master = section.querySelector("[data-alarm-clock-field=\"masterEnabled\"]");
+            const items = readAlarmRows(section);
+            return master === null ? { items } : { masterEnabled: master.checked, items };
+        },
     },
 };
