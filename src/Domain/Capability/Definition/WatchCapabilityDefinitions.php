@@ -111,12 +111,14 @@ final class WatchCapabilityDefinitions extends CapabilityDefinitions
             ],
             'reminders' => [
                 'setting' => [
-                    'alarm_clock',
                     'medication_reminders',
                 ],
             ],
             'alarms' => [
                 'setting' => [
+                    // hitcare: o hitCare procura o alarm_clock só em capabilities.alarms; passa para os
+                    // reminders quando o ajax/custom.php o procurar lá.
+                    'alarm_clock',
                     'low_battery_alert',
                     'fall_detection',
                     'fall_sensitivity',

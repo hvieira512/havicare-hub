@@ -39,7 +39,7 @@ final class CapabilitiesApiTest extends MysqlDashboardTestCase
         self::assertTrue($porChave['heart_rate']['isTelemetry'] ?? false);
 
         self::assertArrayHasKey('alarm_clock', $porChave);
-        self::assertSame('reminders', $porChave['alarm_clock']['section'] ?? null);
+        self::assertSame('alarms', $porChave['alarm_clock']['section'] ?? null);
         self::assertFalse($porChave['alarm_clock']['isTelemetry'] ?? true);
 
         foreach ($porChave as $key => $row) {

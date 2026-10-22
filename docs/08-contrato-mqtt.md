@@ -527,6 +527,7 @@ marcado com um comentário `hitcare:`.
 | `src/Api/Auth/ApiTokenStore.php` | O token do login sai com `access_token`, `expires_in`, `refresh_token` e `refresh_expires_in` em snake_case; os outros campos já são camelCase | `api_v2/hub/repositories/HubApiRepository.php` |
 | `src/Api/Services/AuthService.php` | A renovação aceita `{refresh_token}` no corpo do `POST /api/auth/login` | `api_v2/hub/repositories/HubApiRepository.php` |
 | `VivistarConfigurationDefinitions`, `FourPTouchConfigurationDefinitions`, `AlarmClock/Wonlex.php`, `AlarmClock/Vivistar.php`, `AlarmClockCapability.php` | As etiquetas das opções no `_meta` (`working_mode.mode`, `fall_sensitivity.sensitivity`, `alarm_clock.days`, `alarm_clock.type`, `alarm_clock.recurrence`); saem quando o hitCare traduzir os valores | `ajax/custom.php:1948,2150,2170-2177` |
+| `WatchCapabilityDefinitions` | O `alarm_clock` dos relógios na secção `alarms`, e não na `reminders`: o hitCare procura-o em `capabilities.alarms`, e sem ele não desenha os alarmes de um relógio que ainda não tenha nenhum | `ajax/custom.php:1480,2160` |
 | `VivistarConfigurationDefinitions` | O `working_mode.mode` da Vivistar em inteiros (`1`, `2`, `3`, `8`), e não numa enumeração: o hitCare envia o número e testa o `8` | `ajax/custom.php:1265-1280` |
 
 ## Implementação
