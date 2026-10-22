@@ -6,8 +6,6 @@ namespace Hub\Domain\Capability\Contacts;
 
 final class WonlexContactCodec
 {
-    public const NAME_MAX_LENGTH = 4;
-
     private const DIAL_CODES = ['351', '34', '33', '39', '49', '44'];
 
     /**
