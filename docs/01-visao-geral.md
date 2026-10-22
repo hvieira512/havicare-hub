@@ -134,12 +134,10 @@ O `MaintenanceScheduler` mantém dois temporizadores de 10 segundos:
 - **[Comandos](11-comandos-e-downlink.md)** — repete os que ficaram por
   entregar, até três tentativas com 60 segundos de intervalo, e expira os que
   excedem `DASHBOARD_COMMAND_TIMEOUT_SECONDS`.
-- **Ligações** — encerra as que permanecem inativas para além de
-  `DASHBOARD_DEVICE_IDLE_TIMEOUT_SECONDS`, 30 minutos por omissão, publicando
-  `status offline` e o evento `device.disconnected`. Os aparelhos sem sessão
-  própria — os que falam através de um gateway BLE — dão-se por desligados aqui
-  pelo mesmo prazo; os radares têm o seu, de 3 minutos
-  ([radar](04-ingestao-mqtt-radar.md#7-ligado-e-desligado)).
+- **Ligações** — dá por desligado quem falhou dois sinais de vida do seu
+  protocolo, publicando `status offline` e o evento `device.disconnected`, e
+  fecha o socket dos relógios. Os prazos e as fontes estão na
+  [persistência](14-persistencia.md#7-ligado-e-desligado).
 
 ## Localização do estado
 

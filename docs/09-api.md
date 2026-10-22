@@ -504,6 +504,12 @@ apresenta já o conjunto completo de capacidades, com os valores por omissão.
 
 Ver a [configuração de dispositivos](10-configuracao-de-dispositivos.md).
 
+O `device.presence` diz o estado de ligação, aqui e na lista: `online` ou
+`offline` nos aparelhos que ficam ligados, e `measuring` ou `idle` nos que só se
+ligam para medir — a balança, o tensiómetro, o termómetro e o oxímetro. Num
+`idle` o `lastSeenAt` é a última leitura. O `device.online` continua a dizer se
+há ligação agora ([persistência](14-persistencia.md#7-ligado-e-desligado)).
+
 ### Erros
 
 ```json

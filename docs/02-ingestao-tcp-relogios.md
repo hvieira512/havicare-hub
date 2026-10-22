@@ -212,10 +212,13 @@ Quatro características deste fluxo:
 O hub não inicia comunicação: não emite pedidos de eco nem interroga o
 dispositivo. A ligação é mantida pela transmissão periódica do próprio relógio.
 
-Um dispositivo inativo para além de `DASHBOARD_DEVICE_IDLE_TIMEOUT_SECONDS` —
-**30 minutos** por omissão — tem o socket encerrado pelo
-`MaintenanceScheduler`, com publicação de `status offline` retido e do evento
-`device.disconnected`. A verificação decorre a cada 10 segundos.
+Um relógio que falha **dois heartbeats** — calado `2 × intervalo + 30 s` — tem o
+socket encerrado, com publicação de `status offline` retido e do evento
+`device.disconnected`: 630 s na Wonlex e na 4P, 990 s na Vivistar (mais, com o
+modo de poupança confirmado) e 150 s no dispensador. Uma ligação que morre sem
+FIN, como um relógio que perde a rede, deixa assim de receber comandos num socket
+morto. A verificação decorre a cada 10 segundos; os intervalos e as fontes estão
+na [persistência](14-persistencia.md#7-ligado-e-desligado).
 
 ## 5. Correspondência entre tipo nativo e capacidade
 

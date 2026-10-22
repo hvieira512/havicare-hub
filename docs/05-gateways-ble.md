@@ -200,8 +200,8 @@ publicado dezenas de vezes por minuto.
 |---|---|---|---|
 | **De-duplicação** | O mesmo anúncio, byte a byte, ouvido outra vez é descartado | sensor de fralda | 5 s |
 | **Refrescamento** | Suprime telemetria de conteúdo idêntico até decorrer este período, findo o qual volta a ser publicada | aparelhos MOKO | 60 s |
-| **Inatividade do gateway** | Transição para `offline`, com `status` retido. Vale também para um gateway que se calou antes de um reinício do hub: o Redis lembra-se dele | gateways | 180 s |
-| **Inatividade do retransmitido** | `device.disconnected` quando nenhum gateway o ouve; o `device.connected` sai quando um o volta a ouvir | aparelhos atrás do gateway | 30 min (`DASHBOARD_DEVICE_IDLE_TIMEOUT_SECONDS`) |
+| **Inatividade do gateway** | Transição para `offline`, com `status` retido, ao fim de dois sinais de vida falhados. Vale também para um gateway que se calou antes de um reinício do hub: o Redis lembra-se dele | gateways | 90 s no MKGW3, 1230 s no MKGW4, 150 s no da Havicare |
+| **Inatividade do retransmitido** | `device.disconnected` quando nenhum gateway o ouve; o `device.connected` sai quando um o volta a ouvir | aparelhos atrás do gateway | 1230 s, dois envios do MKGW4 |
 
 O refrescamento tem âmbito **por gateway** e não por dispositivo. Com âmbito por
 dispositivo, o primeiro gateway a publicar suprimiria os restantes, eliminando a
@@ -302,9 +302,11 @@ O `…/gw/+/raw` tem um subscritor só, o do MOKO: uma mensagem com `source` é 
 outra ponte, e vai para a que a reclama — pela fonte e, nas JoyTech, pelo prefixo
 do modelo (`DBP`, `XM`, `DET`).
 
-O gateway está ligado enquanto publica: o subscritor marca-o como um MOKO e
-dá-o por desligado ao fim do mesmo prazo sem mensagens. Sem
-aparelhos por perto, só um sinal de vida dele o mantém ligado.
+O gateway está ligado enquanto publica, e manda um `heartbeat` por minuto para
+isso valer sem aparelhos por perto. Dá-se por desligado ao fim de dois sinais de
+vida falhados, como um MOKO. A balança e a JoyTech só se ligam para medir: estão
+`measuring` durante a sessão e `idle` fora dela, e nunca `offline`
+([persistência](14-persistencia.md#7-ligado-e-desligado)).
 
 A instância de dev lê os gateways reais. Com `GATEWAY_COMMANDS_ENABLED=false` não
 lhes escreve nada ([capítulo 15](15-operacao.md)).

@@ -314,6 +314,53 @@ redis-cli --scan --pattern 'dev:hub:*' | wc -l
 As chaves `hub:forward:*` e `hub:crm:target:*` pertencem ao reencaminhador e
 integram a primeira contagem sem pertencerem ao hub.
 
+## 7. Ligado e desligado
+
+O estado de ligação vive no `hub:dashboard` — a bandeira `online` do aparelho e o
+conjunto ordenado pela última vez que falou — e é o mesmo que sai no `status` do
+MQTT e no `device.presence` da API.
+
+**A regra.** Um aparelho dá-se por desligado depois de **dois sinais de vida
+falhados**: calado durante `2 × intervalo + 30 s`. O intervalo é o que o hub tem
+confirmado na configuração do aparelho, quando o tem; senão, o que o fornecedor
+documenta; e, quando a documentação não o diz, o que se mediu em produção. Os
+valores estão no [`Liveness`](../src/Domain/Liveness.php), um por protocolo, cada
+um com a sua fonte.
+
+**Um sítio só.** A manutenção do hub varre o conjunto de dez em dez segundos e
+anuncia `status offline` retido e `device.disconnected` de quem passou o prazo do
+seu protocolo. Uma ligação TCP aberta decide-a o servidor, pelo mesmo prazo: fecha
+o socket, que é o que deixa de escrever comandos para um aparelho que já não está
+lá.
+
+| Protocolo | Categoria | Sinal de vida | Intervalo | Fonte | Prazo | Estados |
+|---|---|---|---|---|---|---|
+| `wonlex-json` | contínuo | `heartbeat` | 300 s | a especificação não o fixa; 303 s observado em produção, 22/10/2026 | 630 s | `online` / `offline` |
+| `four-p-touch` | contínuo | `LK` | 300 s | 5 a 8 min pela especificação; 300 s observado em produção, 22/10/2026 | 630 s | `online` / `offline` |
+| `vivistar-iw` | contínuo | `AP03` | 480 s; com `working_mode` confirmado em `power_saving`, 3600 s, e em `custom`, o `intervalSeconds` se for maior | o AP03 só se regula por SMS (`#hb#`); 480 s observado em produção, 22/10/2026; os modos no BP33 | 990 s | `online` / `offline` |
+| `zayata-m228` | contínuo | heartbeat `0x02` | 60 s | o `0x8004` que o aparelho declara no registo ([19a](19a-dispensador-parametros.md)) | 150 s | `online` / `offline` |
+| `moko-mkgw3` | contínuo | estado de rede `3004` | 30 s | MKGW3 MQTT V2.3 §3.3.3, omissão | 90 s | `online` / `offline` |
+| `moko-mkgw4` | contínuo | estado `0x3004` | 600 s | regula-se no `0x100C`, que o hub não guarda; 600 s é o mais lento observado em produção, 22/10/2026 | 1230 s | `online` / `offline` |
+| `havicare-ble-gateway` | contínuo | `heartbeat` do `havicare-gateway` | 60 s | `HEARTBEAT_MS` do havicare-ble-gateway | 150 s | `online` / `offline` |
+| `veepoo-ble` | contínuo | o `session` que o gateway repete enquanto a ligação dura | 30 s | `HEARTBEAT_SECONDS` do havicare-ble-gateway | 90 s | `online` / `offline` |
+| `monit-mecs-pro-ble`, `moko-w6`, `moko-w6b` | contínuo | anúncio BLE retransmitido | 600 s | sem intervalo documentado: chegam ao ritmo do MKGW4, que sobe o que viu de 600 em 600 s (Config APP V2.1 §4.3.1); 31–44 s atrás de um MKGW3 | 1230 s | `online` / `offline` |
+| `qinglanst-radar` | contínuo | `position` | 60 s | 30 s sem gente pela especificação (Cloud2cloud V2.2.3 §3.3.1); p99 de 62 s observado em produção, 22/10/2026 | 150 s | `online` / `offline` |
+| `voerka-ncs` | contínuo | `status/online` com `code` 1001 | 1200 s | a especificação só documenta o de ligação; 13 a 20 min observado em produção, 22/10/2026. O testamento no broker diz o `offline` sem esperar (Voerka §4.2) | 2430 s | `online` / `offline` |
+| `tuya-cloud` | reportado pela cloud | `deviceOnline` e `deviceOffline` | — | a cloud da Tuya; o botão acorda de 8 em 8 h ([21](21-pulseira-sos-wifi.md)) | nenhum | `online` / `offline` |
+| `lefu-torre`, `joytech-bp`, `joytech-bp-ecg`, `joytech-et`, `joytech-spo2` | a pedido | a sessão GATT e as tramas dela | — | ligam-se para medir e desligam-se | 120 s sem tramas acabam a sessão | `measuring` / `idle` |
+
+**A pedido.** A balança, o tensiómetro, o termómetro e o oxímetro passam a maior
+parte do tempo desligados, e isso é o normal deles. Não têm `online` nem
+`offline`: durante a sessão GATT estão `measuring`, e fora dela `idle`, com a
+última leitura no `lastSeenAt`. A sessão acaba com o `connected: false` ou com
+120 s sem tramas — um gateway que caiu a meio também a acaba. Na dashboard não
+levam «Desligado»: levam «A medir» durante a sessão e «Última leitura há …» fora
+dela.
+
+**O que não tem sinal.** Os botões e os pagers do NCS não são aparelhos do hub:
+aparecem só no `data.pagerId` das chamadas, e o que se sabe deles é a última vez
+que se carregou.
+
 ## Implementação
 
 | Ficheiro | Responsabilidade |
@@ -327,4 +374,6 @@ integram a primeira contagem sem pertencerem ao hub.
 | `src/Api/Repository/` | Um repositório por assunto |
 | `src/Dashboard/DeviceRuntimeStore.php` · `DeviceEventStore.php` · `DeviceCommandStore.php` | Os três espaços de `hub:dashboard` |
 | `src/Runtime/HubServices.php` | Onde o prefixo do Redis é aplicado |
+| `src/Domain/Liveness.php` | O intervalo e o prazo de cada protocolo, e os estados de presença |
+| `src/Runtime/MaintenanceScheduler.php` | A varredura que dá por desligado quem passou o prazo |
 | `tests/Unit/Runtime/RedisPrefixTest.php` | Tranca os oito espaços de chaves |

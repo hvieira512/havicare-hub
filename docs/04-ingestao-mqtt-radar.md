@@ -263,14 +263,14 @@ Um número que a tabela não conheça não entra na planta e fica no `skipped` c
 ## 7. Ligado e desligado
 
 O radar não abre sessão nem se despede: está **ligado** enquanto fala e
-**desligado** quando se cala durante `QINGLANST_IDLE_TIMEOUT_SECONDS` — 180 s
-por omissão. Fala a cada poucos segundos; em Outubro de 2026 o maior silêncio
-medido em produção foi de cinco minutos.
+**desligado** quando falha dois `position` — 150 s calado. Sem gente na divisão
+manda um de 30 em 30 s (Cloud2cloud V2.2.3 §3.3.1), e em produção o p99 é de 62 s.
 
 - A primeira mensagem depois de desligado publica `status online` retido e o
   evento `device.connected`.
-- Um varrimento de dez em dez segundos dá por desligados os que passaram o prazo,
-  com `status offline` e `device.disconnected`.
+- A manutenção do hub dá por desligados os que passaram o prazo, de dez em dez
+  segundos, com `status offline` e `device.disconnected`
+  ([persistência](14-persistencia.md#7-ligado-e-desligado)).
 
 O estado anterior lê-se do Redis e não da memória do processo, e por isso um
 reinício do hub não passa por reconexão.

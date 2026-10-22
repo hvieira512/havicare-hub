@@ -61,8 +61,8 @@ O código está em `src/Ingress/Tuya/`: `PulsarFrame` abre a trama, o
 | `bizCode` | O que o hub faz |
 |---|---|
 | `devicePropertyMessage` | Traduz cada propriedade como na tabela do âmbito. O `occurredAt` é a hora a que o aparelho a reportou. O `sos_state` a `false` é o botão a voltar sozinho ao repouso, e não sai |
-| `deviceOnline` | Só conta como o aparelho ter falado |
-| `deviceOffline` | Ignora-se: chega minutos depois de cada acordar |
+| `deviceOnline` | O botão acordou: fica ligado |
+| `deviceOffline` | O botão adormeceu: fica desligado até ao próximo despertar |
 | os outros | Ignoram-se: são da cloud, e não do aparelho |
 
 O `source.protocol` é `tuya-cloud` e o `source.nativeType` é o código Tuya do
@@ -70,13 +70,11 @@ ponto de dados.
 
 ## 3. Ligado e desligado
 
-A pulseira não tem sessão. Está ligada a partir da primeira mensagem, e é
-anunciada desligada quando se cala por mais de `TUYA_IDLE_TIMEOUT_SECONDS`
-(8 h 30 por omissão). O prazo vai no estado do aparelho (`idleTimeoutSeconds`),
-e o varrimento geral de meia hora respeita-o: sem isso, a pulseira estaria
-desligada sete horas e meia em cada oito.
-
-Uma pulseira avariada só se dá por desligada ao fim desse prazo.
+Quem sabe se a pulseira se alcança é a cloud da Tuya, e o hub segue-a: ligada
+com o `deviceOnline` e com qualquer leitura, desligada com o `deviceOffline`. A
+pulseira acorda de oito em oito horas e volta a dormir minutos depois, e passa
+por isso a maior parte do tempo desligada — é a verdade: um comando não lhe chega
+enquanto dorme. O silêncio não a desliga.
 
 ## 4. Identidade e registo
 
@@ -96,7 +94,6 @@ conta ligada ao projeto (*Devices → Link App Account*).
 | `TUYA_ACCESS_ID`, `TUYA_ACCESS_SECRET` | As chaves do projeto Tuya (*Cloud → Project → Overview*) |
 | `TUYA_PULSAR_URL` | `wss://mqe.tuyaeu.com:8285/`, o da Europa Central |
 | `TUYA_SUBSCRIPTION` | A subscrição Pulsar desta instância |
-| `TUYA_IDLE_TIMEOUT_SECONDS` | O prazo da secção 3 |
 
 **Cada instância usa a sua subscrição.** O tópico de produção tem onze partições,
 e dois consumidores na mesma subscrição repartem-nas: cada instância veria só

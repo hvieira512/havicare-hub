@@ -139,7 +139,7 @@ um `configuration` — nos `device.configuration.*` — ou um `error`. Os segund
 | `type` | Condição de emissão |
 |---|---|
 | `device.connected` | Um aparelho autenticou-se, um NCS reportou-se online, ou um radar ou aparelho retransmitido voltou a falar |
-| `device.disconnected` | Ligação fechada, inatividade, gateway calado, radar calado 3 minutos, ou retransmitido sem gateway que o ouça durante 30 |
+| `device.disconnected` | Ligação fechada, dois sinais de vida falhados, a cloud a dizer que o aparelho adormeceu, ou uma sessão GATT que acabou |
 | `device.rejected` | Um aparelho não registado tentou entrar |
 | `device.downlink.queued` | O aparelho estava offline; o comando ficou em fila. Sai uma vez por pedido: renovar a fila enquanto o aparelho não volta não o repete |
 | `device.downlink.sent` | O comando saiu para o aparelho, por socket, por gateway ou pela cloud do fabricante. Sai a cada tentativa |
@@ -411,25 +411,30 @@ ativo. Quem consome a QoS 1 já tem de tolerar repetidos.
 }
 ```
 
-`state` vale `online`, `offline` ou `error`. O `error` traz um objeto `error` com
+`state` vale `online`, `offline` ou `error`; nos aparelhos que só se ligam para
+medir — balança, tensiómetro, termómetro e oxímetro — vale `measuring` durante a
+sessão e `idle` fora dela, e nunca `offline`. O `error` traz um objeto `error` com
 o código, e é o **único** que não é retido — uma recusa é um acontecimento, não
 um estado que valha a pena guardar.
 
 Todos os dispositivos têm `status`, e é o mesmo estado que a API devolve em
-`device.online`. O que muda é o que o desliga:
+`device.presence`. Desligado é ter falhado **dois sinais de vida** do protocolo —
+calado `2 × intervalo + 30 s`; os intervalos e as fontes estão na
+[persistência](14-persistencia.md#7-ligado-e-desligado):
 
-| Dispositivos | `online` | `offline` |
+| Dispositivos | Ligado | Desligado |
 | --- | --- | --- |
-| Relógios e dispensador (TCP) | Ao autenticar | Ao fechar a ligação, ou sem mensagens no prazo da ligação |
-| Pulseiras W6/W6B e sensores de fralda | Na primeira mensagem que um gateway retransmite | Nenhum gateway os ouve durante 30 min |
-| Pulseira Veepoo, balança, tensiómetro, termómetro e oxímetro | Quando o gateway liga ao aparelho | Quando a ligação BLE cai |
-| Radares | Na primeira mensagem | 3 min calados |
-| Gateways | Na primeira mensagem | 3 min calados |
-| Pulseira Tuya | Na primeira mensagem | 8 h 30 min caladas |
-| NCS | Pelo estado que o próprio aparelho publica | Pelo estado que publica, ou 30 min calado |
+| Relógios e dispensador (TCP) | Ao autenticar | Ao fechar a ligação, ou dois heartbeats falhados: 630 s na Wonlex e na 4P, 990 s na Vivistar, 150 s no dispensador |
+| Pulseiras W6/W6B e sensores de fralda | Na primeira mensagem que um gateway retransmite | Nenhum gateway os ouve durante 1230 s |
+| Pulseira Veepoo | Quando o gateway liga ao aparelho | Quando a ligação BLE cai, ou 90 s sem o `session` que o gateway repete |
+| Balança, tensiómetro, termómetro e oxímetro | `measuring` quando o gateway liga ao aparelho | `idle` quando a ligação cai, ou 120 s sem tramas |
+| Radares | Na primeira mensagem | 150 s calados |
+| Gateways | Na primeira mensagem | 90 s no MKGW3, 1230 s no MKGW4, 150 s no da Havicare |
+| Pulseira Tuya | No `deviceOnline` ou numa leitura | No `deviceOffline` da cloud |
+| NCS | Pelo estado que o próprio aparelho publica | Pelo testamento que publica, ou 2430 s sem o estado periódico |
 
 Um relógio ligado quando o hub reinicia e que não volta a ligar passa a `offline`
-pela mesma varredura dos 30 minutos: sem socket aberto, não há fecho que o anuncie.
+pela mesma varredura: sem socket aberto, não há fecho que o anuncie.
 
 ### O estado retido e a mudança de cliente
 
