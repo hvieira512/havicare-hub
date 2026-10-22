@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Integration\Api\Services;
 
+use Hub\Api\Request\DeviceWriteRequest;
 use Hub\Infrastructure\Persistence\Repository\ApiDataAccess;
 use Hub\Api\Services\DeviceService;
 use Hub\State\DeviceStoreContract;
@@ -35,13 +36,13 @@ final class DeviceImeiRenameTest extends MysqlDashboardTestCase
             $db,
         );
 
-        $result = $service->update($radar, [
-            'imei' => $renamed,
-            'supplier' => 'Qinglanst',
-            'model' => 'HC2',
-            'licenseId' => '1001',
-            'company' => 'hitcare',
-        ]);
+        $result = $service->update($radar, new DeviceWriteRequest(
+            imei: $renamed,
+            supplier: 'Qinglanst',
+            model: 'HC2',
+            licenseId: 1001,
+            company: 'hitcare',
+        ));
 
         self::assertSame('ok', $result['status'] ?? null, 'o renomear devia ter corrido');
         self::assertTrue(

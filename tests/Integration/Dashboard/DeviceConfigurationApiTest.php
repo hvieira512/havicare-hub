@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Integration\Dashboard;
 
+use Hub\Api\Request\DeviceWriteRequest;
 use Tests\Support\ConfigurationFixtures;
 use Tests\Support\DevicesApiFixture;
 use Tests\Support\MysqlDashboardTestCase;
@@ -490,13 +491,13 @@ final class DeviceConfigurationApiTest extends MysqlDashboardTestCase
         $submitted = [];
         [$api, $db] = $this->makeApi(hub: $this->recordingHub($submitted));
         $imei = '868705080300698';
-        self::assertSame('ok', $api->create([
-            'imei' => $imei,
-            'supplier' => 'Wonlex',
-            'model' => 'HW20PRO',
-            'deviceType' => 'watch',
-            'licenseId' => null,
-        ])['status'] ?? null);
+        self::assertSame('ok', $api->create(new DeviceWriteRequest(
+            imei: $imei,
+            supplier: 'Wonlex',
+            model: 'HW20PRO',
+            deviceType: 'watch',
+            licenseId: null,
+        ))['status'] ?? null);
 
         $model = $db->models->find('Wonlex', 'HW20PRO');
         self::assertIsArray($model);
@@ -657,13 +658,13 @@ final class DeviceConfigurationApiTest extends MysqlDashboardTestCase
         $nonRequestableFeatures = ['heart_rate', 'temperature', 'breath_rate', 'ecg', 'hrv', 'ppg', 'rr_interval'];
 
         self::assertIsArray($model);
-        $created = $api->create([
-            'imei' => $imei,
-            'supplier' => 'Wonlex',
-            'model' => 'HW20PRO',
-            'deviceType' => 'watch',
-            'licenseId' => null,
-        ]);
+        $created = $api->create(new DeviceWriteRequest(
+            imei: $imei,
+            supplier: 'Wonlex',
+            model: 'HW20PRO',
+            deviceType: 'watch',
+            licenseId: null,
+        ));
         self::assertSame('ok', $created['status'] ?? null);
         $db->modelCapabilities->replaceForModelId((int)$model['id'], [...$requestableFeatures, ...$nonRequestableFeatures]);
         // O que se pode pedir é decisão por modelo, no `model_capabilities.is_requestable`.

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Integration\Api\Services;
 
+use Hub\Api\Request\DeviceWriteRequest;
 use Hub\Api\Auth\ApiAuthContext;
 use Hub\Api\Services\DeviceService;
 use Hub\Api\Services\RadarLayoutService;
@@ -66,13 +67,13 @@ final class DeviceTenantScopeTest extends MysqlDashboardTestCase
 
     public function testAnotherTenantCannotCreateADeviceInTheOwnerTenant(): void
     {
-        $result = $this->devices->create([
-            'imei' => '865028000000403',
-            'supplier' => '4P Touch',
-            'model' => 'D46',
-            'licenseId' => 1001,
-            'company' => 'hitcare',
-        ], $this->intruder());
+        $result = $this->devices->create(new DeviceWriteRequest(
+            imei: '865028000000403',
+            supplier: '4P Touch',
+            model: 'D46',
+            licenseId: 1001,
+            company: 'hitcare',
+        ), $this->intruder());
 
         // Aqui não há dispositivo cuja existência esconder: a recusa é directa.
         self::assertSame('forbidden', $result['error']['code'] ?? null);

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Integration\Api\Services;
 
+use Hub\Api\Request\RadarCredentialsWriteRequest;
 use Hub\Infrastructure\Persistence\Repository\ApiDataAccess;
 use Hub\Infrastructure\Persistence\Repository\RadarApiCredentialsRepository;
 use Hub\Infrastructure\Persistence\Repository\RadarLayoutRepository;
@@ -43,13 +44,13 @@ final class RadarCredentialsServiceTest extends MysqlDashboardTestCase
     /** A palavra-passe e o segredo nunca saem: quem pergunta só sabe se estão preenchidos. */
     public function testNeverGivesTheSecretsBack(): void
     {
-        $this->service->save($this->licenseRefId, [
-            'baseUrl' => 'https://radarconsole.com/prod-api',
-            'username' => 'casabranca',
-            'password' => 'nao-sai-daqui',
-            'appId' => 'ql-casabranca',
-            'appSecret' => 'tambem-nao',
-        ]);
+        $this->service->save($this->licenseRefId, new RadarCredentialsWriteRequest(
+            baseUrl: 'https://radarconsole.com/prod-api',
+            username: 'casabranca',
+            password: 'nao-sai-daqui',
+            appId: 'ql-casabranca',
+            appSecret: 'tambem-nao',
+        ));
 
         $shown = $this->service->show($this->licenseRefId);
 
@@ -68,21 +69,21 @@ final class RadarCredentialsServiceTest extends MysqlDashboardTestCase
     /** Gravar sem os segredos é «fica como está», e não «apaga». */
     public function testKeepsTheStoredSecretsWhenTheyAreNotResent(): void
     {
-        $this->service->save($this->licenseRefId, [
-            'baseUrl' => 'https://radarconsole.com/prod-api',
-            'username' => 'casabranca',
-            'password' => 'a-boa',
-            'appId' => 'ql-casabranca',
-            'appSecret' => 'o-bom',
-        ]);
+        $this->service->save($this->licenseRefId, new RadarCredentialsWriteRequest(
+            baseUrl: 'https://radarconsole.com/prod-api',
+            username: 'casabranca',
+            password: 'a-boa',
+            appId: 'ql-casabranca',
+            appSecret: 'o-bom',
+        ));
 
-        $this->service->save($this->licenseRefId, [
-            'baseUrl' => 'https://radarconsole.com/prod-api/v2',
-            'username' => 'casabranca',
-            'password' => '',
-            'appId' => 'ql-casabranca',
-            'appSecret' => '',
-        ]);
+        $this->service->save($this->licenseRefId, new RadarCredentialsWriteRequest(
+            baseUrl: 'https://radarconsole.com/prod-api/v2',
+            username: 'casabranca',
+            password: '',
+            appId: 'ql-casabranca',
+            appSecret: '',
+        ));
 
         $stored = $this->db->radarCredentials->findByLicenseRefId($this->licenseRefId);
 
@@ -94,13 +95,13 @@ final class RadarCredentialsServiceTest extends MysqlDashboardTestCase
 
     public function testRefusesALicenceThatDoesNotExist(): void
     {
-        $result = $this->service->save(4040, [
-            'baseUrl' => 'https://radarconsole.com/prod-api',
-            'username' => 'casabranca',
-            'password' => 'x',
-            'appId' => 'y',
-            'appSecret' => 'z',
-        ]);
+        $result = $this->service->save(4040, new RadarCredentialsWriteRequest(
+            baseUrl: 'https://radarconsole.com/prod-api',
+            username: 'casabranca',
+            password: 'x',
+            appId: 'y',
+            appSecret: 'z',
+        ));
 
         self::assertSame('license_not_found', $result['error']['code'] ?? null);
     }
@@ -116,17 +117,13 @@ final class RadarCredentialsServiceTest extends MysqlDashboardTestCase
     }
 
     /** A primeira gravação tem de trazer tudo: metade das credenciais nunca autentica. */
-    public function testRefusesAFirstSaveWithoutAPassword(): void
+    public function testOnlyTheFirstSaveRequiresTheSecrets(): void
     {
-        $result = $this->service->save($this->licenseRefId, [
-            'baseUrl' => 'https://radarconsole.com/prod-api',
-            'username' => 'casabranca',
-            'appId' => 'ql-casabranca',
-            'appSecret' => 'o-bom',
-        ]);
+        self::assertSame(['create'], $this->service->requestGroups($this->licenseRefId));
 
-        self::assertSame('invalid_request', $result['error']['code'] ?? null);
-        self::assertArrayHasKey('password', $result['error']['fields'] ?? []);
+        $this->service->save($this->licenseRefId, new RadarCredentialsWriteRequest(...$this->credentials()));
+
+        self::assertSame([], $this->service->requestGroups($this->licenseRefId));
     }
 
     /** A verificação conta os radares que respondem, porque outra conta autentica à mesma. */
@@ -191,7 +188,7 @@ final class RadarCredentialsServiceTest extends MysqlDashboardTestCase
     /** A verificação usa os segredos guardados quando o pedido não os traz. */
     public function testTheConnectionCheckFallsBackToTheStoredSecrets(): void
     {
-        $this->service->save($this->licenseRefId, $this->credentials());
+        $this->service->save($this->licenseRefId, new RadarCredentialsWriteRequest(...$this->credentials()));
         $this->registerRadars('594B3CCBA56B');
         $client = $this->clientAnswering(['594B3CCBA56B' => 200]);
 
@@ -207,13 +204,13 @@ final class RadarCredentialsServiceTest extends MysqlDashboardTestCase
 
     public function testForgettingTheCredentialsRemovesTheRow(): void
     {
-        $this->service->save($this->licenseRefId, [
-            'baseUrl' => 'https://radarconsole.com/prod-api',
-            'username' => 'casabranca',
-            'password' => 'a-boa',
-            'appId' => 'ql-casabranca',
-            'appSecret' => 'o-bom',
-        ]);
+        $this->service->save($this->licenseRefId, new RadarCredentialsWriteRequest(
+            baseUrl: 'https://radarconsole.com/prod-api',
+            username: 'casabranca',
+            password: 'a-boa',
+            appId: 'ql-casabranca',
+            appSecret: 'o-bom',
+        ));
 
         self::assertSame('ok', $this->service->delete($this->licenseRefId)['status'] ?? null);
         self::assertNull($this->db->radarCredentials->findByLicenseRefId($this->licenseRefId));

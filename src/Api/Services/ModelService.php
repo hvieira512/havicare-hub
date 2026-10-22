@@ -10,7 +10,6 @@ use Hub\Api\Http\CollectionColumns;
 use Hub\Api\Http\ModelImageUrl;
 use Hub\Infrastructure\Persistence\Repository\ApiDataAccess;
 use Hub\Api\Request\ModelWriteRequest;
-use Hub\Api\Request\RequestBinder;
 use Hub\Command\DeviceCommandCatalog;
 use Hub\Domain\ProtocolRegistry;
 use Hub\Domain\DeviceMetadata;
@@ -21,14 +20,12 @@ class ModelService
 {
     private CollectionPresenter $presenter;
     private ModelImageUrl $imageUrl;
-    private RequestBinder $binder;
     private ModelImageStore $images;
 
     public function __construct(private ApiDataAccess $db)
     {
         $this->presenter = new CollectionPresenter();
         $this->imageUrl = new ModelImageUrl();
-        $this->binder = new RequestBinder();
         $this->images = new ModelImageStore();
     }
 
@@ -270,13 +267,10 @@ class ModelService
         ];
     }
 
-    /**
-     * @param array<string, mixed> $payload
-     * @return array<string, mixed>
-     */
-    public function create(array $payload, mixed $imageUpload = null): array
+    /** @return array<string, mixed> */
+    public function create(ModelWriteRequest $request, mixed $imageUpload = null): array
     {
-        $fields = $this->modelFields($payload, 'create');
+        $fields = $this->modelFields($request, 'create');
         if (isset($fields['error'])) {
             return $fields;
         }
@@ -312,18 +306,15 @@ class ModelService
         return ['status' => 'ok'];
     }
 
-    /**
-     * @param array<string, mixed> $payload
-     * @return array<string, mixed>
-     */
-    public function update(int $id, array $payload, mixed $imageUpload = null, string $baseUrl = ''): array
+    /** @return array<string, mixed> */
+    public function update(int $id, ModelWriteRequest $request, mixed $imageUpload = null, string $baseUrl = ''): array
     {
         $current = $this->db->models->findById($id);
         if ($current === null) {
             return ApiError::modelNotFound()->toArray();
         }
 
-        $fields = $this->modelFields($payload, 'update', $id);
+        $fields = $this->modelFields($request, 'update', $id);
         if (isset($fields['error'])) {
             return $fields;
         }
@@ -368,18 +359,9 @@ class ModelService
         return ['status' => 'ok'];
     }
 
-    /**
-     * @param array<string, mixed> $decoded
-     * @return array<string, mixed>
-     */
-    private function modelFields(array $decoded, string $mode, ?int $modelId = null): array
+    /** @return array<string, mixed> */
+    private function modelFields(ModelWriteRequest $request, string $mode, ?int $modelId = null): array
     {
-        // A conversão de escalares corre sempre: o corpo pode ser multipart, e num JSON não toca em nada.
-        $request = $this->binder->bind($decoded, ModelWriteRequest::class, [], true);
-        if (is_array($request)) {
-            return $request;
-        }
-
         $supplierId = $request->supplierId;
         $internalModel = trim($request->internalModel);
         $commercialName = trim($request->commercialName);

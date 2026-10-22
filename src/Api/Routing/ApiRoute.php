@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Hub\Api\Routing;
 
+use Hub\Api\Request\RequestBinder;
 use Psr\Http\Message\ServerRequestInterface;
 
 final class ApiRoute
@@ -17,10 +18,14 @@ final class ApiRoute
     private string $regex;
 
     /**
-     * O handler é `fn(array $params, ServerRequestInterface $request)`, e pode declarar menos. O
-     * `$body` faz o kernel descodificar e recusar `invalid_json`; o `$status` é o sucesso em cru.
+     * O handler é `fn(array $params, ServerRequestInterface $request, object $input)`, e pode
+     * declarar menos. O `$body` faz o kernel descodificar e recusar `invalid_json`; o `$request`
+     * é a classe em que o kernel o liga e valida antes de chamar o handler, que recebe o `$input`.
      *
      * @param callable $handler
+     * @param class-string|null $request
+     * @param list<string>|\Closure(array<string, string>): list<string> $groups grupos além do `Default`
+     * @param array<string, string> $codeByField
      */
     public function __construct(
         private string $method,
@@ -28,6 +33,10 @@ final class ApiRoute
         private $handler,
         private ?string $body = null,
         private int $status = 200,
+        private ?string $request = null,
+        private array|\Closure $groups = [],
+        private bool $coerceStrings = false,
+        private array $codeByField = [],
     ) {
         $this->regex = $this->compilePattern($pattern);
     }
@@ -81,11 +90,30 @@ final class ApiRoute
     }
 
     /**
+     * O corpo ligado à classe que a rota declara, a recusa com o `error.fields`, ou `null` se a
+     * rota não declara nenhuma.
+     *
+     * @param array<string, string> $parameters
+     * @param array<string, mixed> $body
+     * @return object|array{error: array<string, mixed>}|null
+     */
+    public function bind(array $parameters, array $body): object|array|null
+    {
+        if ($this->request === null) {
+            return null;
+        }
+
+        $groups = $this->groups instanceof \Closure ? ($this->groups)($parameters) : $this->groups;
+
+        return (new RequestBinder())->bind($body, $this->request, $groups, $this->coerceStrings, $this->codeByField);
+    }
+
+    /**
      * @param array<string, string> $parameters
      */
-    public function invoke(array $parameters, ServerRequestInterface $request): mixed
+    public function invoke(array $parameters, ServerRequestInterface $request, ?object $input = null): mixed
     {
-        return ($this->handler)($parameters, $request);
+        return ($this->handler)($parameters, $request, $input);
     }
 
     private function compilePattern(string $pattern): string

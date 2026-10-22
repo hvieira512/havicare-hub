@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Integration\Api\Services;
 
+use Hub\Api\Request\LicenseWriteRequest;
 use Hub\Infrastructure\Persistence\Repository\ApiDataAccess;
 use Hub\Api\Services\LicenseService;
 use Tests\Support\MysqlDashboardTestCase;
@@ -16,7 +17,7 @@ final class LicenseServiceTest extends MysqlDashboardTestCase
         $db = ApiDataAccess::fromDatabase($this->createDashboardDatabase());
         $service = new LicenseService($db);
 
-        $result = $service->create(['companyId' => 999999, 'licenseId' => 4004, 'name' => 'orfa']);
+        $result = $service->create(new LicenseWriteRequest(999999, 4004, 'orfa'));
 
         self::assertSame('company_not_found', $result['error']['code'] ?? null);
     }
@@ -28,7 +29,7 @@ final class LicenseServiceTest extends MysqlDashboardTestCase
         $companyId = $db->companies->create('hitcare');
         $licenseId = $db->licenses->create($companyId, 5005, 'valida');
 
-        $result = (new LicenseService($db))->update($licenseId, ['companyId' => 999999]);
+        $result = (new LicenseService($db))->update($licenseId, new LicenseWriteRequest(companyId: 999999));
 
         self::assertSame('company_not_found', $result['error']['code'] ?? null);
     }

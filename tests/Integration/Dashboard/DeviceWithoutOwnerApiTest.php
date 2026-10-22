@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Integration\Dashboard;
 
+use Hub\Api\Request\DeviceAssociationRequest;
 use Tests\Support\DevicesApiFixture;
 use Tests\Support\MysqlDashboardTestCase;
 
@@ -41,7 +42,7 @@ final class DeviceWithoutOwnerApiTest extends MysqlDashboardTestCase
     public function testRemovingTheOwnerSaysNull(): void
     {
         [$api] = $this->makeApi();
-        self::assertSame('ok', $api->associations->associate(self::IMEI, ['company' => 'hitcare', 'licenseId' => 1001])['status'] ?? null);
+        self::assertSame('ok', $api->associations->associate(self::IMEI, new DeviceAssociationRequest('hitcare', 1001))['status'] ?? null);
 
         $removed = $api->associations->remove(self::IMEI);
 

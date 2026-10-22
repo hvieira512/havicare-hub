@@ -8,7 +8,6 @@ use Hub\Api\Http\ApiError;
 use Hub\Api\Http\CollectionPresenter;
 use Hub\Api\Http\CollectionColumns;
 use Hub\Api\Request\DenylistBlockRequest;
-use Hub\Api\Request\RequestBinder;
 use Hub\Infrastructure\Persistence\Repository\ApiDataAccess;
 
 final class DenylistService
@@ -41,17 +40,9 @@ final class DenylistService
         );
     }
 
-    /**
-     * @param array<string, mixed> $payload
-     * @return array<string, mixed>
-     */
-    public function block(array $payload, string $createdBy = ''): array
+    /** @return array<string, mixed> */
+    public function block(DenylistBlockRequest $request, string $createdBy = ''): array
     {
-        $request = (new RequestBinder())->bind($payload, DenylistBlockRequest::class, coerceStrings: true);
-        if (is_array($request)) {
-            return $request;
-        }
-
         $identity = trim((string)$request->identity);
         $protocol = trim((string)($request->protocol ?? ''));
         $note = trim((string)($request->note ?? '')) !== '' ? trim((string)$request->note) : null;

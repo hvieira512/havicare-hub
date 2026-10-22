@@ -146,6 +146,7 @@ dashboard/
 │   ├── empty-panel.js      o estado vazio de um painel, em texto
 │   ├── pagination.js       os botões do paginador: as setas e a janela de sete lugares
 │   ├── wizard-cards.js     a migalha, a barra de progresso e as grelhas de tipo e de fornecedor
+│   ├── row-actions-menu.js o menu «⋮» dos verbos de uma linha: empresas, licenças e utilizadores da API
 │   └── cards/              os cartões de telemetria, que são um bloco fechado
 │       ├── telemetry.js        o catálogo: ícone, cor e corpo por tipo
 │       ├── shell.js            a moldura de um cartão

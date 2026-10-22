@@ -16,6 +16,13 @@ final class ApiUserWriteRequest
 {
     public const GROUP_CREATE = 'create';
 
+    /**
+     * Os campos cuja recusa tem código próprio, em vez do `invalid_request` das constraints.
+     *
+     * @var array<string, string>
+     */
+    public const ERROR_CODE_BY_FIELD = ['role' => 'invalid_role'];
+
     public function __construct(
         #[Assert\NotBlank(message: 'username is required')]
         #[Assert\Length(max: 191, maxMessage: 'username must be 191 characters or fewer')]

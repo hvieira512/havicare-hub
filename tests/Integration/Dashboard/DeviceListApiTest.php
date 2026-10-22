@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Integration\Dashboard;
 
+use Hub\Api\Request\DeviceWriteRequest;
 use Tests\Support\DevicesApiFixture;
 use Tests\Support\MysqlDashboardTestCase;
 
@@ -15,14 +16,14 @@ final class DeviceListApiTest extends MysqlDashboardTestCase
     {
         [$api, $db] = $this->makeApi();
 
-        $response = $api->create([
-            'imei' => '864293000000111',
-            'supplier' => '4P Touch',
-            'model' => 'D46',
-            'deviceType' => 'watch',
-            'licenseId' => null,
-            'deviceId' => '',
-        ]);
+        $response = $api->create(new DeviceWriteRequest(
+            imei: '864293000000111',
+            supplier: '4P Touch',
+            model: 'D46',
+            deviceType: 'watch',
+            licenseId: null,
+            deviceId: '',
+        ));
 
         self::assertSame('ok', $response['status'] ?? null);
         self::assertSame('9300000011', $api->show('864293000000111', null, '')['device']['deviceId'] ?? null);
@@ -183,35 +184,6 @@ final class DeviceListApiTest extends MysqlDashboardTestCase
         self::assertSame('http://localhost:8081/model-images/example.jpg', $response['data'][0]['image'] ?? null);
     }
 
-    public function testUpdateRejectsConfigurationPayloadsOnMetadataEndpoint(): void
-    {
-        [$api] = $this->makeApi();
-
-        $response = $api->update('861265061009822', [
-            'configurations' => [
-                'fallDetection' => ['enabled' => true],
-            ],
-        ]);
-
-        self::assertSame('invalid_request', $response['error']['code'] ?? null);
-
-        $legacyConfigs = $api->update('861265061009822', [
-            'configs' => [
-                'fallDetection' => ['enabled' => true],
-            ],
-        ]);
-        self::assertSame('invalid_request', $legacyConfigs['error']['code'] ?? null);
-
-        $legacyCapabilities = $api->update('861265061009822', [
-            'capabilities' => [
-                'alarms' => [
-                    'fall_detection' => ['enabled' => true],
-                ],
-            ],
-        ]);
-        self::assertSame('invalid_request', $legacyCapabilities['error']['code'] ?? null);
-    }
-
     public function testDeviceGroupedRoutesCanLinkGatewayAndDiaperSensor(): void
     {
         [$api] = $this->makeApi();
@@ -221,7 +193,7 @@ final class DeviceListApiTest extends MysqlDashboardTestCase
             ['imei' => 'eec5000202f9', 'supplier' => 'MONIT', 'model' => 'MECS-PRO'],
             ] as $device
         ) {
-            $result = $api->create($device + ['licenseId' => '1001', 'company' => 'hitcare']);
+            $result = $api->create(new DeviceWriteRequest(...$device, licenseId: 1001, company: 'hitcare'));
             self::assertSame('ok', $result['status'] ?? null);
         }
 
@@ -254,7 +226,7 @@ final class DeviceListApiTest extends MysqlDashboardTestCase
             ['imei' => '861265061009823', 'supplier' => 'Vivistar', 'model' => 'L08 Pro'],
             ] as $device
         ) {
-            $result = $api->create($device + ['licenseId' => '1001', 'company' => 'hitcare']);
+            $result = $api->create(new DeviceWriteRequest(...$device, licenseId: 1001, company: 'hitcare'));
             self::assertSame('ok', $result['status'] ?? null);
         }
 
@@ -279,7 +251,7 @@ final class DeviceListApiTest extends MysqlDashboardTestCase
             ['imei' => 'fbd87c59ba8b', 'supplier' => 'MOKO', 'model' => 'W6B'],
             ] as $device
         ) {
-            $api->create($device + ['licenseId' => '1001', 'company' => 'hitcare']);
+            $api->create(new DeviceWriteRequest(...$device, licenseId: 1001, company: 'hitcare'));
         }
         $api->createLink('c5e390f30bce', 'fbd87c59ba8b');
         $api->createLink('dc1603ecf1f7', 'fbd87c59ba8b');

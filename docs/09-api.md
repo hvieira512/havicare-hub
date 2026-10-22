@@ -551,8 +551,18 @@ Duas distinções relevantes:
 
 ## 5. Validação
 
-Os corpos de escrita são objetos com regras — seis classes em
+Os corpos de escrita são objetos com regras — nove classes em
 `src/Api/Request/`, com as restrições declaradas em atributos.
+
+**Cada rota de escrita declara a sua classe** (`request:` no `ApiRoute`), com os
+grupos, a conversão de texto e os códigos próprios por campo. O kernel liga e
+valida o corpo uma vez, antes de chamar o handler: uma recusa responde dali, e o
+serviço recebe o objeto já válido, sem nunca ver o array. Por isso a validação do
+corpo vem antes de tudo o que o serviço verifica — um `PUT` a um recurso que não
+existe com um corpo inválido responde `400`, e não `404`.
+
+Os grupos podem depender do recurso: nas credenciais dos radares, o `groups:` é
+uma função dos parâmetros do caminho, e só exige os segredos à primeira gravação.
 
 ```mermaid
 flowchart TB
@@ -654,6 +664,6 @@ declarado na especificação como o de qualquer outra rota.
 | `src/Api/Auth/ApiAuthContext.php` | `canAccessTenant()` |
 | `src/Api/Http/ApiError.php` | Os 43 códigos e o mapa de estados |
 | `src/Api/Http/JsonResponder.php` | O estado sai do código do erro |
-| `src/Api/Request/RequestBinder.php` | Corpo → objeto validado |
+| `src/Api/Request/RequestBinder.php` | Corpo → objeto validado, chamado pelo kernel com o que a rota declara |
 | `src/Api/OpenApi/SchemaFromRequest.php` | Restrições → esquema |
 | `src/Api/OpenApiSpec.php` | Monta o documento |

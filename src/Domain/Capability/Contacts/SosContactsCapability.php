@@ -85,12 +85,7 @@ final class SosContactsCapability implements CapabilityContract
             return self::stringList($desired['SOSNumber']);
         }
         if ($nativeKey === 'SOSNumber' && isset($desired['contacts']) && is_array($desired['contacts'])) {
-            return self::stringList(array_map(
-                static fn(mixed $item): string => is_array($item)
-                    ? WonlexContactCodec::publicPhone($item)
-                    : trim((string)$item),
-                $desired['contacts']
-            ));
+            return WonlexContactCodec::phones($desired['contacts']);
         }
         return [];
     }

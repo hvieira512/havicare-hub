@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Tests\Integration\Dashboard;
 
+use Hub\Api\Request\ModelWriteRequest;
+use Hub\Api\Request\RequestBinder;
 use GuzzleHttp\Psr7\ServerRequest;
 use Hub\Infrastructure\Persistence\Repository\ApiDataAccess;
 use Hub\Api\Services\ModelService;
@@ -68,7 +70,7 @@ final class ModelsApiTest extends MysqlDashboardTestCase
             'requestableCapabilities' => ['heart_rate'],
         ];
 
-        $result = $api->update((int)$model['id'], $payload);
+        $result = $api->update((int)$model['id'], self::input($payload));
 
         self::assertSame((int)$model['id'], $result['id'] ?? null);
         self::assertSame(
@@ -86,12 +88,12 @@ final class ModelsApiTest extends MysqlDashboardTestCase
         $model = $db->models->find('Wonlex', 'HW20PRO');
         self::assertIsArray($model);
 
-        $result = $api->update((int)$model['id'], [
+        $result = $api->update((int)$model['id'], self::input([
             'supplierId' => (int)$model['supplier_id'],
             'internalModel' => 'HW20PRO',
             'commercialName' => 'Relógio HW20',
             'deviceType' => 'watch',
-        ]);
+        ]));
 
         self::assertSame($api->show((int)$model['id'], ''), $result);
         self::assertSame('Relógio HW20', $result['commercialName'] ?? null);
@@ -114,7 +116,7 @@ final class ModelsApiTest extends MysqlDashboardTestCase
             'requestableCapabilities' => ['heart_rate'],
         ];
 
-        $result = $api->update((int)$model['id'], $payload);
+        $result = $api->update((int)$model['id'], self::input($payload));
 
         self::assertSame('invalid_requestable_capability', $result['error']['code'] ?? null);
     }
@@ -235,12 +237,12 @@ final class ModelsApiTest extends MysqlDashboardTestCase
         // A Voerka só tem um NCS catalogado. Passa a ter um radar, e depois deixa de ter.
         $voerka = $db->suppliers->findByName('Voerka');
         self::assertIsArray($voerka);
-        $created = $api->create([
+        $created = $api->create(self::input([
             'supplierId' => (int)$voerka['id'],
             'internalModel' => 'R1 Teste',
             'commercialName' => 'Radar de teste',
             'deviceType' => 'radar',
-        ]);
+        ]));
         self::assertArrayNotHasKey('error', $created, json_encode($created));
         self::assertSame(['Qinglanst', 'Voerka'], $suppliersOfRadar());
 
@@ -319,7 +321,7 @@ final class ModelsApiTest extends MysqlDashboardTestCase
             'capabilities' => ['heart_rate', 'call_whitelist', 'working_mode'],
         ];
 
-        $result = $api->update((int)$model['id'], $payload);
+        $result = $api->update((int)$model['id'], self::input($payload));
 
         self::assertSame((int)$model['id'], $result['id'] ?? null);
         $actual = $db->modelCapabilities->enabledFeaturesForModelId((int)$model['id']);
@@ -339,12 +341,12 @@ final class ModelsApiTest extends MysqlDashboardTestCase
         $supplier = $db->suppliers->findByName('4P Touch');
 
         self::assertIsArray($supplier);
-        $result = $api->create([
+        $result = $api->create(self::input([
             'supplierId' => (int)$supplier['id'],
             'internalModel' => 'D46-PLUS',
             'commercialName' => 'D46 Plus',
             'deviceType' => 'watch',
-        ]);
+        ]));
 
         self::assertSame('ok', $result['status'] ?? null);
         $model = $db->models->find('4P Touch', 'D46-PLUS');
@@ -363,12 +365,12 @@ final class ModelsApiTest extends MysqlDashboardTestCase
         $existing = $db->models->find('Vivistar', 'L08 Pro');
         self::assertIsArray($existing);
 
-        $result = $api->create([
+        $result = $api->create(self::input([
             'supplierId' => (int)$existing['supplier_id'],
             'internalModel' => 'L08 Pro',
             'commercialName' => 'Outro nome comercial qualquer',
             'deviceType' => 'watch',
-        ]);
+        ]));
 
         self::assertSame('model_exists', $result['error']['code'] ?? null);
         self::assertSame(409, \Hub\Api\Http\ApiError::statusForCode((string)$result['error']['code']));
@@ -381,12 +383,12 @@ final class ModelsApiTest extends MysqlDashboardTestCase
         $existing = $db->models->find('Vivistar', 'L08 Pro');
         self::assertIsArray($existing);
 
-        $result = $api->create([
+        $result = $api->create(self::input([
             'supplierId' => (int)$existing['supplier_id'],
             'internalModel' => 'l08 pro',
             'commercialName' => 'Outro nome comercial qualquer',
             'deviceType' => 'watch',
-        ]);
+        ]));
 
         self::assertSame('model_exists', $result['error']['code'] ?? null);
     }
@@ -399,12 +401,12 @@ final class ModelsApiTest extends MysqlDashboardTestCase
         self::assertIsArray($model);
         $db->modelCapabilities->replaceForModelId((int)$model['id'], ['heart_rate', 'call_whitelist']);
 
-        $result = $api->update((int)$model['id'], [
+        $result = $api->update((int)$model['id'], self::input([
             'supplierId' => (int)$model['supplier_id'],
             'internalModel' => (string)$model['internal_model'],
             'commercialName' => 'Vivistar L08 Pro Renamed',
             'deviceType' => (string)$model['device_type'],
-        ]);
+        ]));
 
         self::assertSame((int)$model['id'], $result['id'] ?? null);
         $actual = $db->modelCapabilities->enabledFeaturesForModelId((int)$model['id']);
@@ -420,12 +422,12 @@ final class ModelsApiTest extends MysqlDashboardTestCase
         self::assertIsArray($model);
         $db->modelCapabilities->replaceForModelId((int)$model['id'], ['heart_rate', 'ecg']);
 
-        $result = $api->update((int)$model['id'], [
+        $result = $api->update((int)$model['id'], self::input([
             'supplierId' => (int)$model['supplier_id'],
             'internalModel' => (string)$model['internal_model'],
             'commercialName' => (string)$model['commercial_name'],
             'deviceType' => (string)$model['device_type'],
-        ]);
+        ]));
 
         self::assertSame((int)$model['id'], $result['id'] ?? null);
         self::assertSame(
@@ -443,7 +445,7 @@ final class ModelsApiTest extends MysqlDashboardTestCase
         $model = $db->models->find('Vivistar', 'RADAR-TEMP');
         self::assertIsArray($model);
 
-        $result = $api->update((int)$model['id'], [
+        $result = $api->update((int)$model['id'], self::input([
             'supplierId' => (int)$model['supplier_id'],
             'internalModel' => (string)$model['internal_model'],
             'commercialName' => (string)$model['commercial_name'],
@@ -452,7 +454,7 @@ final class ModelsApiTest extends MysqlDashboardTestCase
             // Uma capacidade real, mas de outro tipo de dispositivo. Não pode ser
             // `heart_rate`: o radar mede-a, e tem-na no catálogo.
             'capabilities' => ['blood_pressure'],
-        ]);
+        ]));
 
         self::assertSame('unsupported_capability', $result['error']['code'] ?? null);
     }
@@ -463,14 +465,14 @@ final class ModelsApiTest extends MysqlDashboardTestCase
         $model = $db->models->find('4P Touch', 'D46');
 
         self::assertIsArray($model);
-        $result = $api->update((int)$model['id'], [
+        $result = $api->update((int)$model['id'], self::input([
             'supplierId' => (int)$model['supplier_id'],
             'internalModel' => (string)$model['internal_model'],
             'commercialName' => (string)$model['commercial_name'],
             'deviceType' => (string)$model['device_type'],
             'capabilitiesConfigured' => '1',
             'capabilities' => ['heart_rate', 'ecg'],
-        ]);
+        ]));
 
         self::assertSame('unsupported_capability', $result['error']['code'] ?? null);
     }
@@ -500,5 +502,18 @@ final class ModelsApiTest extends MysqlDashboardTestCase
         $db = ApiDataAccess::fromDatabase($this->createDashboardDatabase());
 
         return [new ModelService($db), $db];
+    }
+
+    /**
+     * O corpo ligado como a rota o liga, com o texto do multipart convertido.
+     *
+     * @param array<string, mixed> $payload
+     */
+    private static function input(array $payload): ModelWriteRequest
+    {
+        $request = (new RequestBinder())->bind($payload, ModelWriteRequest::class, coerceStrings: true);
+        self::assertInstanceOf(ModelWriteRequest::class, $request);
+
+        return $request;
     }
 }

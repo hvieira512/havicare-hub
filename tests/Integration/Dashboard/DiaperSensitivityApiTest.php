@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Integration\Dashboard;
 
+use Hub\Api\Request\DeviceWriteRequest;
 use Hub\Api\Services\DeviceService;
 use Hub\Infrastructure\Persistence\Repository\ApiDataAccess;
 use Hub\Infrastructure\Persistence\Repository\DiaperSensitivityRepository;
@@ -40,10 +41,13 @@ final class DiaperSensitivityApiTest extends MysqlDashboardTestCase
         $hub->method('submitDownlink')->willReturn('sent');
 
         $api = new DeviceService($store, new Whitelist($db->whitelist), $hub, $db);
-        $created = $api->create([
-            'imei' => self::SENSOR, 'supplier' => 'MONIT', 'model' => 'MECS-PRO',
-            'licenseId' => '1001', 'company' => 'hitcare',
-        ]);
+        $created = $api->create(new DeviceWriteRequest(
+            imei: self::SENSOR,
+            supplier: 'MONIT',
+            model: 'MECS-PRO',
+            licenseId: 1001,
+            company: 'hitcare',
+        ));
         self::assertSame('ok', $created['status'] ?? null, 'devia registar o sensor');
 
         return [$api, $pdo];
