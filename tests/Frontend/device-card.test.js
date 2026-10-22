@@ -66,3 +66,15 @@ test("a device that never spoke says so instead of a date that does not exist", 
     // aparelho e não sobre o que o hub sabe dele.
     assert.doesNotMatch(markup, />nunca</);
 });
+
+/** O termómetro entre leituras não fica esbatido como um aparelho em falha. */
+test("an on-demand device between readings is not shown as offline", () => {
+    const markup = deviceCard(
+        { ...device, online: false, presence: "idle", lastSeenAt: new Date(Date.now() - 3 * 3600 * 1000).toISOString() },
+        false,
+    );
+
+    assert.doesNotMatch(markup, /Desligado/);
+    assert.doesNotMatch(markup, /device-card[^"]* offline/);
+    assert.match(markup, /Última leitura há 3 h/);
+});

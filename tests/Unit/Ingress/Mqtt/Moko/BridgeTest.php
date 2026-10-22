@@ -7,7 +7,6 @@ namespace Tests\Unit\Ingress\Mqtt\Moko;
 use Hub\State\DeviceStoreContract;
 use Tests\Support\Doubles\ArrayObservationStateStore;
 use Hub\Ingress\Mqtt\Moko\MokoBridge;
-use Hub\Ingress\Mqtt\Moko\MokoGatewayOptions;
 use PHPUnit\Framework\TestCase;
 use Tests\Support\Doubles\InMemoryRedisClient;
 use Hub\State\DeviceStore;
@@ -53,10 +52,6 @@ final class BridgeTest extends TestCase
 
         self::assertSame(['online'], array_column(array_column($mqtt->statuses, 'payload'), 'state'));
         self::assertSame([], $mqtt->raw);
-
-        $now += 181;
-        $bridge->expireIdleGateways();
-        self::assertSame(['online', 'offline'], array_column(array_column($mqtt->statuses, 'payload'), 'state'));
     }
 
     /** Dado por desligado pela manutenção, o gateway que volta a reencaminhar volta a estar ligado. */
@@ -72,10 +67,28 @@ final class BridgeTest extends TestCase
 
         $bridge->handleReceivedMessage('havicare-hub/null/0/gw/bef341903987/raw', $relayed);
         $store->deviceOffline('bef341903987');
-        $now += 61;
+        // O «visto» guarda-se a metade do sinal de vida de 60 s, para a manutenção nunca o perder.
+        $now += 31;
         $bridge->handleReceivedMessage('havicare-hub/null/0/gw/bef341903987/raw', $relayed);
 
         self::assertSame(['online', 'online'], array_column(array_column($mqtt->statuses, 'payload'), 'state'));
+    }
+
+    /** Dado por desligado pela manutenção, o MOKO que volta a falar volta a estar ligado. */
+    public function testAMokoGatewayComesBackAfterTheHubGaveItUp(): void
+    {
+        $mqtt = new RecordingHubMqttBridge();
+        $store = new DeviceStore(new InMemoryRedisClient());
+        $bridge = $this->bridge($mqtt, true, store: $store);
+
+        $bridge->handleReceivedMessage('havicare-hub/null/0/gw/d48c49f7909c/raw', $this->scanPayload());
+        $store->deviceOffline('d48c49f7909c');
+        $bridge->handleReceivedMessage('havicare-hub/null/0/gw/d48c49f7909c/raw', $this->scanPayload());
+
+        self::assertSame(['online', 'online'], array_column(array_column(
+            array_filter($mqtt->statuses, static fn (array $status): bool => $status['imei'] === 'd48c49f7909c'),
+            'payload',
+        ), 'state'));
     }
 
     public function testAuthorizedLinkedSensorPublishesIndependentTelemetryAndDeduplicatesReplay(): void
@@ -179,21 +192,6 @@ final class BridgeTest extends TestCase
         self::assertSame([], $mqtt->telemetry);
     }
 
-    public function testGatewayPublishesDisconnectedAfterIdleTimeout(): void
-    {
-        $mqtt = new RecordingHubMqttBridge();
-        $now = 1000.0;
-        $bridge = $this->bridge($mqtt, true, static function () use (&$now): float {
-            return $now;
-        }, 1);
-        $bridge->handleReceivedMessage('havicare-hub/null/0/gw/d48c49f7909c/raw', $this->scanPayload());
-        $now = 1002.0;
-        $bridge->expireIdleGateways();
-
-        self::assertSame(['device.connected', 'device.disconnected'], array_column($mqtt->events, 'type'));
-        self::assertSame(['online', 'offline'], array_column(array_column($mqtt->statuses, 'payload'), 'state'));
-    }
-
     /** O assistente de registo tira do protocolo fornecedor, tipo e modelos, e uma chave que o `ProtocolRegistry` não conheça abre-o vazio. */
     public function testAnUnregisteredJsonGatewayIsReportedAsMkgw3(): void
     {
@@ -238,7 +236,7 @@ final class BridgeTest extends TestCase
         $bridge->handleReceivedMessage('havicare-hub/null/0/gw/' . $mac . '/raw', $payload);
     }
 
-    private function bridge(RecordingHubMqttBridge $mqtt, bool $linked, ?callable $clock = null, int $idleTimeout = 180, ?DeviceStore $store = null): MokoBridge
+    private function bridge(RecordingHubMqttBridge $mqtt, bool $linked, ?callable $clock = null, ?DeviceStore $store = null): MokoBridge
     {
         $whitelist = IngressFixtures::whitelist([
             'd48c49f7909c' => IngressFixtures::gateway('MKGW3'),
@@ -252,7 +250,6 @@ final class BridgeTest extends TestCase
             $mqtt,
             IngressFixtures::links($linked),
             new ArrayObservationStateStore(),
-            options: new MokoGatewayOptions(gatewayIdleTimeoutSeconds: $idleTimeout),
             clock: $clock,
             deviceStore: $store,
         );

@@ -43,12 +43,12 @@ final class JoyTechBpBridgeTest extends TestCase
     }
 
     /** O aparelho não pede a hora: acerta-se a cada ligação, e logo a seguir lê-se a memória. */
-    public function testTheSessionPutsItOnlineSetsTheClockAndReadsTheMemory(): void
+    public function testTheSessionPutsItMeasuringSetsTheClockAndReadsTheMemory(): void
     {
         $mqtt = new RecordingHubMqttBridge();
         IngressFixtures::relay($this->bridge($mqtt), self::TOPIC, self::message('session', ['connected' => true]));
 
-        self::assertSame('online', $mqtt->statuses[0]['payload']['state']);
+        self::assertSame('measuring', $mqtt->statuses[0]['payload']['state']);
         self::assertSame(['calibrateClock', 'readBloodPressureHistory'], array_column(array_column($mqtt->gatewayCommands, 'payload'), 'operation'));
         self::assertStringStartsWith('faaaaaaf000f04', $mqtt->gatewayCommands[0]['payload']['payload']['writes'][0]['hex']);
     }

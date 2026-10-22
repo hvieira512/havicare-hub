@@ -54,7 +54,6 @@ final class TuyaBridge implements MqttIngress
         private readonly ?DeviceReportStore $deviceStore = null,
         private readonly ?CommercialModelResolver $commercialModelResolver = null,
         private readonly ?Denylist $denylist = null,
-        private readonly int $idleTimeoutSeconds = 30600,
         ?LoopInterface $loop = null,
     ) {
         $this->normalizer = new MessageNormalizer();
@@ -140,6 +139,12 @@ final class TuyaBridge implements MqttIngress
         $company = (string)($device['company'] ?? 'null');
 
         $this->mqttBridge->publishAndStore($this->deviceStore, 'raw', $deviceId, $normalized['raw'], $deviceType, $licenseId, $company);
+        if (($business['bizCode'] ?? null) === 'deviceOffline') {
+            if ($this->deviceStore?->deviceOffline($deviceId) ?? true) {
+                $this->connections->announce($deviceId, $device, false);
+            }
+            return;
+        }
         $cameOnline = $this->deviceStore?->deviceSeen($deviceId, [
             'supplier' => (string)$device['supplier'],
             'model' => (string)$device['model'],
@@ -149,7 +154,6 @@ final class TuyaBridge implements MqttIngress
             'protocol' => self::PROTOCOL,
             'transport' => 'pulsar',
             'online' => '1',
-            'idleTimeoutSeconds' => (string)$this->idleTimeoutSeconds,
         ]) ?? false;
         if ($cameOnline) {
             $this->connections->announce($deviceId, $device, true);

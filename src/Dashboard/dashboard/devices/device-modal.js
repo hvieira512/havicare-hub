@@ -66,6 +66,7 @@ import {
     state,
 } from "../state.js";
 import { els } from "../dom.js";
+import { presenceOf, PRESENCE_LABEL } from "../components/state-badge.js";
 
 let deviceModal;
 
@@ -235,6 +236,8 @@ export async function editDevice(imei, supplier, model) {
 }
 
 /** A identidade no cabeçalho do modal, à vista mesmo com a página a rolar. */
+const PRESENCE_DOT = { online: " bg-success", measuring: " bg-info", offline: "", idle: "" };
+
 function renderDeviceModalIdentity(device, deviceModel, deviceType) {
     if (!els.deviceModalIdentity) return;
 
@@ -242,7 +245,7 @@ function renderDeviceModalIdentity(device, deviceModel, deviceType) {
     const commercial = String(deviceModel?.commercialName || deviceModel?.internalModel || "");
     const supplier = String(deviceModel?.supplier || "");
     const company = companyLabel(device?.company);
-    const online = Boolean(device?.online);
+    const presence = presenceOf(device);
     const meta = [
         deviceTypeLabel(normalizeDeviceType(deviceType)),
         supplierModelLabel(supplier, commercial),
@@ -255,8 +258,8 @@ function renderDeviceModalIdentity(device, deviceModel, deviceType) {
         <span class="min-w-0">
             <h5 class="modal-title mb-0 tabular-nums text-truncate" id="deviceModalLabel">${imei}</h5>
             <span class="modal-device-meta d-flex align-items-center gap-2 min-w-0">
-                <span class="state-badge-dot rounded-circle flex-shrink-0${online ? " bg-success" : ""}" aria-hidden="true"></span>
-                <span class="visually-hidden">${online ? "Ligado" : "Desligado"}</span>
+                <span class="state-badge-dot rounded-circle flex-shrink-0${PRESENCE_DOT[presence]}" aria-hidden="true"></span>
+                <span class="visually-hidden">${PRESENCE_LABEL[presence]}</span>
                 <span class="text-truncate">${meta.join(" · ")}</span>
             </span>
         </span>`;

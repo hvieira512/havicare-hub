@@ -6,13 +6,13 @@ namespace Hub;
 
 /**
  * @phpstan-type TcpIngressConfig array{host: string, port: int}
- * @phpstan-type DashboardConfig array{cors_allowed_origins: list<string>, host: string, port: int, api_auth_required: bool, api_token_ttl_seconds: int, api_refresh_token_ttl_seconds: int, history_limit: int, command_timeout_seconds: int, device_idle_timeout_seconds: int, max_open_streams: int, max_open_streams_per_user: int, login_max_per_address: int, login_max_per_username: int, login_max_global: int}
+ * @phpstan-type DashboardConfig array{cors_allowed_origins: list<string>, host: string, port: int, api_auth_required: bool, api_token_ttl_seconds: int, api_refresh_token_ttl_seconds: int, history_limit: int, command_timeout_seconds: int, max_open_streams: int, max_open_streams_per_user: int, login_max_per_address: int, login_max_per_username: int, login_max_global: int}
  * @phpstan-type HubRuntimeConfig array{downlink_queue_ttl_seconds: int}
  * @phpstan-type LocationResolutionConfig array{enabled: bool, endpoint: string, user_agent: string, radio_map_enabled: bool, radio_map_hash_key: string}
  * @phpstan-type NcsConfig array{enabled: bool, topic_filter: string}
- * @phpstan-type GatewayConfig array{enabled: bool, topic_filter: string, dedupe_ttl_seconds: int, telemetry_refresh_seconds: int, idle_timeout_seconds: int}
- * @phpstan-type QinglanstConfig array{enabled: bool, host: string, port: int, username: string, password: string, topic_filter: string, client_id_prefix: string, tls_enabled: bool, tls_verify_peer: bool, tls_ca_file: string, tls_cert_file: string, tls_key_file: string, dashboard_seen_min_interval_ms: int, raw_history_sample_ms: int, idle_timeout_seconds: int}
- * @phpstan-type TuyaConfig array{enabled: bool, access_id: string, access_secret: string, pulsar_url: string, subscription: string, idle_timeout_seconds: int}
+ * @phpstan-type GatewayConfig array{enabled: bool, topic_filter: string, dedupe_ttl_seconds: int, telemetry_refresh_seconds: int}
+ * @phpstan-type QinglanstConfig array{enabled: bool, host: string, port: int, username: string, password: string, topic_filter: string, client_id_prefix: string, tls_enabled: bool, tls_verify_peer: bool, tls_ca_file: string, tls_cert_file: string, tls_key_file: string, dashboard_seen_min_interval_ms: int, raw_history_sample_ms: int}
+ * @phpstan-type TuyaConfig array{enabled: bool, access_id: string, access_secret: string, pulsar_url: string, subscription: string}
  * @phpstan-type MqttConfig array{host: string, port: int, username: string, password: string, topic_prefix: string, client_id_prefix: string, keepalive: int, timeout: float, tls_enabled: bool, tls_verify_peer: bool, tls_ca_file: string, tls_cert_file: string, tls_key_file: string}
  * @phpstan-type RedisConfig array{host: string, port: int, password: string}
  * @phpstan-type DatabaseConfig array{driver: string, host: string, port: int, name: string, username: string, password: string, charset: string}
@@ -78,7 +78,6 @@ class Config
                     explode(',', (string)(getenv('CORS_ALLOWED_ORIGINS') ?: '')),
                 ))),
                 'command_timeout_seconds' => (int)(getenv('DASHBOARD_COMMAND_TIMEOUT_SECONDS') ?: 3600),
-                'device_idle_timeout_seconds' => (int)(getenv('DASHBOARD_DEVICE_IDLE_TIMEOUT_SECONDS') ?: 1800),
                 // Sem `ev`, `event` ou `uv` o loop é `select(2)`, com `FD_SETSIZE` 1024 partilhado com TCP, MQTT e
                 // HTTP: 400 streams deixam ~600. O teto por inquilino, a 25% do global, não deixa um esfomear os outros.
                 'max_open_streams' => max(1, (int)(getenv('DASHBOARD_MAX_OPEN_STREAMS') ?: 400)),
@@ -112,7 +111,6 @@ class Config
                 'commands_enabled' => self::flag('GATEWAY_COMMANDS_ENABLED', true),
                 'dedupe_ttl_seconds' => max(1, (int)self::env('GATEWAY_DEDUPE_TTL_SECONDS', '5')),
                 'telemetry_refresh_seconds' => max(1, (int)self::env('GATEWAY_TELEMETRY_REFRESH_SECONDS', '60')),
-                'idle_timeout_seconds' => max(10, (int)self::env('GATEWAY_IDLE_TIMEOUT_SECONDS', '1500')),
                 'raw_history_sample_seconds' => max(0, (int)self::env('GATEWAY_RAW_HISTORY_SAMPLE_SECONDS', '30')),
             ],
             'qinglanst' => [
@@ -130,8 +128,6 @@ class Config
                 'tls_key_file' => getenv('MQTT_TLS_KEY_FILE') ?: '',
                 'dashboard_seen_min_interval_ms' => max(0, (int)(getenv('QINGLANST_DASHBOARD_SEEN_MIN_INTERVAL_MS') ?: 5000)),
                 'raw_history_sample_ms' => max(0, (int)self::env('QINGLANST_RAW_HISTORY_SAMPLE_MS', '30000')),
-                // O radar fala a cada poucos segundos e não abre sessão: calado este tempo, está desligado.
-                'idle_timeout_seconds' => max(10, (int)(getenv('QINGLANST_IDLE_TIMEOUT_SECONDS') ?: 180)),
                 // Quanto se espera pela cloud do fabricante ao sincronizar uma planta. A
                 // sincronização acontece a pedido e mais nada: não há relógio nenhum atrás.
                 'layout_sync_timeout_seconds' => max(1, (int)(getenv('QINGLANST_LAYOUT_SYNC_TIMEOUT_SECONDS') ?: 15)),
@@ -143,8 +139,6 @@ class Config
                 'pulsar_url' => getenv('TUYA_PULSAR_URL') ?: 'wss://mqe.tuyaeu.com:8285/',
                 // Uma por instância, sem valor por omissão: duas instâncias na mesma repartem as mensagens.
                 'subscription' => getenv('TUYA_SUBSCRIPTION') ?: '',
-                // A pulseira acorda de oito em oito horas; calada mais do que isto, está desligada.
-                'idle_timeout_seconds' => max(60, (int)(getenv('TUYA_IDLE_TIMEOUT_SECONDS') ?: 30600)),
             ],
             'mqtt' => [
                 'host' => getenv('MQTT_HOST') ?: '',

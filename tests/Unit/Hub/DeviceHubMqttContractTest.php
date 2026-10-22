@@ -532,14 +532,14 @@ final class DeviceHubMqttContractTest extends TestCase
         $hub->onMessage($first, 'IWAP00865028000000308#');
 
         // A primeira sessão envelhece, e só então o relógio reconecta noutro socket.
-        $now += 2;
+        $now += 2 * 480 + 30;
         $second = new FakeConnection(6);
         $hub->onOpen($second);
         $hub->onMessage($second, 'IWAP00865028000000308#');
 
-        // A varredura de inactividade corre com a antiga já com 2 s: fechada na reautenticação,
-        // não expira nem publica um disconnect.
-        $hub->expireIdleConnections(1);
+        // A varredura corre com a antiga já para lá do prazo: fechada na reautenticação, não
+        // expira nem publica um disconnect.
+        $hub->expireIdleConnections();
 
         $disconnects = array_filter(
             $mqtt->events,

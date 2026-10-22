@@ -164,7 +164,6 @@ final class MqttIngressFactory
             $services->deviceStore,
             $services->commercialModelResolver,
             $services->denylist,
-            (int)$config['tuya']['idle_timeout_seconds'],
             $loop,
         );
     }
@@ -200,7 +199,6 @@ final class MqttIngressFactory
                 rawHistorySampleMs: (int)$config['qinglanst']['raw_history_sample_ms'],
                 commercialModelResolver: $services->commercialModelResolver,
                 denylist: $services->denylist,
-                idleTimeoutSeconds: (int)$config['qinglanst']['idle_timeout_seconds'],
                 // ponytail: uma leitura à base por entrada ou saída de área; com cache se o ritmo subir.
                 layouts: static fn (string $imei): ?array => $services->dataAccess->radarLayouts->findByImei($imei),
                 onMessage: static fn (string $imei) => $services->qinglanstCloudDownlinks->dispatchPending($imei),

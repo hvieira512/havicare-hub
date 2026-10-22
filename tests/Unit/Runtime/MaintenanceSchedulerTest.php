@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Unit\Runtime;
 
 use Hub\State\DeviceStore;
+use Hub\Device\CommercialModelResolver;
 use Hub\Device\DeviceHubServer;
 use Hub\Runtime\HubServices;
 use Hub\Runtime\MaintenanceScheduler;
@@ -20,7 +21,6 @@ final class MaintenanceSchedulerTest extends TestCase
 {
     private const IMEI = '861265061009822';
     private const COMMAND_TIMEOUT = 3600;
-    private const IDLE_TIMEOUT = 300;
 
     /** @var list<callable():void> */
     private array $timers = [];
@@ -29,7 +29,7 @@ final class MaintenanceSchedulerTest extends TestCase
 
     private InMemoryRedisClient $redis;
 
-    private RecordingHubMqttBridge $mqtt;
+    private FailingMaintenanceMqttBridge $mqtt;
 
     private RecordingMaintenanceHubServer $hubServer;
 
@@ -37,14 +37,13 @@ final class MaintenanceSchedulerTest extends TestCase
     {
         $this->timers = [];
         $this->redis = new InMemoryRedisClient();
-        $this->mqtt = new RecordingHubMqttBridge();
+        $this->mqtt = new FailingMaintenanceMqttBridge();
         $this->store = new DeviceStore($this->redis);
         $this->store->registerDevice(self::IMEI, 'Vivistar', 'VIVISTAR-CARE');
         $this->hubServer = $this->recordingHubServer();
 
         MaintenanceScheduler::schedule($this->loop(), $this->services(), [
             'command_timeout_seconds' => self::COMMAND_TIMEOUT,
-            'device_idle_timeout_seconds' => self::IDLE_TIMEOUT,
         ]);
     }
 
@@ -142,22 +141,21 @@ final class MaintenanceSchedulerTest extends TestCase
         self::assertSame('failed', $this->command('cmd-old')['status']);
     }
 
-    /** As ligações paradas largam-se pelo tempo do aparelho, e não pelo do comando. */
-    public function testIdleConnectionsAreExpiredWithTheDeviceTimeout(): void
+    public function testIdleConnectionsAreSweptOnEveryTick(): void
     {
         $this->tick();
 
-        self::assertSame([self::IDLE_TIMEOUT], $this->hubServer->idleSeconds);
+        self::assertSame(1, $this->hubServer->idleSweeps);
     }
 
     /** Um aparelho sem sessão própria, como um sensor atrás de um gateway, só se dá por desligado aqui. */
     public function testASilentDeviceWithoutItsOwnSessionIsAnnouncedDisconnected(): void
     {
         $this->store->deviceSeen('eec5000202f9', [
-            'online' => '1', 'deviceType' => 'diaper_sensor', 'transport' => 'ble_gateway',
+            'online' => '1', 'deviceType' => 'diaper_sensor', 'transport' => 'ble_gateway', 'protocol' => 'monit-mecs-pro-ble',
             'supplier' => 'MONIT', 'model' => 'MECS-PRO', 'licenseId' => 1001, 'company' => 'hitcare',
         ]);
-        $this->rewindLastSeen('eec5000202f9');
+        $this->rewindLastSeen('eec5000202f9', 2 * 600 + 30);
 
         $this->tick();
 
@@ -166,24 +164,77 @@ final class MaintenanceSchedulerTest extends TestCase
         self::assertSame(['device.disconnected'], array_column($this->store->recent('eec5000202f9', 'connections'), 'type'));
     }
 
-    /** Uma ligação TCP aberta anuncia-a o servidor ao fechar o socket; aqui só se apaga. */
-    public function testASilentConnectedTcpDeviceExpiresWithoutAnAnnouncement(): void
+    /** O hitCare lê o estado do gateway: `status` retido `offline` e o `device.disconnected`, na licença dele. */
+    public function testASilentGatewayIsAnnouncedDisconnectedWhereHitCareReadsIt(): void
+    {
+        $this->store->deviceSeen('d48c49f7909c', [
+            'online' => '1', 'deviceType' => 'gateway', 'transport' => 'mqtt', 'protocol' => 'moko-mkgw3',
+            'supplier' => 'MOKO', 'model' => 'MKGW3', 'licenseId' => 1001, 'company' => 'hitcare',
+        ]);
+        $this->rewindLastSeen('d48c49f7909c', 2 * 30 + 30);
+
+        $this->tick();
+
+        self::assertSame(['device.disconnected'], array_column(array_column($this->mqtt->events, 'payload'), 'type'));
+        self::assertSame('offline', $this->mqtt->statuses[0]['payload']['state']);
+        self::assertTrue($this->mqtt->statuses[0]['retain']);
+        self::assertSame(['gateway', 1001, 'hitcare'], [$this->mqtt->statuses[0]['deviceType'], $this->mqtt->statuses[0]['licenseId'], $this->mqtt->statuses[0]['company']]);
+    }
+
+    public function testASilentRadarIsAnnouncedDisconnected(): void
+    {
+        $this->store->deviceSeen('594B3CB31A87', ['online' => '1', 'deviceType' => 'radar', 'protocol' => 'qinglanst-radar']);
+        $this->rewindLastSeen('594B3CB31A87', 2 * 60 + 30);
+
+        $this->tick();
+
+        self::assertSame(['offline'], array_column(array_column($this->mqtt->statuses, 'payload'), 'state'));
+    }
+
+    /** A cloud da Tuya diz quando o botão adormece: o silêncio entre despertares não o desliga. */
+    public function testASilentTuyaButtonIsNotAnnouncedDisconnected(): void
+    {
+        $this->store->deviceSeen('bf1234567890abcdef', ['online' => '1', 'deviceType' => 'sos_button', 'protocol' => 'tuya-cloud']);
+        $this->rewindLastSeen('bf1234567890abcdef', 86400);
+
+        $this->tick();
+
+        self::assertSame([], $this->mqtt->statuses);
+        self::assertTrue($this->store->device('bf1234567890abcdef')['online']);
+    }
+
+    /** Uma publicação que falha não leva consigo o anúncio dos outros. */
+    public function testOneFailedAnnouncementDoesNotStopTheNext(): void
+    {
+        $this->mqtt->failing = true;
+        foreach (['d48c49f7909c', 'c5e390f30bce'] as $gateway) {
+            $this->store->deviceSeen($gateway, ['online' => '1', 'deviceType' => 'gateway', 'protocol' => 'moko-mkgw3']);
+            $this->rewindLastSeen($gateway, 2 * 30 + 30);
+        }
+
+        $this->tick();
+
+        self::assertSame(2, $this->mqtt->attempts);
+    }
+
+    /** Uma ligação TCP aberta decide-a o servidor: a manutenção não a apaga nem a anuncia. */
+    public function testASilentConnectedTcpDeviceIsLeftToTheServer(): void
     {
         $this->hubServer->connected = true;
-        $this->store->deviceSeen(self::IMEI, ['online' => '1', 'deviceType' => 'watch', 'transport' => 'tcp']);
-        $this->rewindLastSeen(self::IMEI);
+        $this->store->deviceSeen(self::IMEI, ['online' => '1', 'deviceType' => 'watch', 'transport' => 'tcp', 'protocol' => 'vivistar-iw']);
+        $this->rewindLastSeen(self::IMEI, 2 * 480 + 30);
 
         $this->tick();
 
         self::assertSame([], $this->mqtt->events);
-        self::assertFalse($this->store->device(self::IMEI)['online']);
+        self::assertTrue($this->store->device(self::IMEI)['online']);
     }
 
     /** Depois de um reinício do hub, um relógio que não voltou não tem socket que o anuncie: anuncia-o a manutenção. */
     public function testATcpDeviceThatNeverReconnectedIsAnnouncedDisconnected(): void
     {
-        $this->store->deviceSeen(self::IMEI, ['online' => '1', 'deviceType' => 'watch', 'transport' => 'tcp']);
-        $this->rewindLastSeen(self::IMEI);
+        $this->store->deviceSeen(self::IMEI, ['online' => '1', 'deviceType' => 'watch', 'transport' => 'tcp', 'protocol' => 'vivistar-iw']);
+        $this->rewindLastSeen(self::IMEI, 2 * 480 + 30);
 
         $this->tick();
 
@@ -191,9 +242,9 @@ final class MaintenanceSchedulerTest extends TestCase
         self::assertSame(['offline'], array_column(array_column($this->mqtt->statuses, 'payload'), 'state'));
     }
 
-    private function rewindLastSeen(string $imei): void
+    private function rewindLastSeen(string $imei, int $seconds): void
     {
-        $this->redis->zadd('hub:dashboard:online-devices-by-last-seen', [$imei => time() - self::IDLE_TIMEOUT - 1]);
+        $this->redis->zadd('hub:dashboard:online-devices-by-last-seen', [$imei => time() - $seconds]);
     }
 
     /** Corre uma passagem completa de manutenção. */
@@ -268,6 +319,7 @@ final class MaintenanceSchedulerTest extends TestCase
         $reflection->getProperty('deviceStore')->setValue($services, $this->store);
         $reflection->getProperty('hubServer')->setValue($services, $this->hubServer);
         $reflection->getProperty('mqttBridge')->setValue($services, $this->mqtt);
+        $reflection->getProperty('commercialModelResolver')->setValue($services, new CommercialModelResolver());
 
         return $services;
     }
@@ -279,8 +331,7 @@ final class RecordingMaintenanceHubServer extends DeviceHubServer
     /** @var list<array<string, mixed>> */
     public array $submitted = [];
 
-    /** @var list<int> */
-    public array $idleSeconds = [];
+    public int $idleSweeps = 0;
 
     public bool $connected = false;
 
@@ -296,8 +347,25 @@ final class RecordingMaintenanceHubServer extends DeviceHubServer
         return 'sent';
     }
 
-    public function expireIdleConnections(int $idleSeconds): void
+    public function expireIdleConnections(): void
     {
-        $this->idleSeconds[] = $idleSeconds;
+        $this->idleSweeps++;
+    }
+}
+
+/** Conta as tentativas de publicar, e com `failing` recusa-as como um socket de saída cheio. */
+final class FailingMaintenanceMqttBridge extends RecordingHubMqttBridge
+{
+    public bool $failing = false;
+
+    public int $attempts = 0;
+
+    public function publishStatus(string $imei, array $payload, bool $retain, string $deviceType, int $licenseId, string $company): void
+    {
+        $this->attempts++;
+        if ($this->failing) {
+            throw new \RuntimeException('publish refused');
+        }
+        parent::publishStatus($imei, $payload, $retain, $deviceType, $licenseId, $company);
     }
 }

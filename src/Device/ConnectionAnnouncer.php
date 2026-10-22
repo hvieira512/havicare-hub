@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Hub\Device;
 
 use Hub\Domain\DeviceMetadata;
+use Hub\Domain\Liveness;
 use Hub\State\DeviceReportStore;
 
 /**
@@ -49,7 +50,7 @@ final class ConnectionAnnouncer
             $imei,
             (string)($device['supplier'] ?? ''),
             (string)($device['model'] ?? ''),
-            $connected ? 'online' : 'offline',
+            Liveness::presence((string)($device['protocol'] ?? ''), $connected),
             null,
             (string)($device['commercialName'] ?? ''),
         );

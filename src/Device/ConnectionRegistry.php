@@ -91,25 +91,29 @@ class ConnectionRegistry
         return $this->deviceMap[$imei] ?? null;
     }
 
-    /** @return array<int, DeviceSession> */
-    public function expireIdleConnections(int $idleSeconds): array
+    /**
+     * Fecha as ligações cujo silêncio o `$expired` dá por excessivo.
+     *
+     * @param \Closure(DeviceSession, int): bool $expired recebe a sessão e os segundos calada
+     * @return array<int, DeviceSession>
+     */
+    public function expireIdleConnections(\Closure $expired): array
     {
         $now = ($this->clock)();
-        $cutoff = $now - max(1, $idleSeconds);
-        $expired = [];
+        $closed = [];
 
         foreach ($this->sessions as $resourceId => $session) {
-            if (($this->lastActivityAt[$resourceId] ?? $now) > $cutoff) {
+            if (!$expired($session, $now - ($this->lastActivityAt[$resourceId] ?? $now))) {
                 continue;
             }
 
             $session = $this->close($session->connection) ?? $session;
             $session->connection->close();
             if ($session->authenticated) {
-                $expired[] = $session;
+                $closed[] = $session;
             }
         }
 
-        return $expired;
+        return $closed;
     }
 }

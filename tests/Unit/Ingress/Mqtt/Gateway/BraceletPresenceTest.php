@@ -28,12 +28,36 @@ final class BraceletPresenceTest extends TestCase
         self::assertSame(['device.connected', 'device.connected'], array_column($mqtt->events, 'type'));
     }
 
+    /** A balança só se liga para medir: fora disso não está desligada, está à espera da próxima leitura. */
+    public function testAnOnDemandDeviceIsMeasuringAndThenIdle(): void
+    {
+        $mqtt = new RecordingHubMqttBridge();
+        $presence = new BraceletPresence($mqtt, new DeviceStore(new InMemoryRedisClient()), 'lefu-torre');
+
+        $presence->markOnline('cfe908067329', self::DEVICE);
+        $presence->markOffline('cfe908067329', self::DEVICE);
+
+        self::assertSame(['measuring', 'idle'], array_column(array_column($mqtt->statuses, 'payload'), 'state'));
+    }
+
+    /** A pulseira mantém a sessão aberta e repete-a: essa liga-se e desliga-se. */
+    public function testAContinuousDeviceIsOnlineAndThenOffline(): void
+    {
+        $mqtt = new RecordingHubMqttBridge();
+        $presence = new BraceletPresence($mqtt, new DeviceStore(new InMemoryRedisClient()), 'veepoo-ble');
+
+        $presence->markOnline('cfe908067329', self::DEVICE);
+        $presence->markOffline('cfe908067329', self::DEVICE);
+
+        self::assertSame(['online', 'offline'], array_column(array_column($mqtt->statuses, 'payload'), 'state'));
+    }
+
     /** Um hub acabado de arrancar não sabe que o aparelho estava ligado, e a queda conta na mesma. */
     public function testADisconnectAfterARestartIsAnnounced(): void
     {
         $mqtt = new RecordingHubMqttBridge();
 
-        (new BraceletPresence($mqtt, new DeviceStore(new InMemoryRedisClient()), 'lefu-torre'))->markOffline('cfe908067329', self::DEVICE);
+        (new BraceletPresence($mqtt, new DeviceStore(new InMemoryRedisClient()), 'veepoo-ble'))->markOffline('cfe908067329', self::DEVICE);
 
         self::assertSame(['offline'], array_column(array_column($mqtt->statuses, 'payload'), 'state'));
     }

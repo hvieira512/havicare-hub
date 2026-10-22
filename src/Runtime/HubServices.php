@@ -13,6 +13,7 @@ use Hub\Device\HubMqttBridge;
 use Hub\Device\LifecycleEvents;
 use Hub\Device\RedisPendingDownlinkQueue;
 use Hub\Domain\Capability\Medication\MedicationRunout;
+use Hub\Domain\Liveness;
 use Hub\Infrastructure\Persistence\DashboardDatabase;
 use Hub\Ingress\Http\Qinglanst\LayoutParser;
 use Hub\Ingress\Http\Qinglanst\QinglanstApiClient;
@@ -146,7 +147,7 @@ final class HubServices
             denylist: $denylist,
             firmwareUpgrades: new FirmwareUpgradeStore($redis),
             effectiveConfiguration: static fn (string $imei): array => $dataAccess->configurationLifecycle
-                ->effectivePayloads($imei, MedicationRunout::CONFIGURATION_KEYS),
+                ->effectivePayloads($imei, [...MedicationRunout::CONFIGURATION_KEYS, ...Liveness::CONFIGURATION_KEYS]),
             // Na volta seguinte do ciclo: quem pôs na fila ainda vai gravar o registo do comando.
             downlinkQueued: static fn (string $imei) => Loop::futureTick(
                 static fn () => $qinglanstCloudDownlinks->dispatchPending($imei, now: true),

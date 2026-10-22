@@ -42,6 +42,11 @@ final class DeviceSchemas
                     'licenseId' => ['type' => 'integer', 'example' => 0],
                     'protocol' => ['type' => 'string', 'nullable' => true, 'example' => 'wonlex-json'],
                     'online' => ['type' => 'boolean', 'example' => false],
+                    'presence' => [
+                        'type' => 'string',
+                        'enum' => ['online', 'offline', 'measuring', 'idle'],
+                        'description' => '`measuring`/`idle` nos aparelhos que só se ligam para medir; `online`/`offline` nos outros.',
+                    ],
                     'lastSeenAt' => ['type' => 'string', 'nullable' => true, 'example' => '2026-06-15T10:00:00Z'],
                 ],
             ],
@@ -55,6 +60,11 @@ final class DeviceSchemas
                     'simNumber' => ['type' => 'string'],
                     'deviceId' => ['type' => 'string'],
                     'online' => ['type' => 'boolean'],
+                    'presence' => [
+                        'type' => 'string',
+                        'enum' => ['online', 'offline', 'measuring', 'idle'],
+                        'description' => '`measuring`/`idle` nos aparelhos que só se ligam para medir; `online`/`offline` nos outros.',
+                    ],
                     'lastSeenAt' => ['type' => 'string', 'nullable' => true],
                     'lastStateAt' => ['type' => 'string', 'nullable' => true],
                 ],

@@ -19,12 +19,17 @@ interface DeviceReportStore
     /** @return bool se estava ligado */
     public function deviceOffline(string $imei): bool;
 
+    /** Uma trama de quem já está ligado prova-o vivo, sem o voltar a ligar. */
+    public function deviceHeard(string $imei): void;
+
     /**
-     * Dá por desligado quem se calou há mais do que o prazo, só do tipo pedido quando há um.
+     * Dá por desligado quem se calou para lá do que o protocolo dele aguenta, só do tipo pedido
+     * quando há um.
      *
+     * @param (\Closure(string): bool)|null $hasSession diz quem tem ligação própria, que decide por si
      * @return list<string> os que estavam ligados
      */
-    public function expireStaleDevices(int $timeoutSeconds, ?string $deviceType = null): array;
+    public function expireStaleDevices(?string $deviceType = null, ?\Closure $hasSession = null): array;
 
     /** @param array<string, mixed> $payload */
     public function append(string $imei, string $list, array $payload): void;

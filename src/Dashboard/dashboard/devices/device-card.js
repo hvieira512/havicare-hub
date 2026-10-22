@@ -1,6 +1,6 @@
 import { html } from "../html.js";
 import { deviceLicenseBlock } from "../components/device-license.js";
-import { onlineBadge } from "../components/state-badge.js";
+import { presenceBadge, presenceOf } from "../components/state-badge.js";
 import { deviceTypeLabel, normalizeDeviceType } from "../domain.js";
 import { ago } from "../format.js";
 
@@ -53,9 +53,10 @@ const simNumberHtml = (simNumber) =>
         : "";
 
 /** Sem data é «sem registo», e não «nunca»: o hub registou o aparelho e ainda não o ouviu. */
-function lastSeenLine(lastSeenAt) {
-    return lastSeenAt
-        ? html`<span class="${DEVICE_CARD_WHEN}">${ago(lastSeenAt)}</span>`
+function lastSeenLine(device) {
+    const prefix = presenceOf(device) === "idle" ? "Última leitura " : "";
+    return device.lastSeenAt
+        ? html`<span class="${DEVICE_CARD_WHEN}">${prefix}${ago(device.lastSeenAt)}</span>`
         : html`<span class="${DEVICE_CARD_WHEN} fst-italic">sem registo</span>`;
 }
 
@@ -72,12 +73,12 @@ export function deviceCard(device, selected, siblings = []) {
         .join(" · ");
 
     return html`
-        <button type="button" class="device-card d-grid w-100 text-start${selected ? " selected" : ""}${device.online ? "" : " offline"}"
+        <button type="button" class="device-card d-grid w-100 text-start${selected ? " selected" : ""}${presenceOf(device) === "offline" ? " offline" : ""}"
             data-imei="${device.imei}" data-action="${DEVICE_CARD_ACTION}"${selected ? html` aria-current="true"` : ""}>
         <span class="device-card-thumb d-grid overflow-hidden rounded-3 flex-shrink-0">${image}</span>
         <span class="device-card-state d-flex flex-column align-items-start gap-1 min-w-0">
-            ${onlineBadge(device.online, "align-self-start")}
-            ${lastSeenLine(device.lastSeenAt)}
+            ${presenceBadge(device, "align-self-start")}
+            ${lastSeenLine(device)}
         </span>
         <span class="device-card-identity">
             <span class="min-w-0">

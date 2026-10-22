@@ -12,7 +12,6 @@ final class MokoGatewayOptions
     public function __construct(
         public readonly int $dedupeTtlSeconds = 5,
         public readonly int $telemetryRefreshSeconds = 60,
-        public readonly int $gatewayIdleTimeoutSeconds = 180,
         public readonly int $rawHistorySampleSeconds = 30,
         public readonly ?DiaperSensitivityLookup $diaperSensitivity = null,
     ) {
@@ -24,7 +23,6 @@ final class MokoGatewayOptions
         return new self(
             dedupeTtlSeconds: (int)$gateway['dedupe_ttl_seconds'],
             telemetryRefreshSeconds: (int)$gateway['telemetry_refresh_seconds'],
-            gatewayIdleTimeoutSeconds: (int)$gateway['idle_timeout_seconds'],
             rawHistorySampleSeconds: (int)$gateway['raw_history_sample_seconds'],
             diaperSensitivity: $diaperSensitivity,
         );

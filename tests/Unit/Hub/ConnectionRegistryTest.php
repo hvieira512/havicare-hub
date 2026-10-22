@@ -85,7 +85,7 @@ final class ConnectionRegistryTest extends TestCase
         $registry->authenticate($connection, $identity, 'Wonlex', 'HW20PRO');
 
         $now += 2;
-        $expired = $registry->expireIdleConnections(1);
+        $expired = $registry->expireIdleConnections(static fn ($session, int $idleSeconds): bool => $idleSeconds >= 1);
 
         self::assertCount(1, $expired);
         self::assertSame('865028000000307', $expired[0]->imei);

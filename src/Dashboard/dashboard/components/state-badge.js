@@ -38,3 +38,21 @@ export function onlineBadge(online, options = "") {
         options,
     );
 }
+
+/** `measuring` e `idle` em quem só se liga para medir; os outros estão ligados ou desligados. */
+export const presenceOf = (device) => device?.presence || (device?.online ? "online" : "offline");
+
+export const PRESENCE_LABEL = {
+    online: "Ligado",
+    offline: "Desligado",
+    measuring: "A medir",
+    idle: "Sem medição em curso",
+};
+
+/** Entre leituras não há pastilha: o que se diz é quando foi a última. */
+export function presenceBadge(device, options = "") {
+    const presence = presenceOf(device);
+    if (presence === "measuring") return stateBadge("A medir", "info", options);
+    if (presence === "idle") return "";
+    return onlineBadge(presence === "online", options);
+}

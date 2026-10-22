@@ -7,6 +7,8 @@ namespace Tests\Unit\Ingress\Mqtt\JoyTech;
 use Hub\Ingress\Mqtt\JoyTech\JoyTechFrame;
 use Hub\Ingress\Mqtt\JoyTech\JoyTechThermometerBridge;
 use Hub\Ingress\Mqtt\JoyTech\RecentMeasurementKeys;
+use Hub\State\DeviceStore;
+use Hub\State\RedisKeys;
 use PHPUnit\Framework\TestCase;
 use Tests\Support\Doubles\InMemoryRedisClient;
 use Tests\Support\Doubles\IngressFixtures;
@@ -35,6 +37,21 @@ final class JoyTechThermometerBridgeTest extends TestCase
         $this->seen = new RecentMeasurementKeys(new InMemoryRedisClient());
     }
 
+    /** A sessão só repete o `session` ao abrir: são as tramas que a provam viva até ao fim. */
+    public function testFramesKeepTheMeasuringSessionAlive(): void
+    {
+        $redis = new InMemoryRedisClient();
+        $store = new DeviceStore($redis);
+        $bridge = $this->bridge(new RecordingHubMqttBridge(), $store);
+        IngressFixtures::relay($bridge, self::TOPIC, self::message('session', ['connected' => true]));
+        $redis->zadd(RedisKeys::onlineDevices(), [self::THERMOMETER => time() - 200]);
+
+        $this->now += 200;
+        IngressFixtures::relay($bridge, self::TOPIC, self::frame(self::CLOCK_REQUEST));
+
+        self::assertSame([], $store->expireStaleDevices());
+    }
+
     /** O aparelho pede a hora 4 vezes por segundo e só mede depois de a ter: responde-se ao primeiro. */
     public function testTheClockRequestIsAnsweredOnce(): void
     {
@@ -46,7 +63,7 @@ final class JoyTechThermometerBridgeTest extends TestCase
             IngressFixtures::relay($bridge, self::TOPIC, self::frame(self::CLOCK_REQUEST));
         }
 
-        self::assertSame('online', $mqtt->statuses[0]['payload']['state']);
+        self::assertSame('measuring', $mqtt->statuses[0]['payload']['state']);
         self::assertCount(1, $mqtt->gatewayCommands);
         self::assertSame('answerClock', $mqtt->gatewayCommands[0]['payload']['operation']);
         self::assertStringStartsWith('faaaaaaf000f86', $mqtt->gatewayCommands[0]['payload']['payload']['writes'][0]['hex']);
@@ -116,7 +133,7 @@ final class JoyTechThermometerBridgeTest extends TestCase
         ], JSON_THROW_ON_ERROR);
     }
 
-    private function bridge(RecordingHubMqttBridge $mqtt): JoyTechThermometerBridge
+    private function bridge(RecordingHubMqttBridge $mqtt, ?DeviceStore $store = null): JoyTechThermometerBridge
     {
         return new JoyTechThermometerBridge(
             IngressFixtures::whitelist([
@@ -127,7 +144,7 @@ final class JoyTechThermometerBridgeTest extends TestCase
             IngressFixtures::links(),
             'havicare-hub/null/0/gw/+/raw',
             $this->seen,
-            null,
+            $store,
             fn (): float => $this->now,
         );
     }

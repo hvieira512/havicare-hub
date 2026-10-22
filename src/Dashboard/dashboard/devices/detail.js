@@ -23,7 +23,7 @@ import { els, renderInto } from "../dom.js";
 import { capabilityLabel } from "../capability-catalog.js";
 import { apiError, toast } from "../dialogs.js";
 import { deviceLicenseBlock, deviceLicenseLabel } from "../components/device-license.js";
-import { onlineBadge } from "../components/state-badge.js";
+import { presenceBadge, presenceOf, PRESENCE_LABEL } from "../components/state-badge.js";
 import { cardTone, uplinkCardContent } from "../components/cards/telemetry.js";
 import { telemetryCard } from "../components/cards/shell.js";
 import {
@@ -132,7 +132,7 @@ function renderSelection() {
 
 /** Um desligado cujo último registo de ligação não o diz fica em quebra desde que falou. */
 function silentSince(device, allItems) {
-    if (!state.selectedDetail?.recent || device.online !== false || !device.lastSeenAt) return [];
+    if (!state.selectedDetail?.recent || presenceOf(device) !== "offline" || !device.lastSeenAt) return [];
 
     const last = allItems
         .filter((item) => item._source === "connection")
@@ -240,8 +240,10 @@ function renderSelectedDeviceSummary(device, deviceModel, linkedDevices = []) {
     }
     els.selectedDeviceTitle.textContent = device.imei;
     els.selectedDeviceTitle.title = device.imei;
-    els.selectedDeviceBadge.innerHTML = onlineBadge(device.online) + (device.lastSeenAt
-        ? html`<span class="text-secondary small tabular-nums" title="${when(device.lastSeenAt)}">${ago(device.lastSeenAt)}</span>`
+    const presence = presenceOf(device);
+    const lastReading = presence === "idle" ? "Última leitura " : "";
+    els.selectedDeviceBadge.innerHTML = presenceBadge(device) + (device.lastSeenAt
+        ? html`<span class="text-secondary small tabular-nums" title="${when(device.lastSeenAt)}">${lastReading}${ago(device.lastSeenAt)}</span>`
         : "");
     els.selectedDeviceMeta.textContent = `${typeLabel} · ${supplier || "Sem fornecedor"} · ${model || "Sem modelo interno"}`;
     // A banda do telemóvel diz o mesmo numa linha, sem o fornecedor, que o modelo implica.
@@ -254,9 +256,10 @@ function renderSelectedDeviceSummary(device, deviceModel, linkedDevices = []) {
             : "<i class=\"fa-solid fa-microchip text-white-50\"></i>";
     }
     // O estado é a cor da bola; quem não vê a cor lê-o no nome acessível.
-    const onlineLabel = device.online ? "Ligado" : "Desligado";
-    els.deviceBandDot.classList.toggle("bg-success", !!device.online);
-    els.deviceBandDot.classList.toggle("bg-secondary", !device.online);
+    const onlineLabel = presence === "idle" ? `Última leitura ${ago(device.lastSeenAt)}` : PRESENCE_LABEL[presence];
+    els.deviceBandDot.classList.toggle("bg-success", presence === "online");
+    els.deviceBandDot.classList.toggle("bg-info", presence === "measuring");
+    els.deviceBandDot.classList.toggle("bg-secondary", presence === "offline" || presence === "idle");
     els.deviceBandDot.setAttribute("aria-label", onlineLabel);
     els.deviceBandDot.title = onlineLabel;
     els.deviceBandMeta.textContent = `${model || "Sem modelo interno"} · ${deviceLicenseLabel(device)}`;

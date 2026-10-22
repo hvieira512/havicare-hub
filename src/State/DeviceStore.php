@@ -141,6 +141,11 @@ final class DeviceStore implements DeviceStoreContract
         return $this->runtime->deviceOffline($imei);
     }
 
+    public function deviceHeard(string $imei): void
+    {
+        $this->runtime->deviceHeard($imei);
+    }
+
     public function append(string $imei, string $list, array $payload): void
     {
         if ($list === 'events' && in_array($payload['type'] ?? null, self::CONNECTION_TYPES, true)) {
@@ -234,9 +239,9 @@ final class DeviceStore implements DeviceStoreContract
         $this->updates->notifyAll();
     }
 
-    public function expireStaleDevices(int $timeoutSeconds, ?string $deviceType = null): array
+    public function expireStaleDevices(?string $deviceType = null, ?\Closure $hasSession = null): array
     {
-        return $this->runtime->expireStaleDevices($timeoutSeconds, $deviceType);
+        return $this->runtime->expireStaleDevices($deviceType, $hasSession);
     }
 
     /**

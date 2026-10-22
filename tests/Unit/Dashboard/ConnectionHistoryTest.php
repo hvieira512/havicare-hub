@@ -71,13 +71,13 @@ final class ConnectionHistoryTest extends TestCase
 
     public function testStaleDevicesOfOneTypeExpireAndAreNamed(): void
     {
-        $this->store->deviceSeen(self::IMEI, ['online' => '1', 'deviceType' => 'radar']);
-        $this->store->deviceSeen('861265061009822', ['online' => '1', 'deviceType' => 'watch']);
-        $this->rewindLastSeen(self::IMEI, 181);
-        $this->rewindLastSeen('861265061009822', 181);
+        $this->store->deviceSeen(self::IMEI, ['online' => '1', 'deviceType' => 'radar', 'protocol' => 'qinglanst-radar']);
+        $this->store->deviceSeen('861265061009822', ['online' => '1', 'deviceType' => 'watch', 'protocol' => 'vivistar-iw']);
+        $this->rewindLastSeen(self::IMEI, 3600);
+        $this->rewindLastSeen('861265061009822', 3600);
 
-        self::assertSame([self::IMEI], $this->store->expireStaleDevices(180, 'radar'));
-        self::assertSame([], $this->store->expireStaleDevices(180, 'radar'));
+        self::assertSame([self::IMEI], $this->store->expireStaleDevices('radar'));
+        self::assertSame([], $this->store->expireStaleDevices('radar'));
         self::assertFalse($this->store->device(self::IMEI)['online']);
         self::assertTrue($this->store->device('861265061009822')['online']);
     }

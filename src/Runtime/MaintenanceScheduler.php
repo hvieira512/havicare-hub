@@ -12,7 +12,7 @@ use React\EventLoop\LoopInterface;
 
 /**
  * Manutenção periódica: repetir e expirar os comandos em fila, e largar os dispositivos e as
- * ligações que se calaram.
+ * ligações que se calaram para lá do que o protocolo deles aguenta (`Liveness`).
  */
 final class MaintenanceScheduler
 {
@@ -27,14 +27,13 @@ final class MaintenanceScheduler
     public static function schedule(LoopInterface $loop, HubServices $services, array $dashboardConfig): void
     {
         $commandTimeout = (int)$dashboardConfig['command_timeout_seconds'];
-        $deviceIdleTimeout = (int)$dashboardConfig['device_idle_timeout_seconds'];
         $store = $services->deviceStore;
         $hubServer = $services->hubServer;
         $connections = new ConnectionAnnouncer($services->mqttBridge, $store);
 
         $loop->addPeriodicTimer(
             self::INTERVAL_SECONDS,
-            static function () use ($store, $hubServer, $connections, $commandTimeout, $deviceIdleTimeout): void {
+            static function () use ($store, $hubServer, $connections, $commandTimeout, $services): void {
                 $store->retryWaitingCommands(
                     self::COMMAND_RETRY_AFTER_SECONDS,
                     $commandTimeout,
@@ -45,11 +44,12 @@ final class MaintenanceScheduler
                         => $hubServer->submitDownlink($imei, $bytes, DownlinkRetryContext::forCommand($command))
                 );
                 $store->expireWaitingCommands($commandTimeout);
-                // Uma ligação TCP aberta anuncia-a o servidor ao fechar o socket; as outras, aqui.
-                foreach ($store->expireStaleDevices($deviceIdleTimeout) as $imei) {
-                    $device = $store->device($imei);
-                    if (($device['transport'] ?? '') !== 'tcp' || !$hubServer->isConnected($imei)) {
-                        $connections->announce($imei, $device, false);
+                // Uma ligação TCP aberta decide-a o servidor, que a anuncia ao fechar o socket.
+                foreach ($store->expireStaleDevices(hasSession: $hubServer->isConnected(...)) as $imei) {
+                    try {
+                        $connections->announce($imei, $services->commercialModelResolver->enrich($store->device($imei)), false);
+                    } catch (\Throwable $e) {
+                        $services->mqttBridge->logPublishFailure('hub', $imei, $e);
                     }
                 }
             }
@@ -57,8 +57,8 @@ final class MaintenanceScheduler
 
         $loop->addPeriodicTimer(
             self::INTERVAL_SECONDS,
-            static function () use ($hubServer, $deviceIdleTimeout): void {
-                $hubServer->expireIdleConnections($deviceIdleTimeout);
+            static function () use ($hubServer): void {
+                $hubServer->expireIdleConnections();
             }
         );
 

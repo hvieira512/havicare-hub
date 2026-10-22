@@ -8,6 +8,7 @@ use Hub\Command\DeviceCommandCatalog;
 use Hub\Domain\Capability\CapabilityCatalog;
 use Hub\Domain\Capability\Medication\MedicationOccurrence;
 use Hub\Domain\Capability\Medication\MedicationRunout;
+use Hub\Domain\Liveness;
 use Hub\Domain\ProtocolRegistry;
 use Hub\Log\Logger;
 use Hub\Location\LocationTelemetryEnricherContract;
@@ -222,11 +223,20 @@ class DeviceHubServer
         }
     }
 
-    public function expireIdleConnections(int $idleSeconds): void
+    /** Fecha as sessões caladas para lá do que o protocolo delas aguenta (`Liveness`). */
+    public function expireIdleConnections(): void
     {
-        foreach ($this->connections->expireIdleConnections($idleSeconds) as $session) {
+        $expired = function (DeviceSession $session, int $idleSeconds): bool {
+            if ($idleSeconds < (Liveness::idleTimeout($session->protocol) ?? PHP_INT_MAX)) {
+                return false;
+            }
+
+            return !Liveness::isConfigurable($session->protocol)
+                || $idleSeconds >= Liveness::idleTimeout($session->protocol, $this->effectiveConfigurations($session->imei));
+        };
+        foreach ($this->connections->expireIdleConnections($expired) as $session) {
             $this->goOffline($session);
-            Logger::channel('hub')->warning("Device offline by idle timeout IMEI={$session->imei} idle_seconds={$idleSeconds}");
+            Logger::channel('hub')->warning("Device offline by idle timeout IMEI={$session->imei} protocol={$session->protocol}");
         }
     }
 
@@ -369,13 +379,7 @@ class DeviceHubServer
             return $event;
         }
 
-        try {
-            $configurations = $this->effectiveConfiguration === null ? [] : ($this->effectiveConfiguration)($session->imei);
-        } catch (\Throwable $error) {
-            Logger::channel('hub')->warning("Medication plan unavailable IMEI={$session->imei}: {$error->getMessage()}");
-            $configurations = [];
-        }
-
+        $configurations = $this->effectiveConfigurations($session->imei);
         $now = new \DateTimeImmutable();
         $event['data'] = match ($type) {
             'cells_remaining' => $event['data'] + ['runoutAt' => MedicationRunout::at($remaining, $configurations, $now)],
@@ -384,6 +388,17 @@ class DeviceHubServer
         };
 
         return $event;
+    }
+
+    /** @return array<string, mixed> */
+    private function effectiveConfigurations(string $imei): array
+    {
+        try {
+            return $this->effectiveConfiguration === null ? [] : ($this->effectiveConfiguration)($imei);
+        } catch (\Throwable $error) {
+            Logger::channel('hub')->warning("Effective configuration unavailable IMEI={$imei}: {$error->getMessage()}");
+            return [];
+        }
     }
 
     /** @param array<string, mixed> $event */

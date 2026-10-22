@@ -17,7 +17,6 @@ final class QinglanstBridge extends MqttBridgeBase
     private readonly ConnectionAnnouncer $connections;
     private readonly ActiveDetections $activeDetections;
     /** O varrimento dos radares calados corre no máximo de dez em dez segundos. */
-    private const MAINTENANCE_INTERVAL_SECONDS = 10.0;
     private const SUPPORTED_TYPES = ['position', 'heartbreath', 'posstatics', 'hbstatics'];
     /** O tópico traz a licença e não a empresa, e estes radares só existem para a hitcare. */
     private const RADAR_COMPANY = 'hitcare';
@@ -33,7 +32,6 @@ final class QinglanstBridge extends MqttBridgeBase
         private readonly int $rawHistorySampleMs = 30000,
         ?\Hub\Device\CommercialModelResolver $commercialModelResolver = null,
         ?\Hub\Registry\Denylist $denylist = null,
-        private readonly int $idleTimeoutSeconds = 180,
         private readonly ?\Closure $layouts = null,
         private readonly ?\Closure $onMessage = null,
     ) {
@@ -90,26 +88,6 @@ final class QinglanstBridge extends MqttBridgeBase
         }
 
         return $event;
-    }
-
-    public function tick(float $timeout = 0.01): void
-    {
-        parent::tick($timeout);
-        if ($this->allow('maintenance', self::MAINTENANCE_INTERVAL_SECONDS)) {
-            $this->expireIdleRadars();
-        }
-    }
-
-    /** O radar não abre sessão: está desligado quando se cala para lá do prazo. Público para os testes. */
-    public function expireIdleRadars(): void
-    {
-        foreach ($this->deviceStore?->expireStaleDevices($this->idleTimeoutSeconds, 'radar') ?? [] as $imei) {
-            $device = $this->whitelist->resolve($imei, 'qinglanst-radar');
-            $this->connections->announce($imei, $device !== null ? $this->enrichWithCommercialName($device) : [
-                'deviceType' => 'radar',
-                'company' => self::RADAR_COMPANY,
-            ], false);
-        }
     }
 
     public function handleReceivedMessage(string $topic, string $payload): void

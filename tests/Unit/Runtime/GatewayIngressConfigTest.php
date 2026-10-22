@@ -40,13 +40,6 @@ final class GatewayIngressConfigTest extends TestCase
         self::assertTrue($config['gateway']['enabled']);
     }
 
-    public function testTheIdleTimeoutDefaultsToWhatBothServersRun(): void
-    {
-        $this->env('GATEWAY_IDLE_TIMEOUT_SECONDS', '');
-
-        self::assertSame(1500, Config::load()->all()['gateway']['idle_timeout_seconds']);
-    }
-
     public function testTheGatewaySwitchIsWhatTheBraceletIngressFollows(): void
     {
         // As pulseiras Veepoo são retransmitidas pelo gateway, e por isso a variável leva o nome dele.

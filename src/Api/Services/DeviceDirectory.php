@@ -9,6 +9,7 @@ use Hub\Infrastructure\Persistence\Repository\ApiDataAccess;
 use Hub\Command\DeviceCommandCatalog;
 use Hub\State\DeviceRegistry;
 use Hub\Domain\DeviceMetadata;
+use Hub\Domain\Liveness;
 use Hub\Domain\ProtocolRegistry;
 use Hub\Registry\Whitelist;
 
@@ -155,12 +156,6 @@ final class DeviceDirectory
     public function overlayRuntimeState(array $device, array $runtimeStates): array
     {
         $imei = (string)($device['imei'] ?? '');
-        if ($imei === '' || !isset($runtimeStates[$imei])) {
-            $device['online'] = (bool)($device['online'] ?? false);
-            return $device;
-        }
-
-        $runtime = $runtimeStates[$imei];
         foreach (
             [
             'online',
@@ -171,10 +166,14 @@ final class DeviceDirectory
             'lastConnectionId',
             ] as $field
         ) {
-            if (array_key_exists($field, $runtime)) {
-                $device[$field] = $runtime[$field];
+            if (array_key_exists($field, $runtimeStates[$imei] ?? [])) {
+                $device[$field] = $runtimeStates[$imei][$field];
             }
         }
+        $device['online'] = (bool)($device['online'] ?? false);
+        $protocol = (string)($device['protocol'] ?? '')
+            ?: ProtocolRegistry::forModel((string)($device['supplier'] ?? ''), (string)($device['model'] ?? ''));
+        $device['presence'] = Liveness::presence($protocol, $device['online']);
 
         return $device;
     }

@@ -43,6 +43,20 @@ final class DeviceDetailApiTest extends MysqlDashboardTestCase
         self::assertArrayNotHasKey('sourceDeviceId', $device);
     }
 
+    /** Um relógio ligado diz `online`; o termómetro, que só se liga para medir, nunca diz `offline`. */
+    public function testThePresenceSaysOnlineOrOfflineOnlyForDevicesThatStayConnected(): void
+    {
+        [$api, $db, $store] = $this->makeApi();
+        $store->deviceSeen('861265061009822', ['online' => '1', 'protocol' => 'vivistar-iw']);
+        $db->whitelist->register('748b34830e5b', 'JoyTech', 'HC-3018B', 'thermometer', 0, '', '748b34830e5b');
+
+        self::assertSame('online', $api->show('861265061009822', null, '')['device']['presence'] ?? null);
+        self::assertSame('idle', $api->show('748b34830e5b', null, '')['device']['presence'] ?? null);
+
+        $store->deviceSeen('748b34830e5b', ['online' => '1', 'protocol' => 'joytech-et']);
+        self::assertSame('measuring', $api->show('748b34830e5b', null, '')['device']['presence'] ?? null);
+    }
+
     public function testShowReturnsVoerkaHelpCallCapabilitySupportWithoutStoredConfiguration(): void
     {
         [$api, $db, $store] = $this->makeApi();

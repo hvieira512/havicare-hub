@@ -62,6 +62,20 @@ test("offline and without a licence, the band still says what it knows", () => {
     assert.equal(els.deviceBandDot.getAttribute("aria-label"), "Desligado");
 });
 
+test("an on-demand device between readings says when it last read, and not that it is offline", () => {
+    const els = detailEls();
+
+    select(els, {
+        device: { ...device, online: false, presence: "idle", lastSeenAt: new Date(Date.now() - 3 * 3600 * 1000).toISOString() },
+        model,
+        capabilities: {},
+    });
+
+    assert.equal(els.deviceBandDot.getAttribute("aria-label"), "Última leitura há 3 h");
+    assert.doesNotMatch(els.selectedDeviceBadge.textContent, /Desligado/);
+    assert.match(els.selectedDeviceBadge.textContent, /Última leitura/);
+});
+
 test("with no device chosen, the band and the tabs go away", () => {
     const els = detailEls();
     cacheElements(els);

@@ -9,8 +9,8 @@ use Hub\Device\HubMqttBridge;
 use Hub\State\DeviceReportStore;
 
 /**
- * Se cada gateway está vivo: um gateway pode cair sem `will`, e por isso estar vivo é ter
- * falado há pouco. Quem passa do prazo é dado como desligado por um varrimento.
+ * Anuncia cada gateway ligado. Desligado dá-o a manutenção do hub, quando se cala para lá do que
+ * o protocolo dele aguenta (`Liveness`): um gateway pode cair sem `will`.
  */
 final class GatewayPresence
 {
@@ -21,27 +21,11 @@ final class GatewayPresence
      */
     private array $online = [];
 
-    /** @var array<string, float> */
-    private array $lastSeenAt = [];
-
-    private \Closure $clock;
-
     private readonly ConnectionAnnouncer $announcer;
 
-    public function __construct(
-        private readonly HubMqttBridge $mqttBridge,
-        private readonly ?DeviceReportStore $deviceStore,
-        private readonly int $idleTimeoutSeconds,
-        ?callable $clock = null,
-    ) {
-        $this->clock = $clock !== null ? \Closure::fromCallable($clock) : static fn(): float => microtime(true);
-        $this->announcer = new ConnectionAnnouncer($mqttBridge, $deviceStore);
-    }
-
-    /** Marca o instante em que este gateway falou. Chamado a cada trama dele. */
-    public function touch(string $deviceKey): void
+    public function __construct(HubMqttBridge $mqttBridge, ?DeviceReportStore $deviceStore)
     {
-        $this->lastSeenAt[$deviceKey] = (float)($this->clock)();
+        $this->announcer = new ConnectionAnnouncer($mqttBridge, $deviceStore);
     }
 
     /**
@@ -58,27 +42,5 @@ final class GatewayPresence
         }
         $this->online[$deviceKey] = $gateway;
         $this->announcer->announce($deviceKey, $gateway, true);
-    }
-
-    /** Dá por desligado quem passou do prazo sem falar. */
-    public function expireIdle(): void
-    {
-        $now = (float)($this->clock)();
-        foreach ($this->online as $deviceKey => $gateway) {
-            if ($now - ($this->lastSeenAt[$deviceKey] ?? $now) < $this->idleTimeoutSeconds) {
-                continue;
-            }
-
-            // Só sai da lista depois de o `offline` sair, para se retentar; os outros seguem.
-            try {
-                $this->announcer->announce((string)$deviceKey, $gateway, false);
-            } catch (\Throwable $e) {
-                $this->mqttBridge->logPublishFailure('hub', (string)$deviceKey, $e);
-                continue;
-            }
-
-            $this->deviceStore?->deviceOffline((string)$deviceKey);
-            unset($this->online[$deviceKey], $this->lastSeenAt[$deviceKey]);
-        }
     }
 }

@@ -7,7 +7,6 @@ namespace Hub\Ingress\Mqtt\Moko;
 use Hub\Domain\Capability\CapabilityCatalog;
 use Hub\Domain\DeviceMetadata;
 use Hub\Device\CommercialModelResolver;
-use Hub\Device\ConnectionAnnouncer;
 use Hub\Device\DeviceDescriptor;
 use Hub\Domain\DiaperSensitivity;
 use Hub\Domain\GatewayDeviceLinkLookup;
@@ -80,7 +79,7 @@ final class MokoBridge extends MqttBridgeBase implements DispatchesQueued
             $options->rawHistorySampleSeconds,
             $clock,
         );
-        $this->gateways = new GatewayPresence($mqttBridge, $deviceStore, $options->gatewayIdleTimeoutSeconds, $clock);
+        $this->gateways = new GatewayPresence($mqttBridge, $deviceStore);
         $this->messageDecoder = new MokoMessageDecoder();
         $this->monitDecoder = new MonitMecsProDecoder();
         $this->monitNormalizer = new MonitNormalizer();
@@ -95,7 +94,7 @@ final class MokoBridge extends MqttBridgeBase implements DispatchesQueued
     private readonly RelayPublisher $relay;
     private readonly GatewayPresence $gateways;
 
-    private const RELAYING_SEEN_SECONDS = 60;
+    private const RELAYING_SEEN_SECONDS = 30;
     private readonly MessageDecoder $messageDecoder;
     private readonly MonitMecsProDecoder $monitDecoder;
     private readonly MonitNormalizer $monitNormalizer;
@@ -113,8 +112,7 @@ final class MokoBridge extends MqttBridgeBase implements DispatchesQueued
         }
 
         $deviceKey = (string)$gateway['imei'];
-        $this->gateways->touch($deviceKey);
-        // Reencaminha dezenas de tramas por segundo: o «visto» guarda-se de minuto a minuto.
+        // Reencaminha dezenas de tramas por segundo: o «visto» guarda-se a metade do sinal de vida.
         $cameOnline = false;
         if ($this->allow('relaying:' . $deviceKey, self::RELAYING_SEEN_SECONDS)) {
             $cameOnline = $this->deviceStore?->deviceSeen($deviceKey, [
@@ -181,32 +179,18 @@ final class MokoBridge extends MqttBridgeBase implements DispatchesQueued
     }
 
     /**
-     * Expira gateways parados e pares silenciosos, no máximo uma vez por janela: os limiares
-     * são de 180 e 30 segundos e o varrimento percorre todos os pares. Público para os testes.
+     * Expira os pares silenciosos, no máximo uma vez por janela: o limiar é de 30 segundos e o
+     * varrimento percorre todos os pares. Público para os testes.
      */
     public function runDueMaintenance(): void
     {
         if (!$this->allow('maintenance', self::MAINTENANCE_INTERVAL_SECONDS)) {
             return;
         }
-        $this->expireIdleGateways();
         $this->expireStaleProximity();
     }
 
-    /** Público para os testes o exercerem sem esperar pela janela de manutenção. */
-    public function expireIdleGateways(): void
-    {
-        $this->gateways->expireIdle();
-
-        // Os que se calaram antes de um reinício não estão na lista em memória; o Redis lembra-se deles.
-        $announcer = new ConnectionAnnouncer($this->mqttBridge, $this->deviceStore);
-        foreach ($this->deviceStore?->expireStaleDevices($this->options->gatewayIdleTimeoutSeconds, 'gateway') ?? [] as $imei) {
-            $gateway = $this->whitelist->resolve($imei);
-            $announcer->announce($imei, $gateway !== null ? $this->enrichWithCommercialName($gateway) : ['deviceType' => 'gateway'], false);
-        }
-    }
-
-    /** Idem: um par que se calou é reportado uma vez, e o teste quer provocá-lo. */
+    /** Um par que se calou é reportado uma vez, e o teste quer provocá-lo. */
     public function expireStaleProximity(): void
     {
         $this->relay->expireStaleProximity();
@@ -269,7 +253,6 @@ final class MokoBridge extends MqttBridgeBase implements DispatchesQueued
         $deviceType = (string)$gateway['deviceType'];
         $licenseId = DeviceMetadata::normalizeLicenseId($gateway['licenseId'] ?? 0);
         $company = (string)($gateway['company'] ?? 'null');
-        $this->gateways->touch($deviceKey);
         $protocol = (string)($decoded['protocol'] ?? 'moko-gateway');
         $encoding = (string)($decoded['encoding'] ?? 'unknown');
         $raw = [
@@ -286,7 +269,7 @@ final class MokoBridge extends MqttBridgeBase implements DispatchesQueued
             ],
         ];
         $this->mqttBridge->publishRaw($deviceKey, $raw, $deviceType, $licenseId, $company);
-        $this->deviceStore?->deviceSeen($deviceKey, [
+        $cameOnline = $this->deviceStore?->deviceSeen($deviceKey, [
             'supplier' => (string)$gateway['supplier'], 'model' => (string)$gateway['model'],
             'deviceType' => $deviceType, 'licenseId' => $licenseId, 'company' => $company,
             'protocol' => $protocol, 'transport' => 'mqtt', 'online' => '1',
@@ -307,7 +290,7 @@ final class MokoBridge extends MqttBridgeBase implements DispatchesQueued
             $this->mqttBridge->publishAndStore($this->deviceStore, 'telemetry', $deviceKey, $telemetry, $deviceType, $licenseId, $company);
         }
 
-        $this->gateways->markOnline($gateway);
+        $this->gateways->markOnline($gateway, $cameOnline === true);
     }
 
     /**

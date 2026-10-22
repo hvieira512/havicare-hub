@@ -8,6 +8,7 @@ use Hub\Device\CommercialModelResolver;
 use Hub\Device\HubMqttBridge;
 use Hub\Device\TelemetryEnvelope;
 use Hub\Domain\GatewayDeviceLinkLookup;
+use Hub\Domain\Liveness;
 use Hub\Ingress\Mqtt\DeviceBridge;
 use Hub\Ingress\Mqtt\DispatchesQueued;
 use Hub\Registry\Denylist;
@@ -21,8 +22,8 @@ use Hub\State\DeviceReportStore;
  */
 abstract class GattBridge extends DeviceBridge implements GatewayRelay, DispatchesQueued
 {
-    /** Sem mensagens deste tempo, a sessão acabou mesmo sem o `connected: false`. */
-    private const SESSION_SILENCE_SECONDS = 120;
+    /** O termómetro manda quatro tramas por segundo: a sessão prova-se viva de 10 em 10 s. */
+    private const HEARD_INTERVAL_SECONDS = 10.0;
 
     /**
      * Por cada aparelho com sessão: o gateway, o MTU e o fuso dele.
@@ -67,6 +68,9 @@ abstract class GattBridge extends DeviceBridge implements GatewayRelay, Dispatch
 
         $this->mqttBridge->publishRaw($context->deviceKey, $message, $this->deviceType, $context->licenseId, $context->company);
         $this->heardAt[$context->deviceKey] = $this->clockNow();
+        if ($this->allow('heard:' . $context->deviceKey, self::HEARD_INTERVAL_SECONDS)) {
+            $this->deviceStore?->deviceHeard($context->deviceKey);
+        }
 
         $kind = (string)($message['kind'] ?? '');
         $data = is_array($message['payload'] ?? null) ? $message['payload'] : [];
@@ -83,7 +87,7 @@ abstract class GattBridge extends DeviceBridge implements GatewayRelay, Dispatch
     {
         foreach (array_keys($this->sessions) as $deviceKey) {
             $deviceKey = (string)$deviceKey;
-            if ($this->clockNow() - ($this->heardAt[$deviceKey] ?? 0) > self::SESSION_SILENCE_SECONDS) {
+            if ($this->clockNow() - ($this->heardAt[$deviceKey] ?? 0) > Liveness::SESSION_SILENCE_SECONDS) {
                 unset($this->sessions[$deviceKey]);
                 continue;
             }

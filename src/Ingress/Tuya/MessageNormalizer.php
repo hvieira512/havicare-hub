@@ -14,14 +14,13 @@ use Hub\Device\TelemetryEnvelope;
 final class MessageNormalizer
 {
     /**
-     * O `deviceOffline` fica de fora: chega minutos depois de cada acordar, e quem dá a pulseira
-     * por desligada é o prazo próprio dela. O resto vem da cloud, e não do aparelho.
+     * O que diz respeito ao aparelho: as leituras e o acordar e adormecer. O resto vem da cloud.
      *
      * @param array<string, mixed> $business
      */
     public static function isFromDevice(array $business): bool
     {
-        return in_array($business['bizCode'] ?? null, ['devicePropertyMessage', 'deviceOnline'], true);
+        return in_array($business['bizCode'] ?? null, ['devicePropertyMessage', 'deviceOnline', 'deviceOffline'], true);
     }
 
     /**

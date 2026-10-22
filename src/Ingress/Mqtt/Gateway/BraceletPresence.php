@@ -57,11 +57,11 @@ final class BraceletPresence
 
         // O estado é retido e vale a cada anúncio; o acontecimento só sai na transição.
         if ($wasOnline && $cameOnline !== true) {
-            $this->announcer->status($deviceKey, $device, true);
+            $this->announcer->status($deviceKey, ['protocol' => $this->protocol] + $device, true);
             return;
         }
 
-        $this->announcer->announce($deviceKey, $device, true);
+        $this->announcer->announce($deviceKey, ['protocol' => $this->protocol] + $device, true);
     }
 
     /**
@@ -78,6 +78,6 @@ final class BraceletPresence
         $this->online[$deviceKey] = false;
 
         $this->deviceStore?->deviceOffline($deviceKey);
-        $this->announcer->announce($deviceKey, $device, false);
+        $this->announcer->announce($deviceKey, ['protocol' => $this->protocol] + $device, false);
     }
 }

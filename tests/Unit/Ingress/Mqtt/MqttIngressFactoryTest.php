@@ -64,7 +64,6 @@ final class MqttIngressFactoryTest extends TestCase
                 'topic_filter' => 'havicare-hub/null/0/gw/+/raw',
                 'dedupe_ttl_seconds' => 5,
                 'telemetry_refresh_seconds' => 60,
-                'idle_timeout_seconds' => 180,
                 'raw_history_sample_seconds' => 30,
             ],
             'qinglanst' => [

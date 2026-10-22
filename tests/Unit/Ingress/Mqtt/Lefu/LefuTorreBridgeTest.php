@@ -23,12 +23,12 @@ final class LefuTorreBridgeTest extends TestCase
 
     private float $now = 1000.0;
 
-    public function testTheSessionPutsTheScaleOnlineWithItsBatteryAndSetsTheClock(): void
+    public function testTheSessionPutsTheScaleMeasuringWithItsBatteryAndSetsTheClock(): void
     {
         $mqtt = new RecordingHubMqttBridge();
         IngressFixtures::relay($this->bridge($mqtt), self::TOPIC, self::message('session', ['connected' => true, 'battery' => 46, 'mtu' => 61]));
 
-        self::assertSame('online', $mqtt->statuses[0]['payload']['state']);
+        self::assertSame('measuring', $mqtt->statuses[0]['payload']['state']);
         self::assertSame(['percent' => 46], self::telemetry($mqtt, 'battery')[0]['data']);
         self::assertSame('calibrateClock', $mqtt->gatewayCommands[0]['payload']['operation']);
         self::assertStringStartsWith('0406', $mqtt->gatewayCommands[0]['payload']['payload']['writes'][0]['hex']);
@@ -239,13 +239,13 @@ final class LefuTorreBridgeTest extends TestCase
     }
 
     /** Um hub reiniciado com a balança ligada só a vê pela primeira trama, e é aí que ela fica ligada. */
-    public function testAFrameWithoutASessionMarksTheScaleOnline(): void
+    public function testAFrameWithoutASessionMarksTheScaleMeasuring(): void
     {
         $mqtt = new RecordingHubMqttBridge();
 
         IngressFixtures::relay($this->bridge($mqtt), self::TOPIC, self::frame('fff3', '010da580942500 4a0032a00f64330e'));
 
-        self::assertSame(['online'], array_column(array_column($mqtt->statuses, 'payload'), 'state'));
+        self::assertSame(['measuring'], array_column(array_column($mqtt->statuses, 'payload'), 'state'));
     }
 
     public function testWithoutAnOnlineUserTheWeighingHasNoOwnerNorComposition(): void

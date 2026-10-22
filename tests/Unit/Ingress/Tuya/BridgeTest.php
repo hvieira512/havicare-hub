@@ -17,7 +17,6 @@ final class BridgeTest extends TestCase
     private const BUTTON = 'bf7cbe84a6199e98168qvb';
     private const ACCESS_ID = 'test-access-id';
     private const ACCESS_SECRET = '0123456789abcdef0123456789abcdef';
-    private const PREFIX = 'hub:dashboard';
 
     private InMemoryRedisClient $redis;
     private DeviceStore $store;
@@ -106,32 +105,25 @@ final class BridgeTest extends TestCase
         self::assertSame('online', $this->mqtt->statuses[0]['payload']['state'] ?? null);
     }
 
-    /** A Tuya dá-o por desligado minutos depois de cada acordar, e ele só volta oito horas depois. */
-    public function testTheCloudsOfflineIsNotTheButtonGoingAway(): void
+    /** Adormecido, o botão não se alcança: o `deviceOffline` da cloud é a verdade, até ao próximo despertar. */
+    public function testTheCloudsOfflineTakesTheButtonOffline(): void
     {
         $this->bridge->handleReceivedMessage('', $this->frame($this->online()));
-        $this->bridge->handleReceivedMessage('', $this->frame(['bizCode' => 'deviceOffline', 'bizData' => ['devId' => self::BUTTON, 'time' => 1790778200000]]));
+        $this->bridge->handleReceivedMessage('', $this->frame($this->offline()));
+        $this->bridge->handleReceivedMessage('', $this->frame($this->offline()));
 
-        self::assertSame(['online'], array_column(array_column($this->mqtt->statuses, 'payload'), 'state'));
-        self::assertTrue($this->store->device(self::BUTTON)['online']);
+        self::assertSame(['online', 'offline'], array_column(array_column($this->mqtt->statuses, 'payload'), 'state'));
+        self::assertSame(['device.connected', 'device.disconnected'], array_column(array_column($this->events(), 'payload'), 'type'));
+        self::assertFalse($this->store->device(self::BUTTON)['online']);
     }
 
-    /** O botão acorda de oito em oito horas: o varrimento geral da meia hora não o pode dar por desligado. */
-    public function testASleepingButtonOutlivesTheGeneralIdleTimeout(): void
+    public function testTheNextWakeUpBringsTheButtonBack(): void
     {
         $this->bridge->handleReceivedMessage('', $this->frame($this->online()));
-        $this->redis->zadd(self::PREFIX . ':online-devices-by-last-seen', [self::BUTTON => time() - 1801]);
-
-        self::assertSame([], $this->store->expireStaleDevices(1800));
-        self::assertTrue($this->store->device(self::BUTTON)['online']);
-    }
-
-    public function testAButtonSilentPastItsOwnTimeoutIsExpired(): void
-    {
+        $this->bridge->handleReceivedMessage('', $this->frame($this->offline()));
         $this->bridge->handleReceivedMessage('', $this->frame($this->online()));
-        $this->redis->zadd(self::PREFIX . ':online-devices-by-last-seen', [self::BUTTON => time() - 30601]);
 
-        self::assertSame([self::BUTTON], $this->store->expireStaleDevices(1800));
+        self::assertSame(['online', 'offline', 'online'], array_column(array_column($this->mqtt->statuses, 'payload'), 'state'));
     }
 
     public function testAHandledMessageIsAcknowledged(): void
@@ -197,7 +189,6 @@ final class BridgeTest extends TestCase
             $whitelist,
             $this->mqtt,
             $store,
-            idleTimeoutSeconds: 30600,
         );
     }
 
@@ -224,6 +215,12 @@ final class BridgeTest extends TestCase
             ],
             'ts' => $time,
         ];
+    }
+
+    /** @return array<string, mixed> */
+    private function offline(): array
+    {
+        return ['bizCode' => 'deviceOffline', 'bizData' => ['devId' => self::BUTTON, 'time' => 1790778200000]];
     }
 
     /** @return array<string, mixed> */

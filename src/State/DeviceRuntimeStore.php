@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Hub\State;
 
 use Hub\Domain\DeviceMetadata;
+use Hub\Domain\Liveness;
 use Hub\Support\Values;
 use Predis\ClientInterface;
 
@@ -94,6 +95,16 @@ final class DeviceRuntimeStore
         });
 
         return !$wasOnline;
+    }
+
+    /** Uma trama de quem já está ligado prova-o vivo, sem o voltar a ligar. */
+    public function deviceHeard(string $imei): void
+    {
+        if ($this->redis->hget(RedisKeys::device($imei), 'online') !== '1') {
+            return;
+        }
+        $this->redis->hset(RedisKeys::device($imei), 'lastSeenAt', gmdate('Y-m-d\\TH:i:s\\Z'));
+        $this->redis->zadd(RedisKeys::onlineDevices(), [$imei => time()]);
     }
 
     /**
@@ -193,25 +204,31 @@ final class DeviceRuntimeStore
     }
 
     /**
-     * Dá por desligado quem está calado há mais do que o prazo, só do tipo pedido quando há um.
-     * Um aparelho que dorme traz o seu `idleTimeoutSeconds`, e esse prazo, se for maior, ganha.
+     * Dá por desligado quem se calou para lá do que o protocolo dele aguenta (`Liveness`), só do
+     * tipo pedido quando há um.
      *
+     * @param (\Closure(string): bool)|null $hasSession diz quem tem ligação própria, que decide por si
      * @return list<string> os que estavam ligados e deixaram de estar
      */
-    public function expireStaleDevices(int $timeoutSeconds, ?string $deviceType = null): array
+    public function expireStaleDevices(?string $deviceType = null, ?\Closure $hasSession = null): array
     {
         $now = time();
         /** @var array<string, string|float> $lastSeen */
-        $lastSeen = $this->redis->zrangebyscore(RedisKeys::onlineDevices(), '-inf', (string)($now - max(1, $timeoutSeconds)), ['withscores' => true]);
+        $lastSeen = $this->redis->zrangebyscore(RedisKeys::onlineDevices(), '-inf', '+inf', ['withscores' => true]);
         $states = $lastSeen !== [] ? $this->runtimeStates(array_map('strval', array_keys($lastSeen))) : [];
         $stale = [];
         foreach ($lastSeen as $imei => $seenAt) {
-            $state = $states[(string)$imei] ?? [];
+            $imei = (string)$imei;
+            $state = $states[$imei] ?? [];
             if ($deviceType !== null && ($state['deviceType'] ?? null) !== $deviceType) {
                 continue;
             }
-            if ((float)$seenAt <= $now - max($timeoutSeconds, (int)($state['idleTimeoutSeconds'] ?? 0))) {
-                $stale[] = (string)$imei;
+            if ($hasSession !== null && $hasSession($imei)) {
+                continue;
+            }
+            $timeout = Liveness::idleTimeout((string)($state['protocol'] ?? ''));
+            if ($timeout !== null && (float)$seenAt <= $now - $timeout) {
+                $stale[] = $imei;
             }
         }
 

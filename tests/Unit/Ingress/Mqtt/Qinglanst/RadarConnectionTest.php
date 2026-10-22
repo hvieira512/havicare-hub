@@ -12,28 +12,24 @@ use Tests\Support\Doubles\InMemoryRedisClient;
 use Tests\Support\Doubles\IngressFixtures;
 use Tests\Support\Doubles\RecordingHubMqttBridge;
 
-/** O radar não abre sessão: ligado é ter falado, desligado é três minutos calado. */
+/** O radar não abre sessão: ligado é ter falado; desligado dá-o a manutenção do hub. */
 final class RadarConnectionTest extends TestCase
 {
     private const RADAR = '594B3CB31A87';
-    private const PREFIX = 'hub:dashboard';
 
-    private InMemoryRedisClient $redis;
     private DeviceStore $store;
     private RecordingHubMqttBridge $mqtt;
     private QinglanstBridge $bridge;
 
     protected function setUp(): void
     {
-        $this->redis = new InMemoryRedisClient();
-        $this->store = new DeviceStore($this->redis);
+        $this->store = new DeviceStore(new InMemoryRedisClient());
         $this->mqtt = new RecordingHubMqttBridge();
         $this->bridge = new QinglanstBridge(
             new FakeMqttSubscriber(),
             IngressFixtures::whitelist([self::RADAR => IngressFixtures::radar()]),
             $this->mqtt,
             deviceStore: $this->store,
-            idleTimeoutSeconds: 180,
         );
     }
 
@@ -45,29 +41,6 @@ final class RadarConnectionTest extends TestCase
         self::assertSame(['device.connected'], $this->connectionEvents());
         self::assertSame(['online'], array_column(array_column($this->mqtt->statuses, 'payload'), 'state'));
         self::assertSame(['device.connected'], array_column($this->store->recent(self::RADAR, 'connections'), 'type'));
-    }
-
-    public function testARadarSilentForThreeMinutesIsAnnouncedDisconnected(): void
-    {
-        $this->bridge->handleReceivedMessage('radar/1001/' . self::RADAR, $this->position());
-        $this->redis->zadd(self::PREFIX . ':online-devices-by-last-seen', [self::RADAR => time() - 181]);
-
-        $this->bridge->expireIdleRadars();
-        $this->bridge->expireIdleRadars();
-
-        self::assertSame(['device.connected', 'device.disconnected'], $this->connectionEvents());
-        self::assertSame('offline', $this->mqtt->statuses[1]['payload']['state'] ?? null);
-        self::assertFalse($this->store->device(self::RADAR)['online']);
-    }
-
-    public function testARadarThatStillTalksIsNotExpired(): void
-    {
-        $this->bridge->handleReceivedMessage('radar/1001/' . self::RADAR, $this->position());
-        $this->redis->zadd(self::PREFIX . ':online-devices-by-last-seen', [self::RADAR => time() - 170]);
-
-        $this->bridge->expireIdleRadars();
-
-        self::assertSame(['device.connected'], $this->connectionEvents());
     }
 
     /** @return list<string> */
