@@ -102,12 +102,7 @@ class DeviceHubServer
             return;
         }
 
-        $licenseId = $this->currentLicenseId($session->imei, $session->licenseId);
-        $company = $this->currentCompany($session->imei, $session->company);
-        $commercialName = $this->currentCommercialName($session->imei, $session->commercialName);
-        $this->publishStatus($session->imei, $session->supplier, $session->model, 'offline', $session->deviceType, $licenseId, $company, $commercialName);
-        $this->publishEvent($session->imei, $session->supplier, $session->model, 'device.disconnected', $session->deviceType, $licenseId, $company, $commercialName);
-        $this->deviceStore?->deviceOffline($session->imei);
+        $this->goOffline($session);
         Logger::channel('hub')->info("Device offline IMEI={$session->imei}");
     }
 
@@ -143,38 +138,16 @@ class DeviceHubServer
 
         $conn->send($bytes);
         $session = $this->connections->get($conn);
-        $licenseId = $this->currentLicenseId($imei, $session?->licenseId ?? 0);
-        $company = $this->currentCompany($imei, $session?->company ?? 'null');
-        $commercialName = $this->currentCommercialName($imei, $session?->commercialName ?? '');
+        $device = ['supplier' => $session?->supplier ?? '', 'model' => $session?->model ?? ''] + $this->current($imei, $session);
         try {
-            $command = self::withRequestId($this->commandMetadata($bytes, $session?->protocol), $context);
-            $this->mqtt->publishEvent($imei, RawPayload::event(
-                $imei,
-                $session?->supplier ?? '',
-                $session?->model ?? '',
-                'device.downlink.sent',
-                null,
-                $command,
-                $commercialName
-            ), $this->currentDeviceType($imei, $session?->deviceType), $licenseId, $company);
-            $this->recordDownlinkEvent(
-                $imei,
-                $session?->supplier ?? '',
-                $session?->model ?? '',
-                'device.downlink.sent',
-                $bytes,
-                $this->currentDeviceType($imei, $session?->deviceType),
-                $licenseId,
-                $command,
-                $commercialName
-            );
+            $this->announce($imei, $device, 'device.downlink.sent', null, self::withRequestId($this->commandMetadata($bytes, $session?->protocol), $context));
             if ($session !== null) {
                 $this->mqtt->publishRaw(
                     $imei,
-                    RawPayload::raw($imei, $session->supplier, $session->model, 'tcp', $session->protocol, $bytes, 'downlink', (string)$conn->resourceId, $commercialName),
+                    RawPayload::raw($imei, $session->supplier, $session->model, 'tcp', $session->protocol, $bytes, 'downlink', (string)$conn->resourceId, $device['commercialName']),
                     $session->deviceType,
-                    $licenseId,
-                    $company,
+                    $device['licenseId'],
+                    $device['company'],
                 );
             }
         } catch (\Throwable $e) {
@@ -200,28 +173,13 @@ class DeviceHubServer
     /** @param array<string, mixed>|null $context */
     public function reportDownlinkDropped(string $imei, string $reason, ?string $bytes = null, ?array $context = null): void
     {
-        $error = $this->errorPayload($reason);
-        $metadata = $this->authorizer->metadataFor($imei);
         try {
-            $command = self::withRequestId($bytes !== null ? $this->commandMetadata($bytes) : null, $context);
-            $this->mqtt->publishEvent($imei, RawPayload::event(
+            $this->announce(
                 $imei,
-                $metadata['supplier'],
-                $metadata['model'],
+                $this->authorizer->metadataFor($imei),
                 'device.downlink.dropped',
-                $error,
-                $command,
-                (string)($metadata['commercialName'] ?? '')
-            ), $metadata['deviceType'], $metadata['licenseId'], $metadata['company']);
-            $this->recordEvent(
-                $imei,
-                $metadata['supplier'],
-                $metadata['model'],
-                'device.downlink.dropped',
-                $command,
-                $metadata['deviceType'],
-                $metadata['licenseId'],
-                (string)($metadata['commercialName'] ?? '')
+                $this->errorPayload($reason),
+                self::withRequestId($bytes !== null ? $this->commandMetadata($bytes) : null, $context),
             );
         } catch (\Throwable $e) {
             $this->mqtt->logPublishFailure('hub', $imei, $e);
@@ -236,9 +194,7 @@ class DeviceHubServer
             return false;
         }
 
-        $metadata = $this->authorizer->metadataFor($imei);
         $command = self::withoutBinaryValues(array_merge($this->commandMetadata($bytes) ?? [], $context ?? []));
-        $commercialName = (string)($metadata['commercialName'] ?? '');
 
         // A manutenção renova de minuto a minuto o comando que espera pelo aparelho: o anúncio
         // é do pedido, e só sai quando ele entra na fila.
@@ -257,16 +213,7 @@ class DeviceHubServer
             if ($renewal) {
                 return true;
             }
-            $this->mqtt->publishEvent($imei, RawPayload::event(
-                $imei,
-                $metadata['supplier'],
-                $metadata['model'],
-                'device.downlink.queued',
-                null,
-                $command,
-                $commercialName
-            ), $metadata['deviceType'], $metadata['licenseId'], $metadata['company']);
-            $this->recordEvent($imei, $metadata['supplier'], $metadata['model'], 'device.downlink.queued', $command, $metadata['deviceType'], $metadata['licenseId'], $commercialName);
+            $this->announce($imei, $this->authorizer->metadataFor($imei), 'device.downlink.queued', null, $command);
             return true;
         } catch (\Throwable $e) {
             Logger::channel('hub')->error("Failed to queue downlink for IMEI={$imei}: {$e->getMessage()}");
@@ -278,12 +225,7 @@ class DeviceHubServer
     public function expireIdleConnections(int $idleSeconds): void
     {
         foreach ($this->connections->expireIdleConnections($idleSeconds) as $session) {
-            $licenseId = $this->currentLicenseId($session->imei, $session->licenseId);
-            $company = $this->currentCompany($session->imei, $session->company);
-            $commercialName = $this->currentCommercialName($session->imei, $session->commercialName);
-            $this->publishStatus($session->imei, $session->supplier, $session->model, 'offline', $session->deviceType, $licenseId, $company, $commercialName);
-            $this->publishEvent($session->imei, $session->supplier, $session->model, 'device.disconnected', $session->deviceType, $licenseId, $company, $commercialName);
-            $this->deviceStore?->deviceOffline($session->imei);
+            $this->goOffline($session);
             Logger::channel('hub')->warning("Device offline by idle timeout IMEI={$session->imei} idle_seconds={$idleSeconds}");
         }
     }
@@ -324,24 +266,9 @@ class DeviceHubServer
             $authorization->licenseId,
             $authorization->company,
         );
-        $this->deviceStore?->deviceSeen($identity->imei, [
-            'supplier' => $session->supplier,
-            'model' => $session->model,
-            'commercialName' => $session->commercialName,
-            'deviceType' => $session->deviceType,
-            'licenseId' => $this->currentLicenseId($session->imei, $session->licenseId),
-            'company' => $this->currentCompany($session->imei, $session->company),
-            'protocol' => $identity->protocol,
-            'transport' => 'tcp',
-            'online' => '1',
-            'lastConnectionId' => (string)$conn->resourceId,
-        ]);
-
-        $licenseId = $this->currentLicenseId($session->imei, $session->licenseId);
-        $company = $this->currentCompany($session->imei, $session->company);
-        $commercialName = $this->currentCommercialName($session->imei, $session->commercialName);
-        $this->publishStatus($identity->imei, $session->supplier, $session->model, 'online', $session->deviceType, $licenseId, $company, $commercialName);
-        $this->publishEvent($identity->imei, $session->supplier, $session->model, 'device.connected', $session->deviceType, $licenseId, $company, $commercialName);
+        $this->markSeen($session, (string)$conn->resourceId);
+        $this->publishStatus($session, 'online');
+        $this->publishEvent($session, 'device.connected');
 
         // Um registo por confirmar ainda não deixou o aparelho pronto: as ordens esperam.
         if ($this->handleAuthenticatedMessage($conn, $session, $raw, (string)$conn->resourceId)) {
@@ -360,8 +287,7 @@ class DeviceHubServer
                 $session->imei,
                 RawPayload::raw($session->imei, $session->supplier, $session->model, 'tcp', $session->protocol, $raw, 'uplink', $connectionId, $session->commercialName),
                 $session->deviceType,
-                $this->currentLicenseId($session->imei, $session->licenseId),
-                $this->currentCompany($session->imei, $session->company),
+                ...$this->owner($session),
             );
             $rawPublished = true;
             $this->recordRaw($session, $raw, $connectionId);
@@ -464,8 +390,7 @@ class DeviceHubServer
     private function publishTelemetryEvent(DeviceSession $session, array $event): bool
     {
         try {
-            $licenseId = $this->currentLicenseId($session->imei, $session->licenseId);
-            $company = $this->currentCompany($session->imei, $session->company);
+            ['licenseId' => $licenseId, 'company' => $company] = $this->current($session->imei, $session);
             $type = $event['type'] ?? null;
 
             // Os eventos saem por `events` (QoS 1) e as leituras por `telemetry` (QoS 0); a `location` de
@@ -606,52 +531,98 @@ class DeviceHubServer
         }
     }
 
-    private function publishStatus(string $imei, string $supplier, string $model, string $state, string $deviceType, int $licenseId = 0, string $company = 'null', string $commercialName = ''): void
+    /** O fim de uma ligação: o estado e o evento no broker, e o aparelho dado por desligado. */
+    private function goOffline(DeviceSession $session): void
     {
+        $this->publishStatus($session, 'offline');
+        $this->publishEvent($session, 'device.disconnected');
+        $this->deviceStore?->deviceOffline($session->imei);
+    }
+
+    private function publishStatus(DeviceSession $session, string $state): void
+    {
+        $current = $this->current($session->imei, $session);
         try {
-            $this->mqtt->publishStatus($imei, RawPayload::status($imei, $supplier, $model, $state, null, $commercialName), true, $deviceType, $licenseId, $company);
+            $this->mqtt->publishStatus(
+                $session->imei,
+                RawPayload::status($session->imei, $session->supplier, $session->model, $state, null, $current['commercialName']),
+                true,
+                $session->deviceType,
+                $current['licenseId'],
+                $current['company'],
+            );
             if ($state === 'online') {
-                $this->deviceStore?->deviceSeen($imei, [
-                    'supplier' => $supplier,
-                    'model' => $model,
-                    'commercialName' => $commercialName,
-                    'deviceType' => $deviceType,
-                    'licenseId' => $licenseId,
-                    'company' => $company,
+                $this->deviceStore?->deviceSeen($session->imei, [
+                    'supplier' => $session->supplier,
+                    'model' => $session->model,
+                    'commercialName' => $current['commercialName'],
+                    'deviceType' => $session->deviceType,
+                    'licenseId' => $current['licenseId'],
+                    'company' => $current['company'],
                     'online' => '1',
                 ]);
             } elseif ($state === 'offline') {
-                $this->deviceStore?->deviceOffline($imei);
+                $this->deviceStore?->deviceOffline($session->imei);
             }
         } catch (\Throwable $e) {
-            $this->mqtt->logPublishFailure('hub', $imei, $e);
+            $this->mqtt->logPublishFailure('hub', $session->imei, $e);
         }
     }
 
-    private function publishEvent(string $imei, string $supplier, string $model, string $type, string $deviceType, int $licenseId = 0, string $company = 'null', string $commercialName = ''): void
+    private function publishEvent(DeviceSession $session, string $type): void
     {
+        $device = ['supplier' => $session->supplier, 'model' => $session->model, 'deviceType' => $session->deviceType]
+            + $this->current($session->imei, $session);
         try {
-            $this->mqtt->publishEvent($imei, RawPayload::event($imei, $supplier, $model, $type, null, null, $commercialName), $deviceType, $licenseId, $company);
-            $this->recordEvent($imei, $supplier, $model, $type, null, $deviceType, $licenseId, $commercialName);
+            $this->announce($session->imei, $device, $type);
         } catch (\Throwable $e) {
-            $this->mqtt->logPublishFailure('hub', $imei, $e);
+            $this->mqtt->logPublishFailure('hub', $session->imei, $e);
         }
     }
 
-    private function recordRaw(DeviceSession $session, string $raw, string $connectionId): void
+    /**
+     * Um evento do hub sobre o aparelho, no broker e no histórico; o erro só segue no broker.
+     *
+     * @param array{supplier: string, model: string, commercialName: string, deviceType: string, licenseId: int, company: string} $device
+     * @param array<string, mixed>|null $error
+     * @param array<string, mixed>|null $command
+     */
+    private function announce(string $imei, array $device, string $type, ?array $error = null, ?array $command = null): void
+    {
+        $event = static fn (?array $error): array => RawPayload::event(
+            $imei,
+            $device['supplier'],
+            $device['model'],
+            $type,
+            $error,
+            $command,
+            $device['commercialName'],
+        );
+        $this->mqtt->publishEvent($imei, $event($error), $device['deviceType'], $device['licenseId'], $device['company']);
+        $this->deviceStore?->append($imei, 'events', array_merge(
+            $event(null),
+            ['deviceType' => $device['deviceType'], 'licenseId' => $device['licenseId']]
+        ));
+    }
+
+    private function markSeen(DeviceSession $session, string $connectionId): void
     {
         $this->deviceStore?->deviceSeen($session->imei, [
             'supplier' => $session->supplier,
             'model' => $session->model,
             'commercialName' => $session->commercialName,
             'deviceType' => $session->deviceType,
-            'licenseId' => $this->currentLicenseId($session->imei, $session->licenseId),
-            'company' => $this->currentCompany($session->imei, $session->company),
+            ...$this->owner($session),
             'protocol' => $session->protocol,
             'transport' => 'tcp',
             'online' => '1',
             'lastConnectionId' => $connectionId,
         ]);
+    }
+
+    private function recordRaw(DeviceSession $session, string $raw, string $connectionId): void
+    {
+        $this->markSeen($session, $connectionId);
         $this->deviceStore?->append($session->imei, 'raw', RawPayload::raw(
             $session->imei,
             $session->supplier,
@@ -665,72 +636,36 @@ class DeviceHubServer
         ));
     }
 
-    /** @param array<string, mixed>|null $command */
-    private function recordEvent(
-        string $imei,
-        string $supplier,
-        string $model,
-        string $type,
-        ?array $command,
-        string $deviceType,
-        int $licenseId = 0,
-        string $commercialName = ''
-    ): void {
-        $this->deviceStore?->append($imei, 'events', array_merge(
-            RawPayload::event($imei, $supplier, $model, $type, null, $command, $commercialName),
-            ['deviceType' => $deviceType, 'licenseId' => $licenseId]
-        ));
-    }
-
-    /** @param array<string, mixed>|null $command */
-    private function recordDownlinkEvent(
-        string $imei,
-        string $supplier,
-        string $model,
-        string $type,
-        string $bytes,
-        string $deviceType,
-        int $licenseId = 0,
-        ?array $command = null,
-        string $commercialName = ''
-    ): void {
-        $this->recordEvent($imei, $supplier, $model, $type, $command ?? $this->commandMetadata($bytes), $deviceType, $licenseId, $commercialName);
-    }
-
-    // A leitura é da whitelist e não da sessão: reassociar um dispositivo tem de valer já
-    // numa ligação viva, e a sessão guardou os valores do login.
-    private function currentLicenseId(string $imei, int $fallback = 0): int
-    {
-        $licenseId = $this->whitelist->getMetadata($imei)?->licenseId ?? 0;
-
-        // O 0 quer dizer "sem atribuição", e por isso um valor ausente recorre ao anterior
-        // em vez de restringir o dispositivo à licença 0 em silêncio.
-        return $licenseId !== 0 ? $licenseId : $fallback;
-    }
-
-    private function currentCompany(string $imei, string $fallback = 'null'): string
-    {
-        $company = $this->whitelist->getMetadata($imei)?->company ?? '';
-        return $company !== '' ? $company : $fallback;
-    }
-
-    private function currentCommercialName(string $imei, string $fallback = ''): string
-    {
-        $metadata = $this->authorizer->metadataFor($imei);
-        $commercialName = (string)($metadata['commercialName'] ?? '');
-        return $commercialName !== '' ? $commercialName : $fallback;
-    }
-
     /**
-     * O tipo de aparelho sai da whitelist e não de um valor por omissão: um tipo assumido publica
-     * no tópico errado sem erro. Sem whitelist não há sessão, por isso há sempre metadados.
+     * O dono, o nome comercial e o tipo de agora, lidos da whitelist e não da sessão: reassociar
+     * um aparelho tem de valer já numa ligação viva. O que a whitelist não sabe fica o da sessão,
+     * e a licença 0 é «sem atribuição», que não restringe o aparelho à licença 0.
+     *
+     * @return array{licenseId: int, company: string, commercialName: string, deviceType: string}
      */
-    private function currentDeviceType(string $imei, ?string $fallback = null): string
+    private function current(string $imei, ?DeviceSession $session): array
     {
-        $metadata = $this->authorizer->metadataFor($imei);
-        $deviceType = (string)($metadata['deviceType'] ?? '');
+        $metadata = $this->whitelist->getMetadata($imei);
+        $licenseId = $metadata?->licenseId ?? 0;
+        $company = $metadata?->company ?? '';
+        $commercialName = $this->authorizer->commercialNameFor($metadata?->supplier ?? '', $metadata?->model ?? '');
+        $deviceType = $metadata?->deviceType ?? 'watch';
 
-        return $deviceType !== '' ? $deviceType : (string)$fallback;
+        return [
+            'licenseId' => $licenseId !== 0 ? $licenseId : ($session?->licenseId ?? 0),
+            'company' => $company !== '' ? $company : ($session?->company ?? 'null'),
+            'commercialName' => $commercialName !== '' ? $commercialName : ($session?->commercialName ?? ''),
+            // Um tipo assumido publica no tópico errado sem erro: vale o da whitelist.
+            'deviceType' => $deviceType !== '' ? $deviceType : ($session?->deviceType ?? ''),
+        ];
+    }
+
+    /** @return array{licenseId: int, company: string} */
+    private function owner(DeviceSession $session): array
+    {
+        $current = $this->current($session->imei, $session);
+
+        return ['licenseId' => $current['licenseId'], 'company' => $current['company']];
     }
 
     /** @return array<string, mixed> */
@@ -779,8 +714,7 @@ class DeviceHubServer
                 $session->imei,
                 RawPayload::raw($session->imei, $session->supplier, $session->model, 'tcp', $session->protocol, $response->bytes, 'downlink', $connectionId, $session->commercialName),
                 $session->deviceType,
-                $this->currentLicenseId($session->imei, $session->licenseId),
-                $this->currentCompany($session->imei, $session->company),
+                ...$this->owner($session),
             );
         } catch (\Throwable $e) {
             $this->mqtt->logPublishFailure('hub', $session->imei, $e);
