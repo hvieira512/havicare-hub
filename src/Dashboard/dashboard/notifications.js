@@ -7,7 +7,7 @@ import {
 import { isSignedIn } from "./api/http.js";
 import { ago, when } from "./format.js";
 import { countLabel } from "./i18n.js";
-import { html, raw } from "./html.js";
+import { html } from "./html.js";
 import { apiError, confirmDestructive, toast } from "./dialogs.js";
 import { els, whileVisible } from "./dom.js";
 
@@ -98,14 +98,14 @@ export function notificationRow(notification) {
                 <i class="fa-solid ${kind.icon} text-danger mt-1 flex-shrink-0" aria-hidden="true"></i>
                 <div class="min-w-0 flex-grow-1">
                     <span class="d-block fw-semibold">${kind.title}</span>
-                    ${raw(deviceLine)}
-                    ${raw(detailsLine)}
+                    ${deviceLine}
+                    ${detailsLine}
                     <span class="d-flex justify-content-between gap-2 small text-secondary mt-1">
                         <span>${kind.count(attempts)}</span>
                         <span>${ago(notification.lastSeenAt)}</span>
                     </span>
                     <div class="d-flex gap-2 mt-2">
-                        ${raw(deviceActions)}
+                        ${deviceActions}
                         <button class="btn btn-sm btn-outline-secondary flex-shrink-0 ms-auto" type="button" data-notification-dismiss="${id}" title="Eliminar notificação" aria-label="Eliminar notificação">
                             <i class="fa-solid fa-trash-can" aria-hidden="true"></i>
                         </button>

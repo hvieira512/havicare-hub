@@ -1,4 +1,4 @@
-import { html, raw } from "../../html.js";
+import { html } from "../../html.js";
 
 // O limiar vem no payload, por sensor; 12 é o preset normal, para leituras sem o campo.
 const DIAPER_WET_DELTA_FALLBACK = 12;
@@ -55,8 +55,7 @@ export function diaperMoistureBody(data) {
 </div>
 <div class="diaper-channel-index text-center tabular-nums lh-sm">${index}</div>
 </div>`;
-        })
-        .join("");
+        });
 
     const maximum = Math.max(0, Number(data?.maximumDelta ?? 0) || 0);
     const affected = Math.max(0, Number(data?.affectedChannelCount ?? 0) || 0);
@@ -64,7 +63,7 @@ export function diaperMoistureBody(data) {
     const thresholdOffset = (wetDelta / scaleDelta) * 100;
 
     return html`<div class="diaper-moisture mt-3">
-<div class="diaper-strip d-grid align-items-end" style="--diaper-threshold:${thresholdOffset}%">${raw(columns)}</div>
+<div class="diaper-strip d-grid align-items-end" style="--diaper-threshold:${thresholdOffset}%">${columns}</div>
 <div class="border-top pt-2 small text-secondary mt-2">
 Máx. <strong class="text-body">${maximum}</strong> · <strong class="text-body">${affected}</strong> de ${required} canais acima do limiar (${wetDelta})
 </div>

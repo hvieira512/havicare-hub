@@ -1,6 +1,6 @@
 import { getDenylist, unblockDevice } from "../api/index.js";
 import { state } from "../state.js";
-import { html, raw } from "../html.js";
+import { html } from "../html.js";
 import { ago } from "../format.js";
 import { apiError, toast } from "../dialogs.js";
 import { emptyPanel } from "../components/empty-panel.js";
@@ -43,8 +43,8 @@ function denylistRow(entry) {
         <div class="list-group-item d-flex flex-column flex-sm-row align-items-start align-items-sm-center gap-2">
             <div class="min-w-0 flex-grow-1">
                 <span class="d-block font-monospace text-truncate" title="${entry.identity}">${entry.identity}</span>
-                ${raw(metaLine)}
-                ${raw(whoLine)}
+                ${metaLine}
+                ${whoLine}
             </div>
             <button class="btn btn-outline-secondary btn-sm flex-shrink-0" data-action="unblock" data-id="${entry.identity}">Desbloquear</button>
         </div>`;
@@ -68,7 +68,7 @@ function renderDenylistSection() {
 
     els.denylistListBody.innerHTML = total === 0
         ? emptyPanel("Um aparelho bloqueia-se a partir da notificação de «Dispositivo não autorizado».")
-        : html`<div class="list-group">${raw(current.map(denylistRow).join(""))}</div>`;
+        : html`<div class="list-group">${current.map(denylistRow)}</div>`;
 }
 
 async function unblock(identity) {

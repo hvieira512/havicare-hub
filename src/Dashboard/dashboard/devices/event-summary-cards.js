@@ -1,4 +1,4 @@
-import { html, raw } from "../html.js";
+import { html } from "../html.js";
 import { ago, displayPersonIndex, eventTime, rowPayload, when } from "../format.js";
 import { fallLabel } from "../domain.js";
 import { valueLabel } from "../i18n.js";
@@ -61,18 +61,18 @@ export function helpCallSummaryCard(events = [], pressModes = []) {
         const occurredAttr = called ? html` data-occurred-at="${occurredAt}"` : "";
         const since = called
             ? html`${ago(occurredAt)}`
-            : "<span class=\"help-call-never\">nunca</span>";
+            : html`<span class="help-call-never">nunca</span>`;
 
         return html`<div class="col-12 col-md-4">
-<div class="d-flex align-items-center gap-2 border rounded p-2 h-100${called ? "" : " opacity-50"}"${raw(occurredAttr)}${raw(tooltip)}>
+<div class="d-flex align-items-center gap-2 border rounded p-2 h-100${called ? "" : " opacity-50"}"${occurredAttr}${tooltip}>
 <i class="fa-solid ${icon} ${called ? "text-danger" : "text-body-secondary"}" style="width:1.25rem;text-align:center;flex-shrink:0;"></i>
 <div class="min-w-0">
 <div class="fw-semibold text-truncate">${label}</div>
-<div class="small text-body-secondary">${raw(since)}</div>
+<div class="small text-body-secondary">${since}</div>
 </div>
 </div>
 </div>`;
-    }).join("");
+    });
 
     return html`<div class="telemetry-card-wide min-w-0">
 <div class="card h-100 border-danger">
@@ -83,7 +83,7 @@ export function helpCallSummaryCard(events = [], pressModes = []) {
 </div>
 <div class="fw-bold text-danger flex-grow-1 min-w-0">Últimas chamadas de ajuda</div>
 </div>
-<div class="row g-2">${raw(columns)}</div>
+<div class="row g-2">${columns}</div>
 </div>
 </div>
 </div>`;
@@ -117,7 +117,7 @@ export function fallSummaryCard(events) {
 </div>
 <div class="min-w-0 flex-grow-1">
 <div class="fw-bold text-danger">Última queda</div>
-<div class="small text-body-secondary text-truncate" title="${when(occurredAt)}">${ago(occurredAt)} · ${label}${raw(who)}</div>
+<div class="small text-body-secondary text-truncate" title="${when(occurredAt)}">${ago(occurredAt)} · ${label}${who}</div>
 </div>
 </div>
 </div>

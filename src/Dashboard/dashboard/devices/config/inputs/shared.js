@@ -1,4 +1,4 @@
-import { html, raw } from "../../../html.js";
+import { html } from "../../../html.js";
 import { fieldUnit } from "../../../format.js";
 import { configFieldLabel, configText, optionDescription, optionLabel } from "../../../i18n.js";
 import { boolValue } from "../normalizers.js";
@@ -65,7 +65,7 @@ export const boundedNumber = (entry, meta = {}, field = "", desired = {}, extra 
 export function switchField(field, checked, { on = "Ligado", off = "Desligado", cls = "", attr = "data-config-field" } = {}) {
     return html`
         <div class="form-check form-switch${cls ? ` ${cls}` : ""}">
-            <input class="form-check-input" type="checkbox" role="switch" ${raw(attr)}="${field}" ${checked ? "checked" : ""}>
+            <input class="form-check-input" type="checkbox" role="switch" ${attr}="${field}" ${checked ? "checked" : ""}>
             <label class="form-check-label" data-switch-label data-switch-on="${on}" data-switch-off="${off}">${checked ? on : off}</label>
         </div>`;
 }
@@ -82,7 +82,7 @@ export function choiceField({ field, value, options, label = "", cards = false, 
     const choices = options.map((option, index) => {
         const id = `${name}-${index}`;
         const optionValue = String(option.value);
-        const input = html`<input type="radio" class="btn-check" name="${name}" id="${id}" value="${optionValue}" ${raw(attr)}="${field}"${raw(optionValue === current ? " checked" : "")}>`;
+        const input = html`<input type="radio" class="btn-check" name="${name}" id="${id}" value="${optionValue}" ${attr}="${field}"${optionValue === current ? " checked" : ""}>`;
         const icon = option.icon ? html`<i class="fa-solid ${option.icon}${cards ? " mt-1" : " me-2"}" aria-hidden="true"></i>` : "";
         if (!cards) {
             return html`${input}<label class="btn btn-outline-${option.tone || "secondary"}" for="${id}">${icon}${option.label}</label>`;

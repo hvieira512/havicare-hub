@@ -1,4 +1,4 @@
-import { html, raw } from "../html.js";
+import { html } from "../html.js";
 
 /** A pastilha de estado: o ponto, o rótulo e um tom do Bootstrap. O rótulo diz sempre o estado. */
 const TONES = ["primary", "secondary", "success", "warning", "danger", "info"];
@@ -26,9 +26,9 @@ export function stateBadge(label, tone = "secondary", options = "") {
     // O ícone ocupa o lugar do ponto; ambos são decoração, e o leitor de ecrã lê o rótulo.
     const mark = icon
         ? html`<i class="fa-solid ${icon}" aria-hidden="true"></i>`
-        : "<span class=\"state-badge-dot rounded-circle d-inline-block\" aria-hidden=\"true\"></span>";
+        : html`<span class="state-badge-dot rounded-circle d-inline-block" aria-hidden="true"></span>`;
 
-    return html`<span class="${classes}">${raw(mark)}${label}</span>`;
+    return html`<span class="${classes}">${mark}${label}</span>`;
 }
 
 export function onlineBadge(online, options = "") {

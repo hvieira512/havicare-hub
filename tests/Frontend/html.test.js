@@ -7,7 +7,8 @@ import { field } from "../../src/Dashboard/dashboard/components/form-field.js";
 import { deviceLicenseBlock } from "../../src/Dashboard/dashboard/components/device-license.js";
 import { uplinkCardContent } from "../../src/Dashboard/dashboard/components/cards/telemetry.js";
 import { telemetryCard } from "../../src/Dashboard/dashboard/components/cards/shell.js";
-import { compactDetails } from "../../src/Dashboard/dashboard/components/cards/shared.js";
+import { compactDetails, joinMarkup } from "../../src/Dashboard/dashboard/components/cards/shared.js";
+import { apiUserForm } from "../../src/Dashboard/dashboard/settings/api-users.js";
 import { state } from "../../src/Dashboard/dashboard/state.js";
 
 /** O que se afirma é a marcação, e o `html` devolve um fragmento: comparar texto com texto. */
@@ -201,4 +202,17 @@ test("but a control in raw text is escaped", () => {
     const rendered = markup(field("Nome", "<img src=x onerror=alert(1)>"));
 
     assert.doesNotMatch(rendered, /<img/i);
+});
+
+test("joining fragments keeps them as markup, and a text part between them is escaped", () => {
+    assert.equal(markup(joinMarkup([html`<b>a</b>`, "<i>b</i>", ""])), "<b>a</b> · &lt;i&gt;b&lt;/i&gt;");
+});
+
+test("a licence name with markup comes out inert in the API user form", () => {
+    const root = parseFragment(apiUserForm(null, [
+        { id: 7, companyName: "hitcare", licenseId: "1001", name: "<img src=x onerror=alert(1)>" },
+    ]));
+
+    assert.equal(root.querySelector("img"), null);
+    assert.match(root.querySelector("[data-field=\"licenseRefId\"]").textContent, /<img src=x onerror=alert\(1\)>/);
 });

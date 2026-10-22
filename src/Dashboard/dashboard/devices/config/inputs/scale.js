@@ -1,5 +1,5 @@
 import { stateBadge } from "../../../components/state-badge.js";
-import { html, raw } from "../../../html.js";
+import { html } from "../../../html.js";
 import { state } from "../../../state.js";
 import { nextUid } from "./shared.js";
 
@@ -65,10 +65,10 @@ function userCard(user, { dirty = false, online = "", group = "" } = {}) {
     const isOnline = saved && user.id === online;
 
     return html`
-        <div class="scale-user d-flex align-items-center gap-3 border rounded px-3 py-2${raw(isOnline ? " scale-user-online" : "")}"
+        <div class="scale-user d-flex align-items-center gap-3 border rounded px-3 py-2${isOnline ? " scale-user-online" : ""}"
              data-scale-user="${JSON.stringify(user)}">
             <input class="form-check-input scale-user-radio flex-shrink-0 m-0" type="radio" name="${group}" value="${user.id || ""}"
-                   aria-label="${user.name} em linha"${raw(isOnline ? " checked" : "")}${raw(saved ? "" : " disabled")}>
+                   aria-label="${user.name} em linha"${isOnline ? " checked" : ""}${saved ? "" : " disabled"}>
             <div class="flex-grow-1 min-w-0">
                 <div class="fw-semibold d-flex flex-wrap align-items-center gap-2">${user.name}${isOnline ? onlineBadge(user.id) : ""}</div>
                 <div class="small text-secondary">${meta(user)}</div>

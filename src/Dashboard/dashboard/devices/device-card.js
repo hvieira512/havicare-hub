@@ -1,4 +1,4 @@
-import { html, raw } from "../html.js";
+import { html } from "../html.js";
 import { deviceLicenseBlock } from "../components/device-license.js";
 import { onlineBadge } from "../components/state-badge.js";
 import { deviceTypeLabel, normalizeDeviceType } from "../domain.js";
@@ -56,13 +56,13 @@ const simNumberHtml = (simNumber) =>
 function lastSeenLine(lastSeenAt) {
     return lastSeenAt
         ? html`<span class="${DEVICE_CARD_WHEN}">${ago(lastSeenAt)}</span>`
-        : `<span class="${DEVICE_CARD_WHEN} fst-italic">sem registo</span>`;
+        : html`<span class="${DEVICE_CARD_WHEN} fst-italic">sem registo</span>`;
 }
 
 export function deviceCard(device, selected, siblings = []) {
     const image = device.image
         ? html`<img class="mw-100 mh-100 object-fit-contain" src="${device.image}" alt="${device.model || device.imei}">`
-        : "<i class=\"fa-solid fa-microchip\"></i>";
+        : html`<i class="fa-solid fa-microchip"></i>`;
     const { prefix, suffix } = imeiEmphasis(device.imei, siblings);
     const meta = [
         deviceTypeLabel(normalizeDeviceType(device.deviceType)),
@@ -73,27 +73,27 @@ export function deviceCard(device, selected, siblings = []) {
 
     return html`
         <button type="button" class="device-card d-grid w-100 text-start${selected ? " selected" : ""}${device.online ? "" : " offline"}"
-            data-imei="${device.imei}" data-action="${DEVICE_CARD_ACTION}"${raw(selected ? " aria-current=\"true\"" : "")}>
-        <span class="device-card-thumb d-grid overflow-hidden rounded-3 flex-shrink-0">${raw(image)}</span>
+            data-imei="${device.imei}" data-action="${DEVICE_CARD_ACTION}"${selected ? html` aria-current="true"` : ""}>
+        <span class="device-card-thumb d-grid overflow-hidden rounded-3 flex-shrink-0">${image}</span>
         <span class="device-card-state d-flex flex-column align-items-start gap-1 min-w-0">
-            ${raw(onlineBadge(device.online, "align-self-start"))}
-            ${raw(lastSeenLine(device.lastSeenAt))}
+            ${onlineBadge(device.online, "align-self-start")}
+            ${lastSeenLine(device.lastSeenAt)}
         </span>
         <span class="device-card-identity">
             <span class="min-w-0">
-                <span class="device-card-imei d-block text-truncate fw-semibold lh-sm tabular-nums">${raw(sharedPrefixHtml(prefix))}${suffix}</span>
+                <span class="device-card-imei d-block text-truncate fw-semibold lh-sm tabular-nums">${sharedPrefixHtml(prefix)}${suffix}</span>
                 <span class="device-card-meta d-block text-truncate text-secondary lh-sm">${meta}</span>
             </span>
         </span>
         <span class="device-card-fields">
             <span class="device-card-field">
-                ${raw(deviceLicenseBlock(device, {
+                ${deviceLicenseBlock(device, {
                     valueClass: DEVICE_CARD_FIELD_VALUE,
                     noteClass: "device-card-field-note d-block text-truncate text-secondary lh-sm",
-                }))}
+                })}
             </span>
             <span class="device-card-field">
-                ${raw(simNumberHtml(device.simNumber))}
+                ${simNumberHtml(device.simNumber)}
             </span>
         </span>
         </button>`;

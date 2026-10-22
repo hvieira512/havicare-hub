@@ -1,4 +1,4 @@
-import { html, raw } from "../../html.js";
+import { html } from "../../html.js";
 import { stateBadge } from "../state-badge.js";
 
 /** A casca de um cartão, partilhada pelo uplink e pelo downlink. */
@@ -25,7 +25,7 @@ export function telemetryCard({
     const toneClass = tone ? ` telemetry-card-tone-${tone}` : "";
     const featureAttr = feature ? html` data-feature="${feature}"` : "";
     const attrs = clickable
-        ? html` type="button" class="card h-100 w-100 telemetry-card-action text-start${toneClass}" data-action="${action || "requestFeature"}"${raw(featureAttr)}${pending ? " disabled" : ""}`
+        ? html` type="button" class="card h-100 w-100 telemetry-card-action text-start${toneClass}" data-action="${action || "requestFeature"}"${featureAttr}${pending ? " disabled" : ""}`
         : html` class="card h-100${toneClass}"`;
     // A pastilha leva a sua linha: num mosaico estreito não cabe ao lado do ícone e do nome.
     const state = stateLabel
@@ -38,7 +38,7 @@ export function telemetryCard({
     // Em repouso o avião de papel diz que o mosaico se pode pedir; a correr, a pastilha o estado.
     const requestHint =
         clickable && !stateLabel
-            ? `<span class="telemetry-card-hint flex-shrink-0" aria-hidden="true"><i class="fa-solid ${action ? "fa-up-right-and-down-left-from-center" : "fa-paper-plane"}"></i></span>`
+            ? html`<span class="telemetry-card-hint flex-shrink-0" aria-hidden="true"><i class="fa-solid ${action ? "fa-up-right-and-down-left-from-center" : "fa-paper-plane"}"></i></span>`
             : "";
 
     // Pelo texto, e não pelo valor: um `Fragment` vazio é um objecto, e é sempre verdadeiro.
@@ -57,7 +57,7 @@ export function telemetryCard({
 
     return html`
     <div class="${cell}">
-        <${tag}${raw(attrs)}>
+        <${tag}${attrs}>
             <div class="card-body p-3 d-flex flex-column gap-3">
                 <div class="d-flex align-items-center gap-2 gap-sm-3">
                     <div class="telemetry-card-icon position-relative d-flex align-items-center justify-content-center flex-shrink-0 rounded-3">
@@ -66,12 +66,12 @@ export function telemetryCard({
                     </div>
                     <div class="flex-grow-1 min-w-0">
                         <div class="telemetry-card-title text-uppercase fw-normal text-secondary lh-sm" title="${title}">${title}</div>
-                            ${raw(valueHtml)}
+                            ${valueHtml}
                         </div>
-                        ${raw(requestHint)}
+                        ${requestHint}
                     </div>
-                    ${raw(state)}
-                    ${raw(detailsHtml)}
+                    ${state}
+                    ${detailsHtml}
                 ${body}
             </div>
         </${tag}>

@@ -6,7 +6,7 @@ import {
 import { allPages } from "../api/http.js";
 import { apiError } from "../dialogs.js";
 import { esc } from "../format.js";
-import { html, raw } from "../html.js";
+import { html } from "../html.js";
 import { state } from "../state.js";
 import { linksToGateway, normalizeDeviceType } from "../domain.js";
 import { eligibleGateways, gatewayLinkChanges, normalizeKey } from "./gateway-links.js";
@@ -71,7 +71,7 @@ function setGatewayLinksDisabled(disabled) {
     }
 }
 
-const GATEWAY_THUMB_PLACEHOLDER = `<svg class="gateway-card-thumb-icon text-secondary" viewBox="0 0 24 24" fill="none"
+const GATEWAY_THUMB_PLACEHOLDER = html`<svg class="gateway-card-thumb-icon text-secondary" viewBox="0 0 24 24" fill="none"
     stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
     <rect x="2.5" y="13.5" width="19" height="7" rx="1.75"></rect>
     <path d="M6 17h.01M9.5 17h5"></path>
@@ -84,10 +84,10 @@ export function gatewayCardMarkup(gateway, checked, signal = null) {
     const image = String(gateway.image || "").trim();
     const thumb = image
         ? html`<img class="object-fit-contain" src="${image}" alt="" loading="lazy" decoding="async">`
-        : raw(GATEWAY_THUMB_PLACEHOLDER);
+        : GATEWAY_THUMB_PLACEHOLDER;
 
     return html`<label class="gateway-card d-flex align-items-center m-0 py-2">
-        <input class="form-check-input gateway-card-check flex-shrink-0 m-0" type="checkbox" data-gateway-key="${key}"${checked ? raw(" checked") : ""}>
+        <input class="form-check-input gateway-card-check flex-shrink-0 m-0" type="checkbox" data-gateway-key="${key}"${checked ? " checked" : ""}>
         <span class="gateway-card-thumb d-flex align-items-center justify-content-center flex-shrink-0 overflow-hidden rounded-3">${thumb}</span>
         <span class="min-w-0">
             <span class="d-block fw-semibold text-truncate lh-sm">${key}</span>

@@ -2,7 +2,7 @@ import {
     saveModel as apiSaveModel,
 } from "../../api/index.js";
 import { state } from "../../state.js";
-import { html, raw } from "../../html.js";
+import { html } from "../../html.js";
 import { apiError, toast } from "../../dialogs.js";
 import { sectionStrip } from "../../components/chips.js";
 import { modelPreviewHtml } from "../../components/model-image.js";
@@ -260,12 +260,11 @@ function renderCapabilitiesSection() {
                             <div class="form-check form-switch mb-0">
                                 <input class="form-check-input" type="checkbox" role="switch" data-action="toggleCapabilitySupport" data-feature="${feature}" id="cap-${feature}" ${enabled.has(feature) ? "checked" : ""}>
                                 <label class="form-check-label" for="cap-${feature}">${labelText}</label>
-                                ${raw(description)}
+                                ${description}
                             </div>
-                            ${raw(requestableSwitch)}
+                            ${requestableSwitch}
                         </div>`;
-            })
-            .join("");
+            });
 
         const note = section.section === "telemetry"
             ? html`<div class="small text-secondary mb-3" data-section-note>${telemetryProtocolNote(String(model?.supplier || "protocolo"), section.entries, protocolRequestable)}</div>`
@@ -277,9 +276,9 @@ function renderCapabilitiesSection() {
                 <div class="section-label">${section.label}</div>
                 <span class="small text-secondary" data-section-count>${section.entries.filter((f) => enabled.has(f)).length}/${section.entries.length} ativos</span>
             </div>
-            ${raw(note)}
+            ${note}
             <div class="d-flex flex-column gap-2">
-                ${raw(rows)}
+                ${rows}
             </div>
         </section>`;
     } else {

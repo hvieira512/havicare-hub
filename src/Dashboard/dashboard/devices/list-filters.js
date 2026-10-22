@@ -1,5 +1,5 @@
 import { changeDeviceFilter, setDeviceFilters, state } from "../state.js";
-import { html, raw } from "../html.js";
+import { html } from "../html.js";
 import { filterChips } from "../components/chips.js";
 import { filterBranch, filterOption } from "../components/filter-tree.js";
 import { deviceTypeTiles } from "../components/device-type-tiles.js";
@@ -82,7 +82,7 @@ function deviceFilterOption({ key, value, selected, disabled = false, ...rest })
     return filterOption({
         ...rest,
         selected,
-        attrs: html`data-action="toggleDeviceFilter" data-filter-key="${key}" data-filter-value="${value}" aria-pressed="${selected ? "true" : "false"}"${disabled ? raw(" disabled") : ""}`,
+        attrs: html`data-action="toggleDeviceFilter" data-filter-key="${key}" data-filter-value="${value}" aria-pressed="${selected ? "true" : "false"}"${disabled ? " disabled" : ""}`,
     });
 }
 

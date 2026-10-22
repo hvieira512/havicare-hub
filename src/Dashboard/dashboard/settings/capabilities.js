@@ -1,6 +1,6 @@
 import { loadModelFilters } from "./shell.js";
 import { state } from "../state.js";
-import { html, raw } from "../html.js";
+import { html } from "../html.js";
 import { buttonGroup } from "../components/button-group.js";
 import { sectionStrip } from "../components/chips.js";
 import { deviceTypeTiles } from "../components/device-type-tiles.js";
@@ -215,8 +215,7 @@ function renderCapabilitiesCatalogSection() {
                     <span class="fw-semibold min-w-0">${capabilityLabel(entry.key)}</span>
                     <span class="capability-facts text-secondary">${facts.join(" · ")}</span>
                 </div>`;
-                })
-                .join("");
+                });
 
             // Em telefone cada secção fecha; a partir de `sm`, o `d-sm-block` deixa-as todas abertas.
             const bodyId = `${catalogSectionId(section)}Body`;
@@ -237,7 +236,7 @@ function renderCapabilitiesCatalogSection() {
                 </span>
             </button>
             <div class="collapse d-sm-block" id="${bodyId}">
-                <div class="vstack gap-2">${raw(rows)}</div>
+                <div class="vstack gap-2">${rows}</div>
             </div>
         </section>
     `;
