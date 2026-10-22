@@ -37,10 +37,12 @@ const nameField = (index, name, label) =>
 const slotCell = (index, plan, nameLabel) =>
     html`
         <div class="col">
-            <div class="d-flex align-items-center gap-2 border rounded-3 px-2 py-1" data-alarm-slot="${String(index)}">
-                <div class="text-secondary small flex-shrink-0">${String(index + 1)}</div>
-                ${raw(timeField(`time-${index}`, plan?.hour, plan?.minute))}
-                ${raw(nameField(index, plan?.name, nameLabel))}
+            <div class="border rounded-3 px-2 py-1" data-alarm-slot="${String(index)}">
+                <div class="d-flex align-items-center gap-2">
+                    <div class="text-secondary small flex-shrink-0">${String(index + 1)}</div>
+                    ${raw(timeField(`time-${index}`, plan?.hour, plan?.minute))}
+                </div>
+                <div class="mt-1">${raw(nameField(index, plan?.name, nameLabel))}</div>
             </div>
         </div>`;
 
