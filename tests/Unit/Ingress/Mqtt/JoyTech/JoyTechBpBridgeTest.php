@@ -10,7 +10,6 @@ use Hub\Ingress\Mqtt\JoyTech\JoyTechFrame;
 use Hub\Ingress\Mqtt\JoyTech\JoyTechBpBridge;
 use Hub\State\DeviceStoreContract;
 use PHPUnit\Framework\TestCase;
-use Tests\Support\Doubles\FakeMqttSubscriber;
 use Tests\Support\Doubles\IngressFixtures;
 use Tests\Support\Doubles\OneShotDownlinkQueue;
 use Tests\Support\Doubles\RecordingHubMqttBridge;
@@ -47,7 +46,7 @@ final class JoyTechBpBridgeTest extends TestCase
     public function testTheSessionPutsItOnlineSetsTheClockAndReadsTheMemory(): void
     {
         $mqtt = new RecordingHubMqttBridge();
-        $this->bridge($mqtt)->handleReceivedMessage(self::TOPIC, self::message('session', ['connected' => true]));
+        IngressFixtures::relay($this->bridge($mqtt), self::TOPIC, self::message('session', ['connected' => true]));
 
         self::assertSame('online', $mqtt->statuses[0]['payload']['state']);
         self::assertSame(['calibrateClock', 'readBloodPressureHistory'], array_column(array_column($mqtt->gatewayCommands, 'payload'), 'operation'));
@@ -61,7 +60,7 @@ final class JoyTechBpBridgeTest extends TestCase
         $bridge = $this->bridge($mqtt);
 
         for ($i = 0; $i < 6; $i++) {
-            $bridge->handleReceivedMessage(self::TOPIC, self::frame(self::LIVE));
+            IngressFixtures::relay($bridge, self::TOPIC, self::frame(self::LIVE));
             $this->now += 2;
         }
 
@@ -101,7 +100,7 @@ final class JoyTechBpBridgeTest extends TestCase
     public function testALiveResultIsNotRepeatedByTheNextRead(): void
     {
         $bridge = $this->bridge(new RecordingHubMqttBridge());
-        $bridge->handleReceivedMessage(self::TOPIC, self::frame(self::LIVE));
+        IngressFixtures::relay($bridge, self::TOPIC, self::frame(self::LIVE));
         $this->now += 60;
 
         $mqtt = new RecordingHubMqttBridge();
@@ -116,7 +115,7 @@ final class JoyTechBpBridgeTest extends TestCase
         $later = self::reading(118, 79, 70, 26, 10, 16, 15, 0, 1);
         $bridge = $this->bridge(new RecordingHubMqttBridge());
         $this->now = (float)strtotime('2026-10-16T14:00:56Z');
-        $bridge->handleReceivedMessage(self::TOPIC, self::frame($later));
+        IngressFixtures::relay($bridge, self::TOPIC, self::frame($later));
         $this->now += 60;
 
         $mqtt = new RecordingHubMqttBridge();
@@ -132,9 +131,9 @@ final class JoyTechBpBridgeTest extends TestCase
         $later = self::reading(118, 79, 70, 26, 10, 16, 15, 0, 1);
         $bridge = $this->bridge(new RecordingHubMqttBridge());
         $this->now = (float)strtotime('2026-10-16T13:30:56Z');
-        $bridge->handleReceivedMessage(self::TOPIC, self::frame($earlier));
+        IngressFixtures::relay($bridge, self::TOPIC, self::frame($earlier));
         $this->now = (float)strtotime('2026-10-16T14:00:56Z');
-        $bridge->handleReceivedMessage(self::TOPIC, self::frame($later));
+        IngressFixtures::relay($bridge, self::TOPIC, self::frame($later));
         $this->now += 60;
 
         $mqtt = new RecordingHubMqttBridge();
@@ -152,10 +151,10 @@ final class JoyTechBpBridgeTest extends TestCase
             self::reading(123, 82, 72, 26, 9, 3, 9, 0, 1),
         ];
         $bridge = $this->bridge(new RecordingHubMqttBridge());
-        $bridge->handleReceivedMessage(self::TOPIC, self::message('session', ['connected' => true]));
+        IngressFixtures::relay($bridge, self::TOPIC, self::message('session', ['connected' => true]));
         $this->now += 0.1;
-        $bridge->handleReceivedMessage(self::TOPIC, self::frame($third));
-        $bridge->handleReceivedMessage(self::TOPIC, self::message('session', ['connected' => false]));
+        IngressFixtures::relay($bridge, self::TOPIC, self::frame($third));
+        IngressFixtures::relay($bridge, self::TOPIC, self::message('session', ['connected' => false]));
         $this->now += 60;
 
         $mqtt = new RecordingHubMqttBridge();
@@ -173,8 +172,8 @@ final class JoyTechBpBridgeTest extends TestCase
         $this->readMemory($bridge, [self::MAY]);
         $this->now += 60;
 
-        $bridge->handleReceivedMessage(self::TOPIC, self::frame($april));
-        $bridge->handleReceivedMessage(self::TOPIC, self::frame(self::MAY));
+        IngressFixtures::relay($bridge, self::TOPIC, self::frame($april));
+        IngressFixtures::relay($bridge, self::TOPIC, self::frame(self::MAY));
 
         self::assertCount(1, self::telemetry($mqtt, 'blood_pressure'));
     }
@@ -197,7 +196,7 @@ final class JoyTechBpBridgeTest extends TestCase
     {
         $mqtt = new RecordingHubMqttBridge();
         $bridge = $this->bridge($mqtt);
-        $bridge->handleReceivedMessage(self::TOPIC, self::frame(self::LIVE));
+        IngressFixtures::relay($bridge, self::TOPIC, self::frame(self::LIVE));
         $this->now += 16;
 
         $bridge->dispatchQueued();
@@ -210,10 +209,10 @@ final class JoyTechBpBridgeTest extends TestCase
     {
         $mqtt = new RecordingHubMqttBridge();
         $bridge = $this->bridge($mqtt);
-        $bridge->handleReceivedMessage(self::TOPIC, self::message('session', ['connected' => true]));
+        IngressFixtures::relay($bridge, self::TOPIC, self::message('session', ['connected' => true]));
         $this->now += 30;
 
-        $bridge->handleReceivedMessage(self::TOPIC, self::frame(self::LIVE));
+        IngressFixtures::relay($bridge, self::TOPIC, self::frame(self::LIVE));
 
         self::assertArrayNotHasKey('fromHistory', self::telemetry($mqtt, 'blood_pressure')[0]['data']);
     }
@@ -223,9 +222,9 @@ final class JoyTechBpBridgeTest extends TestCase
     {
         $mqtt = new RecordingHubMqttBridge();
         $bridge = $this->bridge($mqtt);
-        $bridge->handleReceivedMessage(self::TOPIC, self::message('session', ['connected' => true]));
+        IngressFixtures::relay($bridge, self::TOPIC, self::message('session', ['connected' => true]));
         $this->now += 30;
-        $bridge->handleReceivedMessage(self::TOPIC, self::frame(self::LIVE));
+        IngressFixtures::relay($bridge, self::TOPIC, self::frame(self::LIVE));
 
         $this->now += 10;
         $bridge->dispatchQueued();
@@ -244,7 +243,7 @@ final class JoyTechBpBridgeTest extends TestCase
         $bridge = $this->bridge($mqtt);
         $this->readMemory($bridge, []);
         $this->now += 30;
-        $bridge->handleReceivedMessage(self::TOPIC, self::frame(self::LIVE));
+        IngressFixtures::relay($bridge, self::TOPIC, self::frame(self::LIVE));
 
         $this->now += 20;
         $bridge->dispatchQueued();
@@ -266,9 +265,9 @@ final class JoyTechBpBridgeTest extends TestCase
         $queue = new OneShotDownlinkQueue('readBloodPressureHistory', ['id' => 'op-1', 'command' => 'readBloodPressureHistory', 'payload' => []]);
         $bridge = $this->bridge(new RecordingHubMqttBridge(), $queue, $store);
 
-        $bridge->handleReceivedMessage(self::TOPIC, self::message('session', ['connected' => true]));
-        $bridge->handleReceivedMessage(self::TOPIC, self::frame(self::MEMORY_END));
-        $bridge->handleReceivedMessage(self::TOPIC, self::message('command_result', ['dedupeKey' => 'test-dedupe', 'ok' => true]));
+        IngressFixtures::relay($bridge, self::TOPIC, self::message('session', ['connected' => true]));
+        IngressFixtures::relay($bridge, self::TOPIC, self::frame(self::MEMORY_END));
+        IngressFixtures::relay($bridge, self::TOPIC, self::message('command_result', ['dedupeKey' => 'test-dedupe', 'ok' => true]));
 
         self::assertSame([['op-1', 'waiting'], ['op-1', 'acked']], $marked);
     }
@@ -282,10 +281,10 @@ final class JoyTechBpBridgeTest extends TestCase
         $this->readMemory($bridge, [self::UNSET_CLOCK, self::MAY]);
 
         $this->now += 5;
-        $bridge->handleReceivedMessage(self::TOPIC, self::message('session', ['connected' => true]));
+        IngressFixtures::relay($bridge, self::TOPIC, self::message('session', ['connected' => true]));
         foreach ([self::UNSET_CLOCK, self::MAY, $october] as $hex) {
             $this->now += 2.6;
-            $bridge->handleReceivedMessage(self::TOPIC, self::frame($hex));
+            IngressFixtures::relay($bridge, self::TOPIC, self::frame($hex));
         }
 
         $last = self::telemetry($mqtt, 'blood_pressure')[1]['data'];
@@ -298,7 +297,7 @@ final class JoyTechBpBridgeTest extends TestCase
         $mqtt = new RecordingHubMqttBridge();
         $queue = new OneShotDownlinkQueue('readBloodPressureHistory', ['id' => 'op-1', 'command' => 'readBloodPressureHistory', 'payload' => []]);
 
-        $this->bridge($mqtt, $queue)->handleReceivedMessage(self::TOPIC, self::message('session', ['connected' => true]));
+        IngressFixtures::relay($this->bridge($mqtt, $queue), self::TOPIC, self::message('session', ['connected' => true]));
 
         // A leitura pedida substitui a automática: o aparelho não lê a memória duas vezes.
         $commands = array_column($mqtt->gatewayCommands, 'payload');
@@ -319,13 +318,13 @@ final class JoyTechBpBridgeTest extends TestCase
             'payload' => ['char' => 'fff1', 'hex' => 'faaaaaaf000a0610f55f'],
         ], JSON_THROW_ON_ERROR);
 
-        $this->bridge(new RecordingHubMqttBridge(), store: $store)->handleReceivedMessage(self::TOPIC, $message);
+        IngressFixtures::relay($this->bridge(new RecordingHubMqttBridge(), store: $store), self::TOPIC, $message);
     }
 
     public function testAMonitorNotLinkedToTheGatewayIsIgnored(): void
     {
         $mqtt = new RecordingHubMqttBridge();
-        $this->bridge($mqtt, links: false)->handleReceivedMessage(self::TOPIC, self::frame(self::LIVE));
+        IngressFixtures::relay($this->bridge($mqtt, links: false), self::TOPIC, self::frame(self::LIVE));
 
         self::assertSame([], $mqtt->telemetry);
     }
@@ -333,12 +332,12 @@ final class JoyTechBpBridgeTest extends TestCase
     /** @param list<string> $records */
     private function readMemory(JoyTechBpBridge $bridge, array $records): void
     {
-        $bridge->handleReceivedMessage(self::TOPIC, self::message('session', ['connected' => true]));
+        IngressFixtures::relay($bridge, self::TOPIC, self::message('session', ['connected' => true]));
         foreach ($records as $hex) {
             $this->now += 0.1;
-            $bridge->handleReceivedMessage(self::TOPIC, self::frame($hex));
+            IngressFixtures::relay($bridge, self::TOPIC, self::frame($hex));
         }
-        $bridge->handleReceivedMessage(self::TOPIC, self::frame(self::MEMORY_END));
+        IngressFixtures::relay($bridge, self::TOPIC, self::frame(self::MEMORY_END));
     }
 
     /** @return list<array<string, mixed>> */
@@ -366,7 +365,7 @@ final class JoyTechBpBridgeTest extends TestCase
         $mqtt = new RecordingHubMqttBridge();
         $queue = new \Hub\Device\RedisPendingDownlinkQueue(new \Tests\Support\Doubles\InMemoryRedisClient());
         $bridge = $this->bridge($mqtt, $queue);
-        $bridge->handleReceivedMessage(self::TOPIC, self::message('session', ['connected' => true]));
+        IngressFixtures::relay($bridge, self::TOPIC, self::message('session', ['connected' => true]));
         $mqtt->gatewayCommands = [];
 
         $this->now += 121;
@@ -396,7 +395,6 @@ final class JoyTechBpBridgeTest extends TestCase
         bool $links = true,
     ): JoyTechBpBridge {
         return new JoyTechBpBridge(
-            new FakeMqttSubscriber(),
             IngressFixtures::whitelist([
                 self::GATEWAY => IngressFixtures::device('Havicare', 'BLE Gateway', 'gateway'),
                 self::MONITOR => IngressFixtures::device('JoyTech', 'HC-6292B', 'blood_pressure_monitor'),
@@ -405,7 +403,6 @@ final class JoyTechBpBridgeTest extends TestCase
             IngressFixtures::links($links),
             $queue,
             'havicare-hub/null/0/gw/+/raw',
-            null,
             $store,
             fn (): float => $this->now,
             marks: $this->marks,

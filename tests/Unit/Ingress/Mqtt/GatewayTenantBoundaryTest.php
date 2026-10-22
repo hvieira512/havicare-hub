@@ -12,7 +12,7 @@ use Tests\Support\Doubles\FakeMqttSubscriber;
 use Tests\Support\Doubles\IngressFixtures;
 use Tests\Support\Doubles\RecordingHubMqttBridge;
 
-/** A regra do mesmo cliente e licença está escrita duas vezes, em `MokoBridge::linkedDevice()` e no `VeepooBridge::handleMessage()`. */
+/** A regra do mesmo cliente e licença está escrita duas vezes, em `MokoBridge::linkedDevice()` e no `VeepooBridge::handle()`. */
 final class GatewayTenantBoundaryTest extends TestCase
 {
     private const MOKO_GATEWAY = 'd48c49f7909c';
@@ -55,7 +55,8 @@ final class GatewayTenantBoundaryTest extends TestCase
         $mqtt = new RecordingHubMqttBridge();
         $bridge = $this->veepoo($mqtt, IngressFixtures::device('Wonlex', 'MF91', 'bracelet', '1001', 'havicare'));
 
-        $bridge->handleReceivedMessage(
+        IngressFixtures::relay(
+            $bridge,
             'havicare-hub/null/0/gw/' . self::VEEPOO_GATEWAY . '/raw',
             $this->sessionPayload(),
         );
@@ -70,7 +71,8 @@ final class GatewayTenantBoundaryTest extends TestCase
         $mqtt = new RecordingHubMqttBridge();
         $bridge = $this->veepoo($mqtt, IngressFixtures::device('Wonlex', 'MF91', 'bracelet', '2002', 'hitcare'));
 
-        $bridge->handleReceivedMessage(
+        IngressFixtures::relay(
+            $bridge,
             'havicare-hub/null/0/gw/' . self::VEEPOO_GATEWAY . '/raw',
             $this->sessionPayload(),
         );
@@ -114,7 +116,6 @@ final class GatewayTenantBoundaryTest extends TestCase
     private function veepoo(RecordingHubMqttBridge $mqtt, array $bracelet): VeepooBridge
     {
         return new VeepooBridge(
-            new FakeMqttSubscriber(),
             IngressFixtures::whitelist([
                 self::VEEPOO_GATEWAY => IngressFixtures::device('Havicare', 'Veepoo Gateway', 'gateway'),
                 self::MF91 => $bracelet,

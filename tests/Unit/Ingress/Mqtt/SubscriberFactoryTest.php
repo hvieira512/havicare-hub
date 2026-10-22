@@ -8,9 +8,9 @@ use Hub\Ingress\Mqtt\MqttIngress;
 use Hub\Ingress\Mqtt\SubscriberFactory;
 use Hub\Mqtt\BrokerSettings;
 use Hub\Mqtt\ConnectionFactory;
-use PhpMqtt\Client\Contracts\Repository;
 use PhpMqtt\Client\MqttClient;
 use PHPUnit\Framework\TestCase;
+use Tests\Support\Doubles\RecordingConnectionFactory;
 
 final class SubscriberFactoryTest extends TestCase
 {
@@ -106,34 +106,6 @@ final class SubscriberFactoryTest extends TestCase
             $connections->created[0]->getClientId(),
             $connections->created[1]->getClientId(),
         );
-    }
-}
-
-final class RecordingConnectionFactory extends ConnectionFactory
-{
-    /** @var list<MqttClient> */
-    public array $created = [];
-    /** @var list<Repository> */
-    public array $repositories = [];
-    /** @var list<bool> */
-    public array $cleanSessions = [];
-
-    public function create(string $suffix, bool $stableClientId = false, ?Repository $repository = null): MqttClient
-    {
-        $client = parent::create($suffix, $stableClientId, $repository);
-        $this->created[] = $client;
-        if ($repository !== null) {
-            $this->repositories[] = $repository;
-        }
-
-        return $client;
-    }
-
-    public function connect(MqttClient $client, bool $cleanSession = true): MqttClient
-    {
-        $this->cleanSessions[] = $cleanSession;
-
-        return $client;
     }
 }
 

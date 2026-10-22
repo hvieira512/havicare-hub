@@ -115,7 +115,7 @@ final class QinglanstBridge extends MqttBridgeBase
         }
     }
 
-    protected function handleMessage(string $topic, string $payload): void
+    public function handleReceivedMessage(string $topic, string $payload): void
     {
         $parsedTopic = QinglanstTopic::parse($topic);
         if ($parsedTopic === null) {

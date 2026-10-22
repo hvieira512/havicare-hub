@@ -486,7 +486,7 @@ cada fabricante já publica:
 | Origem | Filtro | Sessão |
 |---|---|---|
 | NCS Voerka | `/voerka/#` | a do hub |
-| Gateways MOKO | `havicare-hub/null/0/gw/+/raw` | a do hub |
+| Gateways MOKO e BLE | `havicare-hub/null/0/gw/+/raw` | a do hub, uma para todas as pontes |
 | Radar Qinglanst | `radar/+/+` | própria, no **mesmo** broker |
 
 O radar abre sessão à parte — credenciais e identificador de cliente próprios —

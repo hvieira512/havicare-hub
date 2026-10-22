@@ -7,7 +7,6 @@ namespace Tests\Unit\Ingress\Mqtt\Veepoo;
 use Tests\Support\Doubles\ArrayObservationStateStore;
 use Hub\Ingress\Mqtt\Veepoo\VeepooBridge;
 use PHPUnit\Framework\TestCase;
-use Tests\Support\Doubles\FakeMqttSubscriber;
 use Tests\Support\Doubles\IngressFixtures;
 use Tests\Support\Doubles\RecordingHubMqttBridge;
 
@@ -22,7 +21,7 @@ final class BridgeSleepTest extends TestCase
     public function testANightArrivesWrappedInAListWithTheCurveInIntegers(): void
     {
         $mqtt = new RecordingHubMqttBridge();
-        $this->bridge($mqtt)->handleReceivedMessage(self::TOPIC, self::sleepAsTheBraceletSendsIt());
+        IngressFixtures::relay($this->bridge($mqtt), self::TOPIC, self::sleepAsTheBraceletSendsIt());
 
         $sleep = array_values(array_filter(
             $mqtt->telemetry,
@@ -37,7 +36,7 @@ final class BridgeSleepTest extends TestCase
     public function testTheInstantsAreConvertedFromTheBraceletClockToUtc(): void
     {
         $mqtt = new RecordingHubMqttBridge();
-        $this->bridge($mqtt)->handleReceivedMessage(self::TOPIC, self::sleepAsTheBraceletSendsIt());
+        IngressFixtures::relay($this->bridge($mqtt), self::TOPIC, self::sleepAsTheBraceletSendsIt());
 
         $sleep = array_values(array_filter(
             $mqtt->telemetry,
@@ -79,7 +78,6 @@ final class BridgeSleepTest extends TestCase
     private function bridge(RecordingHubMqttBridge $mqtt): VeepooBridge
     {
         return new VeepooBridge(
-            new FakeMqttSubscriber(),
             IngressFixtures::whitelist([
                 self::GATEWAY => IngressFixtures::device('Havicare', 'Veepoo Gateway', 'gateway'),
                 self::BRACELET => IngressFixtures::device('Wonlex', 'MF91', 'bracelet'),

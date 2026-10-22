@@ -9,7 +9,6 @@ use Hub\Device\PendingDownlinkQueue;
 use Tests\Support\Doubles\ArrayObservationStateStore;
 use Hub\Ingress\Mqtt\Veepoo\VeepooBridge;
 use PHPUnit\Framework\TestCase;
-use Tests\Support\Doubles\FakeMqttSubscriber;
 use Tests\Support\Doubles\IngressFixtures;
 use Tests\Support\Doubles\RecordingHubMqttBridge;
 
@@ -26,7 +25,7 @@ final class BridgeQueuedDispatchTest extends TestCase
         $queue = self::queue();
         $bridge = $this->bridge($mqtt, $queue);
 
-        $bridge->handleReceivedMessage(self::TOPIC, self::session(true));
+        IngressFixtures::relay($bridge, self::TOPIC, self::session(true));
         self::assertSame([], $mqtt->gatewayCommands, 'a fila estava vazia quando a sessão chegou');
 
         $queue->push('config:find_device', ['command' => 'config:find_device', 'payload' => ['enabled' => true]]);
@@ -44,7 +43,7 @@ final class BridgeQueuedDispatchTest extends TestCase
         $queue = self::queue();
         $bridge = $this->bridge($mqtt, $queue);
 
-        $bridge->handleReceivedMessage(self::TOPIC, self::session(true));
+        IngressFixtures::relay($bridge, self::TOPIC, self::session(true));
         $queue->push('config:find_device', ['command' => 'config:find_device', 'payload' => ['enabled' => true]]);
 
         for ($i = 0; $i < 5; $i++) {
@@ -73,8 +72,8 @@ final class BridgeQueuedDispatchTest extends TestCase
         $queue = self::queue();
         $bridge = $this->bridge($mqtt, $queue);
 
-        $bridge->handleReceivedMessage(self::TOPIC, self::session(true));
-        $bridge->handleReceivedMessage(self::TOPIC, self::session(false));
+        IngressFixtures::relay($bridge, self::TOPIC, self::session(true));
+        IngressFixtures::relay($bridge, self::TOPIC, self::session(false));
 
         $queue->push('config:find_device', ['command' => 'config:find_device', 'payload' => ['enabled' => true]]);
         $bridge->dispatchQueued();
@@ -99,7 +98,7 @@ final class BridgeQueuedDispatchTest extends TestCase
         };
         $bridge = $this->bridge($mqtt, $queue);
 
-        $bridge->handleReceivedMessage(self::TOPIC, self::session(true));
+        IngressFixtures::relay($bridge, self::TOPIC, self::session(true));
         $queue->push('config:find_device', ['command' => 'config:find_device', 'payload' => ['enabled' => true]]);
 
         try {
@@ -122,7 +121,7 @@ final class BridgeQueuedDispatchTest extends TestCase
         $queue = self::queue();
         $bridge = $this->bridge($mqtt, $queue);
 
-        $bridge->handleReceivedMessage(self::TOPIC, self::session(true));
+        IngressFixtures::relay($bridge, self::TOPIC, self::session(true));
         $queue->push('measure.heartRate.start', ['id' => 'a1b2c3d4']);
         $bridge->dispatchQueued();
 
@@ -149,7 +148,6 @@ final class BridgeQueuedDispatchTest extends TestCase
     private function bridge(RecordingHubMqttBridge $mqtt, PendingDownlinkQueue $queue): VeepooBridge
     {
         return new VeepooBridge(
-            new FakeMqttSubscriber(),
             IngressFixtures::whitelist([
                 self::GATEWAY => IngressFixtures::device('Havicare', 'Veepoo Gateway', 'gateway'),
                 self::BRACELET => IngressFixtures::device('Wonlex', 'MF91', 'bracelet'),

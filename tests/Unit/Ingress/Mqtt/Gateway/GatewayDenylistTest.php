@@ -4,17 +4,16 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Ingress\Mqtt\Gateway;
 
+use Hub\Ingress\Mqtt\Gateway\GatewayRelay;
 use Hub\Ingress\Mqtt\JoyTech\JoyTechBpBridge;
 use Hub\Ingress\Mqtt\JoyTech\JoyTechThermometerBridge;
 use Hub\Ingress\Mqtt\Lefu\LefuTorreBridge;
-use Hub\Ingress\Mqtt\MqttBridgeBase;
 use Hub\Ingress\Mqtt\Veepoo\VeepooBridge;
 use Hub\Registry\Denylist;
 use Hub\State\DeviceStoreContract;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Tests\Support\Doubles\ArrayObservationStateStore;
-use Tests\Support\Doubles\FakeMqttSubscriber;
 use Tests\Support\Doubles\IngressFixtures;
 use Tests\Support\Doubles\RecordingHubMqttBridge;
 
@@ -45,7 +44,7 @@ final class GatewayDenylistTest extends TestCase
         $denylist = new Denylist();
         $denylist->block(self::STRANGER);
 
-        self::bridge($bridge, $store, $denylist)->handleReceivedMessage(self::TOPIC, json_encode([
+        IngressFixtures::relay(self::bridge($bridge, $store, $denylist), self::TOPIC, json_encode([
             'source' => $source,
             'kind' => 'session',
             'device' => ['mac' => self::STRANGER, 'model' => $model],
@@ -75,7 +74,7 @@ final class GatewayDenylistTest extends TestCase
             'joytech-thermometer' => 'thermometer',
         })];
 
-        self::bridge($bridge, $store, new Denylist(), $whitelist)->handleReceivedMessage(self::TOPIC, json_encode([
+        IngressFixtures::relay(self::bridge($bridge, $store, new Denylist(), $whitelist), self::TOPIC, json_encode([
             'source' => $source,
             'kind' => 'session',
             'device' => ['mac' => self::STRANGER, 'model' => $model, 'rssiDbm' => -63],
@@ -89,9 +88,8 @@ final class GatewayDenylistTest extends TestCase
      * @param 'veepoo'|'lefu'|'joytech-bp'|'joytech-thermometer' $name
      * @param array<string, array<string, mixed>> $devices
      */
-    private static function bridge(string $name, DeviceStoreContract $store, Denylist $denylist, array $devices = []): MqttBridgeBase
+    private static function bridge(string $name, DeviceStoreContract $store, Denylist $denylist, array $devices = []): GatewayRelay
     {
-        $subscriber = new FakeMqttSubscriber();
         $whitelist = IngressFixtures::whitelist([
             self::GATEWAY => IngressFixtures::device('Havicare', 'BLE Gateway', 'gateway'),
         ] + $devices);
@@ -100,10 +98,10 @@ final class GatewayDenylistTest extends TestCase
         $topic = 'havicare-hub/null/0/gw/+/raw';
 
         return match ($name) {
-            'veepoo' => new VeepooBridge($subscriber, $whitelist, $mqtt, $links, null, new ArrayObservationStateStore(), $topic, null, $store, denylist: $denylist),
-            'lefu' => new LefuTorreBridge($subscriber, $whitelist, $mqtt, $links, null, $topic, null, $store, denylist: $denylist),
-            'joytech-bp' => new JoyTechBpBridge($subscriber, $whitelist, $mqtt, $links, null, $topic, null, $store, denylist: $denylist),
-            'joytech-thermometer' => new JoyTechThermometerBridge($subscriber, $whitelist, $mqtt, $links, $topic, null, $store, denylist: $denylist),
+            'veepoo' => new VeepooBridge($whitelist, $mqtt, $links, null, new ArrayObservationStateStore(), $topic, $store, denylist: $denylist),
+            'lefu' => new LefuTorreBridge($whitelist, $mqtt, $links, null, $topic, $store, denylist: $denylist),
+            'joytech-bp' => new JoyTechBpBridge($whitelist, $mqtt, $links, null, $topic, $store, denylist: $denylist),
+            'joytech-thermometer' => new JoyTechThermometerBridge($whitelist, $mqtt, $links, $topic, $store, denylist: $denylist),
         };
     }
 }

@@ -10,7 +10,6 @@ use Hub\Device\PendingDownlinkQueue;
 use Tests\Support\Doubles\ArrayObservationStateStore;
 use Hub\Ingress\Mqtt\Veepoo\VeepooBridge;
 use PHPUnit\Framework\TestCase;
-use Tests\Support\Doubles\FakeMqttSubscriber;
 use Tests\Support\Doubles\IngressFixtures;
 use Tests\Support\Doubles\RecordingHubMqttBridge;
 
@@ -29,8 +28,8 @@ final class BridgeFailedMeasurementTest extends TestCase
         $queue->add('measure.oxygen.start');
         $bridge = $this->bridge(new RecordingHubMqttBridge(), $queue);
 
-        $bridge->handleReceivedMessage(self::TOPIC, self::session());
-        $bridge->handleReceivedMessage(self::TOPIC, self::measurement([
+        IngressFixtures::relay($bridge, self::TOPIC, self::session());
+        IngressFixtures::relay($bridge, self::TOPIC, self::measurement([
             'sdkType' => 51,
             'notWear' => true,
         ]));
@@ -45,8 +44,8 @@ final class BridgeFailedMeasurementTest extends TestCase
         $queue->add('measure.bloodPressure.start');
         $bridge = $this->bridge(new RecordingHubMqttBridge(), $queue);
 
-        $bridge->handleReceivedMessage(self::TOPIC, self::session());
-        $bridge->handleReceivedMessage(self::TOPIC, self::measurement([
+        IngressFixtures::relay($bridge, self::TOPIC, self::session());
+        IngressFixtures::relay($bridge, self::TOPIC, self::measurement([
             'sdkType' => 18,
             'deviceDetectionInfo' => 'atLowVoltage',
         ]));
@@ -61,8 +60,8 @@ final class BridgeFailedMeasurementTest extends TestCase
         $queue->add('measure.ecg.start');
         $bridge = $this->bridge(new RecordingHubMqttBridge(), $queue);
 
-        $bridge->handleReceivedMessage(self::TOPIC, self::session());
-        $bridge->handleReceivedMessage(self::TOPIC, json_encode([
+        IngressFixtures::relay($bridge, self::TOPIC, self::session());
+        IngressFixtures::relay($bridge, self::TOPIC, json_encode([
             'source' => 'veepoo-node',
             'kind' => 'ecg_wave',
             'device' => ['mac' => self::BRACELET],
@@ -79,8 +78,8 @@ final class BridgeFailedMeasurementTest extends TestCase
         $queue->add('measure.heartRate.start');
         $bridge = $this->bridge(new RecordingHubMqttBridge(), $queue);
 
-        $bridge->handleReceivedMessage(self::TOPIC, self::session());
-        $bridge->handleReceivedMessage(self::TOPIC, self::measurement([
+        IngressFixtures::relay($bridge, self::TOPIC, self::session());
+        IngressFixtures::relay($bridge, self::TOPIC, self::measurement([
             'sdkType' => 51,
             'deviceBusy' => true,
         ]));
@@ -102,8 +101,8 @@ final class BridgeFailedMeasurementTest extends TestCase
         );
         $bridge = $this->bridge(new RecordingHubMqttBridge(), $queue, $store);
 
-        $bridge->handleReceivedMessage(self::TOPIC, self::session());
-        $bridge->handleReceivedMessage(self::TOPIC, self::measurement([
+        IngressFixtures::relay($bridge, self::TOPIC, self::session());
+        IngressFixtures::relay($bridge, self::TOPIC, self::measurement([
             'sdkType' => 51,
             'notWear' => true,
         ]));
@@ -126,8 +125,8 @@ final class BridgeFailedMeasurementTest extends TestCase
         $queue->add('measure.heartRate.start');
         $bridge = $this->bridge($mqtt, $queue);
 
-        $bridge->handleReceivedMessage(self::TOPIC, self::session());
-        $bridge->handleReceivedMessage(self::TOPIC, self::confirmation('measure.heartRate.start', 'no_response'));
+        IngressFixtures::relay($bridge, self::TOPIC, self::session());
+        IngressFixtures::relay($bridge, self::TOPIC, self::confirmation('measure.heartRate.start', 'no_response'));
 
         self::assertSame([], $queue->operations(), 'o pedido não pode ficar em fila');
 
@@ -144,8 +143,8 @@ final class BridgeFailedMeasurementTest extends TestCase
         $queue->add('config:find_device');
         $bridge = $this->bridge($mqtt, $queue);
 
-        $bridge->handleReceivedMessage(self::TOPIC, self::session());
-        $bridge->handleReceivedMessage(self::TOPIC, json_encode([
+        IngressFixtures::relay($bridge, self::TOPIC, self::session());
+        IngressFixtures::relay($bridge, self::TOPIC, json_encode([
             'source' => 'veepoo-node',
             'kind' => 'command_result',
             'device' => ['mac' => self::BRACELET],
@@ -171,8 +170,8 @@ final class BridgeFailedMeasurementTest extends TestCase
         );
         $bridge = $this->bridge($mqtt, $queue, $store);
 
-        $bridge->handleReceivedMessage(self::TOPIC, self::session());
-        $bridge->handleReceivedMessage(self::TOPIC, self::commandResult('config:find_device', ['ok' => false, 'error' => 'disconnected']));
+        IngressFixtures::relay($bridge, self::TOPIC, self::session());
+        IngressFixtures::relay($bridge, self::TOPIC, self::commandResult('config:find_device', ['ok' => false, 'error' => 'disconnected']));
 
         self::assertSame([], $queue->operations());
         $last = end($marked);
@@ -189,7 +188,7 @@ final class BridgeFailedMeasurementTest extends TestCase
         $stop = $queue->enqueue(self::BRACELET, 'config:find_device', ['command' => 'config:find_device', 'payload' => ['enabled' => false]], 300);
         $bridge = $this->bridge(new RecordingHubMqttBridge(), $queue);
 
-        $bridge->handleReceivedMessage(self::TOPIC, json_encode([
+        IngressFixtures::relay($bridge, self::TOPIC, json_encode([
             'source' => 'veepoo-node',
             'kind' => 'command_result',
             'device' => ['mac' => self::BRACELET],
@@ -207,8 +206,8 @@ final class BridgeFailedMeasurementTest extends TestCase
         $queue->add('measure.heartRate.start');
         $bridge = $this->bridge($mqtt, $queue);
 
-        $bridge->handleReceivedMessage(self::TOPIC, self::session());
-        $bridge->handleReceivedMessage(self::TOPIC, self::commandResult('measure.heartRate.start', ['ok' => false, 'error' => 'not_connected']));
+        IngressFixtures::relay($bridge, self::TOPIC, self::session());
+        IngressFixtures::relay($bridge, self::TOPIC, self::commandResult('measure.heartRate.start', ['ok' => false, 'error' => 'not_connected']));
 
         self::assertSame([], $queue->operations());
         self::assertSame(['reason' => 'not_connected'], self::failures($mqtt)[0]['payload']['error']);
@@ -222,11 +221,11 @@ final class BridgeFailedMeasurementTest extends TestCase
         $queue->add('measure.heartRate.start');
         $bridge = $this->bridge($mqtt, $queue);
 
-        $bridge->handleReceivedMessage(self::TOPIC, self::session());
+        IngressFixtures::relay($bridge, self::TOPIC, self::session());
         for ($i = 0; $i < 5; $i++) {
-            $bridge->handleReceivedMessage(self::TOPIC, self::measurement(['sdkType' => 51, 'heartRate' => 0]));
+            IngressFixtures::relay($bridge, self::TOPIC, self::measurement(['sdkType' => 51, 'heartRate' => 0]));
         }
-        $bridge->handleReceivedMessage(self::TOPIC, self::confirmation('measure.heartRate.start', null));
+        IngressFixtures::relay($bridge, self::TOPIC, self::confirmation('measure.heartRate.start', null));
 
         self::assertSame([], $queue->operations());
 
@@ -243,10 +242,10 @@ final class BridgeFailedMeasurementTest extends TestCase
         $queue->add('measure.heartRate.start');
         $bridge = $this->bridge($mqtt, $queue);
 
-        $bridge->handleReceivedMessage(self::TOPIC, self::session());
-        $bridge->handleReceivedMessage(self::TOPIC, self::measurement(['sdkType' => 51, 'heartRate' => 0]));
-        $bridge->handleReceivedMessage(self::TOPIC, self::measurement(['sdkType' => 51, 'heartRate' => 87]));
-        $bridge->handleReceivedMessage(self::TOPIC, self::confirmation('measure.heartRate.start', null));
+        IngressFixtures::relay($bridge, self::TOPIC, self::session());
+        IngressFixtures::relay($bridge, self::TOPIC, self::measurement(['sdkType' => 51, 'heartRate' => 0]));
+        IngressFixtures::relay($bridge, self::TOPIC, self::measurement(['sdkType' => 51, 'heartRate' => 87]));
+        IngressFixtures::relay($bridge, self::TOPIC, self::confirmation('measure.heartRate.start', null));
 
         self::assertSame([], $queue->operations());
         self::assertSame([], self::failures($mqtt));
@@ -262,12 +261,12 @@ final class BridgeFailedMeasurementTest extends TestCase
         $queue->add('measure.heartRate.start');
         $bridge = $this->bridge($mqtt, $queue);
 
-        $bridge->handleReceivedMessage(self::TOPIC, self::session());
-        $bridge->handleReceivedMessage(self::TOPIC, self::measurement(['sdkType' => 51, 'heartRate' => 87]));
-        $bridge->handleReceivedMessage(self::TOPIC, self::confirmation('measure.heartRate.start', null));
+        IngressFixtures::relay($bridge, self::TOPIC, self::session());
+        IngressFixtures::relay($bridge, self::TOPIC, self::measurement(['sdkType' => 51, 'heartRate' => 87]));
+        IngressFixtures::relay($bridge, self::TOPIC, self::confirmation('measure.heartRate.start', null));
 
         $queue->add('measure.heartRate.start');
-        $bridge->handleReceivedMessage(self::TOPIC, self::confirmation('measure.heartRate.start', null));
+        IngressFixtures::relay($bridge, self::TOPIC, self::confirmation('measure.heartRate.start', null));
 
         $failures = self::failures($mqtt);
         self::assertCount(1, $failures);
@@ -282,12 +281,12 @@ final class BridgeFailedMeasurementTest extends TestCase
         $queue->add('measure.heartRate.start');
         $bridge = $this->bridge($mqtt, $queue);
 
-        $bridge->handleReceivedMessage(self::TOPIC, self::session());
-        $bridge->handleReceivedMessage(self::TOPIC, self::measurement(['sdkType' => 51, 'notWear' => true]));
-        $bridge->handleReceivedMessage(self::TOPIC, self::confirmation('measure.heartRate.start', null));
+        IngressFixtures::relay($bridge, self::TOPIC, self::session());
+        IngressFixtures::relay($bridge, self::TOPIC, self::measurement(['sdkType' => 51, 'notWear' => true]));
+        IngressFixtures::relay($bridge, self::TOPIC, self::confirmation('measure.heartRate.start', null));
 
         $queue->add('measure.heartRate.start');
-        $bridge->handleReceivedMessage(self::TOPIC, self::confirmation('measure.heartRate.start', null));
+        IngressFixtures::relay($bridge, self::TOPIC, self::confirmation('measure.heartRate.start', null));
 
         $reasons = array_map(
             static fn(array $e): mixed => $e['payload']['error']['reason'] ?? null,
@@ -305,14 +304,14 @@ final class BridgeFailedMeasurementTest extends TestCase
         $queue->add('measure.ecg.start');
         $bridge = $this->bridge($mqtt, $queue);
 
-        $bridge->handleReceivedMessage(self::TOPIC, self::session());
-        $bridge->handleReceivedMessage(self::TOPIC, json_encode([
+        IngressFixtures::relay($bridge, self::TOPIC, self::session());
+        IngressFixtures::relay($bridge, self::TOPIC, json_encode([
             'source' => 'veepoo-node',
             'kind' => 'ecg_wave',
             'device' => ['mac' => self::BRACELET],
             'payload' => ['samples' => [12, -4, 33, 128, -71], 'samplingHz' => 500],
         ], JSON_THROW_ON_ERROR));
-        $bridge->handleReceivedMessage(self::TOPIC, self::confirmation('measure.ecg.start', null));
+        IngressFixtures::relay($bridge, self::TOPIC, self::confirmation('measure.ecg.start', null));
 
         self::assertSame([], $queue->operations());
         self::assertSame([], self::failures($mqtt));
@@ -329,14 +328,14 @@ final class BridgeFailedMeasurementTest extends TestCase
             return (float)$now;
         });
 
-        $bridge->handleReceivedMessage(self::TOPIC, self::session());
-        $bridge->handleReceivedMessage(self::TOPIC, self::measurement(['sdkType' => 51, 'notWear' => true]));
+        IngressFixtures::relay($bridge, self::TOPIC, self::session());
+        IngressFixtures::relay($bridge, self::TOPIC, self::measurement(['sdkType' => 51, 'notWear' => true]));
 
         $now += 200;
         $bridge->dispatchQueued();
 
         $queue->add('measure.heartRate.start');
-        $bridge->handleReceivedMessage(self::TOPIC, self::confirmation('measure.heartRate.start', null));
+        IngressFixtures::relay($bridge, self::TOPIC, self::confirmation('measure.heartRate.start', null));
 
         $reasons = array_map(
             static fn(array $e): mixed => $e['payload']['error']['reason'] ?? null,
@@ -354,10 +353,10 @@ final class BridgeFailedMeasurementTest extends TestCase
         $queue->add('measure.heartRate.start');
         $bridge = $this->bridge($mqtt, $queue);
 
-        $bridge->handleReceivedMessage(self::TOPIC, self::session());
-        $bridge->handleReceivedMessage(self::TOPIC, self::measurement(['sdkType' => 51, 'notWear' => true]));
-        $bridge->handleReceivedMessage(self::TOPIC, self::measurement(['sdkType' => 51, 'heartRate' => 87]));
-        $bridge->handleReceivedMessage(self::TOPIC, self::confirmation('measure.heartRate.start', null));
+        IngressFixtures::relay($bridge, self::TOPIC, self::session());
+        IngressFixtures::relay($bridge, self::TOPIC, self::measurement(['sdkType' => 51, 'notWear' => true]));
+        IngressFixtures::relay($bridge, self::TOPIC, self::measurement(['sdkType' => 51, 'heartRate' => 87]));
+        IngressFixtures::relay($bridge, self::TOPIC, self::confirmation('measure.heartRate.start', null));
 
         self::assertSame([], array_filter(
             $mqtt->telemetry,
@@ -427,7 +426,6 @@ final class BridgeFailedMeasurementTest extends TestCase
         ?callable $clock = null,
     ): VeepooBridge {
         return new VeepooBridge(
-            new FakeMqttSubscriber(),
             IngressFixtures::whitelist([
                 self::GATEWAY => IngressFixtures::device('Havicare', 'Veepoo Gateway', 'gateway'),
                 self::BRACELET => IngressFixtures::device('Wonlex', 'MF91', 'bracelet'),
@@ -437,7 +435,6 @@ final class BridgeFailedMeasurementTest extends TestCase
             $queue,
             new ArrayObservationStateStore(),
             'havicare-hub/null/0/gw/+/raw',
-            null,
             $store,
             clock: $clock,
         );

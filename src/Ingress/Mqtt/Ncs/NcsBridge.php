@@ -36,7 +36,7 @@ final class NcsBridge extends MqttBridgeBase
         $this->normalizer = new MessageNormalizer();
     }
 
-    protected function handleMessage(string $topic, string $payload): void
+    public function handleReceivedMessage(string $topic, string $payload): void
     {
         $parsedTopic = NcsTopic::parse($topic);
         if ($parsedTopic === null) {

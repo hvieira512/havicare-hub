@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Hub\Ingress\Mqtt\Veepoo;
 
+use Hub\Ingress\Mqtt\DeviceBridge;
+use Hub\Ingress\Mqtt\Gateway\GatewayRelay;
 use Hub\Device\CommercialModelResolver;
 use Hub\Device\DeviceDescriptor;
 use Hub\Device\HubMqttBridge;
@@ -14,20 +16,18 @@ use Hub\Domain\GatewayDeviceLinkLookup;
 use Hub\Ingress\Mqtt\DispatchesQueued;
 use Hub\Ingress\Mqtt\Gateway\GatewayTopic;
 use Hub\Ingress\Mqtt\Gateway\ObservationStateStore;
-use Hub\Ingress\Mqtt\MqttBridgeBase;
 use Hub\Log\Logger;
 use Hub\Registry\Denylist;
 use Hub\Registry\Whitelist;
 use Hub\State\DeviceCommandLog;
 use Hub\State\DeviceReportStore;
 use Hub\Support\Values;
-use PhpMqtt\Client\MqttClient;
 
 /**
  * Ingestão das pulseiras Veepoo entregues por um gateway BLE, que traz da sessão GATT o que a
  * pulseira lhe deu já estruturado pelo SDK do fabricante.
  */
-final class VeepooBridge extends MqttBridgeBase implements DispatchesQueued
+final class VeepooBridge extends DeviceBridge implements GatewayRelay, DispatchesQueued
 {
     /** Estados que o aparelho reporta durante uma medição, e o que significam para o pedido. */
     private const DETECTION_FAILURES = [
@@ -85,31 +85,18 @@ final class VeepooBridge extends MqttBridgeBase implements DispatchesQueued
     private readonly LowBatteryTransitions $lowBattery;
 
     public function __construct(
-        MqttClient $subscriber,
         Whitelist $whitelist,
         HubMqttBridge $mqttBridge,
         private readonly GatewayDeviceLinkLookup $links,
         ?PendingDownlinkQueue $downlinks,
         private readonly ObservationStateStore $state,
         string $topicFilter,
-        ?callable $reconnectSubscriber = null,
         null|(DeviceReportStore&DeviceCommandLog) $deviceStore = null,
         ?callable $clock = null,
         ?CommercialModelResolver $commercialModelResolver = null,
         ?Denylist $denylist = null,
     ) {
-        parent::__construct(
-            $subscriber,
-            $whitelist,
-            $mqttBridge,
-            $topicFilter,
-            'veepoo',
-            $reconnectSubscriber,
-            $deviceStore,
-            denylist: $denylist,
-            clock: $clock,
-            commercialModelResolver: $commercialModelResolver,
-        );
+        parent::__construct($whitelist, $mqttBridge, $deviceStore, $denylist, $clock, $commercialModelResolver);
         $this->normalizer = new DailyBlockNormalizer();
         $this->lowBattery = new LowBatteryTransitions();
         $this->downlinkDispatcher = new DownlinkDispatcher(
@@ -138,14 +125,13 @@ final class VeepooBridge extends MqttBridgeBase implements DispatchesQueued
         }
     }
 
-    protected function handleMessage(string $topic, string $payload): void
+    public static function claims(array $message): bool
     {
-        $message = json_decode($payload, true);
-        // O mesmo tópico serve gateways de outras marcas; só reclamamos o que é nosso.
-        if (!is_array($message) || ($message['source'] ?? null) !== 'veepoo-node') {
-            return;
-        }
+        return ($message['source'] ?? null) === 'veepoo-node';
+    }
 
+    public function handle(string $topic, array $message): void
+    {
         $parsed = GatewayTopic::parse($topic);
         $gateway = $parsed === null ? null : $this->whitelist->resolve($parsed->gatewayMac);
         if ($gateway === null || ($gateway['deviceType'] ?? '') !== 'gateway') {

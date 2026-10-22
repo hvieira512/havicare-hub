@@ -62,9 +62,19 @@ persistentes. Dois clientes com o mesmo identificador expulsam-se do broker em
 ciclo — e o sintoma é ingestão a falhar de forma intermitente, sem erro óbvio.
 
 O identificador final é `{prefixo}-{sufixo}`, onde o sufixo identifica o
-subscritor (`sub`, `ncs-sub`, `moko-sub`). O prefixo é o que tem de ser único
-por hub, e vai inteiro para o broker: em MQTT 3.1.1 os 23 caracteres são o
-mínimo que o servidor tem de aceitar, não um máximo.
+subscritor: `ncs-sub`, `gateway-sub` e, no prefixo do radar, `sub`. O prefixo é
+o que tem de ser único por hub, e vai inteiro para o broker: em MQTT 3.1.1 os 23
+caracteres são o mínimo que o servidor tem de aceitar, não um máximo.
+
+| | produção | desenvolvimento |
+|---|---|---|
+| NCS | `health-mqtt-ncs-sub` | `health-mqtt-dev-ncs-sub` |
+| Gateways | `health-mqtt-gateway-sub` | `health-mqtt-dev-gateway-sub` |
+| Radar | `qinglanst-radar-sub` | `qinglanst-radar-dev-sub` |
+
+O `…/gw/+/raw` é uma sessão só: o MOKO, a Veepoo, a Lefu e as três JoyTech
+partilham-na, e a mensagem é descodificada uma vez e entregue à ponte que a
+reclama.
 
 **O prefixo dos tópicos MQTT.** Dois hubs que o partilhem publicam nos mesmos
 tópicos e escrevem por cima das mensagens retidas de `status` um do outro. Não

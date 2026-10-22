@@ -7,7 +7,6 @@ namespace Tests\Unit\Ingress\Mqtt\JoyTech;
 use Hub\Ingress\Mqtt\JoyTech\JoyTechFrame;
 use Hub\Ingress\Mqtt\JoyTech\JoyTechOximeterBridge;
 use PHPUnit\Framework\TestCase;
-use Tests\Support\Doubles\FakeMqttSubscriber;
 use Tests\Support\Doubles\IngressFixtures;
 use Tests\Support\Doubles\RecordingHubMqttBridge;
 
@@ -35,7 +34,7 @@ final class JoyTechOximeterBridgeTest extends TestCase
     {
         $mqtt = new RecordingHubMqttBridge();
         $bridge = $this->bridge($mqtt);
-        $bridge->handleReceivedMessage(self::TOPIC, self::message('session', ['connected' => true]));
+        IngressFixtures::relay($bridge, self::TOPIC, self::message('session', ['connected' => true]));
         $this->stream($bridge, 2.0, self::SEARCHING);
         $this->stream($bridge, 5.0, self::reading(99, 66));
         $this->stream($bridge, 4.0, self::reading(98, 83));
@@ -63,7 +62,7 @@ final class JoyTechOximeterBridgeTest extends TestCase
         $bridge = $this->bridge($mqtt);
         $this->stream($bridge, 4.0, self::READING);
 
-        $bridge->handleReceivedMessage(self::TOPIC, self::message('session', ['connected' => false]));
+        IngressFixtures::relay($bridge, self::TOPIC, self::message('session', ['connected' => false]));
 
         self::assertSame([['spo2Percent' => 98]], array_column(self::telemetry($mqtt, 'blood_oxygen'), 'data'));
         self::assertSame([['bpm' => 84]], array_column(self::telemetry($mqtt, 'heart_rate'), 'data'));
@@ -76,7 +75,7 @@ final class JoyTechOximeterBridgeTest extends TestCase
         $bridge = $this->bridge($mqtt);
         $this->stream($bridge, 2.5, self::READING);
 
-        $bridge->handleReceivedMessage(self::TOPIC, self::message('session', ['connected' => false]));
+        IngressFixtures::relay($bridge, self::TOPIC, self::message('session', ['connected' => false]));
 
         self::assertSame([], $mqtt->telemetry);
     }
@@ -127,7 +126,7 @@ final class JoyTechOximeterBridgeTest extends TestCase
     private function stream(JoyTechOximeterBridge $bridge, float $seconds, string $hex): void
     {
         for ($elapsed = 0.0; $elapsed < $seconds; $elapsed += 0.1) {
-            $bridge->handleReceivedMessage(self::TOPIC, self::message('frame', ['char' => 'fff1', 'hex' => $hex]));
+            IngressFixtures::relay($bridge, self::TOPIC, self::message('frame', ['char' => 'fff1', 'hex' => $hex]));
             $this->now += 0.1;
         }
     }
@@ -162,15 +161,12 @@ final class JoyTechOximeterBridgeTest extends TestCase
     private function bridge(RecordingHubMqttBridge $mqtt): JoyTechOximeterBridge
     {
         return new JoyTechOximeterBridge(
-            new FakeMqttSubscriber(),
             IngressFixtures::whitelist([
                 self::GATEWAY => IngressFixtures::device('Havicare', 'BLE Gateway', 'gateway'),
                 self::OXIMETER => IngressFixtures::device('JoyTech', 'HC-101', 'pulse_oximeter'),
             ]),
             $mqtt,
             IngressFixtures::links(),
-            'havicare-hub/null/0/gw/+/raw',
-            null,
             null,
             fn (): float => $this->now,
         );

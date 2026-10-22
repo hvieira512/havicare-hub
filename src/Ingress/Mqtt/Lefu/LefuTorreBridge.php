@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Hub\Ingress\Mqtt\Lefu;
 
+use Hub\Ingress\Mqtt\DeviceBridge;
+use Hub\Ingress\Mqtt\Gateway\GatewayRelay;
 use Hub\Command\Configuration\Payload\LefuTorreScaleUsers;
 use Hub\Device\CommercialModelResolver;
 use Hub\Device\HubMqttBridge;
@@ -14,19 +16,17 @@ use Hub\Ingress\Mqtt\DispatchesQueued;
 use Hub\Ingress\Mqtt\Gateway\GattDeviceContext;
 use Hub\Ingress\Mqtt\Gateway\GattDownlinks;
 use Hub\Ingress\Mqtt\JoyTech\RecentMeasurementKeys;
-use Hub\Ingress\Mqtt\MqttBridgeBase;
 use Hub\Ingress\Mqtt\Veepoo\BraceletPresence;
 use Hub\Registry\Denylist;
 use Hub\Registry\Whitelist;
 use Hub\State\DeviceCommandLog;
 use Hub\State\DeviceReportStore;
-use PhpMqtt\Client\MqttClient;
 
 /**
  * Ingestão das balanças Torre entregues por um gateway GATT, que reencaminha cada notificação em
  * bruto: o protocolo é todo do hub, à ida e à volta.
  */
-final class LefuTorreBridge extends MqttBridgeBase implements DispatchesQueued
+final class LefuTorreBridge extends DeviceBridge implements GatewayRelay, DispatchesQueued
 {
     private const PROTOCOL = 'lefu-torre';
 
@@ -90,13 +90,11 @@ final class LefuTorreBridge extends MqttBridgeBase implements DispatchesQueued
     private readonly ?DeviceCommandLog $commands;
 
     public function __construct(
-        MqttClient $subscriber,
         Whitelist $whitelist,
         HubMqttBridge $mqttBridge,
         private readonly GatewayDeviceLinkLookup $links,
         ?PendingDownlinkQueue $queue,
         string $topicFilter,
-        ?callable $reconnectSubscriber = null,
         null|(DeviceReportStore&DeviceCommandLog) $deviceStore = null,
         ?callable $clock = null,
         ?CommercialModelResolver $commercialModelResolver = null,
@@ -105,18 +103,7 @@ final class LefuTorreBridge extends MqttBridgeBase implements DispatchesQueued
         private readonly ScaleOnlineUsers $onlineUsers = new ScaleOnlineUsers(),
         private readonly RecentMeasurementKeys $historySeen = new RecentMeasurementKeys(prefix: 'hub:lefu:history-seen', keep: 500),
     ) {
-        parent::__construct(
-            $subscriber,
-            $whitelist,
-            $mqttBridge,
-            $topicFilter,
-            'lefu',
-            $reconnectSubscriber,
-            $deviceStore,
-            denylist: $denylist,
-            clock: $clock,
-            commercialModelResolver: $commercialModelResolver,
-        );
+        parent::__construct($whitelist, $mqttBridge, $deviceStore, $denylist, $clock, $commercialModelResolver);
         $this->commands = $deviceStore;
         $this->scaleUsers = $scaleUsers !== null ? \Closure::fromCallable($scaleUsers) : null;
         $this->decoder = new TorreFrameDecoder();
@@ -136,14 +123,13 @@ final class LefuTorreBridge extends MqttBridgeBase implements DispatchesQueued
         }
     }
 
-    protected function handleMessage(string $topic, string $payload): void
+    public static function claims(array $message): bool
     {
-        $message = json_decode($payload, true);
-        // O mesmo tópico serve gateways de outras marcas; só reclamamos o que é nosso.
-        if (!is_array($message) || ($message['source'] ?? null) !== 'lefu-torre-node') {
-            return;
-        }
+        return ($message['source'] ?? null) === 'lefu-torre-node';
+    }
 
+    public function handle(string $topic, array $message): void
+    {
         $context = $this->resolveGattDevice($topic, $message, $this->links, self::PROTOCOL, self::DEVICE_TYPE);
         if ($context === null) {
             return;

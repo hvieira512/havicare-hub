@@ -298,8 +298,12 @@ O gateway identifica-se pelo tópico e o aparelho pelo `device.mac`; os dois tê
 estar registados e ligados um ao outro. Um aparelho por registar dá a notificação
 de «dispositivo por autorizar», a não ser que esteja na lista de bloqueados.
 
-O gateway está ligado enquanto publica: a ingestão MOKO, que lê o mesmo tópico,
-marca-o como um MOKO e dá-o por desligado ao fim do mesmo prazo sem mensagens. Sem
+O `…/gw/+/raw` tem um subscritor só, o do MOKO: uma mensagem com `source` é de
+outra ponte, e vai para a que a reclama — pela fonte e, nas JoyTech, pelo prefixo
+do modelo (`DBP`, `XM`, `DET`).
+
+O gateway está ligado enquanto publica: o subscritor marca-o como um MOKO e
+dá-o por desligado ao fim do mesmo prazo sem mensagens. Sem
 aparelhos por perto, só um sinal de vida dele o mantém ligado.
 
 A instância de dev lê os gateways reais. Com `GATEWAY_COMMANDS_ENABLED=false` não
@@ -388,7 +392,7 @@ A dashboard traduz-os; um valor fora da lista aparece como veio.
 | Ficheiro | Responsabilidade |
 |---|---|
 | `src/Ingress/Mqtt/Gateway/GatewayTopic.php` | `…/gw/{mac}/raw` e a forma canónica de um MAC |
-| `src/Ingress/Mqtt/Moko/MokoBridge.php` | O centro: identidade, ligações, travões, publicação |
+| `src/Ingress/Mqtt/Moko/MokoBridge.php` | O subscritor do `gw/+/raw`: identidade, ligações, travões, publicação, e a entrega às outras pontes |
 | `src/Ingress/Mqtt/Moko/MokoMessageDecoder.php` | Seleção entre os formatos MKGW3 e MKGW4 |
 | `src/Ingress/Mqtt/Moko/Mkgw3MessageDecoder.php` | JSON |
 | `src/Ingress/Mqtt/Moko/Mkgw4MessageDecoder.php` | Binário TLV |
@@ -402,7 +406,7 @@ Havicare (secção 7), como a balança e a JoyTech.
 
 | Ficheiro | Responsabilidade |
 |---|---|
-| `src/Ingress/Mqtt/Veepoo/VeepooBridge.php` | Subscreve, identifica e publica |
+| `src/Ingress/Mqtt/Veepoo/VeepooBridge.php` | Identifica e publica o que o gateway reencaminha |
 | `src/Ingress/Mqtt/Veepoo/BraceletPresence.php` | Visto, offline e o histórico de presença |
 | `src/Ingress/Mqtt/Veepoo/BraceletContext.php` | O dispositivo resolvido, por mensagem |
 | `src/Ingress/Mqtt/Veepoo/DailyBlockNormalizer.php` | Os blocos diários do histórico |

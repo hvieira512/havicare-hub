@@ -9,7 +9,6 @@ use Hub\State\DeviceStoreContract;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Tests\Support\Doubles\ArrayObservationStateStore;
-use Tests\Support\Doubles\FakeMqttSubscriber;
 use Tests\Support\Doubles\IngressFixtures;
 use Tests\Support\Doubles\RecordingHubMqttBridge;
 
@@ -41,7 +40,7 @@ final class BridgeUnidentifiedDeviceTest extends TestCase
             }
         );
 
-        $this->bridge($store)->handleReceivedMessage(self::TOPIC, json_encode(array_filter([
+        IngressFixtures::relay($this->bridge($store), self::TOPIC, json_encode(array_filter([
             'source' => 'veepoo-node',
             'kind' => 'battery',
             'device' => $device,
@@ -62,7 +61,7 @@ final class BridgeUnidentifiedDeviceTest extends TestCase
             }
         );
 
-        $this->bridge($store)->handleReceivedMessage(self::TOPIC, json_encode([
+        IngressFixtures::relay($this->bridge($store), self::TOPIC, json_encode([
             'source' => 'veepoo-node',
             'kind' => 'battery',
             'device' => ['mac' => 'aabbccddeeff'],
@@ -75,7 +74,6 @@ final class BridgeUnidentifiedDeviceTest extends TestCase
     private function bridge(DeviceStoreContract $store): VeepooBridge
     {
         return new VeepooBridge(
-            new FakeMqttSubscriber(),
             IngressFixtures::whitelist([
                 self::GATEWAY => IngressFixtures::device('Havicare', 'Veepoo Gateway', 'gateway'),
             ]),
@@ -84,7 +82,6 @@ final class BridgeUnidentifiedDeviceTest extends TestCase
             null,
             new ArrayObservationStateStore(),
             'havicare-hub/null/0/gw/+/raw',
-            null,
             $store,
         );
     }

@@ -8,7 +8,6 @@ use Hub\Ingress\Mqtt\JoyTech\JoyTechFrame;
 use Hub\Ingress\Mqtt\JoyTech\JoyTechThermometerBridge;
 use Hub\Ingress\Mqtt\JoyTech\RecentMeasurementKeys;
 use PHPUnit\Framework\TestCase;
-use Tests\Support\Doubles\FakeMqttSubscriber;
 use Tests\Support\Doubles\IngressFixtures;
 use Tests\Support\Doubles\RecordingHubMqttBridge;
 
@@ -40,10 +39,10 @@ final class JoyTechThermometerBridgeTest extends TestCase
     {
         $mqtt = new RecordingHubMqttBridge();
         $bridge = $this->bridge($mqtt);
-        $bridge->handleReceivedMessage(self::TOPIC, self::message('session', ['connected' => true]));
+        IngressFixtures::relay($bridge, self::TOPIC, self::message('session', ['connected' => true]));
         foreach ([0, 0.25, 0.5, 0.75] as $step) {
             $this->now += 0.25;
-            $bridge->handleReceivedMessage(self::TOPIC, self::frame(self::CLOCK_REQUEST));
+            IngressFixtures::relay($bridge, self::TOPIC, self::frame(self::CLOCK_REQUEST));
         }
 
         self::assertSame('online', $mqtt->statuses[0]['payload']['state']);
@@ -56,7 +55,7 @@ final class JoyTechThermometerBridgeTest extends TestCase
     public function testTheMemoryLeavesWithTheFirstOneLive(): void
     {
         $mqtt = new RecordingHubMqttBridge();
-        $this->bridge($mqtt)->handleReceivedMessage(self::TOPIC, self::frame(self::MEMORY));
+        IngressFixtures::relay($this->bridge($mqtt), self::TOPIC, self::frame(self::MEMORY));
 
         self::assertSame(['acknowledgeMeasurements'], array_column(array_column($mqtt->gatewayCommands, 'payload'), 'operation'));
         $temperatures = self::temperatures($mqtt);
@@ -72,11 +71,11 @@ final class JoyTechThermometerBridgeTest extends TestCase
     /** O aparelho manda as mesmas 30 a cada ligação: uma medição nova acrescenta só essa. */
     public function testTheNextConnectionAddsOnlyTheNewMeasurement(): void
     {
-        $this->bridge(new RecordingHubMqttBridge())->handleReceivedMessage(self::TOPIC, self::frame(self::MEMORY));
+        IngressFixtures::relay($this->bridge(new RecordingHubMqttBridge()), self::TOPIC, self::frame(self::MEMORY));
         $this->now += 180;
 
         $mqtt = new RecordingHubMqttBridge();
-        $this->bridge($mqtt)->handleReceivedMessage(self::TOPIC, self::frame(self::MEMORY_AFTER_ONE_MORE));
+        IngressFixtures::relay($this->bridge($mqtt), self::TOPIC, self::frame(self::MEMORY_AFTER_ONE_MORE));
 
         self::assertSame([['bodyCelsius' => 36.4, 'site' => 'forehead']], array_column(self::temperatures($mqtt), 'data'));
     }
@@ -87,7 +86,7 @@ final class JoyTechThermometerBridgeTest extends TestCase
         $mqtt = new RecordingHubMqttBridge();
         $records = pack('Cn', 1, 0x8000 | 9770) . pack('C5', 26, 10, 16, 16, 42)
             . pack('Cn', 3, 2150) . pack('C5', 26, 10, 16, 16, 41);
-        $this->bridge($mqtt)->handleReceivedMessage(self::TOPIC, self::frame(JoyTechFrame::encode(0x03, $records)));
+        IngressFixtures::relay($this->bridge($mqtt), self::TOPIC, self::frame(JoyTechFrame::encode(0x03, $records)));
 
         self::assertSame([['bodyCelsius' => 36.5, 'site' => 'ear']], array_column(self::temperatures($mqtt), 'data'));
     }
@@ -122,7 +121,6 @@ final class JoyTechThermometerBridgeTest extends TestCase
     private function bridge(RecordingHubMqttBridge $mqtt): JoyTechThermometerBridge
     {
         return new JoyTechThermometerBridge(
-            new FakeMqttSubscriber(),
             IngressFixtures::whitelist([
                 self::GATEWAY => IngressFixtures::device('Havicare', 'BLE Gateway', 'gateway'),
                 self::THERMOMETER => IngressFixtures::device('JoyTech', 'HC-3018B', 'thermometer'),
@@ -130,7 +128,6 @@ final class JoyTechThermometerBridgeTest extends TestCase
             $mqtt,
             IngressFixtures::links(),
             'havicare-hub/null/0/gw/+/raw',
-            null,
             null,
             fn (): float => $this->now,
             seen: $this->seen,

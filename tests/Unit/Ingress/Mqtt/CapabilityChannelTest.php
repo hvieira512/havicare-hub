@@ -121,7 +121,6 @@ final class CapabilityChannelTest extends TestCase
     {
         $mqtt = new RecordingHubMqttBridge();
         $bridge = new VeepooBridge(
-            new FakeMqttSubscriber(),
             IngressFixtures::whitelist([
                 self::VEEPOO_GATEWAY => IngressFixtures::device('Havicare', 'Veepoo Gateway', 'gateway'),
                 self::BRACELET => IngressFixtures::device('Wonlex', 'MF91', 'bracelet'),
@@ -133,7 +132,7 @@ final class CapabilityChannelTest extends TestCase
             'havicare-hub/null/0/gw/+/raw',
         );
 
-        $bridge->handleReceivedMessage(self::veepooTopic(), json_encode([
+        IngressFixtures::relay($bridge, self::veepooTopic(), json_encode([
             'source' => 'veepoo-node',
             'kind' => 'session',
             'device' => ['mac' => self::BRACELET, 'firmware' => '02.73.01.00-5966'],
@@ -141,7 +140,7 @@ final class CapabilityChannelTest extends TestCase
         ], JSON_THROW_ON_ERROR));
 
         foreach ([['sdkType' => 51, 'heartRate' => 74], ['sdkType' => 31, 'bloodOxygen' => 97]] as $measurement) {
-            $bridge->handleReceivedMessage(self::veepooTopic(), json_encode([
+            IngressFixtures::relay($bridge, self::veepooTopic(), json_encode([
                 'source' => 'veepoo-node',
                 'kind' => 'measurement',
                 'device' => ['mac' => self::BRACELET],
@@ -151,7 +150,7 @@ final class CapabilityChannelTest extends TestCase
             // Uma medição a assentar só sai quando o pedido que a mandou fazer se fecha.
             $operation = MeasurementNormalizer::operationForSdkType((int)$measurement['sdkType']);
             if ($operation !== null) {
-                $bridge->handleReceivedMessage(self::veepooTopic(), json_encode([
+                IngressFixtures::relay($bridge, self::veepooTopic(), json_encode([
                     'source' => 'veepoo-node',
                     'kind' => 'command_result',
                     'device' => ['mac' => self::BRACELET],

@@ -9,7 +9,6 @@ use Hub\Device\PendingDownlinkQueue;
 use Tests\Support\Doubles\ArrayObservationStateStore;
 use Hub\Ingress\Mqtt\Veepoo\VeepooBridge;
 use PHPUnit\Framework\TestCase;
-use Tests\Support\Doubles\FakeMqttSubscriber;
 use Tests\Support\Doubles\IngressFixtures;
 use Tests\Support\Doubles\OneShotDownlinkQueue;
 use Tests\Support\Doubles\RecordingHubMqttBridge;
@@ -27,7 +26,7 @@ final class BridgeSessionTest extends TestCase
         $bridge = $this->bridge($mqtt);
 
         for ($i = 0; $i < 4; $i++) {
-            $bridge->handleReceivedMessage(self::TOPIC, self::session(true));
+            IngressFixtures::relay($bridge, self::TOPIC, self::session(true));
         }
 
         self::assertCount(1, self::eventsOfType($mqtt, 'device.connected'));
@@ -39,8 +38,8 @@ final class BridgeSessionTest extends TestCase
         $mqtt = new RecordingHubMqttBridge();
         $bridge = $this->bridge($mqtt);
 
-        $bridge->handleReceivedMessage(self::TOPIC, self::session(true));
-        $bridge->handleReceivedMessage(self::TOPIC, self::session(false));
+        IngressFixtures::relay($bridge, self::TOPIC, self::session(true));
+        IngressFixtures::relay($bridge, self::TOPIC, self::session(false));
 
         self::assertCount(1, self::eventsOfType($mqtt, 'device.disconnected'));
 
@@ -57,8 +56,8 @@ final class BridgeSessionTest extends TestCase
         $mqtt = new RecordingHubMqttBridge();
         $bridge = $this->bridge($mqtt);
 
-        $bridge->handleReceivedMessage(self::TOPIC, self::session(true));
-        $bridge->handleReceivedMessage(self::TOPIC, json_encode([
+        IngressFixtures::relay($bridge, self::TOPIC, self::session(true));
+        IngressFixtures::relay($bridge, self::TOPIC, json_encode([
             'source' => 'veepoo-node',
             'kind' => 'session',
             'device' => ['mac' => self::BRACELET],
@@ -75,7 +74,7 @@ final class BridgeSessionTest extends TestCase
         $bridge = $this->bridge($mqtt);
 
         foreach ([true, false, true] as $authenticated) {
-            $bridge->handleReceivedMessage(self::TOPIC, self::session($authenticated));
+            IngressFixtures::relay($bridge, self::TOPIC, self::session($authenticated));
         }
 
         self::assertCount(2, self::eventsOfType($mqtt, 'device.connected'));
@@ -90,7 +89,7 @@ final class BridgeSessionTest extends TestCase
             ['command' => 'config:heart_rate_continuous', 'payload' => ['enabled' => false]],
         );
 
-        $this->bridge($mqtt, $queue)->handleReceivedMessage(self::TOPIC, self::session(true));
+        IngressFixtures::relay($this->bridge($mqtt, $queue), self::TOPIC, self::session(true));
 
         self::assertCount(1, $mqtt->gatewayCommands);
         self::assertSame(
@@ -112,10 +111,10 @@ final class BridgeSessionTest extends TestCase
         );
         $bridge = $this->bridge($mqtt, null, $store);
 
-        $bridge->handleReceivedMessage(self::TOPIC, self::session(true, '02.73.01.00-5966'));
-        $bridge->handleReceivedMessage(self::TOPIC, self::session(true, '02.73.01.00-5966'));
-        $bridge->handleReceivedMessage(self::TOPIC, self::session(true, '02.73.01.00-5966'));
-        $bridge->handleReceivedMessage(self::TOPIC, self::session(true, '02.74.00.00-5966'));
+        IngressFixtures::relay($bridge, self::TOPIC, self::session(true, '02.73.01.00-5966'));
+        IngressFixtures::relay($bridge, self::TOPIC, self::session(true, '02.73.01.00-5966'));
+        IngressFixtures::relay($bridge, self::TOPIC, self::session(true, '02.73.01.00-5966'));
+        IngressFixtures::relay($bridge, self::TOPIC, self::session(true, '02.74.00.00-5966'));
 
         $shown = array_values(array_map(
             static fn(array $e): mixed => $e['data']['version'] ?? null,
@@ -156,7 +155,6 @@ final class BridgeSessionTest extends TestCase
         ?DeviceStoreContract $store = null,
     ): VeepooBridge {
         return new VeepooBridge(
-            new FakeMqttSubscriber(),
             IngressFixtures::whitelist([
                 self::GATEWAY => IngressFixtures::device('Havicare', 'Veepoo Gateway', 'gateway'),
                 self::BRACELET => IngressFixtures::device('Wonlex', 'MF91', 'bracelet'),
@@ -166,7 +164,6 @@ final class BridgeSessionTest extends TestCase
             $queue,
             new ArrayObservationStateStore(),
             'havicare-hub/null/0/gw/+/raw',
-            null,
             $store,
         );
     }
