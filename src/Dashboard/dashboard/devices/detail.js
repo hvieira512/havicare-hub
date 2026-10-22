@@ -87,18 +87,12 @@ function renderSelection() {
     const allItems = allDetailItems();
     const filtered = filterDetailItems(allItems);
     const deviceType = normalizeDeviceType(deviceModel?.deviceType || "watch");
-    const alarmEvents = filtered
-        .filter((item) => item._source === "event")
-        .map((item) => item.raw);
-    const telemetry = filtered
-        .filter((item) => item._source === "telemetry")
-        .map((item) => item.raw);
-    const commands = filtered
-        .filter((item) => item._source === "command")
-        .map((item) => item.raw);
-    const connectionEvents = filtered
-        .filter((item) => item._source === "connection")
-        .map((item) => item.raw);
+    const bySource = Object.groupBy(filtered, (item) => item._source);
+    const rawOf = (source) => (bySource[source] || []).map((item) => item.raw);
+    const alarmEvents = rawOf("event");
+    const telemetry = rawOf("telemetry");
+    const commands = rawOf("command");
+    const connectionEvents = rawOf("connection");
 
     // O cartão leva também a última de cada tipo, para uma leitura rara não sumir com a lista.
     const latest = filterDetailItems((state.selectedDetail.recent?.latestTelemetry || [])
@@ -612,19 +606,10 @@ function downlinkActivityRow(command) {
 
 /** Marcação em texto, para uma tooltip. As entidades desfazem-se: quem a recebe escapa-a. */
 function plainText(markup) {
-    return String(markup)
-        .replace(/<br\s*\/?>/gi, " · ")
-        .replace(/<[^>]*>/g, "")
-        .replace(/&(amp|lt|gt|quot|#039);/g, (entity) => UNESCAPED[entity]);
+    const parsed = document.createElement("template");
+    parsed.innerHTML = String(markup).replace(/<br\s*\/?>/gi, " · ");
+    return parsed.content.textContent;
 }
-
-const UNESCAPED = {
-    "&amp;": "&",
-    "&lt;": "<",
-    "&gt;": ">",
-    "&quot;": "\"",
-    "&#039;": "'",
-};
 
 function expectedReplies(command) {
     return Array.isArray(command.expectedReplyTypes) &&
