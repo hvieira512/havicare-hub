@@ -29,12 +29,13 @@ final class TorreFrameDecoder
         if ($hex === '' || strlen($hex) % 2 !== 0 || !ctype_xdigit($hex)) {
             return null;
         }
-        $bytes = array_values(unpack('C*', (string)hex2bin($hex)) ?: []);
+        $bin = (string)hex2bin($hex);
+        $bytes = array_values(unpack('C*', $bin) ?: []);
 
         return match (strtolower($characteristic)) {
-            'fff3' => $this->measurement($bytes),
+            'fff3' => $this->measurement($bytes, $bin),
             'fff1' => $this->command($bytes),
-            'fff2' => $this->user($bytes),
+            'fff2' => $this->user($bytes, $bin),
             default => null,
         };
     }
@@ -43,20 +44,20 @@ final class TorreFrameDecoder
      * @param list<int> $b
      * @return array<string, mixed>|null
      */
-    private function measurement(array $b): ?array
+    private function measurement(array $b, string $bin): ?array
     {
         return match ($b[0] ?? null) {
-            0x01, 0x11 => count($b) >= 15 ? $this->weighing($b) : null,
+            0x01, 0x11 => count($b) >= 15 ? $this->weighing($bin) : null,
             0x02 => count($b) >= 12 ? [
                 'kind' => 'encoded_impedance',
                 'electrodes' => self::electrodes($b[3]),
-                'encoded50Khz' => self::uint32($b, 4),
-                'encoded100Khz' => self::uint32($b, 8),
+                'encoded50Khz' => self::unpacked('V', $bin, 4),
+                'encoded100Khz' => self::unpacked('V', $bin, 8),
             ] : null,
             0x03 => count($b) >= 6 ? [
                 'kind' => 'impedance_channel',
                 'channel' => $b[3],
-                'impedanceOhm' => round(self::uint16($b, 4) / 10, 1),
+                'impedanceOhm' => round(self::unpacked('v', $bin, 4) / 10, 1),
             ] : null,
             default => null,
         };
@@ -66,12 +67,12 @@ final class TorreFrameDecoder
      * A trama `01`. Os estados vêm em pares de bits do byte 2, e a FC e a impedância só valem
      * quando o seu par diz que foram medidas.
      *
-     * @param list<int> $b
      * @return array<string, mixed>
      */
-    private function weighing(array $b): array
+    private function weighing(string $bin): array
     {
-        $state = $b[2];
+        $b = unpack('Ctype/x/Cstate/Cflags/vweight/Cunit/CheartRate/x2/vimpedance50/x/vimpedance100', $bin) ?: [];
+        $state = $b['state'];
         $impedance = match ($state & 0x30) {
             0x10 => 'measuring',
             0x20 => 'measured',
@@ -94,17 +95,17 @@ final class TorreFrameDecoder
 
         return [
             'kind' => 'weighing',
-            'complete' => ($b[3] & 0x80) !== 0,
-            'weightKg' => round(self::uint16($b, 4) / 100, 2),
-            'heartRateBpm' => $heartRate === 'measured' && $b[7] > 0 ? $b[7] : null,
-            'impedance50KhzOhm' => $impedance === 'measured' ? round(self::uint16($b, 10) / 10, 1) : null,
-            'impedance100KhzOhm' => $impedance === 'measured' ? round(self::uint16($b, 13) / 10, 1) : null,
+            'complete' => ($b['flags'] & 0x80) !== 0,
+            'weightKg' => round($b['weight'] / 100, 2),
+            'heartRateBpm' => $heartRate === 'measured' && $b['heartRate'] > 0 ? $b['heartRate'] : null,
+            'impedance50KhzOhm' => $impedance === 'measured' ? round($b['impedance50'] / 10, 1) : null,
+            'impedance100KhzOhm' => $impedance === 'measured' ? round($b['impedance100'] / 10, 1) : null,
             'status' => [
                 'weightPhase' => $weight,
                 'impedancePhase' => $impedance,
                 'heartRatePhase' => $heartRate,
-                'displayUnit' => self::UNITS[$b[6]] ?? null,
-                'shuttingDown' => ($b[3] & 0x40) !== 0,
+                'displayUnit' => self::UNITS[$b['unit']] ?? null,
+                'shuttingDown' => ($b['flags'] & 0x40) !== 0,
             ],
         ];
     }
@@ -152,7 +153,7 @@ final class TorreFrameDecoder
      * @param list<int> $b
      * @return array<string, mixed>|null
      */
-    private function user(array $b): ?array
+    private function user(array $b, string $bin): ?array
     {
         $flow = match ($b[0] ?? null) {
             0x05 => 'user',
@@ -160,7 +161,7 @@ final class TorreFrameDecoder
             default => null,
         };
         if ($flow === null || ($b[1] ?? null) !== 0x02 || count($b) !== 4) {
-            return $this->history($b);
+            return $this->history($bin);
         }
 
         // O fim do envio do histórico responde `01`: é o sinal, e não uma falha.
@@ -178,34 +179,33 @@ final class TorreFrameDecoder
      * Os pacotes do histórico, já juntos pelo gateway: o membro (64 bytes) e registos de 20 bytes
      * -- data, peso, FC, tipo, e as duas impedâncias, cifrada e em claro.
      *
-     * @param list<int> $b
      * @return array<string, mixed>|null
      */
-    private function history(array $b): ?array
+    private function history(string $bin): ?array
     {
-        $count = count($b) - self::ID_BYTES;
+        $count = strlen($bin) - self::ID_BYTES;
         if ($count < self::HISTORY_RECORD || $count % self::HISTORY_RECORD !== 0) {
             return null;
         }
 
         $records = [];
-        for ($at = self::ID_BYTES; $at < count($b); $at += self::HISTORY_RECORD) {
-            $heartRate = $b[$at + 6];
+        for ($at = self::ID_BYTES; $at < strlen($bin); $at += self::HISTORY_RECORD) {
+            $r = unpack('Vat/vweight/CheartRate/Celectrodes/Vencoded50/vimpedance50/Vencoded100/vimpedance100', $bin, $at) ?: [];
             $records[] = [
-                'at' => self::uint32($b, $at),
-                'weightKg' => round(self::uint16($b, $at + 4) / 100, 2),
-                'heartRateBpm' => $heartRate > 0 && $heartRate < 0xFF ? $heartRate : null,
-                'electrodes' => self::electrodes($b[$at + 7]),
-                'encodedImpedance50Khz' => self::uint32($b, $at + 8),
-                'impedance50KhzOhm' => round(self::uint16($b, $at + 12) / 10, 1),
-                'encodedImpedance100Khz' => self::uint32($b, $at + 14),
-                'impedance100KhzOhm' => round(self::uint16($b, $at + 18) / 10, 1),
+                'at' => $r['at'],
+                'weightKg' => round($r['weight'] / 100, 2),
+                'heartRateBpm' => $r['heartRate'] > 0 && $r['heartRate'] < 0xFF ? $r['heartRate'] : null,
+                'electrodes' => self::electrodes($r['electrodes']),
+                'encodedImpedance50Khz' => $r['encoded50'],
+                'impedance50KhzOhm' => round($r['impedance50'] / 10, 1),
+                'encodedImpedance100Khz' => $r['encoded100'],
+                'impedance100KhzOhm' => round($r['impedance100'] / 10, 1),
             ];
         }
 
         return [
             'kind' => 'history',
-            'memberId' => rtrim(implode('', array_map('chr', array_slice($b, 0, self::ID_BYTES))), "\0"),
+            'memberId' => rtrim(substr($bin, 0, self::ID_BYTES), "\0"),
             'records' => $records,
         ];
     }
@@ -219,15 +219,9 @@ final class TorreFrameDecoder
         };
     }
 
-    /** @param list<int> $b */
-    private static function uint16(array $b, int $at): int
+    /** Um inteiro little-endian, `v` de 16 bits ou `V` de 32. */
+    private static function unpacked(string $format, string $bin, int $at): int
     {
-        return $b[$at] | ($b[$at + 1] << 8);
-    }
-
-    /** @param list<int> $b */
-    private static function uint32(array $b, int $at): int
-    {
-        return $b[$at] | ($b[$at + 1] << 8) | ($b[$at + 2] << 16) | ($b[$at + 3] << 24);
+        return (int)(unpack($format, $bin, $at) ?: [1 => 0])[1];
     }
 }
