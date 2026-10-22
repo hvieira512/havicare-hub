@@ -9,6 +9,7 @@ import {
 import { ensureLicensesLoaded, invalidateLicenses } from "../licenses.js";
 import { state } from "../state.js";
 import { html } from "../html.js";
+import { rowActionsMenu } from "../components/row-actions-menu.js";
 import { apiError, confirmDestructive, reportApiError, toast } from "../dialogs.js";
 import { clearInvalid } from "../validation.js";
 import { handleSettingsPaginationClick, setSettingsNavCount } from "./shell.js";
@@ -84,19 +85,6 @@ async function reloadLicenses() {
     currentLicenses = (await ensureLicensesLoaded()) ?? [];
     editor.reset();
     renderCompanySection();
-}
-
-/** Os verbos de uma linha num menu; o `"divider"` separa o apagar do resto. */
-function rowActionsMenu(label, items) {
-    const entries = items.map((item) => (item === "divider"
-        ? html`<li><hr class="dropdown-divider"></li>`
-        : html`<li><button type="button" class="dropdown-item${item.danger ? " text-danger" : ""}" data-action="${item.action}" ${item.attrs}>${item.label}</button></li>`));
-
-    return html`
-        <div class="dropdown flex-shrink-0">
-            <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-toggle="dropdown" aria-expanded="false" aria-label="${label}"><i class="fa-solid fa-ellipsis-vertical" aria-hidden="true"></i></button>
-            <ul class="dropdown-menu dropdown-menu-end shadow">${entries}</ul>
-        </div>`;
 }
 
 /** O número da licença, quantos aparelhos a usam e, quando configurada, a cloud dos radares. */

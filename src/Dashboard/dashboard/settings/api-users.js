@@ -5,6 +5,7 @@ import {
 } from "../api/index.js";
 import { ensureLicensesLoaded } from "../licenses.js";
 import { stateBadge } from "../components/state-badge.js";
+import { rowActionsMenu } from "../components/row-actions-menu.js";
 import { state } from "../state.js";
 import { html } from "../html.js";
 import { apiError, confirmDestructive, promptPassword, reportApiError, toast } from "../dialogs.js";
@@ -62,6 +63,14 @@ function apiUserRow(user) {
         enabled ? "success" : "warning",
         "flex-shrink-0",
     );
+    const id = html`data-id="${user.id}"`;
+    const menu = rowActionsMenu(`Ações de ${user.username}`, [
+        { action: "editApiUser", attrs: id, label: "Editar utilizador" },
+        { action: "changeApiUserPassword", attrs: id, label: "Trocar palavra-passe" },
+        { action: "toggleApiUser", attrs: id, label: enabled ? "Pausar acesso" : "Retomar acesso" },
+        "divider",
+        { action: "deleteApiUser", attrs: id, label: "Eliminar utilizador", danger: true },
+    ]);
 
     return html`
         <div class="list-group-item d-flex align-items-center gap-2">
@@ -70,16 +79,7 @@ function apiUserRow(user) {
                 <span class="d-block small text-secondary text-truncate">${contextOf(user)}</span>
             </div>
             ${badge}
-            <div class="dropdown flex-shrink-0">
-                <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Ações de ${user.username}"><i class="fa-solid fa-ellipsis-vertical" aria-hidden="true"></i></button>
-                <ul class="dropdown-menu dropdown-menu-end">
-                    <li><button type="button" class="dropdown-item" data-action="editApiUser" data-id="${user.id}">Editar utilizador</button></li>
-                    <li><button type="button" class="dropdown-item" data-action="changeApiUserPassword" data-id="${user.id}">Trocar palavra-passe</button></li>
-                    <li><button type="button" class="dropdown-item" data-action="toggleApiUser" data-id="${user.id}">${enabled ? "Pausar acesso" : "Retomar acesso"}</button></li>
-                    <li><hr class="dropdown-divider"></li>
-                    <li><button type="button" class="dropdown-item text-danger" data-action="deleteApiUser" data-id="${user.id}">Eliminar utilizador</button></li>
-                </ul>
-            </div>
+            ${menu}
         </div>`;
 }
 
