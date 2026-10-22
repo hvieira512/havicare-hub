@@ -9,6 +9,8 @@ use Hub\Device\PendingDownlinkQueue;
 use Hub\Ingress\Http\Qinglanst\QinglanstApiClient;
 use Hub\Ingress\Http\Qinglanst\QinglanstCloudCommands;
 use Hub\Ingress\Http\Qinglanst\QinglanstCloudDownlinks;
+use Hub\Device\RedisPendingDownlinkQueue;
+use Tests\Support\Doubles\InMemoryRedisClient;
 use PHPUnit\Framework\TestCase;
 use React\Promise\PromiseInterface;
 
@@ -27,7 +29,7 @@ final class QinglanstCloudDownlinksTest extends TestCase
 
     public function testASettingIsWrittenAndConfirmedByTheCloudAnswer(): void
     {
-        $queue = new InMemoryRadarQueue();
+        $queue = new RedisPendingDownlinkQueue(new InMemoryRedisClient());
         $queue->enqueue(self::IMEI, 'working_mode', ['id' => 'op-1', 'command' => 'working_mode', 'payload' => ['mode' => 'sleep_monitoring']], 300);
         $client = new ScriptedCloudClient(prop: 200, writes: [200]);
 
@@ -41,7 +43,7 @@ final class QinglanstCloudDownlinksTest extends TestCase
 
     public function testAnOfflineRadarKeepsTheChangeQueued(): void
     {
-        $queue = new InMemoryRadarQueue();
+        $queue = new RedisPendingDownlinkQueue(new InMemoryRedisClient());
         $queue->enqueue(self::IMEI, 'fall_alarm', ['id' => 'op-2', 'command' => 'fall_alarm', 'payload' => ['afterSeconds' => 60]], 300);
         $client = new ScriptedCloudClient(prop: 777, writes: []);
         $downlinks = $this->downlinks($queue, $client);
@@ -56,7 +58,7 @@ final class QinglanstCloudDownlinksTest extends TestCase
 
     public function testAModeTheModelRefusesFailsWithoutRetrying(): void
     {
-        $queue = new InMemoryRadarQueue();
+        $queue = new RedisPendingDownlinkQueue(new InMemoryRedisClient());
         $queue->enqueue(self::IMEI, 'working_mode', ['id' => 'op-3', 'command' => 'working_mode', 'payload' => ['mode' => 'sleep_monitoring']], 300);
 
         $this->await($this->downlinks($queue, new ScriptedCloudClient(prop: 200, writes: [778]))->dispatchPending(self::IMEI, now: true));
@@ -68,7 +70,7 @@ final class QinglanstCloudDownlinksTest extends TestCase
     /** Ler o radar não escreve nada: é a leitura que fica guardada. */
     public function testReadingTheRadarOnlyReadsIt(): void
     {
-        $queue = new InMemoryRadarQueue();
+        $queue = new RedisPendingDownlinkQueue(new InMemoryRedisClient());
         $queue->enqueue(self::IMEI, 'read_device_state', ['id' => 'op-4', 'command' => 'read_device_state', 'payload' => []], 300);
         $client = new ScriptedCloudClient(prop: 200, writes: []);
 
@@ -82,7 +84,7 @@ final class QinglanstCloudDownlinksTest extends TestCase
     /** Uma leitura sem resposta (a cloud a passar o tempo limite) diz isso, com o motivo. */
     public function testAReadTheCloudNeverAnsweredSaysSo(): void
     {
-        $queue = new InMemoryRadarQueue();
+        $queue = new RedisPendingDownlinkQueue(new InMemoryRedisClient());
         $queue->enqueue(self::IMEI, 'read_device_state', ['id' => 'op-9', 'command' => 'read_device_state', 'payload' => []], 300);
         $downlinks = new QinglanstCloudDownlinks(
             $queue,
@@ -103,7 +105,7 @@ final class QinglanstCloudDownlinksTest extends TestCase
 
     public function testARadarWhoseLicenceHasNoCredentialsFails(): void
     {
-        $queue = new InMemoryRadarQueue();
+        $queue = new RedisPendingDownlinkQueue(new InMemoryRedisClient());
         $queue->enqueue(self::IMEI, 'fall_alarm', ['id' => 'op-5', 'command' => 'fall_alarm', 'payload' => ['afterSeconds' => 60]], 300);
         $downlinks = new QinglanstCloudDownlinks(
             $queue,
@@ -122,7 +124,7 @@ final class QinglanstCloudDownlinksTest extends TestCase
     /** O que entra enquanto o radar está ocupado sai logo a seguir, sem esperar pela próxima mensagem dele. */
     public function testWhatIsQueuedWhileBusyGoesRightAfter(): void
     {
-        $queue = new InMemoryRadarQueue();
+        $queue = new RedisPendingDownlinkQueue(new InMemoryRedisClient());
         $client = new DeferredCloudClient();
         $downlinks = $this->downlinks($queue, $client);
         $queue->enqueue(self::IMEI, 'fall_alarm', ['id' => 'op-7', 'command' => 'fall_alarm', 'payload' => ['afterSeconds' => 60]], 300);
@@ -138,7 +140,7 @@ final class QinglanstCloudDownlinksTest extends TestCase
     /** Um aparelho que não é radar fica na fila para quem o entrega pelo socket. */
     public function testWhatIsQueuedForAnotherDeviceIsLeftAlone(): void
     {
-        $queue = new InMemoryRadarQueue();
+        $queue = new RedisPendingDownlinkQueue(new InMemoryRedisClient());
         $queue->enqueue('865028000000308', 'IWBP84', ['id' => 'op-6', 'command' => 'BP84', 'payload' => []], 300);
         $downlinks = new QinglanstCloudDownlinks(
             $queue,
@@ -302,28 +304,5 @@ final class CountingRadarQueue implements PendingDownlinkQueue
 
     public function remove(PendingDownlink $downlink): void
     {
-    }
-}
-
-final class InMemoryRadarQueue implements PendingDownlinkQueue
-{
-    /** @var array<string, PendingDownlink> */
-    private array $items = [];
-
-    public function enqueue(string $imei, string $bytes, ?array $command, int $ttlSeconds): PendingDownlink
-    {
-        $downlink = new PendingDownlink($imei, $imei . ':' . $bytes, $bytes, $command, time(), time() + $ttlSeconds);
-
-        return $this->items[$downlink->dedupeKey] = $downlink;
-    }
-
-    public function pendingFor(string $imei): array
-    {
-        return array_values(array_filter($this->items, static fn (PendingDownlink $item): bool => $item->imei === $imei));
-    }
-
-    public function remove(PendingDownlink $downlink): void
-    {
-        unset($this->items[$downlink->dedupeKey]);
     }
 }

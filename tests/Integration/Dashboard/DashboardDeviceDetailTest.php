@@ -5,10 +5,10 @@ declare(strict_types=1);
 namespace Tests\Integration\Dashboard;
 
 use GuzzleHttp\Psr7\ServerRequest;
-use Hub\Device\PendingDownlink;
-use Hub\Device\PendingDownlinkQueue;
+use Hub\Device\RedisPendingDownlinkQueue;
 use Tests\Support\ConfigurationFixtures;
 use Tests\Support\DashboardHttpTestCase;
+use Tests\Support\Doubles\InMemoryRedisClient;
 use Tests\Support\Doubles\WavFixture;
 
 /**
@@ -98,23 +98,8 @@ final class DashboardDeviceDetailTest extends DashboardHttpTestCase
             $submitted[] = ['imei' => $imei, 'bytes' => $bytes];
             return 'sent';
         });
-        $queue = new class implements PendingDownlinkQueue {
-            public function enqueue(string $imei, string $bytes, ?array $command, int $ttlSeconds): PendingDownlink
-            {
-                return new PendingDownlink($imei, 'dedupe', $bytes, $command, time(), time() + $ttlSeconds);
-            }
-
-            public function pendingFor(string $imei): array
-            {
-                return [
-                    new PendingDownlink($imei, 'cfg:BP76', 'IWBP76,...', ['command' => 'BP76'], 1719650000, 1719650300),
-                ];
-            }
-
-            public function remove(PendingDownlink $downlink): void
-            {
-            }
-        };
+        $queue = new RedisPendingDownlinkQueue(new InMemoryRedisClient());
+        $queue->enqueue('861265061009822', 'IWBP76,...', ['command' => 'BP76'], 300);
         [$server, $db] = $this->makeServerWithDatabase($hub, $queue);
         $model = $db->models->find('Vivistar', 'L08 Pro');
 
