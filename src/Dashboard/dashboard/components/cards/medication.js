@@ -39,6 +39,13 @@ function planHours() {
     return hours;
 }
 
+/** O medicamento de um alarme, pelo plano efectivo; vazio quando não tem nome. */
+export function doseName(slot) {
+    const plans = state.selectedDetail?.effectiveConfigurations?.medication_reminders?.plans;
+
+    return medicationPlanTimes(plans).find((entry) => entry.slot === Number(slot))?.name || "";
+}
+
 /** A hora de um alarme, ou o nome dele quando o plano ainda não foi lido. */
 export function doseLabel(slot) {
     return planHours().get(Number(slot)) || `Alarme ${slot}`;

@@ -82,7 +82,7 @@ final class MedicationRunout
      * O fuso do aparelho vem em HHMM, como a TAG `0x1015`, ou com nome, que segue a mudança de
      * hora; sem ele, o relógio foi acertado em UTC.
      */
-    private static function zone(mixed $hhmm): DateTimeZone
+    public static function zone(mixed $hhmm): DateTimeZone
     {
         if (is_string($hhmm) && !is_numeric($hhmm)) {
             return new DateTimeZone($hhmm);

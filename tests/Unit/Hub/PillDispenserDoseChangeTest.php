@@ -19,7 +19,7 @@ final class PillDispenserDoseChangeTest extends TestCase
 
         self::assertArrayNotHasKey('medication_alarm_status', $byFeature);
         self::assertSame(
-            ['alarm' => 3, 'state' => 'missed'],
+            ['slot' => 3, 'state' => 'missed'],
             $byFeature['medication_alarm_change'] ?? null,
         );
     }
@@ -30,7 +30,7 @@ final class PillDispenserDoseChangeTest extends TestCase
         $byFeature = $this->decode(0x02, [0x8133 => "\x06"]);
 
         self::assertArrayNotHasKey('medication_alarm_status', $byFeature);
-        self::assertSame(['alarm' => 3, 'state' => 'missed'], $byFeature['medication_alarm_change'] ?? null);
+        self::assertSame(['slot' => 3, 'state' => 'missed'], $byFeature['medication_alarm_change'] ?? null);
     }
 
     /** Dois acontecimentos numa mensagem obrigariam quem consome a desempacotar uma lista. */
@@ -51,8 +51,8 @@ final class PillDispenserDoseChangeTest extends TestCase
         }
 
         self::assertSame([
-            ['alarm' => 2, 'state' => 'taken'],
-            ['alarm' => 5, 'state' => 'missed'],
+            ['slot' => 2, 'state' => 'taken'],
+            ['slot' => 5, 'state' => 'missed'],
         ], $changes);
     }
 

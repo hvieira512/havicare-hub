@@ -1,11 +1,11 @@
-import { displayPersonIndex, fieldLabel, fieldValue } from "../../format.js";
+import { displayPersonIndex, fieldLabel, fieldValue, timeOnly } from "../../format.js";
 import { fallLabel, zoneLabel } from "../../domain.js";
 import { html, raw } from "../../html.js";
 import { compactDetails, joinMarkup } from "./shared.js";
 import { state } from "../../state.js";
 import { connectivityIcon, connectivityValue } from "./gateway.js";
 import { diaperMoistureBody, diaperMoistureRowValue } from "./diaper.js";
-import { cyclePosition, cycleRunout, doseLabel, medicationAlarmContent } from "./medication.js";
+import { cyclePosition, cycleRunout, doseLabel, doseName, medicationAlarmContent } from "./medication.js";
 import { helpCallContent, ncsPagerContent } from "./ncs.js";
 import { locationDetails, locationValue } from "./location.js";
 import { sleepDetails, sleepQualityValue, sleepValue } from "./sleep.js";
@@ -229,13 +229,20 @@ const UPLINK_CARD_RENDERERS = {
             detailsTitle: [runout && `Acaba ${runout}`, inCycle, cell, level].filter(Boolean).join(" · "),
         };
     },
+    // As horas chegam em UTC e mostram-se na hora de cá.
     medication_intake: (data) => ({
         value: fieldValue("result", data.result),
+        details: joinMarkup([
+            html`${doseName(data.slot)}`,
+            data.scheduledAt ? html`${fieldLabel("scheduledAt")}: ${timeOnly(data.scheduledAt)}` : "",
+            data.takenAt ? html`${fieldLabel("takenAt")}: ${timeOnly(data.takenAt)}` : "",
+        ]),
     }),
     medication_alarm_status: (data) => medicationAlarmContent(data),
     // A hora identifica a dose melhor do que o número do alarme, que é vocabulário do aparelho.
     medication_alarm_change: (data) => ({
-        value: `${doseLabel(data?.alarm)}: ${fieldValue("state", data?.state)}`,
+        value: `${data?.scheduledAt ? timeOnly(data.scheduledAt) : doseLabel(data?.slot)}: ${fieldValue("state", data?.state)}`,
+        details: html`${doseName(data?.slot)}`,
     }),
     device_config: (data) => deviceConfigContent(data),
     storage_environment: () => ({

@@ -14,6 +14,7 @@ export function medicationPlanTimes(plans) {
                 hour: Number(hour) || 0,
                 minute: Number(minute) || 0,
                 enabled: entry?.enabled !== false,
+                name: String(plan?.name ?? ""),
             });
         });
     });

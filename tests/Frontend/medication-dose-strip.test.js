@@ -2,6 +2,7 @@ import test, { beforeEach } from "node:test";
 import assert from "node:assert/strict";
 
 import { parseFragment } from "./support/dom.js";
+import { timeOnly } from "../../src/Dashboard/dashboard/format.js";
 
 const { state } = await import("../../src/Dashboard/dashboard/state.js");
 const { uplinkCardContent } = await import(
@@ -105,7 +106,7 @@ test("without a synced plan, the column goes by alarm number", () => {
 
 /** E a mudança de uma dose é um evento, com a sua própria leitura de uma linha. */
 test("a dose change says the time and the new state", () => {
-    const content = uplinkCardContent("medication_alarm_change", { alarm: 3, state: "missed" });
+    const content = uplinkCardContent("medication_alarm_change", { slot: 3, state: "missed" });
 
     assert.match(content.value, /10:10/);
     assert.match(content.value, /[Ff]alhada/);
@@ -199,9 +200,38 @@ test("with everything disabled the card says there are no doses, in Portuguese",
  * nove.
  */
 test("a dose change is another capability and reads in one line", () => {
-    const rendered = shell("medication_alarm_change", { alarm: 3, state: "missed" });
+    const rendered = shell("medication_alarm_change", { slot: 3, state: "missed" });
 
     assert.match(rendered, /Alarme 3/);
     assert.match(rendered, /falhada/i);
     assert.doesNotMatch(rendered, /\[object Object\]/);
+});
+
+const NAMED_PLAN = {
+    plans: [
+        { name: "Metformina", times: [{ time: "10:10", enabled: true, slot: 3, recurrence: { kind: "daily" } }] },
+    ],
+};
+
+/** O hub manda as horas em UTC; a lista mostra-as na hora de cá, com o medicamento do compartimento. */
+test("the intake in the history shows the medicine and the local times", () => {
+    state.selectedDetail = { effectiveConfigurations: { medication_reminders: NAMED_PLAN } };
+    const scheduledAt = "2026-10-19T09:10:00Z";
+    const takenAt = "2026-10-19T09:14:00Z";
+
+    const content = uplinkCardContent("medication_intake", { slot: 3, scheduledAt, takenAt, result: "on_time" });
+
+    assert.match(String(content.details), /Metformina/);
+    assert.match(String(content.details), new RegExp(timeOnly(scheduledAt)));
+    assert.match(String(content.details), new RegExp(timeOnly(takenAt)));
+});
+
+test("a dose change in the history shows the medicine and the local time of its dose", () => {
+    state.selectedDetail = { effectiveConfigurations: { medication_reminders: NAMED_PLAN } };
+    const scheduledAt = "2026-10-19T23:30:00Z";
+
+    const content = uplinkCardContent("medication_alarm_change", { slot: 3, state: "taken", scheduledAt, doseDate: "2026-10-20" });
+
+    assert.match(String(content.value), new RegExp(timeOnly(scheduledAt)));
+    assert.match(String(content.details), /Metformina/);
 });

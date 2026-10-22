@@ -332,7 +332,10 @@
             "help": "Desligado, vale sempre. Não há escolha de dias da semana."
         },
         "medication_reminders": {
-            "help": "Cada hora preenchida gasta um compartimento; saem pela ordem da hora, não do número."
+            "help": "Cada hora preenchida gasta um compartimento; saem pela ordem da hora, não do número.",
+            "fields": {
+                "name": "Medicamento"
+            }
         },
         "missed_dispense": {
             "help": "Levantada depois de falhada, a toma fica registada como anormal."
@@ -672,7 +675,6 @@
         "age": "Idade",
         "alarm": "Alarme",
         "alarms": "Alarmes",
-        "alarmSlot": "Alarme",
         "appId": "ID da aplicação",
         "appSecret": "Segredo da aplicação",
         "avgBreathsPerMinute": "Respiração média",
@@ -850,6 +852,7 @@
         "skeletalMusclePercent": "Músculo esquelético",
         "sleep_state": "Estado do sono",
         "sleepGoalMinutes": "Meta de sono",
+        "slot": "Alarme",
         "source": "Origem",
         "speedKmh": "Velocidade",
         "spo2Percent": "Oxigénio no sangue",

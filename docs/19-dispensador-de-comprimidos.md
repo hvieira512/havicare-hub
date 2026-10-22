@@ -300,7 +300,7 @@ que impede um `0xAA` perdido numa dessincronização de passar por trama.
 
 | TAG | Capacidade | Campos |
 |---|---|---|
-| `0xC201`–`0xC206` | `medication_intake` | `alarmSlot`, `scheduledAt`, `takenAt`, `cellNumber`, `method`, `result` — as horas como o aparelho as guarda, em hora local e sem fuso |
+| `0xC201`–`0xC206` | `medication_intake` | `slot`, `scheduledAt`, `takenAt`, `cellNumber`, `method`, `result` — o aparelho guarda as horas em hora local e sem fuso, e o hub publica-as em UTC pelo `time_zone` confirmado; sem ele, não saem ([contrato](08-contrato-mqtt.md#as-horas-das-tomas-do-dispensador)) |
 | `0x8103` / `0x8104` / `0x8109` | `battery` | `percent`, `charging` (o `0x8104` a `3`; falta sem bateria), `mainsPowered`, `lowBattery` — a corrente vai com a bateria porque «ligado à corrente» e «a carregar» são a mesma pergunta. O `lowBattery` é o `0x8104` a `2`, e quando acende sai também o evento `low_battery`, uma vez. Sem bateria (`4`) não é bateria fraca |
 | `0x811A` / `0x811B` / `0x811D` / `0x8101` | `cells_remaining` | `current`, `total`, `remaining`, `level` (`ok` · `low` · `empty`). **O `remaining` é `carregados − posição`**, com corte a zero — quantas doses faltam sair a partir de onde o carrossel está, e **não** quantos compartimentos ainda têm comprimidos. Confirmado no aparelho: 28 carregados na posição 20 deram 8, e a posição 21 deu 7. Por isso o cartão não os põe lado a lado: diz «8 por dispensar» e manda a posição para os detalhes, que é o que se precisa para saber onde carregar o prato. O hub junta-lhe o `runoutAt`: percorre os alarmes do plano confirmado, dentro do período, no fuso do aparelho, até gastar o `remaining` |
 | `0x810E` | `ambient_temperature` | `environmentCelsius` — o ar onde o aparelho está, e não uma pessoa. A spec dá-o como INT8S de −40 a 120 **graus inteiros**, que não é gama nem resolução de sensor corporal; por isso não partilha a chave `temperature` dos relógios |
@@ -310,7 +310,7 @@ que impede um `0xAA` perdido numa dessincronização de passar por trama.
 | `0x8105` | — | Nada. Sabe o ligado/desligado do «não incomodar» mas não a janela, e as duas escreviam na mesma chave: como o `saveReported` substitui o payload inteiro, meia configuração apagava a outra metade. A janela completa — interruptor incluído — vem só na resposta ao `0x05` |
 | `0x8111` | `storage_environment` | `outOfRange` — o juízo do aparelho sobre a temperatura e a humidade que ele mede. **Só é publicado quando dispara**: como leitura, enchia o histórico com linhas a dizer que estava tudo bem |
 | `0x8131`–`0x8139` **num `0x87`** | `medication_alarm_status` | `takenCount`, `missedCount`, `alarms[{alarm, state}]` — a leitura dos nove, que só a resposta ao `0x07` traz |
-| `0x8131`–`0x8139` **num `0x04`/`0x02`** | `medication_alarm_change` | `alarm`, `state` — o alarme que mudou, um evento por alarme |
+| `0x8131`–`0x8139` **num `0x04`/`0x02`** | `medication_alarm_change` | `slot`, `state` — o alarme que mudou, um evento por alarme. O hub junta-lhe o `scheduledAt` e o `doseDate` da dose, do plano e do fuso confirmados |
 | `0x8121`–`0x8125` | `device_fault` | `fault`: `rotation` · `tray_reset` · `pusher` · `cell_door` · `keys` |
 | `0x8112` | `help_call` | — · o `1` (chamada em curso) é o pedido de ajuda; o `0` não gera nada |
 | `0x8002` **num `0x01`** | `firmware_version` | `version` — em hexadecimal, `0x0502`. Só o registo a traz, e por isso não é pedível |

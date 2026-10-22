@@ -87,7 +87,7 @@ final class PillDispenserEventDecoder
     {
         $slot = Tlv::u8($tlv, 0xC201);
         $value = Values::withoutNulls([
-            'alarmSlot' => $slot === null ? null : $slot + 1,
+            'slot' => $slot === null ? null : $slot + 1,
             'scheduledAt' => Tlv::text($tlv, 0xC202),
             'takenAt' => Tlv::text($tlv, 0xC203),
             'cellNumber' => Tlv::u8($tlv, 0xC204),
@@ -403,7 +403,10 @@ final class PillDispenserEventDecoder
         // Um evento por alarme: dois acontecimentos numa mensagem obrigavam quem consome a
         // desempacotar uma lista para ler um facto.
         foreach ($doses as $dose) {
-            $events[] = ['feature' => 'medication_alarm_change', 'nativeType' => $nativeType, 'value' => $dose];
+            $events[] = ['feature' => 'medication_alarm_change', 'nativeType' => $nativeType, 'value' => [
+                'slot' => $dose['alarm'],
+                'state' => $dose['state'],
+            ]];
         }
 
         return $events;

@@ -31,7 +31,7 @@ final class PillDispenserNormalizationTest extends TestCase
         self::assertCount(1, $events);
         self::assertSame('medication_intake', $events[0]['feature']);
         self::assertSame([
-            'alarmSlot' => 3,
+            'slot' => 3,
             'scheduledAt' => '2026-09-18T20:05:00',
             'takenAt' => '2026-09-18T20:05:04',
             'cellNumber' => 12,

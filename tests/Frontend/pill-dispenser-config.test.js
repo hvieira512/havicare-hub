@@ -64,6 +64,20 @@ test("a set alarm reads back with the chosen time", () => {
     assert.deepEqual(alarms.read(render(alarms, { plans })), { plans });
 });
 
+test("each compartment shows the name of its medicine", () => {
+    const cells = render(alarms, { plans: [{ name: "Metformina", ...daily("10:24", 5) }] })
+        .querySelectorAll("[data-alarm-slot]");
+
+    assert.equal(cells[4].querySelector("input[type=text]").getAttribute("value"), "Metformina");
+    assert.equal(cells[0].querySelector("input[type=text]").getAttribute("value"), "");
+});
+
+test("the name reads back with its compartment, and a blank one is left out", () => {
+    const plans = [{ name: "Metformina", ...daily("08:30", 1) }, daily("20:05", 2)];
+
+    assert.deepEqual(alarms.read(render(alarms, { plans })), { plans });
+});
+
 /** O `24` e o `60` são o sentinela do aparelho para um slot nunca definido. */
 test("the device's sentinel times are not drawn as a time", () => {
     const root = render(alarms, { plans: [{ hour: 24, minute: 60 }] });

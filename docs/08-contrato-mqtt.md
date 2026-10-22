@@ -313,9 +313,38 @@ eventos guardados no histórico da dashboard levam-na igual.
 | `device_fault` | `fault` | dispensador | `alert` |
 | `storage_environment` | `outOfRange` | dispensador | `alert` |
 | `device_state` | `state` | relógio Wonlex | `alert` |
-| `medication_alarm_change` | `alarm`, `state` | dispensador | `alert` numa dose falhada (`missed`, `timed_out`, `retrieval_timed_out`); `info` o resto |
-| `medication_intake` | `result`, `scheduledAt`, `takenAt`, … | dispensador | `alert` numa toma anormal ou falhada (`abnormal`, `missed`); `info` o resto. O `scheduledAt` e o `takenAt` são a hora local do aparelho, sem fuso (`2026-10-19T18:05:00`), tal como ele a guarda |
+| `medication_alarm_change` | `slot`, `state`, `scheduledAt`, `doseDate` | dispensador | `alert` numa dose falhada (`missed`, `timed_out`, `retrieval_timed_out`); `info` o resto |
+| `medication_intake` | `slot`, `result`, `scheduledAt`, `takenAt`, `cellNumber`, `method` | dispensador | `alert` numa toma anormal ou falhada (`abnormal`, `missed`); `info` o resto |
 | `reset` | `pagerId` | NCS | `info` |
+
+#### As horas das tomas do dispensador
+
+O dispensador conta as horas no relógio dele, sem fuso. O hub situa-as com o
+`time_zone` que o aparelho **confirmou**, e publica-as em UTC com `Z`:
+
+- **`medication_intake`** — o `scheduledAt` (a hora prevista) e o `takenAt` (a
+  hora da toma) passam da hora local do aparelho para UTC.
+- **`medication_alarm_change`** — leva o `slot` do alarme que mudou e, do plano
+  de medicação confirmado, a dose a que o estado se refere: o `scheduledAt` em
+  UTC e o `doseDate` (`AAAA-MM-DD`), o dia dessa dose no fuso do aparelho. A dose
+  é a ocorrência do alarme mais próxima da mudança — a toma antecipada vem antes
+  da hora, e uma dose das 22:30 dada por falhada depois da meia-noite é a da
+  véspera.
+
+O `slot` é o número do alarme (1–9), o mesmo do `slot` das horas do plano em
+`configurations.medication_reminders`: é por ele que se chega ao nome do
+medicamento.
+
+**Sem fuso confirmado, as horas não saem.** O hub não sabe a que hora está o
+relógio do aparelho, e uma hora local publicada como UTC estaria errada sem que
+nada o mostrasse. A toma sai sem `scheduledAt` nem `takenAt`, e a mudança de
+alarme sem `scheduledAt` nem `doseDate` — o resto do evento sai igual. O mesmo
+vale para um `slot` que não está no plano confirmado.
+
+```json
+{ "type": "medication_alarm_change", "severity": "info",
+  "data": { "slot": 2, "state": "taken", "scheduledAt": "2026-10-19T07:00:00Z", "doseDate": "2026-10-19" } }
+```
 
 O `heart_rate_abnormal` vem do bit 22 do alarme da 4P Touch, que diz só que a
 frequência cardíaca está anormal, sem o valor e sem o sentido. **Nenhum relógio o
@@ -496,6 +525,7 @@ As versões anteriores do contrato contêm as seguintes incorreções:
 | Os alarmes dos relógios saem em `telemetry` | Saem em `events`, a QoS 1 |
 | O `device_state` dos relógios sai em `telemetry` | Sai em `events`, a QoS 1. Está declarado como acontecimento desde sempre; o que o mandava para o outro canal era a lista à mão que o `isEvent` substituiu |
 | O estado de toma dos alarmes do dispensador é sempre `medication_alarm_status` | A **leitura dos nove** continua a sê-lo, em `telemetry`; a **mudança de um** é `medication_alarm_change`, em `events` a QoS 1. Uma dose falhada chega pelos dois: a mudança do alarme para `missed`, e um `medication_intake` com `result: "missed"` |
+| O `scheduledAt` e o `takenAt` do `medication_intake` são a hora local do aparelho, sem fuso, e o alarme chama-se `alarmSlot` na toma e `alarm` na mudança | Saem em UTC com `Z`, pelo fuso confirmado, e o alarme é o `slot` nos dois |
 | Os alarmes dos relógios saem num `type: "alarm"` com um `reason` | Cada motivo é um tipo: `help_call`, `fall`, `low_battery`, `device_removed`, `zone_entry`/`zone_exit`, `heart_rate_abnormal` |
 | As detecções do radar saem em `fall`, `vitals_alarm` e `presence_event`, com `detectionType`, `detectionCategory`, `detectionLevel`, `detectionSource` e `details` | Cada detecção é um tipo, com os campos no `data`; o grau é a `severity` |
 | O radar publica `vitals_signal_lost` quando não mede ninguém | Um quarto vazio não publica nada; o sinal fraco do `hbstatics` é `weak_vital_signs` |

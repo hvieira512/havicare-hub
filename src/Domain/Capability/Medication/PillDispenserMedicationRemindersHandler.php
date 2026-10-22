@@ -17,6 +17,8 @@ final class PillDispenserMedicationRemindersHandler implements MedicationReminde
     /** O aparelho tem nove alarmes fixos. */
     private const SLOTS = 9;
 
+    private const NAME_LENGTH = 64;
+
     public function nativeKey(): string
     {
         return 'medication_reminders';
@@ -52,7 +54,24 @@ final class PillDispenserMedicationRemindersHandler implements MedicationReminde
     }
 
     /**
-     * O nativo do aparelho é o compartimento e a hora em duas peças.
+     * O plano sem os nomes, que não viajam: o que o aparelho recebe.
+     *
+     * @param array<string, mixed> $native
+     * @return array<string, mixed>
+     */
+    public static function withoutNames(array $native): array
+    {
+        $plans = is_array($native['plans'] ?? null) ? $native['plans'] : [];
+
+        return ['plans' => array_map(
+            static fn(mixed $plan): mixed => is_array($plan) ? array_diff_key($plan, ['name' => true]) : $plan,
+            $plans,
+        )] + $native;
+    }
+
+    /**
+     * O nativo do aparelho é o compartimento e a hora em duas peças. O nome do medicamento fica
+     * guardado ao lado e nunca entra na trama.
      *
      * @param array<string, mixed> $plan
      * @return array<string, mixed>
@@ -72,12 +91,29 @@ final class PillDispenserMedicationRemindersHandler implements MedicationReminde
             'hour' => (int)$hour,
             'minute' => (int)$minute,
             'enabled' => MedicationPlanShape::enabled($entry['enabled'] ?? true),
-        ];
+        ] + self::name($plan['name'] ?? null);
+    }
+
+    /** @return array{name?: string} */
+    private static function name(mixed $name): array
+    {
+        if ($name === null) {
+            return [];
+        }
+        if (!is_string($name)) {
+            throw new \InvalidArgumentException('plans name must be a string');
+        }
+        $name = trim($name);
+        if (mb_strlen($name) > self::NAME_LENGTH) {
+            throw new \InvalidArgumentException('plans name must be at most ' . self::NAME_LENGTH . ' characters');
+        }
+
+        return $name === '' ? [] : ['name' => $name];
     }
 
     /**
-     * Cada compartimento é um plano sem nome com uma hora só: o aparelho não sabe o que
-     * dispensa, só quando.
+     * Cada compartimento é um plano com uma hora só, e com o nome que o hub lhe guardou: o
+     * aparelho não sabe o que dispensa, só quando.
      *
      * @param array<string, mixed> $plan
      * @return array<string, mixed>
@@ -91,7 +127,7 @@ final class PillDispenserMedicationRemindersHandler implements MedicationReminde
         $time = sprintf('%02d:%02d', (int)($plan['hour'] ?? 0), (int)($plan['minute'] ?? 0));
         $slot = array_key_exists('slot', $plan) ? (int)$plan['slot'] : null;
 
-        return MedicationPlanShape::plan([], [
+        return MedicationPlanShape::plan(['name' => $plan['name'] ?? null], [
             MedicationPlanShape::timeEntry(
                 $time,
                 MedicationPlanShape::enabled($plan['enabled'] ?? true),
