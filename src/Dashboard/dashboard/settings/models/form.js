@@ -16,8 +16,8 @@ import {
     supplierCardsHtml,
     wizardProgressHtml,
     wizardTrailHtml,
-} from "../../devices/classification-ui.js";
-import { createWizard } from "../../devices/wizard.js";
+} from "../../components/wizard-cards.js";
+import { createWizard } from "../../wizard.js";
 import { deviceTypeLabel, normalizeDeviceType } from "../../domain.js";
 import {
     backToModelList,

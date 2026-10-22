@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { createWizard } from "../../src/Dashboard/dashboard/devices/wizard.js";
+import { createWizard } from "../../src/Dashboard/dashboard/wizard.js";
 
 /** O motor do assistente, sem DOM: é lógica pura e testa-se como tal. */
 

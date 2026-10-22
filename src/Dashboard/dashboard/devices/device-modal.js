@@ -7,12 +7,8 @@ import { ensureCapabilityCatalog } from "../capability-catalog.js";
 import { apiError, confirmDestructive } from "../dialogs.js";
 import { clearInvalid, markApiFields } from "../validation.js";
 import { ensureLicensesLoaded } from "../licenses.js";
-import {
-    deviceTypeCardsHtml,
-    licenseTree,
-    modelCardsHtml,
-    supplierCardsHtml,
-} from "./classification-ui.js";
+import { licenseTree, modelCardsHtml } from "./classification-ui.js";
+import { deviceTypeCardsHtml, supplierCardsHtml } from "../components/wizard-cards.js";
 import {
     renderEditWizard,
     resetEditWizard,

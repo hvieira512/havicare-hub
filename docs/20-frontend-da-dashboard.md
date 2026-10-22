@@ -145,6 +145,7 @@ dashboard/
 │   ├── chips.js            as pastilhas de secção e as de filtro aplicado
 │   ├── empty-panel.js      o estado vazio de um painel, em texto
 │   ├── pagination.js       os botões do paginador: as setas e a janela de sete lugares
+│   ├── wizard-cards.js     a migalha, a barra de progresso e as grelhas de tipo e de fornecedor
 │   └── cards/              os cartões de telemetria, que são um bloco fechado
 │       ├── telemetry.js        o catálogo: ícone, cor e corpo por tipo
 │       ├── shell.js            a moldura de um cartão
@@ -153,6 +154,7 @@ dashboard/
 │       └── radar.js · diaper.js · gateway.js · ncs.js · location.js · sleep.js
 ├── pagination.js           escreve o paginador no painel, e resolve a página de um clique
 ├── phone.js                o campo de telefone com indicativo
+├── wizard.js               o motor das perguntas dos assistentes de aparelho e de modelo
 ├── storage.js              as chaves e os acessos ao localStorage
 ├── load-script.js          carrega uma biblioteca de terceiros à primeira vez que faz falta
 ├── tooltips.js             re-atar os tooltips do Bootstrap depois de um render
@@ -175,8 +177,7 @@ dashboard/
 │   ├── device-modal.js     o modal de um dispositivo, e a porta do painel de configurações
 │   ├── create-wizard.js    o assistente de adicionar: perguntas, grelhas, e a criação
 │   ├── edit-wizard.js      a mesma classificação, no modal de editar
-│   ├── wizard.js           o motor das perguntas (não é uma biblioteca: ~110 linhas)
-│   ├── classification-ui.js  as grelhas de tipo/fornecedor/modelo/licença, partilhadas
+│   ├── classification-ui.js  a grelha de modelos, o escolhedor de licença e as pastilhas da classificação
 │   ├── gateway-links.js    que gateways são elegíveis (lógica pura)
 │   ├── gateway-links-ui.js os cards de gateway no modal
 │   ├── gateway-signal.js   o RSSI de cada par (dispositivo, gateway)

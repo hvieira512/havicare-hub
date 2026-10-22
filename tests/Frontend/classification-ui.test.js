@@ -4,15 +4,15 @@ import assert from "node:assert/strict";
 import { parseFragment } from "./support/dom.js";
 import { html } from "../../src/Dashboard/dashboard/html.js";
 
+const { modelCardsHtml, ownerFromLicense } =
+    await import("../../src/Dashboard/dashboard/devices/classification-ui.js");
 const {
     cardGrid,
     deviceTypeCardsHtml,
-    modelCardsHtml,
-    ownerFromLicense,
     supplierCardsHtml,
     wizardProgressHtml,
     wizardTrailHtml,
-} = await import("../../src/Dashboard/dashboard/devices/classification-ui.js");
+} = await import("../../src/Dashboard/dashboard/components/wizard-cards.js");
 
 /**
  * A classificação -- trilha, tipo, fornecedor, modelo -- que o assistente e o modal de editar

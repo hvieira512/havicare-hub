@@ -21,18 +21,20 @@ import {
     supplierProtocol,
     suppliersForDeviceType,
 } from "../domain.js";
-import { createWizard } from "./wizard.js";
+import { createWizard } from "../wizard.js";
 import {
-    deviceTypeCardsHtml,
     licenseBadgeValue,
     licensePickerHtml,
     licenseTree,
     modelCardsHtml,
     ownerFromLicense,
+} from "./classification-ui.js";
+import {
+    deviceTypeCardsHtml,
     supplierCardsHtml,
     wizardProgressHtml,
     wizardTrailHtml,
-} from "./classification-ui.js";
+} from "../components/wizard-cards.js";
 import { gatewayCardMarkup } from "./gateway-links-ui.js";
 import { eligibleGateways, normalizeKey } from "./gateway-links.js";
 import {

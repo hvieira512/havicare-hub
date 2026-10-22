@@ -69,3 +69,17 @@ test("the root modules do not import a feature", () => {
 
     assert.deepEqual(crossings, []);
 });
+
+/** O `wiring/` é raiz de composição, e por isso fica de fora como quem importa. */
+test("a feature does not import another feature", () => {
+    const featureOf = (file) => path.relative(MODULE_ROOT, file).split(path.sep)[0];
+    const crossings = FEATURES.filter((feature) => feature !== "wiring")
+        .flatMap((feature) => listModules(path.join(MODULE_ROOT, feature)))
+        .flatMap((file) => specifiersOf(fs.readFileSync(file, "utf8"))
+            .filter((specifier) => specifier.startsWith("."))
+            .map((specifier) => featureOf(path.resolve(path.dirname(file), specifier)))
+            .filter((target) => FEATURES.includes(target) && target !== featureOf(file))
+            .map((target) => `${path.relative(MODULE_ROOT, file)} -> ${target}`));
+
+    assert.deepEqual(crossings, []);
+});
