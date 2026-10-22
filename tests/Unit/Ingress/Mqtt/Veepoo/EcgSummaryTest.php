@@ -4,17 +4,13 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Ingress\Mqtt\Veepoo;
 
-use Tests\Support\Doubles\ArrayObservationStateStore;
-use Hub\Ingress\Mqtt\Veepoo\VeepooBridge;
 use PHPUnit\Framework\TestCase;
-use Tests\Support\Doubles\FakeMqttSubscriber;
-use Tests\Support\Doubles\IngressFixtures;
 use Tests\Support\Doubles\RecordingHubMqttBridge;
+use Tests\Support\Doubles\VeepooFixtures;
 
 /** Este firmware não documenta o relatório final, só tramas de estado por segundo; os valores são de uma medição real, com artefactos. */
 final class EcgSummaryTest extends TestCase
 {
-    private const GATEWAY = 'bef341903987';
     private const BRACELET = '9f69c4866e6c';
     private const TOPIC = 'havicare-hub/null/0/gw/bef341903987/raw';
 
@@ -96,7 +92,7 @@ final class EcgSummaryTest extends TestCase
     public function testTheLiveFramesAreNotPublishedOneByOne(): void
     {
         $mqtt = new RecordingHubMqttBridge();
-        $bridge = $this->bridge($mqtt);
+        $bridge = VeepooFixtures::bridge($mqtt);
 
         foreach (self::captured() as $frame) {
             $bridge->handleReceivedMessage(self::TOPIC, json_encode([
@@ -133,7 +129,7 @@ final class EcgSummaryTest extends TestCase
     private function ecg(array $status): array
     {
         $mqtt = new RecordingHubMqttBridge();
-        $this->bridge($mqtt)->handleReceivedMessage(self::TOPIC, json_encode([
+        VeepooFixtures::bridge($mqtt)->handleReceivedMessage(self::TOPIC, json_encode([
             'source' => 'veepoo-node',
             'kind' => 'ecg_wave',
             'device' => ['mac' => self::BRACELET],
@@ -147,21 +143,5 @@ final class EcgSummaryTest extends TestCase
         }
 
         self::fail('o exame não foi publicado');
-    }
-
-    private function bridge(RecordingHubMqttBridge $mqtt): VeepooBridge
-    {
-        return new VeepooBridge(
-            new FakeMqttSubscriber(),
-            IngressFixtures::whitelist([
-                self::GATEWAY => IngressFixtures::device('Havicare', 'Veepoo Gateway', 'gateway'),
-                self::BRACELET => IngressFixtures::device('Wonlex', 'MF91', 'bracelet'),
-            ]),
-            $mqtt,
-            IngressFixtures::links(true),
-            null,
-            new ArrayObservationStateStore(),
-            'havicare-hub/null/0/gw/+/raw',
-        );
     }
 }

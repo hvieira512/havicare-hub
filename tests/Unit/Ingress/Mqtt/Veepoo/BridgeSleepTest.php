@@ -4,17 +4,13 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Ingress\Mqtt\Veepoo;
 
-use Tests\Support\Doubles\ArrayObservationStateStore;
-use Hub\Ingress\Mqtt\Veepoo\VeepooBridge;
 use PHPUnit\Framework\TestCase;
-use Tests\Support\Doubles\FakeMqttSubscriber;
-use Tests\Support\Doubles\IngressFixtures;
 use Tests\Support\Doubles\RecordingHubMqttBridge;
+use Tests\Support\Doubles\VeepooFixtures;
 
 /** O gateway publica o registo de sono em espécie própria, fora dos blocos de cinco minutos, e o hub tem de o fazer sair. */
 final class BridgeSleepTest extends TestCase
 {
-    private const GATEWAY = 'bef341903987';
     private const BRACELET = '9f69c4866e6c';
     private const TOPIC = 'havicare-hub/null/0/gw/bef341903987/raw';
 
@@ -22,7 +18,7 @@ final class BridgeSleepTest extends TestCase
     public function testANightArrivesWrappedInAListWithTheCurveInIntegers(): void
     {
         $mqtt = new RecordingHubMqttBridge();
-        $this->bridge($mqtt)->handleReceivedMessage(self::TOPIC, self::sleepAsTheBraceletSendsIt());
+        VeepooFixtures::bridge($mqtt)->handleReceivedMessage(self::TOPIC, self::sleepAsTheBraceletSendsIt());
 
         $sleep = array_values(array_filter(
             $mqtt->telemetry,
@@ -37,7 +33,7 @@ final class BridgeSleepTest extends TestCase
     public function testTheInstantsAreConvertedFromTheBraceletClockToUtc(): void
     {
         $mqtt = new RecordingHubMqttBridge();
-        $this->bridge($mqtt)->handleReceivedMessage(self::TOPIC, self::sleepAsTheBraceletSendsIt());
+        VeepooFixtures::bridge($mqtt)->handleReceivedMessage(self::TOPIC, self::sleepAsTheBraceletSendsIt());
 
         $sleep = array_values(array_filter(
             $mqtt->telemetry,
@@ -74,21 +70,5 @@ final class BridgeSleepTest extends TestCase
                 'sleepCurve' => [0, 0, 1, 1, 1, 1, 2, 2, 1, 1],
             ]],
         ], JSON_THROW_ON_ERROR);
-    }
-
-    private function bridge(RecordingHubMqttBridge $mqtt): VeepooBridge
-    {
-        return new VeepooBridge(
-            new FakeMqttSubscriber(),
-            IngressFixtures::whitelist([
-                self::GATEWAY => IngressFixtures::device('Havicare', 'Veepoo Gateway', 'gateway'),
-                self::BRACELET => IngressFixtures::device('Wonlex', 'MF91', 'bracelet'),
-            ]),
-            $mqtt,
-            IngressFixtures::links(true),
-            null,
-            new ArrayObservationStateStore(),
-            'havicare-hub/null/0/gw/+/raw',
-        );
     }
 }

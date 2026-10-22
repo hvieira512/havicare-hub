@@ -7,17 +7,13 @@ namespace Tests\Unit\Ingress\Mqtt\Veepoo;
 use Hub\State\DeviceStoreContract;
 use Hub\Device\PendingDownlink;
 use Hub\Device\PendingDownlinkQueue;
-use Tests\Support\Doubles\ArrayObservationStateStore;
-use Hub\Ingress\Mqtt\Veepoo\VeepooBridge;
 use PHPUnit\Framework\TestCase;
-use Tests\Support\Doubles\FakeMqttSubscriber;
-use Tests\Support\Doubles\IngressFixtures;
 use Tests\Support\Doubles\RecordingHubMqttBridge;
+use Tests\Support\Doubles\VeepooFixtures;
 
 /** Sai em `device.measurement_failed` e fecha o pedido, senão é reentregue e a pulseira repete uma medição sem valor. */
 final class BridgeFailedMeasurementTest extends TestCase
 {
-    private const GATEWAY = 'bef341903987';
     private const BRACELET = '9f69c4866e6c';
     private const TOPIC = 'havicare-hub/null/0/gw/bef341903987/raw';
 
@@ -27,7 +23,7 @@ final class BridgeFailedMeasurementTest extends TestCase
         $queue = new FakeQueue();
         $queue->add('measure.heartRate.start');
         $queue->add('measure.oxygen.start');
-        $bridge = $this->bridge(new RecordingHubMqttBridge(), $queue);
+        $bridge = VeepooFixtures::bridge(new RecordingHubMqttBridge(), $queue);
 
         $bridge->handleReceivedMessage(self::TOPIC, self::session());
         $bridge->handleReceivedMessage(self::TOPIC, self::measurement([
@@ -43,7 +39,7 @@ final class BridgeFailedMeasurementTest extends TestCase
     {
         $queue = new FakeQueue();
         $queue->add('measure.bloodPressure.start');
-        $bridge = $this->bridge(new RecordingHubMqttBridge(), $queue);
+        $bridge = VeepooFixtures::bridge(new RecordingHubMqttBridge(), $queue);
 
         $bridge->handleReceivedMessage(self::TOPIC, self::session());
         $bridge->handleReceivedMessage(self::TOPIC, self::measurement([
@@ -59,7 +55,7 @@ final class BridgeFailedMeasurementTest extends TestCase
     {
         $queue = new FakeQueue();
         $queue->add('measure.ecg.start');
-        $bridge = $this->bridge(new RecordingHubMqttBridge(), $queue);
+        $bridge = VeepooFixtures::bridge(new RecordingHubMqttBridge(), $queue);
 
         $bridge->handleReceivedMessage(self::TOPIC, self::session());
         $bridge->handleReceivedMessage(self::TOPIC, json_encode([
@@ -77,7 +73,7 @@ final class BridgeFailedMeasurementTest extends TestCase
     {
         $queue = new FakeQueue();
         $queue->add('measure.heartRate.start');
-        $bridge = $this->bridge(new RecordingHubMqttBridge(), $queue);
+        $bridge = VeepooFixtures::bridge(new RecordingHubMqttBridge(), $queue);
 
         $bridge->handleReceivedMessage(self::TOPIC, self::session());
         $bridge->handleReceivedMessage(self::TOPIC, self::measurement([
@@ -100,7 +96,7 @@ final class BridgeFailedMeasurementTest extends TestCase
                 $marked[] = [$nativeType, $fields];
             }
         );
-        $bridge = $this->bridge(new RecordingHubMqttBridge(), $queue, $store);
+        $bridge = VeepooFixtures::bridge(new RecordingHubMqttBridge(), $queue, $store);
 
         $bridge->handleReceivedMessage(self::TOPIC, self::session());
         $bridge->handleReceivedMessage(self::TOPIC, self::measurement([
@@ -124,7 +120,7 @@ final class BridgeFailedMeasurementTest extends TestCase
         $mqtt = new RecordingHubMqttBridge();
         $queue = new FakeQueue();
         $queue->add('measure.heartRate.start');
-        $bridge = $this->bridge($mqtt, $queue);
+        $bridge = VeepooFixtures::bridge($mqtt, $queue);
 
         $bridge->handleReceivedMessage(self::TOPIC, self::session());
         $bridge->handleReceivedMessage(self::TOPIC, self::confirmation('measure.heartRate.start', 'no_response'));
@@ -142,7 +138,7 @@ final class BridgeFailedMeasurementTest extends TestCase
         $mqtt = new RecordingHubMqttBridge();
         $queue = new FakeQueue();
         $queue->add('config:find_device');
-        $bridge = $this->bridge($mqtt, $queue);
+        $bridge = VeepooFixtures::bridge($mqtt, $queue);
 
         $bridge->handleReceivedMessage(self::TOPIC, self::session());
         $bridge->handleReceivedMessage(self::TOPIC, json_encode([
@@ -169,7 +165,7 @@ final class BridgeFailedMeasurementTest extends TestCase
                 $marked[] = $fields;
             }
         );
-        $bridge = $this->bridge($mqtt, $queue, $store);
+        $bridge = VeepooFixtures::bridge($mqtt, $queue, $store);
 
         $bridge->handleReceivedMessage(self::TOPIC, self::session());
         $bridge->handleReceivedMessage(self::TOPIC, self::commandResult('config:find_device', ['ok' => false, 'error' => 'disconnected']));
@@ -187,7 +183,7 @@ final class BridgeFailedMeasurementTest extends TestCase
         $queue = new \Hub\Device\RedisPendingDownlinkQueue(new \Tests\Support\Doubles\InMemoryRedisClient());
         $start = $queue->enqueue(self::BRACELET, 'config:find_device', ['command' => 'config:find_device', 'payload' => ['enabled' => true]], 300);
         $stop = $queue->enqueue(self::BRACELET, 'config:find_device', ['command' => 'config:find_device', 'payload' => ['enabled' => false]], 300);
-        $bridge = $this->bridge(new RecordingHubMqttBridge(), $queue);
+        $bridge = VeepooFixtures::bridge(new RecordingHubMqttBridge(), $queue);
 
         $bridge->handleReceivedMessage(self::TOPIC, json_encode([
             'source' => 'veepoo-node',
@@ -205,7 +201,7 @@ final class BridgeFailedMeasurementTest extends TestCase
         $mqtt = new RecordingHubMqttBridge();
         $queue = new FakeQueue();
         $queue->add('measure.heartRate.start');
-        $bridge = $this->bridge($mqtt, $queue);
+        $bridge = VeepooFixtures::bridge($mqtt, $queue);
 
         $bridge->handleReceivedMessage(self::TOPIC, self::session());
         $bridge->handleReceivedMessage(self::TOPIC, self::commandResult('measure.heartRate.start', ['ok' => false, 'error' => 'not_connected']));
@@ -220,7 +216,7 @@ final class BridgeFailedMeasurementTest extends TestCase
         $mqtt = new RecordingHubMqttBridge();
         $queue = new FakeQueue();
         $queue->add('measure.heartRate.start');
-        $bridge = $this->bridge($mqtt, $queue);
+        $bridge = VeepooFixtures::bridge($mqtt, $queue);
 
         $bridge->handleReceivedMessage(self::TOPIC, self::session());
         for ($i = 0; $i < 5; $i++) {
@@ -241,7 +237,7 @@ final class BridgeFailedMeasurementTest extends TestCase
         $mqtt = new RecordingHubMqttBridge();
         $queue = new FakeQueue();
         $queue->add('measure.heartRate.start');
-        $bridge = $this->bridge($mqtt, $queue);
+        $bridge = VeepooFixtures::bridge($mqtt, $queue);
 
         $bridge->handleReceivedMessage(self::TOPIC, self::session());
         $bridge->handleReceivedMessage(self::TOPIC, self::measurement(['sdkType' => 51, 'heartRate' => 0]));
@@ -260,7 +256,7 @@ final class BridgeFailedMeasurementTest extends TestCase
         $mqtt = new RecordingHubMqttBridge();
         $queue = new FakeQueue();
         $queue->add('measure.heartRate.start');
-        $bridge = $this->bridge($mqtt, $queue);
+        $bridge = VeepooFixtures::bridge($mqtt, $queue);
 
         $bridge->handleReceivedMessage(self::TOPIC, self::session());
         $bridge->handleReceivedMessage(self::TOPIC, self::measurement(['sdkType' => 51, 'heartRate' => 87]));
@@ -280,7 +276,7 @@ final class BridgeFailedMeasurementTest extends TestCase
         $mqtt = new RecordingHubMqttBridge();
         $queue = new FakeQueue();
         $queue->add('measure.heartRate.start');
-        $bridge = $this->bridge($mqtt, $queue);
+        $bridge = VeepooFixtures::bridge($mqtt, $queue);
 
         $bridge->handleReceivedMessage(self::TOPIC, self::session());
         $bridge->handleReceivedMessage(self::TOPIC, self::measurement(['sdkType' => 51, 'notWear' => true]));
@@ -303,7 +299,7 @@ final class BridgeFailedMeasurementTest extends TestCase
         $mqtt = new RecordingHubMqttBridge();
         $queue = new FakeQueue();
         $queue->add('measure.ecg.start');
-        $bridge = $this->bridge($mqtt, $queue);
+        $bridge = VeepooFixtures::bridge($mqtt, $queue);
 
         $bridge->handleReceivedMessage(self::TOPIC, self::session());
         $bridge->handleReceivedMessage(self::TOPIC, json_encode([
@@ -325,7 +321,7 @@ final class BridgeFailedMeasurementTest extends TestCase
         $queue = new FakeQueue();
         $queue->add('measure.heartRate.start');
         $now = 1000;
-        $bridge = $this->bridge($mqtt, $queue, clock: static function () use (&$now): float {
+        $bridge = VeepooFixtures::bridge($mqtt, $queue, clock: static function () use (&$now): float {
             return (float)$now;
         });
 
@@ -352,7 +348,7 @@ final class BridgeFailedMeasurementTest extends TestCase
         $mqtt = new RecordingHubMqttBridge();
         $queue = new FakeQueue();
         $queue->add('measure.heartRate.start');
-        $bridge = $this->bridge($mqtt, $queue);
+        $bridge = VeepooFixtures::bridge($mqtt, $queue);
 
         $bridge->handleReceivedMessage(self::TOPIC, self::session());
         $bridge->handleReceivedMessage(self::TOPIC, self::measurement(['sdkType' => 51, 'notWear' => true]));
@@ -418,29 +414,6 @@ final class BridgeFailedMeasurementTest extends TestCase
             'device' => ['mac' => self::BRACELET],
             'payload' => ['authenticated' => true],
         ], JSON_THROW_ON_ERROR);
-    }
-
-    private function bridge(
-        RecordingHubMqttBridge $mqtt,
-        PendingDownlinkQueue $queue,
-        ?DeviceStoreContract $store = null,
-        ?callable $clock = null,
-    ): VeepooBridge {
-        return new VeepooBridge(
-            new FakeMqttSubscriber(),
-            IngressFixtures::whitelist([
-                self::GATEWAY => IngressFixtures::device('Havicare', 'Veepoo Gateway', 'gateway'),
-                self::BRACELET => IngressFixtures::device('Wonlex', 'MF91', 'bracelet'),
-            ]),
-            $mqtt,
-            IngressFixtures::links(true),
-            $queue,
-            new ArrayObservationStateStore(),
-            'havicare-hub/null/0/gw/+/raw',
-            null,
-            $store,
-            clock: $clock,
-        );
     }
 }
 

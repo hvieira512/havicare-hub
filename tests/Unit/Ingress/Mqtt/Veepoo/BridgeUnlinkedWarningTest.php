@@ -4,18 +4,13 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Ingress\Mqtt\Veepoo;
 
-use Tests\Support\Doubles\ArrayObservationStateStore;
-use Hub\Ingress\Mqtt\Veepoo\VeepooBridge;
 use Hub\Log\Logger;
 use PHPUnit\Framework\TestCase;
-use Tests\Support\Doubles\FakeMqttSubscriber;
-use Tests\Support\Doubles\IngressFixtures;
-use Tests\Support\Doubles\RecordingHubMqttBridge;
+use Tests\Support\Doubles\VeepooFixtures;
 
 /** O hub recusa o que não está ligado ao gateway, e o aviso leva o travão dos aparelhos não autorizados. */
 final class BridgeUnlinkedWarningTest extends TestCase
 {
-    private const GATEWAY = 'bef341903987';
     private const BRACELET = '9f69c4866e6c';
     private const TOPIC = 'havicare-hub/null/0/gw/bef341903987/raw';
 
@@ -43,7 +38,7 @@ final class BridgeUnlinkedWarningTest extends TestCase
     public function testItWarnsAgainOnceTheWindowHasPassed(): void
     {
         $now = 1000;
-        $bridge = $this->bridge(static function () use (&$now): float {
+        $bridge = VeepooFixtures::bridge(linked: false, clock: static function () use (&$now): float {
             return (float)$now;
         });
 
@@ -71,22 +66,5 @@ final class BridgeUnlinkedWarningTest extends TestCase
             'device' => ['mac' => self::BRACELET],
             'payload' => ['authenticated' => true],
         ], JSON_THROW_ON_ERROR);
-    }
-
-    private function bridge(?callable $clock = null): VeepooBridge
-    {
-        return new VeepooBridge(
-            new FakeMqttSubscriber(),
-            IngressFixtures::whitelist([
-                self::GATEWAY => IngressFixtures::device('Havicare', 'Veepoo Gateway', 'gateway'),
-                self::BRACELET => IngressFixtures::device('Wonlex', 'MF91', 'bracelet'),
-            ]),
-            new RecordingHubMqttBridge(),
-            IngressFixtures::links(false),
-            null,
-            new ArrayObservationStateStore(),
-            'havicare-hub/null/0/gw/+/raw',
-            clock: $clock,
-        );
     }
 }

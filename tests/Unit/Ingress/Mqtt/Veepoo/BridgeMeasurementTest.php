@@ -5,19 +5,15 @@ declare(strict_types=1);
 namespace Tests\Unit\Ingress\Mqtt\Veepoo;
 
 use Hub\Ingress\Mqtt\Veepoo\MeasurementNormalizer;
-use Hub\Ingress\Mqtt\Veepoo\VeepooBridge;
 use Hub\State\DeviceStoreContract;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
-use Tests\Support\Doubles\ArrayObservationStateStore;
-use Tests\Support\Doubles\FakeMqttSubscriber;
-use Tests\Support\Doubles\IngressFixtures;
 use Tests\Support\Doubles\RecordingHubMqttBridge;
+use Tests\Support\Doubles\VeepooFixtures;
 
 /** É aqui que o tipo do SDK, que o gateway reenvia sem interpretar, vira uma grandeza do hub. */
 final class BridgeMeasurementTest extends TestCase
 {
-    private const GATEWAY = 'bef341903987';
     private const BRACELET = '9f69c4866e6c';
     private const TOPIC = 'havicare-hub/null/0/gw/bef341903987/raw';
 
@@ -79,7 +75,7 @@ final class BridgeMeasurementTest extends TestCase
     public function testBodyCompositionInProgressIsNotPublished(): void
     {
         $mqtt = new RecordingHubMqttBridge();
-        $this->bridge($mqtt)->handleReceivedMessage(self::TOPIC, self::message([
+        VeepooFixtures::bridge($mqtt)->handleReceivedMessage(self::TOPIC, self::message([
             'sdkType' => 32, 'BMI' => 0, 'bodyFatPercentage' => 0, 'basalMetabolicRate' => 0,
         ]));
 
@@ -100,7 +96,7 @@ final class BridgeMeasurementTest extends TestCase
         array $expected,
     ): void {
         $mqtt = new RecordingHubMqttBridge();
-        $bridge = $this->bridge($mqtt);
+        $bridge = VeepooFixtures::bridge($mqtt);
         $bridge->handleReceivedMessage(self::TOPIC, self::message($payload));
 
         // Uma medição sai quando o pedido que a mandou fazer se fecha; uma leitura
@@ -130,7 +126,7 @@ final class BridgeMeasurementTest extends TestCase
     public function testZeroWhileMeasuringIsNotPublished(): void
     {
         $mqtt = new RecordingHubMqttBridge();
-        $bridge = $this->bridge($mqtt);
+        $bridge = VeepooFixtures::bridge($mqtt);
 
         $stillSearching = [
             ['sdkType' => 31, 'bloodOxygen' => 0],
@@ -150,7 +146,7 @@ final class BridgeMeasurementTest extends TestCase
     public function testEcgWithoutSkinContactIsReportedOnceAndNotAsTelemetry(): void
     {
         $mqtt = new RecordingHubMqttBridge();
-        $bridge = $this->bridge($mqtt);
+        $bridge = VeepooFixtures::bridge($mqtt);
 
         for ($i = 0; $i < 5; $i++) {
             $bridge->handleReceivedMessage(self::TOPIC, self::message([
@@ -176,7 +172,7 @@ final class BridgeMeasurementTest extends TestCase
     public function testAnAllZeroTracingIsReportedAsFailureAndNotAsAnExam(): void
     {
         $mqtt = new RecordingHubMqttBridge();
-        $this->bridge($mqtt)->handleReceivedMessage(self::TOPIC, json_encode([
+        VeepooFixtures::bridge($mqtt)->handleReceivedMessage(self::TOPIC, json_encode([
             'source' => 'veepoo-node',
             'kind' => 'ecg_wave',
             'device' => ['mac' => self::BRACELET],
@@ -205,7 +201,7 @@ final class BridgeMeasurementTest extends TestCase
             }
         );
 
-        $this->bridge($mqtt, $store)->handleReceivedMessage(self::TOPIC, json_encode([
+        VeepooFixtures::bridge($mqtt, store: $store)->handleReceivedMessage(self::TOPIC, json_encode([
             'source' => 'veepoo-node',
             'kind' => 'ecg_wave',
             'device' => ['mac' => self::BRACELET],
@@ -234,7 +230,7 @@ final class BridgeMeasurementTest extends TestCase
     public function testEmptyEcgWaveformIsNotPublished(): void
     {
         $mqtt = new RecordingHubMqttBridge();
-        $this->bridge($mqtt)->handleReceivedMessage(self::TOPIC, json_encode([
+        VeepooFixtures::bridge($mqtt)->handleReceivedMessage(self::TOPIC, json_encode([
             'source' => 'veepoo-node',
             'kind' => 'ecg_wave',
             'device' => ['mac' => self::BRACELET],
@@ -248,7 +244,7 @@ final class BridgeMeasurementTest extends TestCase
     public function testAMeasurementYieldsTheValueItSettledOn(): void
     {
         $mqtt = new RecordingHubMqttBridge();
-        $bridge = $this->bridge($mqtt);
+        $bridge = VeepooFixtures::bridge($mqtt);
 
         foreach ([0, 79, 85, 90, 91, 90] as $bpm) {
             $bridge->handleReceivedMessage(self::TOPIC, self::message(['sdkType' => 51, 'heartRate' => $bpm]));
@@ -268,7 +264,7 @@ final class BridgeMeasurementTest extends TestCase
     {
         $mqtt = new RecordingHubMqttBridge();
         $now = 1000;
-        $bridge = $this->bridge($mqtt, clock: static function () use (&$now): float {
+        $bridge = VeepooFixtures::bridge($mqtt, clock: static function () use (&$now): float {
             return (float)$now;
         });
 
@@ -317,27 +313,5 @@ final class BridgeMeasurementTest extends TestCase
             'device' => ['mac' => self::BRACELET],
             'payload' => $payload,
         ], JSON_THROW_ON_ERROR);
-    }
-
-    private function bridge(
-        RecordingHubMqttBridge $mqtt,
-        ?DeviceStoreContract $store = null,
-        ?callable $clock = null,
-    ): VeepooBridge {
-        return new VeepooBridge(
-            new FakeMqttSubscriber(),
-            IngressFixtures::whitelist([
-                self::GATEWAY => IngressFixtures::device('Havicare', 'Veepoo Gateway', 'gateway'),
-                self::BRACELET => IngressFixtures::device('Wonlex', 'MF91', 'bracelet'),
-            ]),
-            $mqtt,
-            IngressFixtures::links(true),
-            null,
-            new ArrayObservationStateStore(),
-            'havicare-hub/null/0/gw/+/raw',
-            null,
-            $store,
-            clock: $clock,
-        );
     }
 }

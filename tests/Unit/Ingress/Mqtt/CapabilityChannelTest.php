@@ -9,12 +9,12 @@ use Hub\Ingress\Mqtt\Moko\MokoBridge;
 use Hub\Ingress\Mqtt\Ncs\NcsBridge;
 use Hub\Ingress\Mqtt\Veepoo\MeasurementNormalizer;
 use Hub\Ingress\Mqtt\Qinglanst\QinglanstBridge;
-use Hub\Ingress\Mqtt\Veepoo\VeepooBridge;
 use PHPUnit\Framework\TestCase;
 use Tests\Support\Doubles\ArrayObservationStateStore;
 use Tests\Support\Doubles\FakeMqttSubscriber;
 use Tests\Support\Doubles\IngressFixtures;
 use Tests\Support\Doubles\RecordingHubMqttBridge;
+use Tests\Support\Doubles\VeepooFixtures;
 
 /** O canal de cada capacidade no MQTT contra o `isEvent` do catálogo, nas quatro pontes. */
 final class CapabilityChannelTest extends TestCase
@@ -120,18 +120,7 @@ final class CapabilityChannelTest extends TestCase
     public function testTheVeepooBraceletPublishesEachCapabilityOnTheChannelTheCatalogDeclares(): void
     {
         $mqtt = new RecordingHubMqttBridge();
-        $bridge = new VeepooBridge(
-            new FakeMqttSubscriber(),
-            IngressFixtures::whitelist([
-                self::VEEPOO_GATEWAY => IngressFixtures::device('Havicare', 'Veepoo Gateway', 'gateway'),
-                self::BRACELET => IngressFixtures::device('Wonlex', 'MF91', 'bracelet'),
-            ]),
-            $mqtt,
-            IngressFixtures::links(),
-            null,
-            new ArrayObservationStateStore(),
-            'havicare-hub/null/0/gw/+/raw',
-        );
+        $bridge = VeepooFixtures::bridge($mqtt);
 
         $bridge->handleReceivedMessage(self::veepooTopic(), json_encode([
             'source' => 'veepoo-node',
