@@ -11,7 +11,6 @@ use Tests\Support\Doubles\VeepooFixtures;
 /** Este firmware não documenta o relatório final, só tramas de estado por segundo; os valores são de uma medição real, com artefactos. */
 final class EcgSummaryTest extends TestCase
 {
-    private const BRACELET = '9f69c4866e6c';
     private const TOPIC = 'havicare-hub/null/0/gw/bef341903987/raw';
 
     /** O exame sai num envelope só, com o traçado e o que ele mediu. */
@@ -95,12 +94,7 @@ final class EcgSummaryTest extends TestCase
         $bridge = VeepooFixtures::bridge($mqtt);
 
         foreach (self::captured() as $frame) {
-            $bridge->handleReceivedMessage(self::TOPIC, json_encode([
-                'source' => 'veepoo-node',
-                'kind' => 'measurement',
-                'device' => ['mac' => self::BRACELET],
-                'payload' => ['sdkType' => 42] + $frame,
-            ], JSON_THROW_ON_ERROR));
+            $bridge->handleReceivedMessage(self::TOPIC, VeepooFixtures::message('measurement', ['sdkType' => 42] + $frame));
         }
 
         self::assertSame([], $mqtt->telemetry);
@@ -129,12 +123,7 @@ final class EcgSummaryTest extends TestCase
     private function ecg(array $status): array
     {
         $mqtt = new RecordingHubMqttBridge();
-        VeepooFixtures::bridge($mqtt)->handleReceivedMessage(self::TOPIC, json_encode([
-            'source' => 'veepoo-node',
-            'kind' => 'ecg_wave',
-            'device' => ['mac' => self::BRACELET],
-            'payload' => ['samples' => [12, -4, 33], 'samplingHz' => 500, 'status' => $status],
-        ], JSON_THROW_ON_ERROR));
+        VeepooFixtures::bridge($mqtt)->handleReceivedMessage(self::TOPIC, VeepooFixtures::message('ecg_wave', ['samples' => [12, -4, 33], 'samplingHz' => 500, 'status' => $status]));
 
         foreach ($mqtt->telemetry as $telemetry) {
             if (($telemetry['payload']['type'] ?? '') === 'ecg') {

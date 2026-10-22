@@ -4,32 +4,14 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Mqtt;
 
-use Hub\Log\Logger;
 use Hub\Mqtt\ReconnectsOnLoopFailure;
 use PHPUnit\Framework\TestCase;
+use Tests\Support\CapturesLog;
 
 /** Uma ligação que cai diz quando volta, para se distinguir de uma que nunca mais voltou. */
 final class ReconnectsOnLoopFailureTest extends TestCase
 {
-    private string $logFile;
-
-    protected function setUp(): void
-    {
-        $path = tempnam(sys_get_temp_dir(), 'reconnect-log-');
-        if ($path === false) {
-            throw new \RuntimeException('could not create the temporary log file');
-        }
-        $this->logFile = $path;
-        putenv('LOG_FILE=' . $path);
-        Logger::reset();
-    }
-
-    protected function tearDown(): void
-    {
-        putenv('LOG_FILE');
-        Logger::reset();
-        @unlink($this->logFile);
-    }
+    use CapturesLog;
 
     public function testARecoveredConnectionSaysSo(): void
     {

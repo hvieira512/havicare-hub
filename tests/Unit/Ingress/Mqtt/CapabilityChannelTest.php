@@ -130,22 +130,12 @@ final class CapabilityChannelTest extends TestCase
         ], JSON_THROW_ON_ERROR));
 
         foreach ([['sdkType' => 51, 'heartRate' => 74], ['sdkType' => 31, 'bloodOxygen' => 97]] as $measurement) {
-            $bridge->handleReceivedMessage(self::veepooTopic(), json_encode([
-                'source' => 'veepoo-node',
-                'kind' => 'measurement',
-                'device' => ['mac' => self::BRACELET],
-                'payload' => $measurement,
-            ], JSON_THROW_ON_ERROR));
+            $bridge->handleReceivedMessage(self::veepooTopic(), VeepooFixtures::message('measurement', $measurement));
 
             // Uma medição a assentar só sai quando o pedido que a mandou fazer se fecha.
             $operation = MeasurementNormalizer::operationForSdkType((int)$measurement['sdkType']);
             if ($operation !== null) {
-                $bridge->handleReceivedMessage(self::veepooTopic(), json_encode([
-                    'source' => 'veepoo-node',
-                    'kind' => 'command_result',
-                    'device' => ['mac' => self::BRACELET],
-                    'payload' => ['dedupeKey' => $operation . '-key', 'operation' => $operation],
-                ], JSON_THROW_ON_ERROR));
+                $bridge->handleReceivedMessage(self::veepooTopic(), VeepooFixtures::message('command_result', ['dedupeKey' => $operation . '-key', 'operation' => $operation]));
             }
         }
 

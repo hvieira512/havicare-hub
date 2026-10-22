@@ -16,6 +16,17 @@ final class VeepooFixtures
     public const GATEWAY = 'bef341903987';
     public const BRACELET = '9f69c4866e6c';
 
+    /** Uma mensagem do nó Veepoo no tópico raw do gateway. */
+    public static function message(string $kind, mixed $payload, string $mac = self::BRACELET): string
+    {
+        return json_encode([
+            'source' => 'veepoo-node',
+            'kind' => $kind,
+            'device' => ['mac' => $mac],
+            'payload' => $payload,
+        ], JSON_THROW_ON_ERROR);
+    }
+
     /** @param array<array-key, array<string, mixed>>|null $devices a whitelist, por omissão o gateway e a pulseira */
     public static function bridge(
         ?RecordingHubMqttBridge $mqtt = null,

@@ -14,7 +14,6 @@ use Tests\Support\Doubles\VeepooFixtures;
 /** É aqui que o tipo do SDK, que o gateway reenvia sem interpretar, vira uma grandeza do hub. */
 final class BridgeMeasurementTest extends TestCase
 {
-    private const BRACELET = '9f69c4866e6c';
     private const TOPIC = 'havicare-hub/null/0/gw/bef341903987/raw';
 
     /**
@@ -163,12 +162,7 @@ final class BridgeMeasurementTest extends TestCase
     public function testAnAllZeroTracingIsReportedAsFailureAndNotAsAnExam(): void
     {
         $mqtt = new RecordingHubMqttBridge();
-        VeepooFixtures::bridge($mqtt)->handleReceivedMessage(self::TOPIC, json_encode([
-            'source' => 'veepoo-node',
-            'kind' => 'ecg_wave',
-            'device' => ['mac' => self::BRACELET],
-            'payload' => ['samples' => array_fill(0, 500, 0)],
-        ], JSON_THROW_ON_ERROR));
+        VeepooFixtures::bridge($mqtt)->handleReceivedMessage(self::TOPIC, VeepooFixtures::message('ecg_wave', ['samples' => array_fill(0, 500, 0)]));
 
         self::assertSame([], $mqtt->telemetry);
 
@@ -189,12 +183,7 @@ final class BridgeMeasurementTest extends TestCase
             }
         );
 
-        VeepooFixtures::bridge($mqtt, store: $store)->handleReceivedMessage(self::TOPIC, json_encode([
-            'source' => 'veepoo-node',
-            'kind' => 'ecg_wave',
-            'device' => ['mac' => self::BRACELET],
-            'payload' => ['samples' => [5, -3, 7, 2], 'samplingHz' => 500],
-        ], JSON_THROW_ON_ERROR));
+        VeepooFixtures::bridge($mqtt, store: $store)->handleReceivedMessage(self::TOPIC, VeepooFixtures::message('ecg_wave', ['samples' => [5, -3, 7, 2], 'samplingHz' => 500]));
 
         $ecg = $mqtt->ofType('ecg');
         self::assertSame([5, -3, 7, 2], $ecg[0]['payload']['data']['samples']);
@@ -215,12 +204,7 @@ final class BridgeMeasurementTest extends TestCase
     public function testEmptyEcgWaveformIsNotPublished(): void
     {
         $mqtt = new RecordingHubMqttBridge();
-        VeepooFixtures::bridge($mqtt)->handleReceivedMessage(self::TOPIC, json_encode([
-            'source' => 'veepoo-node',
-            'kind' => 'ecg_wave',
-            'device' => ['mac' => self::BRACELET],
-            'payload' => ['samples' => []],
-        ], JSON_THROW_ON_ERROR));
+        VeepooFixtures::bridge($mqtt)->handleReceivedMessage(self::TOPIC, VeepooFixtures::message('ecg_wave', ['samples' => []]));
 
         self::assertSame([], $mqtt->telemetry);
     }
@@ -267,12 +251,7 @@ final class BridgeMeasurementTest extends TestCase
 
     private static function confirmation(string $operation): string
     {
-        return json_encode([
-            'source' => 'veepoo-node',
-            'kind' => 'command_result',
-            'device' => ['mac' => self::BRACELET],
-            'payload' => ['dedupeKey' => $operation . '-key', 'operation' => $operation],
-        ], JSON_THROW_ON_ERROR);
+        return VeepooFixtures::message('command_result', ['dedupeKey' => $operation . '-key', 'operation' => $operation]);
     }
 
 
@@ -282,11 +261,6 @@ final class BridgeMeasurementTest extends TestCase
     /** @param array<string, mixed> $payload */
     private static function message(array $payload): string
     {
-        return json_encode([
-            'source' => 'veepoo-node',
-            'kind' => 'measurement',
-            'device' => ['mac' => self::BRACELET],
-            'payload' => $payload,
-        ], JSON_THROW_ON_ERROR);
+        return VeepooFixtures::message('measurement', $payload);
     }
 }

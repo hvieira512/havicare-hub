@@ -58,12 +58,7 @@ final class BridgeFailedMeasurementTest extends TestCase
         $bridge = VeepooFixtures::bridge(new RecordingHubMqttBridge(), $queue);
 
         $bridge->handleReceivedMessage(self::TOPIC, self::session());
-        $bridge->handleReceivedMessage(self::TOPIC, json_encode([
-            'source' => 'veepoo-node',
-            'kind' => 'ecg_wave',
-            'device' => ['mac' => self::BRACELET],
-            'payload' => ['samples' => [0, 0, 0, 0], 'samplingHz' => 500],
-        ], JSON_THROW_ON_ERROR));
+        $bridge->handleReceivedMessage(self::TOPIC, VeepooFixtures::message('ecg_wave', ['samples' => [0, 0, 0, 0], 'samplingHz' => 500]));
 
         self::assertSame([], $queue->operations());
     }
@@ -141,12 +136,7 @@ final class BridgeFailedMeasurementTest extends TestCase
         $bridge = VeepooFixtures::bridge($mqtt, $queue);
 
         $bridge->handleReceivedMessage(self::TOPIC, self::session());
-        $bridge->handleReceivedMessage(self::TOPIC, json_encode([
-            'source' => 'veepoo-node',
-            'kind' => 'command_result',
-            'device' => ['mac' => self::BRACELET],
-            'payload' => ['dedupeKey' => 'config:find_device-key', 'operation' => 'config:find_device'],
-        ], JSON_THROW_ON_ERROR));
+        $bridge->handleReceivedMessage(self::TOPIC, VeepooFixtures::message('command_result', ['dedupeKey' => 'config:find_device-key', 'operation' => 'config:find_device']));
 
         self::assertSame([], $queue->operations());
         self::assertSame([], $mqtt->ofType('device.measurement_failed', 'events'));
@@ -185,12 +175,7 @@ final class BridgeFailedMeasurementTest extends TestCase
         $stop = $queue->enqueue(self::BRACELET, 'config:find_device', ['command' => 'config:find_device', 'payload' => ['enabled' => false]], 300);
         $bridge = VeepooFixtures::bridge(new RecordingHubMqttBridge(), $queue);
 
-        $bridge->handleReceivedMessage(self::TOPIC, json_encode([
-            'source' => 'veepoo-node',
-            'kind' => 'command_result',
-            'device' => ['mac' => self::BRACELET],
-            'payload' => ['dedupeKey' => $start->dedupeKey, 'operation' => 'config:find_device', 'ok' => false, 'error' => 'not_connected'],
-        ], JSON_THROW_ON_ERROR));
+        $bridge->handleReceivedMessage(self::TOPIC, VeepooFixtures::message('command_result', ['dedupeKey' => $start->dedupeKey, 'operation' => 'config:find_device', 'ok' => false, 'error' => 'not_connected']));
 
         self::assertSame([$stop->dedupeKey], array_map(static fn ($d): string => $d->dedupeKey, $queue->pendingFor(self::BRACELET)));
     }
@@ -302,12 +287,7 @@ final class BridgeFailedMeasurementTest extends TestCase
         $bridge = VeepooFixtures::bridge($mqtt, $queue);
 
         $bridge->handleReceivedMessage(self::TOPIC, self::session());
-        $bridge->handleReceivedMessage(self::TOPIC, json_encode([
-            'source' => 'veepoo-node',
-            'kind' => 'ecg_wave',
-            'device' => ['mac' => self::BRACELET],
-            'payload' => ['samples' => [12, -4, 33, 128, -71], 'samplingHz' => 500],
-        ], JSON_THROW_ON_ERROR));
+        $bridge->handleReceivedMessage(self::TOPIC, VeepooFixtures::message('ecg_wave', ['samples' => [12, -4, 33, 128, -71], 'samplingHz' => 500]));
         $bridge->handleReceivedMessage(self::TOPIC, self::confirmation('measure.ecg.start', null));
 
         self::assertSame([], $queue->operations());
@@ -361,48 +341,28 @@ final class BridgeFailedMeasurementTest extends TestCase
 
     private static function confirmation(string $operation, ?string $outcome): string
     {
-        return json_encode([
-            'source' => 'veepoo-node',
-            'kind' => 'command_result',
-            'device' => ['mac' => self::BRACELET],
-            'payload' => array_filter([
-                'dedupeKey' => $operation . '-key',
-                'operation' => $operation,
-                'outcome' => $outcome,
-            ], static fn(mixed $v): bool => $v !== null),
-        ], JSON_THROW_ON_ERROR);
+        return VeepooFixtures::message('command_result', array_filter([
+            'dedupeKey' => $operation . '-key',
+            'operation' => $operation,
+            'outcome' => $outcome,
+        ], static fn(mixed $v): bool => $v !== null));
     }
 
     /** @param array<string, mixed> $fields */
     private static function commandResult(string $operation, array $fields): string
     {
-        return json_encode([
-            'source' => 'veepoo-node',
-            'kind' => 'command_result',
-            'device' => ['mac' => self::BRACELET],
-            'payload' => ['dedupeKey' => $operation . '-key', 'operation' => $operation] + $fields,
-        ], JSON_THROW_ON_ERROR);
+        return VeepooFixtures::message('command_result', ['dedupeKey' => $operation . '-key', 'operation' => $operation] + $fields);
     }
 
     /** @param array<string, mixed> $payload */
     private static function measurement(array $payload): string
     {
-        return json_encode([
-            'source' => 'veepoo-node',
-            'kind' => 'measurement',
-            'device' => ['mac' => self::BRACELET],
-            'payload' => $payload,
-        ], JSON_THROW_ON_ERROR);
+        return VeepooFixtures::message('measurement', $payload);
     }
 
     private static function session(): string
     {
-        return json_encode([
-            'source' => 'veepoo-node',
-            'kind' => 'session',
-            'device' => ['mac' => self::BRACELET],
-            'payload' => ['authenticated' => true],
-        ], JSON_THROW_ON_ERROR);
+        return VeepooFixtures::message('session', ['authenticated' => true]);
     }
 }
 

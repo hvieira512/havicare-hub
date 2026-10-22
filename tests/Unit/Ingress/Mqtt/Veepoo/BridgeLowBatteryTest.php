@@ -11,7 +11,6 @@ use Tests\Support\Doubles\VeepooFixtures;
 /** A pulseira repete o `lowVoltage` em cada leitura: o `low_battery` sai quando ele aparece. */
 final class BridgeLowBatteryTest extends TestCase
 {
-    private const BRACELET = '9f69c4866e6c';
     private const TOPIC = 'havicare-hub/null/0/gw/bef341903987/raw';
 
     public function testTheLowVoltageFlagRaisesTheEventOnce(): void
@@ -55,11 +54,6 @@ final class BridgeLowBatteryTest extends TestCase
     /** @param array<string, mixed> $payload */
     private static function battery(array $payload): string
     {
-        return json_encode([
-            'source' => 'veepoo-node',
-            'kind' => 'battery',
-            'device' => ['mac' => self::BRACELET],
-            'payload' => $payload,
-        ], JSON_THROW_ON_ERROR);
+        return VeepooFixtures::message('battery', $payload);
     }
 }

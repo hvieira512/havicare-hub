@@ -130,11 +130,6 @@ final class BridgeQueuedDispatchTest extends TestCase
 
     private static function session(bool $authenticated): string
     {
-        return json_encode([
-            'source' => 'veepoo-node',
-            'kind' => 'session',
-            'device' => ['mac' => self::BRACELET],
-            'payload' => ['authenticated' => $authenticated],
-        ], JSON_THROW_ON_ERROR);
+        return VeepooFixtures::message('session', ['authenticated' => $authenticated]);
     }
 }

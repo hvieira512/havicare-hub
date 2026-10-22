@@ -13,7 +13,6 @@ use Tests\Support\Doubles\VeepooFixtures;
 /** O `commercialName` vem do catálogo de modelos, e os campos desconhecidos omitem-se em vez de saírem vazios. */
 final class BridgeCommercialNameTest extends TestCase
 {
-    private const BRACELET = '9f69c4866e6c';
     private const TOPIC = 'havicare-hub/null/0/gw/bef341903987/raw';
 
     public function testTelemetryCarriesTheCommercialNameFromTheCatalogue(): void
@@ -39,12 +38,7 @@ final class BridgeCommercialNameTest extends TestCase
     public function testTheDailyBlocksCarryItToo(): void
     {
         $mqtt = new RecordingHubMqttBridge();
-        $this->bridge($mqtt)->handleReceivedMessage(self::TOPIC, json_encode([
-            'source' => 'veepoo-node',
-            'kind' => 'daily_block',
-            'device' => ['mac' => self::BRACELET],
-            'payload' => [['date' => '2026-09-08-10-05', 'pulseReat' => [72]]],
-        ], JSON_THROW_ON_ERROR));
+        $this->bridge($mqtt)->handleReceivedMessage(self::TOPIC, VeepooFixtures::message('daily_block', [['date' => '2026-09-08-10-05', 'pulseReat' => [72]]]));
 
         self::assertSame('Havicare MF91', $mqtt->telemetry[0]['payload']['device']['commercialName'] ?? null);
     }
@@ -61,31 +55,21 @@ final class BridgeCommercialNameTest extends TestCase
 
     private static function battery(): string
     {
-        return json_encode([
-            'source' => 'veepoo-node',
-            'kind' => 'battery',
-            'device' => ['mac' => self::BRACELET],
-            'payload' => ['VPDeviceIsPercent' => true, 'VPDeviceElectricPercent' => 64],
-        ], JSON_THROW_ON_ERROR);
+        return VeepooFixtures::message('battery', ['VPDeviceIsPercent' => true, 'VPDeviceElectricPercent' => 64]);
     }
 
     private static function sleep(): string
     {
-        return json_encode([
-            'source' => 'veepoo-node',
-            'kind' => 'sleep',
-            'device' => ['mac' => self::BRACELET],
-            'payload' => [
-                'fallAsleepTime' => '09-14-23-10',
-                'exitSleepTime' => '09-15-07-30',
-                'nightScore' => 88,
-                'sleepTotalTime' => 480,
-                'deepSleepTime' => 120,
-                'lightSleepTime' => 330,
-                'otherSleepTime' => 30,
-                'sleepCurve' => '00112234',
-            ],
-        ], JSON_THROW_ON_ERROR);
+        return VeepooFixtures::message('sleep', [
+            'fallAsleepTime' => '09-14-23-10',
+            'exitSleepTime' => '09-15-07-30',
+            'nightScore' => 88,
+            'sleepTotalTime' => 480,
+            'deepSleepTime' => 120,
+            'lightSleepTime' => 330,
+            'otherSleepTime' => 30,
+            'sleepCurve' => '00112234',
+        ]);
     }
 
     private function bridge(RecordingHubMqttBridge $mqtt, ?CommercialModelResolver $resolver = null): VeepooBridge

@@ -147,12 +147,7 @@ final class GatewayTenantBoundaryTest extends TestCase
 
     private function sessionPayload(): string
     {
-        return json_encode([
-            'source' => 'veepoo-node',
-            'kind' => 'session',
-            'device' => ['mac' => self::MF91],
-            'payload' => ['authenticated' => true],
-        ], JSON_THROW_ON_ERROR);
+        return VeepooFixtures::message('session', ['authenticated' => true], self::MF91);
     }
 
     /**

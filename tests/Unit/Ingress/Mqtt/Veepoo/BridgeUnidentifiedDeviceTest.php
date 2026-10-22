@@ -60,12 +60,7 @@ final class BridgeUnidentifiedDeviceTest extends TestCase
             }
         );
 
-        $this->bridge($store)->handleReceivedMessage(self::TOPIC, json_encode([
-            'source' => 'veepoo-node',
-            'kind' => 'battery',
-            'device' => ['mac' => 'aabbccddeeff'],
-            'payload' => ['VPDeviceIsPercent' => true, 'VPDeviceElectricPercent' => 57],
-        ], JSON_THROW_ON_ERROR));
+        $this->bridge($store)->handleReceivedMessage(self::TOPIC, VeepooFixtures::message('battery', ['VPDeviceIsPercent' => true, 'VPDeviceElectricPercent' => 57], 'aabbccddeeff'));
 
         self::assertSame(['aabbccddeeff'], $recorded);
     }

@@ -53,12 +53,7 @@ final class BridgeSessionTest extends TestCase
         $bridge = VeepooFixtures::bridge($mqtt);
 
         $bridge->handleReceivedMessage(self::TOPIC, self::session(true));
-        $bridge->handleReceivedMessage(self::TOPIC, json_encode([
-            'source' => 'veepoo-node',
-            'kind' => 'session',
-            'device' => ['mac' => self::BRACELET],
-            'payload' => ['connected' => false],
-        ], JSON_THROW_ON_ERROR));
+        $bridge->handleReceivedMessage(self::TOPIC, VeepooFixtures::message('session', ['connected' => false]));
 
         self::assertCount(1, $mqtt->ofType('device.disconnected', 'events'));
     }
