@@ -4,12 +4,12 @@ import {
     getNotifications,
     markNotificationsRead,
 } from "./api/index.js";
-import { getDashboardApiToken } from "./api/http.js";
+import { isSignedIn } from "./api/http.js";
 import { ago, when } from "./format.js";
 import { countLabel } from "./i18n.js";
 import { html, raw } from "./html.js";
 import { apiError, confirmDestructive, toast } from "./dialogs.js";
-import { els } from "./dom.js";
+import { els, whileVisible } from "./dom.js";
 
 const POLL_INTERVAL_MS = 15_000;
 
@@ -136,10 +136,7 @@ const render = () => {
 };
 
 const load = async () => {
-    if (
-        document.body.dataset.dashboardAuthRequired === "true" &&
-        !getDashboardApiToken()?.access_token
-    ) {
+    if (!isSignedIn()) {
         return false;
     }
 
@@ -160,10 +157,7 @@ const load = async () => {
 
 /** O poll de fundo só pede a contagem para a pastilha; a lista refaz-se quando o menu abre. */
 const refreshBadge = async () => {
-    if (
-        document.body.dataset.dashboardAuthRequired === "true" &&
-        !getDashboardApiToken()?.access_token
-    ) {
+    if (!isSignedIn()) {
         return;
     }
     const result = await getNotifications(1);
@@ -310,13 +304,6 @@ export function initNotifications(context) {
     window.addEventListener("hub-dashboard-api-token-updated", () => {
         void load();
     });
-    // Um separador escondido não sonda, e ao voltar relê-se já.
-    const refreshBadgeWhenVisible = () => {
-        if (!document.hidden) {
-            void refreshBadge();
-        }
-    };
-    window.setInterval(refreshBadgeWhenVisible, POLL_INTERVAL_MS);
-    document.addEventListener("visibilitychange", refreshBadgeWhenVisible);
+    whileVisible(() => void refreshBadge(), POLL_INTERVAL_MS);
     void load();
 }

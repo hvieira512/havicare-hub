@@ -1,8 +1,8 @@
 /** A raiz de composição da dashboard: uma funcionalidade nunca importa outra. */
 import { getDevice as apiGetDevice } from "./api/index.js";
-import { getDashboardApiToken } from "./api/http.js";
+import { isSignedIn } from "./api/http.js";
 import { refreshSelectedDetail, setDeviceFilters, state } from "./state.js";
-import { cacheElements, els } from "./dom.js";
+import { cacheElements, els, whileVisible } from "./dom.js";
 import { trackStickyTop } from "./sticky-top.js";
 import { bindDeviceEvents } from "./wiring/devices.js";
 import { bindInvalidClearing } from "./validation.js";
@@ -120,21 +120,11 @@ function wireDashboard() {
 
 /** Relê o registo do dispositivo, e não o histórico, que só o stream traz; escondido, não sonda. */
 export function startSelectedDevicePolling() {
-    const refreshWhenVisible = () => {
-        if (!document.hidden) {
-            refreshSelectedDevice();
-        }
-    };
-
-    setInterval(refreshWhenVisible, DEVICE_REFRESH_MS);
-    document.addEventListener("visibilitychange", refreshWhenVisible);
+    whileVisible(refreshSelectedDevice, DEVICE_REFRESH_MS);
 }
 
 function refreshSelectedDevice() {
-    if (
-        document.body.dataset.dashboardAuthRequired === "true" &&
-        !getDashboardApiToken()?.access_token
-    ) {
+    if (!isSignedIn()) {
         return;
     }
     if (!state.selectedImei) {

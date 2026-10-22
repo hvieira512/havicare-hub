@@ -58,7 +58,7 @@ const { initNotifications } = await import("../../src/Dashboard/dashboard/notifi
 const { startSelectedDevicePolling } = await import("../../src/Dashboard/dashboard/app.js");
 const { state } = await import("../../src/Dashboard/dashboard/state.js");
 
-const notificationTicks = capturedInterval(window, () => {
+const notificationTicks = capturedInterval(globalThis, () => {
     cacheElements({
         dashboardNotificationsDropdown: divWithId("dashboardNotificationsDropdown"),
         dashboardNotificationsBadge: divWithId("dashboardNotificationsBadge"),

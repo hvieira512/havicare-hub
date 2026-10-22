@@ -5,6 +5,10 @@ let apiToken = null;
 let tokenEpoch = 0;
 export const getDashboardApiToken = () => apiToken;
 
+/** Pode-se falar com a API: ou a página não pede sessão, ou já há uma. */
+export const isSignedIn = () =>
+    document.body.dataset.dashboardAuthRequired !== "true" || Boolean(apiToken?.access_token);
+
 export const authHeaders = () => {
     const token = apiToken?.access_token || "";
     return token === "" ? {} : { Authorization: `Bearer ${token}` };

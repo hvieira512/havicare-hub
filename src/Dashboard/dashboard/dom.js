@@ -7,6 +7,15 @@ export function cacheElements(found = null) {
     return els;
 }
 
+/** Corre o `fn` a cada `ms` e ao voltar ao separador; escondido, não corre. */
+export function whileVisible(fn, ms) {
+    const run = () => {
+        if (!document.hidden) fn();
+    };
+    setInterval(run, ms);
+    document.addEventListener("visibilitychange", run);
+}
+
 const lastHtml = new WeakMap();
 
 /** Escreve a marcação só quando difere da anterior, porque substituir o `innerHTML` tira o foco. */
