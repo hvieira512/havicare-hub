@@ -41,9 +41,6 @@ final class JoyTechThermometerBridge extends DeviceBridge implements GatewayRela
 
     private const SITES = [1 => 'ear', 2 => 'forehead'];
 
-    /** @var array<string, float> quando se respondeu ao último pedido de hora */
-    private array $clockAnsweredAt = [];
-
     private readonly GattDownlinks $downlinks;
 
     private readonly BraceletPresence $presence;
@@ -102,8 +99,7 @@ final class JoyTechThermometerBridge extends DeviceBridge implements GatewayRela
         $now = $this->clockNow();
         if ($frame['function'] === 0x06) {
             // Sem resposta o aparelho não mede, e desliga-se.
-            if ($now - ($this->clockAnsweredAt[$context->deviceKey] ?? -INF) >= self::CLOCK_REQUEST_BURST_SECONDS) {
-                $this->clockAnsweredAt[$context->deviceKey] = $now;
+            if ($this->allow('clock:' . $context->deviceKey, self::CLOCK_REQUEST_BURST_SECONDS)) {
                 $this->downlinks->sendDirect($context->deviceKey, $context->gatewayKey, 'answerClock', [], 0, $offsetMinutes);
             }
             return;

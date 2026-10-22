@@ -38,7 +38,6 @@ final class MokoBridge extends MqttBridgeBase implements DispatchesQueued
 
     /** A manutenção corre no máximo uma vez a cada tantos segundos, e não a cada tique. */
     private const MAINTENANCE_INTERVAL_SECONDS = 5.0;
-    private float $lastMaintenanceAt = 0.0;
 
     /** @param list<GatewayRelay> $relays */
     public function __construct(
@@ -96,9 +95,6 @@ final class MokoBridge extends MqttBridgeBase implements DispatchesQueued
     private readonly RelayPublisher $relay;
     private readonly GatewayPresence $gateways;
 
-    /** @var array<string, float> */
-    private array $relayingSeenAt = [];
-
     private const RELAYING_SEEN_SECONDS = 60;
     private readonly MessageDecoder $messageDecoder;
     private readonly MonitMecsProDecoder $monitDecoder;
@@ -120,10 +116,8 @@ final class MokoBridge extends MqttBridgeBase implements DispatchesQueued
         $deviceKey = (string)$gateway['imei'];
         $this->gateways->touch($deviceKey);
         // Reencaminha dezenas de tramas por segundo: o «visto» guarda-se de minuto a minuto.
-        $now = $this->clockNow();
         $cameOnline = false;
-        if ($now - ($this->relayingSeenAt[$deviceKey] ?? -INF) >= self::RELAYING_SEEN_SECONDS) {
-            $this->relayingSeenAt[$deviceKey] = $now;
+        if ($this->allow('relaying:' . $deviceKey, self::RELAYING_SEEN_SECONDS)) {
             $cameOnline = $this->deviceStore?->deviceSeen($deviceKey, [
                 'supplier' => (string)$gateway['supplier'], 'model' => (string)$gateway['model'],
                 'deviceType' => 'gateway', 'licenseId' => DeviceMetadata::normalizeLicenseId($gateway['licenseId'] ?? 0),
@@ -193,11 +187,9 @@ final class MokoBridge extends MqttBridgeBase implements DispatchesQueued
      */
     public function runDueMaintenance(): void
     {
-        $now = (float)$this->clockNow();
-        if ($now - $this->lastMaintenanceAt < self::MAINTENANCE_INTERVAL_SECONDS) {
+        if (!$this->allow('maintenance', self::MAINTENANCE_INTERVAL_SECONDS)) {
             return;
         }
-        $this->lastMaintenanceAt = $now;
         $this->expireIdleGateways();
         $this->expireStaleProximity();
     }

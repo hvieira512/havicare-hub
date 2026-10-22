@@ -15,7 +15,6 @@ use Hub\Ingress\Mqtt\Lefu\ScaleOnlineUsers;
 use Hub\Ingress\Mqtt\Moko\MokoBridge;
 use Hub\Ingress\Mqtt\Moko\MokoGatewayOptions;
 use Hub\Ingress\Mqtt\Ncs\NcsBridge;
-use Hub\Ingress\Mqtt\Qinglanst\DashboardWritePolicy as QinglanstDashboardWritePolicy;
 use Hub\Ingress\Mqtt\Qinglanst\QinglanstBridge;
 use Hub\Ingress\Mqtt\Veepoo\VeepooBridge;
 use Hub\Ingress\Tuya\TuyaBridge;
@@ -197,10 +196,8 @@ final class MqttIngressFactory
                 $topicFilter,
                 $reconnect,
                 $services->deviceStore,
-                dashboardWritePolicy: new QinglanstDashboardWritePolicy(
-                    (int)$config['qinglanst']['dashboard_seen_min_interval_ms'],
-                    (int)$config['qinglanst']['raw_history_sample_ms'],
-                ),
+                seenIntervalMs: (int)$config['qinglanst']['dashboard_seen_min_interval_ms'],
+                rawHistorySampleMs: (int)$config['qinglanst']['raw_history_sample_ms'],
                 commercialModelResolver: $services->commercialModelResolver,
                 denylist: $services->denylist,
                 idleTimeoutSeconds: (int)$config['qinglanst']['idle_timeout_seconds'],

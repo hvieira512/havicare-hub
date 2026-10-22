@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Hub\Ingress\Mqtt\JoyTech;
 
+use Hub\Support\Throttle;
+
 /**
  * Os ECG em curso de cada tensiómetro: o `0x85` da contagem abre, cada `0x87` junta amostras e o
  * `0x86` fecha. O aparelho repete o `0x85` e o `0x86` até ter resposta, e só a primeira conta.
@@ -22,8 +24,12 @@ final class EcgRecordings
     /** @var array<string, array{samples: list<int>}> */
     private array $open = [];
 
-    /** @var array<string, float> */
-    private array $answeredAt = [];
+    private readonly Throttle $answered;
+
+    public function __construct()
+    {
+        $this->answered = new Throttle();
+    }
 
     /** @return bool se é o primeiro `0x85` desta contagem, e tem de ter resposta */
     public function countdown(string $deviceKey, float $now): bool
@@ -72,11 +78,6 @@ final class EcgRecordings
 
     private function first(string $key, float $now): bool
     {
-        if ($now - ($this->answeredAt[$key] ?? -INF) < self::REPEAT_SECONDS) {
-            return false;
-        }
-        $this->answeredAt[$key] = $now;
-
-        return true;
+        return $this->answered->allow($key, self::REPEAT_SECONDS, $now);
     }
 }

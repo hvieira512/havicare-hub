@@ -64,12 +64,6 @@ final class LefuTorreBridge extends DeviceBridge implements GatewayRelay, Dispat
      */
     private array $lastStatus = [];
 
-    /**
-     * Quando saiu a última pesagem completa.
-     *
-     * @var array<string, float>
-     */
-    private array $lastFinalAt = [];
 
     /**
      * A impedância cifrada da pesagem em curso, que chega antes da trama final.
@@ -242,11 +236,10 @@ final class LefuTorreBridge extends DeviceBridge implements GatewayRelay, Dispat
         if (!$frame['complete']) {
             return;
         }
-        $now = $this->clockNow();
-        if ($now - ($this->lastFinalAt[$deviceKey] ?? -INF) < self::REPEATED_FINAL_SECONDS) {
+        if (!$this->allow('final:' . $deviceKey, self::REPEATED_FINAL_SECONDS)) {
             return;
         }
-        $this->lastFinalAt[$deviceKey] = $now;
+        $now = $this->clockNow();
 
         $at = gmdate('Y-m-d\TH:i:s\Z', (int)$now);
         $profile = $this->onlineUser($deviceKey);

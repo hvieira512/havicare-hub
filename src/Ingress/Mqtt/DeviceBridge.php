@@ -13,6 +13,7 @@ use Hub\Ingress\Mqtt\Gateway\GattDeviceContext;
 use Hub\Log\Logger;
 use Hub\Registry\Denylist;
 use Hub\Registry\Whitelist;
+use Hub\Support\Throttle;
 
 /** O que todas as pontes de ingestão partilham: a whitelist, os avisos estrangulados e o aparelho GATT. */
 abstract class DeviceBridge
@@ -23,22 +24,9 @@ abstract class DeviceBridge
     /** E o mesmo para as queixas que se repetem a cada trama. */
     private const REPEATED_WARNING_INTERVAL_SECONDS = 60;
 
-    /** @var array<string, int> */
-    private array $lastUnauthorizedAt = [];
-
-    /**
-     * Quando cada queixa repetida foi escrita pela última vez.
-     *
-     * @var array<string, int>
-     */
-    private array $lastWarnedAt = [];
-
-    private int $lastUnauthorizedPruneAt = 0;
-
     private const LINK_SIGNAL_SECONDS = 10.0;
 
-    /** @var array<string, float> */
-    private array $linkSignalAt = [];
+    private readonly Throttle $throttle;
 
     private \Closure $clock;
 
@@ -51,6 +39,7 @@ abstract class DeviceBridge
         protected readonly ?CommercialModelResolver $commercialModelResolver = null,
     ) {
         $this->clock = $clock !== null ? \Closure::fromCallable($clock) : static fn(): float => microtime(true);
+        $this->throttle = new Throttle();
     }
 
     /** O relógio do ingress, em segundos com fracção; na base porque o travão dos avisos também o usa. */
@@ -59,25 +48,21 @@ abstract class DeviceBridge
         return (float)($this->clock)();
     }
 
+    /** No máximo uma vez por janela e por chave, no relógio do ingress. */
+    protected function allow(string $key, float $seconds): bool
+    {
+        return $this->throttle->allow($key, $seconds, $this->clockNow());
+    }
+
     /**
      * Escreve um aviso uma vez por assunto e por janela. O `$subject` é o que conta como a
      * mesma queixa, como o par aparelho/gateway.
      */
     protected function warnRepeatedly(string $subject, string $message): void
     {
-        $now = (int)$this->clockNow();
-        foreach ($this->lastWarnedAt as $key => $at) {
-            if (($now - $at) >= self::REPEATED_WARNING_INTERVAL_SECONDS) {
-                unset($this->lastWarnedAt[$key]);
-            }
+        if ($this->allow('warning:' . $subject, self::REPEATED_WARNING_INTERVAL_SECONDS)) {
+            Logger::channel('hub')->warning($message);
         }
-
-        if (isset($this->lastWarnedAt[$subject])) {
-            return;
-        }
-
-        $this->lastWarnedAt[$subject] = $now;
-        Logger::channel('hub')->warning($message);
     }
 
     /**
@@ -103,13 +88,9 @@ abstract class DeviceBridge
         }
 
         // Um radar publica ~20 msg/s: o aviso regista-se uma vez por identidade e janela.
-        $now = (int)$this->clockNow();
-        $this->forgetExpiredUnauthorized($now);
-        $last = $this->lastUnauthorizedAt[$identity] ?? null;
-        if ($last !== null && ($now - $last) < self::UNAUTHORIZED_RECORD_INTERVAL_SECONDS) {
+        if (!$this->allow('unauthorized:' . $identity, self::UNAUTHORIZED_RECORD_INTERVAL_SECONDS)) {
             return;
         }
-        $this->lastUnauthorizedAt[$identity] = $now;
 
         try {
             $this->deviceStore?->recordRejectedDevice(
@@ -125,24 +106,6 @@ abstract class DeviceBridge
             Logger::channel('hub')->error(
                 "Failed to record rejected device identity={$identity}: {$e->getMessage()}"
             );
-        }
-    }
-
-    /**
-     * Esquece as identidades que já saíram da janela do travão, uma vez por janela: o processo
-     * corre meses e o varrimento é linear.
-     */
-    private function forgetExpiredUnauthorized(int $now): void
-    {
-        if (($now - $this->lastUnauthorizedPruneAt) < self::UNAUTHORIZED_RECORD_INTERVAL_SECONDS) {
-            return;
-        }
-        $this->lastUnauthorizedPruneAt = $now;
-
-        foreach ($this->lastUnauthorizedAt as $identity => $at) {
-            if (($now - $at) >= self::UNAUTHORIZED_RECORD_INTERVAL_SECONDS) {
-                unset($this->lastUnauthorizedAt[$identity]);
-            }
         }
     }
 
@@ -224,11 +187,9 @@ abstract class DeviceBridge
         if (!is_int($rssiDbm)) {
             return;
         }
-        $now = $this->clockNow();
-        if ($now - ($this->linkSignalAt[$deviceKey . '|' . $gatewayKey] ?? -INF) < self::LINK_SIGNAL_SECONDS) {
+        if (!$this->allow("link:{$deviceKey}|{$gatewayKey}", self::LINK_SIGNAL_SECONDS)) {
             return;
         }
-        $this->linkSignalAt[$deviceKey . '|' . $gatewayKey] = $now;
         $this->deviceStore?->recordGatewaySighting($deviceKey, $gatewayKey, $rssiDbm);
     }
 }

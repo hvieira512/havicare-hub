@@ -14,12 +14,10 @@ final class QinglanstBridge extends MqttBridgeBase
 {
     private readonly PayloadDecoder $decoder;
     private readonly MessageNormalizer $normalizer;
-    private readonly DashboardWritePolicy $dashboardWritePolicy;
     private readonly ConnectionAnnouncer $connections;
     private readonly ActiveDetections $activeDetections;
     /** O varrimento dos radares calados corre no máximo de dez em dez segundos. */
     private const MAINTENANCE_INTERVAL_SECONDS = 10.0;
-    private float $lastMaintenanceAt = 0.0;
     private const SUPPORTED_TYPES = ['position', 'heartbreath', 'posstatics', 'hbstatics'];
     /** O tópico traz a licença e não a empresa, e estes radares só existem para a hitcare. */
     private const RADAR_COMPANY = 'hitcare';
@@ -31,7 +29,8 @@ final class QinglanstBridge extends MqttBridgeBase
         string $topicFilter = 'radar/1001/#',
         ?callable $reconnectSubscriber = null,
         ?\Hub\State\DeviceReportStore $deviceStore = null,
-        ?DashboardWritePolicy $dashboardWritePolicy = null,
+        private readonly int $seenIntervalMs = 5000,
+        private readonly int $rawHistorySampleMs = 30000,
         ?\Hub\Device\CommercialModelResolver $commercialModelResolver = null,
         ?\Hub\Registry\Denylist $denylist = null,
         private readonly int $idleTimeoutSeconds = 180,
@@ -51,7 +50,6 @@ final class QinglanstBridge extends MqttBridgeBase
         );
         $this->decoder = new PayloadDecoder();
         $this->normalizer = new MessageNormalizer();
-        $this->dashboardWritePolicy = $dashboardWritePolicy ?? new DashboardWritePolicy();
         $this->connections = new ConnectionAnnouncer($mqttBridge, $deviceStore);
         $this->activeDetections = new ActiveDetections();
     }
@@ -97,8 +95,7 @@ final class QinglanstBridge extends MqttBridgeBase
     public function tick(float $timeout = 0.01): void
     {
         parent::tick($timeout);
-        if ($this->clockNow() - $this->lastMaintenanceAt >= self::MAINTENANCE_INTERVAL_SECONDS) {
-            $this->lastMaintenanceAt = $this->clockNow();
+        if ($this->allow('maintenance', self::MAINTENANCE_INTERVAL_SECONDS)) {
             $this->expireIdleRadars();
         }
     }
@@ -167,7 +164,6 @@ final class QinglanstBridge extends MqttBridgeBase
         $deviceType = (string)$device['deviceType'];
         $licenseId = DeviceMetadata::normalizeLicenseId($device['licenseId'] ?? 0);
         $company = (string)($device['company'] ?? 'null');
-        $nowMs = (int) floor(microtime(true) * 1000);
 
         // A trama que chega é a mensagem original do radar, republicada em `raw` para debugging.
         $raw = [
@@ -185,11 +181,11 @@ final class QinglanstBridge extends MqttBridgeBase
         ];
         // O MQTT leva tudo; o histórico da dashboard, uma amostra.
         $this->mqttBridge->publishRaw($deviceKey, $raw, $deviceType, $licenseId, $company);
-        if ($this->deviceStore !== null && $this->dashboardWritePolicy->shouldStoreRaw($deviceKey, $nowMs)) {
+        if ($this->deviceStore !== null && $this->allow('raw:' . $deviceKey, $this->rawHistorySampleMs / 1000)) {
             $this->deviceStore->append($deviceKey, 'raw', $raw + ['deviceType' => $deviceType, 'licenseId' => $licenseId]);
         }
 
-        if ($this->deviceStore !== null && $this->dashboardWritePolicy->shouldUpdateSeen($deviceKey, $nowMs)) {
+        if ($this->deviceStore !== null && $this->allow('seen:' . $deviceKey, $this->seenIntervalMs / 1000)) {
             $cameOnline = $this->deviceStore->deviceSeen($deviceKey, [
                 'supplier' => (string)$device['supplier'],
                 'model' => (string)$device['model'],

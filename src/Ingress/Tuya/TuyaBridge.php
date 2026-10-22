@@ -13,6 +13,7 @@ use Hub\Log\Logger;
 use Hub\Registry\Denylist;
 use Hub\Registry\Whitelist;
 use Hub\State\DeviceReportStore;
+use Hub\Support\Throttle;
 use Ratchet\Client\Connector;
 use Ratchet\Client\WebSocket;
 use Ratchet\RFC6455\Messaging\Frame;
@@ -40,8 +41,8 @@ final class TuyaBridge implements MqttIngress
     /** @var array<string, int> entregas falhadas por `messageId` */
     private array $failedDeliveries = [];
 
-    /** @var array<string, int> quando cada aparelho por registar foi anotado, uma vez por minuto */
-    private array $rejectedAt = [];
+    /** Cada aparelho por registar é anotado uma vez por minuto. */
+    private readonly Throttle $rejected;
 
     public function __construct(
         private readonly string $accessId,
@@ -59,6 +60,7 @@ final class TuyaBridge implements MqttIngress
         $this->normalizer = new MessageNormalizer();
         $this->connections = new ConnectionAnnouncer($mqttBridge, $deviceStore);
         $this->loop = $loop ?? Loop::get();
+        $this->rejected = new Throttle();
     }
 
     /** A ligação é assíncrona e volta a tentar sozinha: uma cloud em baixo não impede o hub de arrancar. */
@@ -125,8 +127,7 @@ final class TuyaBridge implements MqttIngress
 
         $device = $this->whitelist->resolve($deviceId, self::PROTOCOL);
         if ($device === null) {
-            if (!$this->denylist?->contains($deviceId) && time() - ($this->rejectedAt[$deviceId] ?? 0) >= 60) {
-                $this->rejectedAt[$deviceId] = time();
+            if (!$this->denylist?->contains($deviceId) && $this->rejected->allow($deviceId, 60, time())) {
                 $this->deviceStore?->recordRejectedDevice($deviceId, self::PROTOCOL, '', $deviceId, 'device_not_authorized');
             }
             return;

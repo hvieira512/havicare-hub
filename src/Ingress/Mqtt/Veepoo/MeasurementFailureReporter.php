@@ -7,6 +7,7 @@ namespace Hub\Ingress\Mqtt\Veepoo;
 use Hub\State\DeviceReportStore;
 use Hub\Device\HubMqttBridge;
 use Hub\Device\RawPayload;
+use Hub\Support\Throttle;
 
 /**
  * Diz porque é que uma medição da pulseira não produziu valor, como acontecimento e não
@@ -17,17 +18,13 @@ final class MeasurementFailureReporter
     /** Quanto tempo a mesma queixa do mesmo aparelho fica calada depois de relatada. */
     private const FAILURE_REPEAT_SECONDS = 60;
 
-    /**
-     * Quando cada par aparelho/motivo foi relatado pela última vez.
-     *
-     * @var array<string, int>
-     */
-    private array $lastFailureAt = [];
+    private readonly Throttle $reported;
 
     public function __construct(
         private readonly HubMqttBridge $mqttBridge,
         private readonly ?DeviceReportStore $deviceStore,
     ) {
+        $this->reported = new Throttle();
     }
 
     /** @param array<string, mixed> $device */
@@ -39,12 +36,9 @@ final class MeasurementFailureReporter
         string $reason,
     ): void {
         // Uma vez por janela e não por trama: o ECG repete a queixa enquanto não há contacto.
-        $key = $deviceKey . '|' . $reason;
-        $now = time();
-        if ($now - ($this->lastFailureAt[$key] ?? 0) < self::FAILURE_REPEAT_SECONDS) {
+        if (!$this->reported->allow($deviceKey . '|' . $reason, self::FAILURE_REPEAT_SECONDS, time())) {
             return;
         }
-        $this->lastFailureAt[$key] = $now;
 
         // O motivo vai em `error`: o comando que pediu a medição aqui não se conhece.
         $event = RawPayload::event(
