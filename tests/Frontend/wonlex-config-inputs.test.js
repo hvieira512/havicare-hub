@@ -53,9 +53,28 @@ test("the temperature threshold accepts decimals", () => {
     assert.equal(readConfigPayload(root).thresholdCelsius, 37.8);
 });
 
-test("the low heart rate alert is not sent without a limit", () => {
-    const root = section(lowHeartRateEntry, { enabled: true, exerciseEnabled: true });
+const bloodPressureEntry = {
+    key: "blood_pressure_alert",
+    capabilityKey: "blood_pressure_alert",
+    input: "wonlexBloodPressureWarning",
+    fields: ["enabled", "systolicMmHg", "diastolicMmHg"],
+};
+
+test("a blank heart rate limit is left out of the payload, not sent as zero", () => {
+    const root = section(lowHeartRateEntry, { enabled: true, exerciseEnabled: true, exerciseMinBpm: 100 });
 
     assert.equal(root.querySelector("[data-config-field=\"thresholdBpm\"]").value, "");
-    assert.throws(() => readConfigPayload(root), /limite/i);
+    assert.deepEqual(readConfigPayload(root), { enabled: true, exerciseEnabled: true, exerciseMinBpm: 100 });
+});
+
+test("a blank blood pressure limit is left out of the payload", () => {
+    const root = section(bloodPressureEntry, { enabled: true, systolicMmHg: 135 });
+
+    assert.deepEqual(readConfigPayload(root), { enabled: true, systolicMmHg: 135 });
+});
+
+test("a blank temperature threshold is left out of the payload", () => {
+    const root = section(temperatureEntry, { enabled: true });
+
+    assert.deepEqual(readConfigPayload(root), { enabled: true });
 });
