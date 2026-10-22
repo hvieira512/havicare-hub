@@ -351,14 +351,9 @@ class PillDispenserAdapter implements DeviceAdapterInterface
 
     public static function encodeDeviceNumber(string $id, string $kind): int
     {
+        // Um dígito por nibble: os quinze dígitos do IMEI lidos como hexadecimal.
         if ($kind === 'imei') {
-            $value = 0;
-            $digits = str_pad($id, 15, '0', STR_PAD_LEFT);
-            for ($i = 0; $i < 15; $i++) {
-                $value = ($value << 4) | (ord($digits[$i]) - 48);
-            }
-
-            return (1 << 62) | $value;
+            return (1 << 62) | (int)hexdec(str_pad($id, 15, '0', STR_PAD_LEFT));
         }
 
         return hexdec($id) & 0xFFFFFFFFFFFF;

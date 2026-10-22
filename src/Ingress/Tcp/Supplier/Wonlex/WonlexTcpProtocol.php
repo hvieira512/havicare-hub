@@ -39,54 +39,20 @@ final class WonlexTcpProtocol extends TcpProtocol
     protected function responsesForDecoded(DeviceSession $session, array $decoded): array
     {
         $type = (string)($decoded['type'] ?? '');
-        $responses = [];
         $timestamp = (int) round(microtime(true) * 1000);
-        $state = $this->state($session);
+        $ident = $this->replyIdent($decoded['ident'] ?? null);
 
         if ($type === 'login') {
-            $responses[] = new TcpResponse($this->adapter->encodeOutgoing([
-                'type' => 'login',
-                'ident' => $this->replyIdent($decoded['ident'] ?? null),
-                'ref' => 's:reply',
-                'imei' => $session->imei,
-                'data' => [
-                    'type' => 'login',
-                    'imei' => $session->imei,
-                    'timestamp' => $timestamp,
-                ],
-                'timestamp' => $timestamp,
-            ]));
-
-            return $responses;
+            return [$this->reply($session, $type, $ident, $timestamp)];
         }
-
         if ($type === 'heartbeat') {
-            $responses[] = new TcpResponse($this->adapter->encodeOutgoing([
-                'type' => 'heartbeat',
-                'ident' => $this->replyIdent($decoded['ident'] ?? null),
-                'ref' => 's:reply',
-                'imei' => $session->imei,
-                'data' => [
-                    'type' => 'heartbeat',
-                    'imei' => $session->imei,
-                    'deviceModel' => $session->model,
-                    'timestamp' => $timestamp,
-                ],
-                'timestamp' => $timestamp,
-            ]));
-
-            return $responses;
+            return [$this->reply($session, $type, $ident, $timestamp, ['deviceModel' => $session->model])];
+        }
+        if (($decoded['ref'] ?? '') !== 'w:update' || $type === '') {
+            return [];
         }
 
-        if (($decoded['ref'] ?? '') !== 'w:update') {
-            return $responses;
-        }
-
-        if ($type === '') {
-            return $responses;
-        }
-
-        $ident = $this->replyIdent($decoded['ident'] ?? null);
+        $state = $this->state($session);
         if ($type === 'upGetDevConfig') {
             return $this->configurationSyncResponses($session, $state['configurations'] ?? [], $ident, $timestamp);
         }
@@ -97,20 +63,24 @@ final class WonlexTcpProtocol extends TcpProtocol
                 'value' => $this->sleepSummary($sleep),
             ], $ident, $timestamp)];
         }
-        $responses[] = new TcpResponse($this->adapter->encodeOutgoing([
+        return [$this->reply($session, $type, $ident, $timestamp, publishRaw: true)];
+    }
+
+    /**
+     * O `s:reply` com que o hub responde a uma trama do relógio.
+     *
+     * @param array<string, mixed> $data o que segue no `data` entre o `imei` e o `timestamp`
+     */
+    private function reply(DeviceSession $session, string $type, int $ident, int $timestamp, array $data = [], bool $publishRaw = false): TcpResponse
+    {
+        return new TcpResponse($this->adapter->encodeOutgoing([
             'type' => $type,
             'ident' => $ident,
             'ref' => 's:reply',
             'imei' => $session->imei,
-            'data' => [
-                'type' => $type,
-                'imei' => $session->imei,
-                'timestamp' => $timestamp,
-            ],
+            'data' => ['type' => $type, 'imei' => $session->imei] + $data + ['timestamp' => $timestamp],
             'timestamp' => $timestamp,
-        ]), true);
-
-        return $responses;
+        ]), $publishRaw);
     }
 
     /** @return array<string, mixed> */

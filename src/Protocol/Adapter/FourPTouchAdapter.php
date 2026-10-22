@@ -116,36 +116,6 @@ class FourPTouchAdapter implements DeviceAdapterInterface
      */
     private function enrichData(string $type, array $fields, array &$data): void
     {
-        if ($type === 'LK') {
-            $data['steps'] = $this->int($fields[0] ?? null);
-            $data['tumblingCount'] = $this->int($fields[1] ?? null);
-            $data['batteryPercent'] = $this->int($fields[2] ?? null);
-            return;
-        }
-
-        if ($type === 'bphrt') {
-            $data['systolic'] = $this->int($fields[0] ?? null);
-            $data['diastolic'] = $this->int($fields[1] ?? null);
-            $data['heartRate'] = $this->int($fields[2] ?? null);
-            $data['heightCm'] = $this->int($fields[3] ?? null);
-            $data['gender'] = $this->gender($fields[4] ?? null);
-            $data['age'] = $this->int($fields[5] ?? null);
-            $data['weightKg'] = $this->int($fields[6] ?? null);
-            return;
-        }
-
-        if ($type === 'oxygen') {
-            $data['measureType'] = $this->int($fields[0] ?? null);
-            $data['spo2'] = $this->int($fields[1] ?? null);
-            return;
-        }
-
-        if ($type === 'btemp2') {
-            $data['measureType'] = $this->int($fields[0] ?? null);
-            $data['temp'] = $this->float($fields[1] ?? null);
-            return;
-        }
-
         if ($this->isPositionType($type) || $this->isAlarmType($type)) {
             $this->enrichPosition($type, $fields, $data);
             if ($this->isAlarmType($type)) {
@@ -157,53 +127,59 @@ class FourPTouchAdapter implements DeviceAdapterInterface
             return;
         }
 
-        if ($type === 'CONFIG') {
-            $data['configAck'] = $fields[0] ?? null;
-            $configs = [];
-            foreach ($fields as $field) {
-                if (!is_string($field) || !str_contains($field, ':')) {
-                    continue;
-                }
-
-                [$key, $value] = array_map('trim', explode(':', $field, 2));
-                if ($key !== '') {
-                    $configs[$key] = $value;
-                }
-            }
-
-            if ($configs !== []) {
-                $data['configs'] = $configs;
-            }
-            return;
-        }
-
-        if ($type === 'TAKEPILLS') {
-            $data['configAck'] = $fields[0] ?? null;
-            return;
-        }
-
-        if ($type === 'WIFIINFOUP') {
+        $data = array_merge($data, match ($type) {
+            'LK' => [
+                'steps' => $this->int($fields[0] ?? null),
+                'tumblingCount' => $this->int($fields[1] ?? null),
+                'batteryPercent' => $this->int($fields[2] ?? null),
+            ],
+            'bphrt' => [
+                'systolic' => $this->int($fields[0] ?? null),
+                'diastolic' => $this->int($fields[1] ?? null),
+                'heartRate' => $this->int($fields[2] ?? null),
+                'heightCm' => $this->int($fields[3] ?? null),
+                'gender' => $this->gender($fields[4] ?? null),
+                'age' => $this->int($fields[5] ?? null),
+                'weightKg' => $this->int($fields[6] ?? null),
+            ],
+            'oxygen' => ['measureType' => $this->int($fields[0] ?? null), 'spo2' => $this->int($fields[1] ?? null)],
+            'btemp2' => ['measureType' => $this->int($fields[0] ?? null), 'temp' => $this->float($fields[1] ?? null)],
+            'CONFIG' => ['configAck' => $fields[0] ?? null] + self::configs($fields),
+            'TAKEPILLS' => ['configAck' => $fields[0] ?? null],
             // A palavra-passe da rede, no campo 1, não se descodifica nem se repete.
-            $data['wifiNameHex'] = $fields[0] ?? null;
-            $data['wifiSsid'] = $fields[2] ?? null;
-            $data['wifiName'] = $this->hexAscii($fields[0] ?? null);
-            return;
+            'WIFIINFOUP' => [
+                'wifiNameHex' => $fields[0] ?? null,
+                'wifiSsid' => $fields[2] ?? null,
+                'wifiName' => $this->hexAscii($fields[0] ?? null),
+            ],
+            'TK' => ['audioData' => $fields[0] ?? null],
+            'VERNO' => ['firmware' => $fields[0] ?? null],
+            'TS' => self::deviceStatus($fields[0] ?? null),
+            default => [],
+        });
+    }
+
+    /**
+     * Os campos `chave:valor` da resposta ao `CONFIG`, em `configs` quando há algum.
+     *
+     * @param list<string> $fields
+     * @return array{configs?: array<string, string>}
+     */
+    private static function configs(array $fields): array
+    {
+        $configs = [];
+        foreach ($fields as $field) {
+            if (!str_contains($field, ':')) {
+                continue;
+            }
+
+            [$key, $value] = array_map('trim', explode(':', $field, 2));
+            if ($key !== '') {
+                $configs[$key] = $value;
+            }
         }
 
-        if ($type === 'TK') {
-            $data['audioData'] = $fields[0] ?? null;
-            return;
-        }
-
-        if ($type === 'VERNO') {
-            $data['firmware'] = $fields[0] ?? null;
-            return;
-        }
-
-        if ($type === 'TS') {
-            $data += self::deviceStatus($fields[0] ?? null);
-            return;
-        }
+        return $configs === [] ? [] : ['configs' => $configs];
     }
 
     /**

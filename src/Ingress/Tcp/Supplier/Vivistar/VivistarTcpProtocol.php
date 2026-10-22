@@ -30,20 +30,10 @@ final class VivistarTcpProtocol extends TcpProtocol
             return [new TcpResponse($this->adapter->encodeOutgoing(['type' => 'login_ok']))];
         }
 
-        $ack = match ($type) {
-            'AP01' => 'IWBP01#',
-            'AP02' => 'IWBP02#',
-            'AP03' => 'IWBP03#',
-            'AP10' => 'IWBP10#',
-            'AP49' => 'IWBP49#',
-            'APHT' => 'IWBPHT#',
-            'APHP' => 'IWBPHP#',
-            'AP50' => 'IWBP50#',
-            'APHD' => 'IWBPHD#',
-            default => null,
-        };
-
-        return $ack !== null ? [new TcpResponse($ack)] : [];
+        // A confirmação é o próprio tipo com `IWB` em vez de `A`: `AP01` → `IWBP01#`.
+        return in_array($type, ['AP01', 'AP02', 'AP03', 'AP10', 'AP49', 'APHT', 'APHP', 'AP50', 'APHD'], true)
+            ? [new TcpResponse('IWB' . substr($type, 1) . '#')]
+            : [];
     }
 
     public function downlinkCorrelation(string $bytes): array

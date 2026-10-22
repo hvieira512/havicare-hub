@@ -35,12 +35,7 @@ final class FirmwareUpgrade
     /** A soma acumulada dos bytes do ficheiro, que é o que o `0x0E` leva como código. */
     public static function checksum(string $firmware): int
     {
-        $sum = 0;
-        foreach (unpack('C*', $firmware) ?: [] as $byte) {
-            $sum += $byte;
-        }
-
-        return $sum;
+        return array_sum(unpack('C*', $firmware) ?: []);
     }
 
     /**
