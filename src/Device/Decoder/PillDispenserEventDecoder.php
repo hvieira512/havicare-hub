@@ -403,10 +403,7 @@ final class PillDispenserEventDecoder
         // Um evento por alarme: dois acontecimentos numa mensagem obrigavam quem consome a
         // desempacotar uma lista para ler um facto.
         foreach ($doses as $dose) {
-            $events[] = ['feature' => 'medication_alarm_change', 'nativeType' => $nativeType, 'value' => [
-                'slot' => $dose['alarm'],
-                'state' => $dose['state'],
-            ]];
+            $events[] = ['feature' => 'medication_alarm_change', 'nativeType' => $nativeType, 'value' => $dose];
         }
 
         return $events;
@@ -439,15 +436,15 @@ final class PillDispenserEventDecoder
      * é que distingue a leitura dos nove da notificação de um, e quem chama é que decide.
      *
      * @param array<int, array{value?: string, state?: int}> $tlv
-     * @return list<array{alarm: int, state: string}>
+     * @return list<array{slot: int, state: string}>
      */
     private static function doseStates(array $tlv): array
     {
         $doses = [];
-        foreach (range(1, PillDispenserAdapter::ALARM_SLOTS) as $alarm) {
+        foreach (range(1, PillDispenserAdapter::ALARM_SLOTS) as $slot) {
             // São oito, e são duas fases: o aparelho primeiro empurra a dose para fora, e só
             // depois espera que alguém a levante. Cada fase tem o seu tempo esgotado.
-            $state = match (Tlv::u8($tlv, 0x8130 + $alarm)) {
+            $state = match (Tlv::u8($tlv, 0x8130 + $slot)) {
                 0 => 'idle',
                 1 => 'preparing',
                 2 => 'waiting',
@@ -459,7 +456,7 @@ final class PillDispenserEventDecoder
                 default => null,
             };
             if ($state !== null) {
-                $doses[] = ['alarm' => $alarm, 'state' => $state];
+                $doses[] = ['slot' => $slot, 'state' => $state];
             }
         }
 

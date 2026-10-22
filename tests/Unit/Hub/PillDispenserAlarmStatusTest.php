@@ -31,14 +31,14 @@ final class PillDispenserAlarmStatusTest extends TestCase
             'takenCount' => 1,
             'missedCount' => 1,
             'alarms' => [
-                ['alarm' => 1, 'state' => 'taken'],
-                ['alarm' => 2, 'state' => 'waiting'],
-                ['alarm' => 3, 'state' => 'missed'],
-                ['alarm' => 4, 'state' => 'idle'],
-                ['alarm' => 5, 'state' => 'timed_out'],
-                ['alarm' => 6, 'state' => 'preparing'],
-                ['alarm' => 7, 'state' => 'awaiting_retrieval'],
-                ['alarm' => 8, 'state' => 'retrieval_timed_out'],
+                ['slot' => 1, 'state' => 'taken'],
+                ['slot' => 2, 'state' => 'waiting'],
+                ['slot' => 3, 'state' => 'missed'],
+                ['slot' => 4, 'state' => 'idle'],
+                ['slot' => 5, 'state' => 'timed_out'],
+                ['slot' => 6, 'state' => 'preparing'],
+                ['slot' => 7, 'state' => 'awaiting_retrieval'],
+                ['slot' => 8, 'state' => 'retrieval_timed_out'],
             ],
         ], $events['medication_alarm_status'] ?? null);
     }
@@ -60,7 +60,7 @@ final class PillDispenserAlarmStatusTest extends TestCase
         ]);
 
         self::assertSame(
-            [['alarm' => 1, 'state' => 'taken']],
+            [['slot' => 1, 'state' => 'taken']],
             $events['medication_alarm_status']['alarms'] ?? null,
         );
     }

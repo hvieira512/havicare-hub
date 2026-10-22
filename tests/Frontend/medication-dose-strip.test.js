@@ -27,7 +27,7 @@ const PLAN = {
 
 const NINE = (overrides = {}) =>
     Array.from({ length: 9 }, (_unused, index) => ({
-        alarm: index + 1,
+        slot: index + 1,
         state: overrides[index + 1] || "idle",
     }));
 
@@ -129,8 +129,8 @@ test("the alarm list never shows as [object Object]", () => {
         takenCount: 1,
         missedCount: 1,
         alarms: [
-            { alarm: 1, state: "taken" },
-            { alarm: 3, state: "missed" },
+            { slot: 1, state: "taken" },
+            { slot: 3, state: "missed" },
         ],
     });
 
@@ -143,9 +143,9 @@ test("a missed dose is the main value", () => {
         takenCount: 2,
         missedCount: 1,
         alarms: [
-            { alarm: 1, state: "taken" },
-            { alarm: 2, state: "taken" },
-            { alarm: 3, state: "missed" },
+            { slot: 1, state: "taken" },
+            { slot: 2, state: "taken" },
+            { slot: 3, state: "missed" },
         ],
     });
 
@@ -157,8 +157,8 @@ test("without misses, the main value is the doses taken", () => {
         takenCount: 2,
         missedCount: 0,
         alarms: [
-            { alarm: 1, state: "taken" },
-            { alarm: 2, state: "taken" },
+            { slot: 1, state: "taken" },
+            { slot: 2, state: "taken" },
         ],
     });
 
@@ -172,9 +172,9 @@ test("disabled alarms do not fill the card", () => {
         takenCount: 0,
         missedCount: 0,
         alarms: [
-            { alarm: 1, state: "idle" },
-            { alarm: 2, state: "waiting" },
-            { alarm: 3, state: "idle" },
+            { slot: 1, state: "idle" },
+            { slot: 2, state: "waiting" },
+            { slot: 3, state: "idle" },
         ],
     });
 
@@ -188,7 +188,7 @@ test("with everything disabled the card says there are no doses, in Portuguese",
     const rendered = card({
         takenCount: 0,
         missedCount: 0,
-        alarms: [{ alarm: 1, state: "idle" }],
+        alarms: [{ slot: 1, state: "idle" }],
     });
 
     assert.doesNotMatch(rendered, /TakenCount|MissedCount|Alarms/);

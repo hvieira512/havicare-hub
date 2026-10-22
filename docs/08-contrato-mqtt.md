@@ -333,7 +333,8 @@ O dispensador conta as horas no relógio dele, sem fuso. O hub situa-as com o
 
 O `slot` é o número do alarme (1–9), o mesmo do `slot` das horas do plano em
 `configurations.medication_reminders`: é por ele que se chega ao nome do
-medicamento.
+medicamento. A leitura dos nove, o `medication_alarm_status` em `telemetry`,
+chama-o igual: `alarms[{slot, state}]`.
 
 **Sem fuso confirmado, as horas não saem.** O hub não sabe a que hora está o
 relógio do aparelho, e uma hora local publicada como UTC estaria errada sem que
@@ -525,7 +526,7 @@ As versões anteriores do contrato contêm as seguintes incorreções:
 | Os alarmes dos relógios saem em `telemetry` | Saem em `events`, a QoS 1 |
 | O `device_state` dos relógios sai em `telemetry` | Sai em `events`, a QoS 1. Está declarado como acontecimento desde sempre; o que o mandava para o outro canal era a lista à mão que o `isEvent` substituiu |
 | O estado de toma dos alarmes do dispensador é sempre `medication_alarm_status` | A **leitura dos nove** continua a sê-lo, em `telemetry`; a **mudança de um** é `medication_alarm_change`, em `events` a QoS 1. Uma dose falhada chega pelos dois: a mudança do alarme para `missed`, e um `medication_intake` com `result: "missed"` |
-| O `scheduledAt` e o `takenAt` do `medication_intake` são a hora local do aparelho, sem fuso, e o alarme chama-se `alarmSlot` na toma e `alarm` na mudança | Saem em UTC com `Z`, pelo fuso confirmado, e o alarme é o `slot` nos dois |
+| O `scheduledAt` e o `takenAt` do `medication_intake` são a hora local do aparelho, sem fuso, e o alarme chama-se `alarmSlot` na toma e `alarm` na mudança e na leitura dos nove (`medication_alarm_status.alarms[]`) | Saem em UTC com `Z`, pelo fuso confirmado, e o alarme é o `slot` nos três |
 | Os alarmes dos relógios saem num `type: "alarm"` com um `reason` | Cada motivo é um tipo: `help_call`, `fall`, `low_battery`, `device_removed`, `zone_entry`/`zone_exit`, `heart_rate_abnormal` |
 | As detecções do radar saem em `fall`, `vitals_alarm` e `presence_event`, com `detectionType`, `detectionCategory`, `detectionLevel`, `detectionSource` e `details` | Cada detecção é um tipo, com os campos no `data`; o grau é a `severity` |
 | O radar publica `vitals_signal_lost` quando não mede ninguém | Um quarto vazio não publica nada; o sinal fraco do `hbstatics` é `weak_vital_signs` |

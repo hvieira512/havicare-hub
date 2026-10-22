@@ -309,7 +309,7 @@ que impede um `0xAA` perdido numa dessincronização de passar por trama.
 | `0x8102` | `device_config` | `settings.child_lock.enabled` — não é telemetria: o que ele diz é o que nós lá pusemos, e por isso viaja como configuração reportada |
 | `0x8105` | — | Nada. Sabe o ligado/desligado do «não incomodar» mas não a janela, e as duas escreviam na mesma chave: como o `saveReported` substitui o payload inteiro, meia configuração apagava a outra metade. A janela completa — interruptor incluído — vem só na resposta ao `0x05` |
 | `0x8111` | `storage_environment` | `outOfRange` — o juízo do aparelho sobre a temperatura e a humidade que ele mede. **Só é publicado quando dispara**: como leitura, enchia o histórico com linhas a dizer que estava tudo bem |
-| `0x8131`–`0x8139` **num `0x87`** | `medication_alarm_status` | `takenCount`, `missedCount`, `alarms[{alarm, state}]` — a leitura dos nove, que só a resposta ao `0x07` traz |
+| `0x8131`–`0x8139` **num `0x87`** | `medication_alarm_status` | `takenCount`, `missedCount`, `alarms[{slot, state}]` — a leitura dos nove, que só a resposta ao `0x07` traz |
 | `0x8131`–`0x8139` **num `0x04`/`0x02`** | `medication_alarm_change` | `slot`, `state` — o alarme que mudou, um evento por alarme. O hub junta-lhe o `scheduledAt` e o `doseDate` da dose, do plano e do fuso confirmados |
 | `0x8121`–`0x8125` | `device_fault` | `fault`: `rotation` · `tray_reset` · `pusher` · `cell_door` · `keys` |
 | `0x8112` | `help_call` | — · o `1` (chamada em curso) é o pedido de ajuda; o `0` não gera nada |

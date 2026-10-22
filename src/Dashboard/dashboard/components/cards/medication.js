@@ -57,7 +57,7 @@ export function medicationDoseStrip(alarms) {
     }
 
     const hours = planHours();
-    const bySlot = new Map(alarms.map((entry) => [Number(entry?.alarm), String(entry?.state || "idle")]));
+    const bySlot = new Map(alarms.map((entry) => [Number(entry?.slot), String(entry?.state || "idle")]));
 
     // Uma dose é um slot que o plano marcou; sem plano, um slot que o aparelho reportou fora do
     // repouso.
@@ -141,7 +141,7 @@ export function medicationAlarmContent(data) {
         // O texto das doses vivas só aparece onde a faixa não chega: a linha da lista de actividade.
         details: strip === ""
             ? live
-                    .map((entry) => html`${doseLabel(entry.alarm)}: ${fieldValue("state", entry.state)}`)
+                    .map((entry) => html`${doseLabel(entry.slot)}: ${fieldValue("state", entry.state)}`)
                     .join(" · ")
             : "",
         span: 12,

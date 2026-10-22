@@ -220,6 +220,7 @@ sair depois de ela ter apagado.
 | `tilt` | radar | `xDegrees`, `yDegrees`, `zDegrees`, `factoryCalibrated` — o ângulo do radar com os três eixos; no teto o X e o Y ficam dentro de ±10° |
 | `diaper_moisture` · `diaper_moisture_level` · `diaper_condition` | sensor de fralda | ver o [capítulo 17](17-sensor-de-fralda.md) |
 | `medication_intake` | dispensador | `slot` (1–9), `scheduledAt` e `takenAt` em UTC (ver o [contrato](08-contrato-mqtt.md#as-horas-das-tomas-do-dispensador)), `cellNumber`, `method`: `on_time` · `early` · `late`, `result`: `on_time` · `late` · `abnormal` · `missed` |
+| `medication_alarm_status` | dispensador | `takenCount`, `missedCount` e `alarms[{slot, state}]` — o estado de cada um dos nove alarmes, com o mesmo `slot` (1–9) do `medication_intake` e do plano |
 | `cells_remaining` | dispensador | `current`, `total`, `remaining`, `level`: `ok` · `low` · `empty`, e `runoutAt` — o `total` é a capacidade do prato, não quantas células vão carregadas, o `level` é o juízo grosseiro do aparelho sobre a mesma contagem, e o `runoutAt` é quando sai a última dose (ISO 8601 no fuso do aparelho; `null` sem plano ou depois do fim do período) |
 | `ambient_temperature` | dispensador | `environmentCelsius` — o ar onde a caixa está, e não uma pessoa |
 | `ambient_humidity` | dispensador | `humidityPercent` — a humidade do ar onde a caixa está, e não a da fralda |
