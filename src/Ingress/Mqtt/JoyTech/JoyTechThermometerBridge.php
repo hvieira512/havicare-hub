@@ -59,7 +59,7 @@ final class JoyTechThermometerBridge extends DeviceBridge implements GatewayRela
         parent::__construct($whitelist, $mqttBridge, $deviceStore, $denylist, $clock, $commercialModelResolver);
         // Não há fila: as duas escritas são respostas ao que o aparelho manda.
         $this->downlinks = new GattDownlinks(null, $mqttBridge, $deviceStore, $topicFilter, (new JoyTechCommandEncoder())->writes(...));
-        $this->presence = new BraceletPresence($mqttBridge, $deviceStore, self::PROTOCOL, self::DEVICE_TYPE);
+        $this->presence = new BraceletPresence($mqttBridge, $deviceStore, self::PROTOCOL);
     }
 
     /** A fonte é a de todos os JoyTech: o nome do aparelho distingue-os. */
@@ -82,8 +82,8 @@ final class JoyTechThermometerBridge extends DeviceBridge implements GatewayRela
         $offset = is_int($message['tzOffsetMinutes'] ?? null) ? $message['tzOffsetMinutes'] : 0;
         match ($message['kind'] ?? null) {
             'session' => ($data['connected'] ?? false) === true
-                ? $this->presence->markOnline($context->deviceKey, $context->device, $context->licenseId, $context->company)
-                : $this->presence->markOffline($context->deviceKey, $context->device, $context->licenseId, $context->company),
+                ? $this->presence->markOnline($context->deviceKey, $context->device)
+                : $this->presence->markOffline($context->deviceKey, $context->device),
             'frame' => $this->frame($context, (string)($data['hex'] ?? ''), $offset),
             default => null,
         };

@@ -169,12 +169,12 @@ final class JoyTechBpBridge extends DeviceBridge implements GatewayRelay, Dispat
             unset($this->reading[$deviceKey]);
             $this->ecg->drop($deviceKey);
             unset($this->sessions[$deviceKey]);
-            $this->presence($context)->markOffline($deviceKey, $context->device, $context->licenseId, $context->company);
+            $this->presence($context)->markOffline($deviceKey, $context->device);
             return;
         }
 
         $this->sessions[$deviceKey] = ['gateway' => $context->gatewayKey, 'offset' => $offsetMinutes, 'memoryRead' => false, 'readAt' => null];
-        $this->presence($context)->markOnline($deviceKey, $context->device, $context->licenseId, $context->company);
+        $this->presence($context)->markOnline($deviceKey, $context->device);
 
         // O aparelho não pede a hora, e a memória é datada por ela: acerta-se a cada ligação.
         $this->downlinks->sendDirect($deviceKey, $context->gatewayKey, 'calibrateClock', [], 0, $offsetMinutes);
@@ -276,7 +276,7 @@ final class JoyTechBpBridge extends DeviceBridge implements GatewayRelay, Dispat
     {
         $protocol = self::protocolOf($context);
 
-        return $this->presences[$protocol] ??= new BraceletPresence($this->mqttBridge, $this->reports, $protocol, self::DEVICE_TYPE);
+        return $this->presences[$protocol] ??= new BraceletPresence($this->mqttBridge, $this->reports, $protocol);
     }
 
     /** O 6292B e o 6679B partilham a ponte; o protocolo diz qual mede o ECG. */

@@ -102,7 +102,7 @@ final class LefuTorreBridge extends DeviceBridge implements GatewayRelay, Dispat
         $this->scaleUsers = $scaleUsers !== null ? \Closure::fromCallable($scaleUsers) : null;
         $this->decoder = new TorreFrameDecoder();
         $this->downlinks = new GattDownlinks($queue, $mqttBridge, $deviceStore, $topicFilter, (new TorreCommandEncoder())->writes(...));
-        $this->presence = new BraceletPresence($mqttBridge, $deviceStore, self::PROTOCOL, self::DEVICE_TYPE);
+        $this->presence = new BraceletPresence($mqttBridge, $deviceStore, self::PROTOCOL);
     }
 
     public function dispatchQueued(): void
@@ -157,13 +157,13 @@ final class LefuTorreBridge extends DeviceBridge implements GatewayRelay, Dispat
     {
         if (($data['connected'] ?? false) !== true) {
             unset($this->sessions[$context->deviceKey], $this->encodedImpedance[$context->deviceKey], $this->lastStatus[$context->deviceKey]);
-            $this->presence->markOffline($context->deviceKey, $context->device, $context->licenseId, $context->company);
+            $this->presence->markOffline($context->deviceKey, $context->device);
             return;
         }
 
         $mtu = is_int($data['mtu'] ?? null) && $data['mtu'] > 2 ? $data['mtu'] : self::DEFAULT_MTU;
         $this->sessions[$context->deviceKey] = ['gateway' => $context->gatewayKey, 'mtu' => $mtu, 'offset' => $offsetMinutes];
-        $this->presence->markOnline($context->deviceKey, $context->device, $context->licenseId, $context->company);
+        $this->presence->markOnline($context->deviceKey, $context->device);
 
         $battery = $data['battery'] ?? null;
         if (is_int($battery) && $battery >= 0 && $battery <= 100) {
@@ -199,7 +199,7 @@ final class LefuTorreBridge extends DeviceBridge implements GatewayRelay, Dispat
         // Um hub reiniciado com a balança ligada não viu a sessão abrir: a primeira trama abre-a.
         if (!isset($this->sessions[$context->deviceKey])) {
             $this->sessions[$context->deviceKey] = ['gateway' => $context->gatewayKey, 'mtu' => self::DEFAULT_MTU, 'offset' => $offsetMinutes];
-            $this->presence->markOnline($context->deviceKey, $context->device, $context->licenseId, $context->company);
+            $this->presence->markOnline($context->deviceKey, $context->device);
         }
         $nativeType = $characteristic . ':' . substr(strtolower(preg_replace('/\s+/', '', $hex) ?? ''), 0, 2);
 

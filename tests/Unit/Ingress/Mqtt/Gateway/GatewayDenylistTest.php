@@ -17,7 +17,7 @@ use Tests\Support\Doubles\ArrayObservationStateStore;
 use Tests\Support\Doubles\IngressFixtures;
 use Tests\Support\Doubles\RecordingHubMqttBridge;
 
-/** Um aparelho bloqueado atrás do gateway BLE não dá notificação, como um radar bloqueado. */
+/** O que as pontes do gateway BLE têm em comum: o bloqueio, o sinal da ligação e o cliente no tópico. */
 final class GatewayDenylistTest extends TestCase
 {
     private const GATEWAY = 'bef341903987';
@@ -67,12 +67,7 @@ final class GatewayDenylistTest extends TestCase
                 $sightings[] = [$device, $gateway, $rssiDbm];
             }
         );
-        $whitelist = [self::STRANGER => IngressFixtures::device('X', $model, match ($bridge) {
-            'veepoo' => 'bracelet',
-            'lefu' => 'scale',
-            'joytech-bp' => 'blood_pressure_monitor',
-            'joytech-thermometer' => 'thermometer',
-        })];
+        $whitelist = [self::STRANGER => IngressFixtures::device('X', $model, self::deviceType($bridge))];
 
         IngressFixtures::relay(self::bridge($bridge, $store, new Denylist(), $whitelist), self::TOPIC, json_encode([
             'source' => $source,
@@ -84,16 +79,54 @@ final class GatewayDenylistTest extends TestCase
         self::assertSame([[self::STRANGER, self::GATEWAY, -63]], $sightings);
     }
 
+    /** @param 'veepoo'|'lefu'|'joytech-bp'|'joytech-thermometer' $bridge */
+    #[DataProvider('bridges')]
+    public function testTheRelayedDevicePublishesUnderItsOwnTenant(string $bridge, string $source, string $model): void
+    {
+        $mqtt = new RecordingHubMqttBridge();
+        $whitelist = [self::STRANGER => IngressFixtures::device('X', $model, self::deviceType($bridge), '2006', 'hitcare')];
+        $gateway = IngressFixtures::device('Havicare', 'BLE Gateway', 'gateway', '2006', 'hitcare');
+
+        IngressFixtures::relay(self::bridge($bridge, $this->createMock(DeviceStoreContract::class), new Denylist(), $whitelist, $mqtt, $gateway), self::TOPIC, json_encode([
+            'source' => $source,
+            'kind' => 'session',
+            'device' => ['mac' => self::STRANGER, 'model' => $model],
+            'payload' => ['connected' => true, 'authenticated' => true],
+        ], JSON_THROW_ON_ERROR));
+
+        self::assertNotSame([], $mqtt->raw);
+        foreach ([...$mqtt->raw, ...$mqtt->statuses, ...$mqtt->events] as $published) {
+            self::assertSame([2006, 'hitcare'], [$published['licenseId'], $published['company']]);
+        }
+    }
+
+    /** @param 'veepoo'|'lefu'|'joytech-bp'|'joytech-thermometer' $bridge */
+    private static function deviceType(string $bridge): string
+    {
+        return match ($bridge) {
+            'veepoo' => 'bracelet',
+            'lefu' => 'scale',
+            'joytech-bp' => 'blood_pressure_monitor',
+            'joytech-thermometer' => 'thermometer',
+        };
+    }
+
     /**
      * @param 'veepoo'|'lefu'|'joytech-bp'|'joytech-thermometer' $name
      * @param array<string, array<string, mixed>> $devices
+     * @param array<string, string>|null $gateway
      */
-    private static function bridge(string $name, DeviceStoreContract $store, Denylist $denylist, array $devices = []): GatewayRelay
-    {
+    private static function bridge(
+        string $name,
+        DeviceStoreContract $store,
+        Denylist $denylist,
+        array $devices = [],
+        RecordingHubMqttBridge $mqtt = new RecordingHubMqttBridge(),
+        ?array $gateway = null,
+    ): GatewayRelay {
         $whitelist = IngressFixtures::whitelist([
-            self::GATEWAY => IngressFixtures::device('Havicare', 'BLE Gateway', 'gateway'),
+            self::GATEWAY => $gateway ?? IngressFixtures::device('Havicare', 'BLE Gateway', 'gateway'),
         ] + $devices);
-        $mqtt = new RecordingHubMqttBridge();
         $links = IngressFixtures::links();
         $topic = 'havicare-hub/null/0/gw/+/raw';
 

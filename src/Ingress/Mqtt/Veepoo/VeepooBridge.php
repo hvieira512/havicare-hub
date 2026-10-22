@@ -171,11 +171,11 @@ final class VeepooBridge extends DeviceBridge implements GatewayRelay, Dispatche
             // A sessão repete-se enquanto a ligação BLE durar; um gateway antigo só manda o `authenticated`.
             if (($message['payload']['connected'] ?? true) === false || ($message['payload']['authenticated'] ?? true) === false) {
                 unset($this->sessionGateway[$deviceKey]);
-                $this->presence->markOffline($deviceKey, $device, $licenseId, $company);
+                $this->presence->markOffline($deviceKey, $device);
                 return;
             }
 
-            $this->presence->markOnline($deviceKey, $device, $licenseId, $company);
+            $this->presence->markOnline($deviceKey, $device);
             $this->publishFirmware((string)($message['device']['firmware'] ?? ''), $context);
             $this->sessionGateway[$deviceKey] = (string)$gateway['imei'];
             $this->downlinkDispatcher->dispatchPending($deviceKey, (string)$gateway['imei']);

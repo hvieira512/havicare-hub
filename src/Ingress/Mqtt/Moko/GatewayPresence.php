@@ -4,10 +4,9 @@ declare(strict_types=1);
 
 namespace Hub\Ingress\Mqtt\Moko;
 
-use Hub\State\DeviceReportStore;
+use Hub\Device\ConnectionAnnouncer;
 use Hub\Device\HubMqttBridge;
-use Hub\Device\RawPayload;
-use Hub\Domain\DeviceMetadata;
+use Hub\State\DeviceReportStore;
 
 /**
  * Se cada gateway está vivo: um gateway pode cair sem `will`, e por isso estar vivo é ter
@@ -27,6 +26,8 @@ final class GatewayPresence
 
     private \Closure $clock;
 
+    private readonly ConnectionAnnouncer $announcer;
+
     public function __construct(
         private readonly HubMqttBridge $mqttBridge,
         private readonly ?DeviceReportStore $deviceStore,
@@ -34,6 +35,7 @@ final class GatewayPresence
         ?callable $clock = null,
     ) {
         $this->clock = $clock !== null ? \Closure::fromCallable($clock) : static fn(): float => microtime(true);
+        $this->announcer = new ConnectionAnnouncer($mqttBridge, $deviceStore);
     }
 
     /** Marca o instante em que este gateway falou. Chamado a cada trama dele. */
@@ -43,8 +45,8 @@ final class GatewayPresence
     }
 
     /**
-     * Anuncia o gateway como ligado, se ainda não estava: o estado sai retido a cada anúncio,
-     * o acontecimento só na transição. `$cameOnline` diz que o Redis o tinha por desligado.
+     * Anuncia o gateway como ligado, se ainda não estava. `$cameOnline` diz que o Redis o tinha
+     * por desligado.
      *
      * @param array<string, mixed> $gateway
      */
@@ -55,17 +57,7 @@ final class GatewayPresence
             return;
         }
         $this->online[$deviceKey] = $gateway;
-
-        $deviceType = (string)$gateway['deviceType'];
-        $licenseId = DeviceMetadata::normalizeLicenseId($gateway['licenseId'] ?? 0);
-        $company = (string)($gateway['company'] ?? 'null');
-        $commercial = (string)($gateway['commercialName'] ?? '');
-        $status = RawPayload::status($deviceKey, (string)$gateway['supplier'], (string)$gateway['model'], 'online', null, $commercial);
-        $event = RawPayload::event($deviceKey, (string)$gateway['supplier'], (string)$gateway['model'], 'device.connected', null, null, $commercial);
-
-        $this->mqttBridge->publishStatus($deviceKey, $status, true, $deviceType, $licenseId, $company);
-        $this->mqttBridge->publishEvent($deviceKey, $event, $deviceType, $licenseId, $company);
-        $this->deviceStore?->append($deviceKey, 'events', $event + ['deviceType' => $deviceType, 'licenseId' => $licenseId]);
+        $this->announcer->announce($deviceKey, $gateway, true);
     }
 
     /** Dá por desligado quem passou do prazo sem falar. */
@@ -76,24 +68,16 @@ final class GatewayPresence
             if ($now - ($this->lastSeenAt[$deviceKey] ?? $now) < $this->idleTimeoutSeconds) {
                 continue;
             }
-            $deviceType = (string)$gateway['deviceType'];
-            $licenseId = DeviceMetadata::normalizeLicenseId($gateway['licenseId'] ?? 0);
-            $company = (string)($gateway['company'] ?? 'null');
-            $commercial = (string)($gateway['commercialName'] ?? '');
-            $status = RawPayload::status($deviceKey, (string)$gateway['supplier'], (string)$gateway['model'], 'offline', null, $commercial);
-            $event = RawPayload::event($deviceKey, (string)$gateway['supplier'], (string)$gateway['model'], 'device.disconnected', null, null, $commercial);
 
             // Só sai da lista depois de o `offline` sair, para se retentar; os outros seguem.
             try {
-                $this->mqttBridge->publishStatus($deviceKey, $status, true, $deviceType, $licenseId, $company);
-                $this->mqttBridge->publishEvent($deviceKey, $event, $deviceType, $licenseId, $company);
+                $this->announcer->announce((string)$deviceKey, $gateway, false);
             } catch (\Throwable $e) {
-                $this->mqttBridge->logPublishFailure('hub', $deviceKey, $e);
+                $this->mqttBridge->logPublishFailure('hub', (string)$deviceKey, $e);
                 continue;
             }
 
-            $this->deviceStore?->deviceOffline($deviceKey);
-            $this->deviceStore?->append($deviceKey, 'events', $event + ['deviceType' => $deviceType, 'licenseId' => $licenseId]);
+            $this->deviceStore?->deviceOffline((string)$deviceKey);
             unset($this->online[$deviceKey], $this->lastSeenAt[$deviceKey]);
         }
     }

@@ -57,7 +57,7 @@ final class JoyTechOximeterBridge extends DeviceBridge implements GatewayRelay, 
         ?Denylist $denylist = null,
     ) {
         parent::__construct($whitelist, $mqttBridge, $deviceStore, $denylist, $clock, $commercialModelResolver);
-        $this->presence = new BraceletPresence($mqttBridge, $deviceStore, self::PROTOCOL, self::DEVICE_TYPE);
+        $this->presence = new BraceletPresence($mqttBridge, $deviceStore, self::PROTOCOL);
     }
 
     public function dispatchQueued(): void
@@ -97,12 +97,12 @@ final class JoyTechOximeterBridge extends DeviceBridge implements GatewayRelay, 
     private function session(GattDeviceContext $context, bool $connected): void
     {
         if ($connected) {
-            $this->presence->markOnline($context->deviceKey, $context->device, $context->licenseId, $context->company);
+            $this->presence->markOnline($context->deviceKey, $context->device);
             return;
         }
 
         $this->finish($context->deviceKey);
-        $this->presence->markOffline($context->deviceKey, $context->device, $context->licenseId, $context->company);
+        $this->presence->markOffline($context->deviceKey, $context->device);
     }
 
     /** O 0x88: SpO2 em %, pulso em bpm, PI, barra e onda, um byte cada. O PI vem sempre a zero. */
