@@ -84,4 +84,54 @@ final class IngressFixtures
             }
         };
     }
+
+    /** Constrói a mensagem de scan BLE do gateway que leva um anúncio MECS-PRO. */
+    public static function monitScan(string $gateway, string $sensor, string $condition, int $battery = 80): string
+    {
+        return json_encode([
+            'msg_id' => 3070,
+            'device_info' => ['mac' => $gateway],
+            'data' => [[
+                'adv_data' => self::monitAdvertisement($sensor, $condition, $battery),
+                'rsp_data' => '0f094d4f4e4954204d4543532050524f',
+                'type_code' => 10, 'type' => 'other', 'rssi' => -83,
+                'connectable' => 0, 'mac' => $sensor,
+            ]],
+        ], JSON_THROW_ON_ERROR);
+    }
+
+    /**
+     * Payload de 20 bytes do fabricante para uma condição: delta máximo < 4 é `clean`, quatro ou mais
+     * canais com delta >= 12 é `change_required`, e o resto é `attention`.
+     */
+    private static function monitAdvertisement(string $sensor, string $condition, int $battery): string
+    {
+        $baseline = array_fill(0, 10, 1);
+        $raw = match ($condition) {
+            'clean' => array_fill(0, 10, 2),                        // delta 1
+            'attention' => array_fill(0, 10, 7),                    // delta 6, nenhum >= 12
+            'change_required' => [13, 13, 13, 13, 1, 1, 1, 1, 1, 1], // 4 canais a delta 12
+            'three_wet' => [13, 13, 13, 1, 1, 1, 1, 1, 1, 1],           // 3 canais a delta 12
+            default => throw new \InvalidArgumentException($condition),
+        };
+
+        $bits = str_pad(decbin(0), 3, '0', STR_PAD_LEFT)            // packetType
+            . str_pad(decbin($battery), 7, '0', STR_PAD_LEFT)       // batteryPercent
+            . '0' . '00' . '000';                                    // alarmType, txStrength, eventStatus
+        foreach ([...$baseline, ...$raw] as $value) {
+            $bits .= str_pad(decbin($value), 6, '0', STR_PAD_LEFT);
+        }
+        // O descodificador exige que os últimos três bytes repitam a cauda do MAC.
+        foreach (str_split(substr($sensor, -6), 2) as $byte) {
+            $bits .= str_pad(decbin((int)hexdec($byte)), 8, '0', STR_PAD_LEFT);
+        }
+
+        $raw20 = '';
+        for ($offset = 0; $offset < 160; $offset += 8) {
+            $raw20 .= sprintf('%02x', bindec(substr($bits, $offset, 8)));
+        }
+
+        $manufacturer = '59000215' . $raw20 . 'c3';
+        return '020104' . sprintf('%02x', strlen($manufacturer) / 2 + 1) . 'ff' . $manufacturer;
+    }
 }
