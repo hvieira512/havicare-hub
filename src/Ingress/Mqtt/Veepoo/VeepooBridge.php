@@ -8,7 +8,7 @@ use Hub\Device\CommercialModelResolver;
 use Hub\Device\DeviceDescriptor;
 use Hub\Device\HubMqttBridge;
 use Hub\Device\LowBatteryTransitions;
-use Hub\Device\PendingDownlinkQueue;
+use Hub\Device\RedisPendingDownlinkQueue;
 use Hub\Device\TelemetryEnvelope;
 use Hub\Domain\GatewayDeviceLinkLookup;
 use Hub\Ingress\Mqtt\Gateway\GattBridge;
@@ -86,7 +86,7 @@ final class VeepooBridge extends GattBridge
         Whitelist $whitelist,
         HubMqttBridge $mqttBridge,
         GatewayDeviceLinkLookup $links,
-        ?PendingDownlinkQueue $downlinks,
+        ?RedisPendingDownlinkQueue $downlinks,
         private readonly ObservationStateStore $state,
         string $topicFilter,
         null|(DeviceReportStore&DeviceCommandLog) $deviceStore = null,

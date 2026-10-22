@@ -28,7 +28,7 @@ class DeviceHubServer
     private DeviceIdentityExtractor $identityExtractor;
     private TcpProtocolRegistry $tcpProtocols;
     private HubMqttBridge $mqtt;
-    private ?PendingDownlinkQueue $downlinkQueue;
+    private ?RedisPendingDownlinkQueue $downlinkQueue;
     private ?DeviceStoreContract $deviceStore;
 
     /** @var array<string, int> */
@@ -44,7 +44,7 @@ class DeviceHubServer
         Whitelist $whitelist,
         HubMqttBridge $mqtt,
         ?CommercialModelResolver $commercialModelResolver = null,
-        ?PendingDownlinkQueue $downlinkQueue = null,
+        ?RedisPendingDownlinkQueue $downlinkQueue = null,
         ?DeviceStoreContract $deviceStore = null,
         int $downlinkQueueTtlSeconds = 300,
         ?LocationTelemetryEnricherContract $locationTelemetryEnricher = null,

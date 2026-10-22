@@ -11,7 +11,6 @@ use Hub\Device\DeviceHubServer;
 use Hub\Device\Firmware\FirmwareUpgradeStore;
 use Hub\Device\HubMqttBridge;
 use Hub\Device\LifecycleEvents;
-use Hub\Device\PendingDownlinkQueue;
 use Hub\Device\RedisPendingDownlinkQueue;
 use Hub\Domain\Capability\Medication\MedicationRunout;
 use Hub\Infrastructure\Persistence\DashboardDatabase;
@@ -44,7 +43,7 @@ final class HubServices
         public readonly ClientInterface $redis,
         public readonly Whitelist $whitelist,
         public readonly Denylist $denylist,
-        public readonly PendingDownlinkQueue $downlinkQueue,
+        public readonly RedisPendingDownlinkQueue $downlinkQueue,
         public readonly DeviceStore $deviceStore,
         public readonly CommercialModelResolver $commercialModelResolver,
         public readonly HubMqttBridge $mqttBridge,

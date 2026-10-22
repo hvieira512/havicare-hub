@@ -6,7 +6,7 @@ namespace Hub\Device;
 
 use Predis\ClientInterface;
 
-final class RedisPendingDownlinkQueue implements PendingDownlinkQueue
+final class RedisPendingDownlinkQueue
 {
     public function __construct(
         private ClientInterface $redis,
@@ -15,6 +15,7 @@ final class RedisPendingDownlinkQueue implements PendingDownlinkQueue
         $this->prefix = trim($this->prefix, ':');
     }
 
+    /** @param array<string, mixed>|null $command o comando que o downlink transporta, para registo */
     public function enqueue(string $imei, string $bytes, ?array $command, int $ttlSeconds): PendingDownlink
     {
         $ttlSeconds = max(1, $ttlSeconds);
@@ -51,6 +52,7 @@ final class RedisPendingDownlinkQueue implements PendingDownlinkQueue
         return $downlink;
     }
 
+    /** @return array<int, PendingDownlink> */
     public function pendingFor(string $imei): array
     {
         $items = [];

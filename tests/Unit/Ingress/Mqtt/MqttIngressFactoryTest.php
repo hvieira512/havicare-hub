@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Ingress\Mqtt;
 
+use Hub\Device\RedisPendingDownlinkQueue;
 use Hub\Device\CommercialModelResolver;
 use Hub\Infrastructure\Persistence\Repository\ApiDataAccess;
 use Hub\Infrastructure\Persistence\Repository\DiaperSensitivityRepository;
@@ -18,7 +19,6 @@ use PHPUnit\Framework\TestCase;
 use React\EventLoop\StreamSelectLoop;
 use Tests\Support\Doubles\InMemoryRedisClient;
 use Tests\Support\Doubles\IngressFixtures;
-use Tests\Support\Doubles\OneShotDownlinkQueue;
 use Tests\Support\Doubles\RecordingConnectionFactory;
 use Tests\Support\Doubles\RecordingHubMqttBridge;
 
@@ -107,7 +107,7 @@ final class MqttIngressFactoryTest extends TestCase
             'redis' => $redis,
             'whitelist' => IngressFixtures::whitelist(),
             'denylist' => new Denylist(),
-            'downlinkQueue' => new OneShotDownlinkQueue(''),
+            'downlinkQueue' => new RedisPendingDownlinkQueue($redis),
             'deviceStore' => new DeviceStore($redis),
             'commercialModelResolver' => new CommercialModelResolver(),
             'mqttBridge' => new RecordingHubMqttBridge(),

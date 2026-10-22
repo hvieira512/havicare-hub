@@ -4,14 +4,14 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Ingress\Mqtt\JoyTech;
 
-use Hub\Device\PendingDownlinkQueue;
+use Hub\Device\RedisPendingDownlinkQueue;
 use Hub\Ingress\Mqtt\JoyTech\BloodPressureHistoryMarks;
 use Hub\Ingress\Mqtt\JoyTech\JoyTechFrame;
 use Hub\Ingress\Mqtt\JoyTech\JoyTechBpBridge;
 use Hub\State\DeviceStoreContract;
 use PHPUnit\Framework\TestCase;
+use Tests\Support\Doubles\InMemoryRedisClient;
 use Tests\Support\Doubles\IngressFixtures;
-use Tests\Support\Doubles\OneShotDownlinkQueue;
 use Tests\Support\Doubles\RecordingHubMqttBridge;
 
 /** Do gateway ao MQTT, com as tramas que o DBP-6292B mandou à sonda a 2026-10-16. */
@@ -262,12 +262,13 @@ final class JoyTechBpBridgeTest extends TestCase
                 $marked[] = [$id, $fields['status']];
             }
         );
-        $queue = new OneShotDownlinkQueue('readBloodPressureHistory', ['id' => 'op-1', 'command' => 'readBloodPressureHistory', 'payload' => []]);
+        $queue = new RedisPendingDownlinkQueue(new InMemoryRedisClient());
+        $read = $queue->enqueue(self::MONITOR, 'readBloodPressureHistory', ['id' => 'op-1', 'command' => 'readBloodPressureHistory', 'payload' => []], 300);
         $bridge = $this->bridge(new RecordingHubMqttBridge(), $queue, $store);
 
         IngressFixtures::relay($bridge, self::TOPIC, self::message('session', ['connected' => true]));
         IngressFixtures::relay($bridge, self::TOPIC, self::frame(self::MEMORY_END));
-        IngressFixtures::relay($bridge, self::TOPIC, self::message('command_result', ['dedupeKey' => 'test-dedupe', 'ok' => true]));
+        IngressFixtures::relay($bridge, self::TOPIC, self::message('command_result', ['dedupeKey' => $read->dedupeKey, 'ok' => true]));
 
         self::assertSame([['op-1', 'waiting'], ['op-1', 'acked']], $marked);
     }
@@ -295,7 +296,8 @@ final class JoyTechBpBridgeTest extends TestCase
     public function testAQueuedReadLeavesWhenTheMonitorConnects(): void
     {
         $mqtt = new RecordingHubMqttBridge();
-        $queue = new OneShotDownlinkQueue('readBloodPressureHistory', ['id' => 'op-1', 'command' => 'readBloodPressureHistory', 'payload' => []]);
+        $queue = new RedisPendingDownlinkQueue(new InMemoryRedisClient());
+        $queue->enqueue(self::MONITOR, 'readBloodPressureHistory', ['id' => 'op-1', 'command' => 'readBloodPressureHistory', 'payload' => []], 300);
 
         IngressFixtures::relay($this->bridge($mqtt, $queue), self::TOPIC, self::message('session', ['connected' => true]));
 
@@ -387,7 +389,7 @@ final class JoyTechBpBridgeTest extends TestCase
 
     private function bridge(
         RecordingHubMqttBridge $mqtt,
-        ?PendingDownlinkQueue $queue = null,
+        ?RedisPendingDownlinkQueue $queue = null,
         ?DeviceStoreContract $store = null,
         bool $links = true,
     ): JoyTechBpBridge {

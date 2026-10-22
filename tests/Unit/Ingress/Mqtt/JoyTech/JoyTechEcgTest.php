@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Ingress\Mqtt\JoyTech;
 
-use Hub\Device\PendingDownlinkQueue;
+use Hub\Device\RedisPendingDownlinkQueue;
 use Hub\Ingress\Mqtt\JoyTech\JoyTechBpBridge;
 use Hub\Ingress\Mqtt\JoyTech\JoyTechFrame;
 use Hub\State\DeviceStoreContract;
 use PHPUnit\Framework\TestCase;
+use Tests\Support\Doubles\InMemoryRedisClient;
 use Tests\Support\Doubles\IngressFixtures;
-use Tests\Support\Doubles\OneShotDownlinkQueue;
 use Tests\Support\Doubles\RecordingHubMqttBridge;
 
 /** Tramas e tempos de chegada de um exame real do DBP-6679B (`ecg-dbp6679b.hex`), em que o ecrã mostrou 73 bpm. */
@@ -63,7 +63,8 @@ final class JoyTechEcgTest extends TestCase
     public function testARequestedReadLeavesWhenTheMonitorConnects(): void
     {
         $mqtt = new RecordingHubMqttBridge();
-        $queue = new OneShotDownlinkQueue('readBloodPressureHistory', ['id' => 'op-1', 'command' => 'readBloodPressureHistory', 'payload' => []]);
+        $queue = new RedisPendingDownlinkQueue(new InMemoryRedisClient());
+        $queue->enqueue(self::MONITOR, 'readBloodPressureHistory', ['id' => 'op-1', 'command' => 'readBloodPressureHistory', 'payload' => []], 300);
 
         IngressFixtures::relay($this->bridge($mqtt, queue: $queue), self::TOPIC, self::message('session', ['connected' => true]));
 
@@ -200,7 +201,7 @@ final class JoyTechEcgTest extends TestCase
         ], JSON_THROW_ON_ERROR);
     }
 
-    private function bridge(RecordingHubMqttBridge $mqtt, ?DeviceStoreContract $store = null, ?PendingDownlinkQueue $queue = null): JoyTechBpBridge
+    private function bridge(RecordingHubMqttBridge $mqtt, ?DeviceStoreContract $store = null, ?RedisPendingDownlinkQueue $queue = null): JoyTechBpBridge
     {
         return new JoyTechBpBridge(
             IngressFixtures::whitelist([

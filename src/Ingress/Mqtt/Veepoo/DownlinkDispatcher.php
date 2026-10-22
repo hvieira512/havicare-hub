@@ -7,7 +7,7 @@ namespace Hub\Ingress\Mqtt\Veepoo;
 use Hub\State\DeviceCommandLog;
 use Hub\Device\HubMqttBridge;
 use Hub\Device\PendingDownlink;
-use Hub\Device\PendingDownlinkQueue;
+use Hub\Device\RedisPendingDownlinkQueue;
 use Hub\Ingress\Mqtt\Gateway\GattDownlinks;
 use Hub\Log\Logger;
 
@@ -31,7 +31,7 @@ final class DownlinkDispatcher
     private array $sentAt = [];
 
     public function __construct(
-        private readonly ?PendingDownlinkQueue $downlinks,
+        private readonly ?RedisPendingDownlinkQueue $downlinks,
         private readonly HubMqttBridge $mqttBridge,
         private readonly ?DeviceCommandLog $deviceStore,
         private readonly string $topicFilter,

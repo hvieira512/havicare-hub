@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Ingress\Mqtt\Lefu;
 
-use Hub\Device\PendingDownlinkQueue;
+use Hub\Device\RedisPendingDownlinkQueue;
 use Hub\Ingress\Mqtt\Lefu\LefuTorreBridge;
 use Hub\State\DeviceStoreContract;
 use PHPUnit\Framework\TestCase;
+use Tests\Support\Doubles\InMemoryRedisClient;
 use Tests\Support\Doubles\IngressFixtures;
-use Tests\Support\Doubles\OneShotDownlinkQueue;
 use Tests\Support\Doubles\RecordingHubMqttBridge;
 
 /** Do gateway ao MQTT, com as tramas da pesagem real em que a FC foi medida. */
@@ -155,7 +155,8 @@ final class LefuTorreBridgeTest extends TestCase
     public function testAQueuedSettingLeavesAsWritesWhenTheScaleConnects(): void
     {
         $mqtt = new RecordingHubMqttBridge();
-        $queue = new OneShotDownlinkQueue('heartRateMeasurement', ['id' => 'op-1', 'command' => 'heartRateMeasurement', 'payload' => ['enabled' => true]]);
+        $queue = new RedisPendingDownlinkQueue(new InMemoryRedisClient());
+        $queue->enqueue(self::SCALE, 'heartRateMeasurement', ['id' => 'op-1', 'command' => 'heartRateMeasurement', 'payload' => ['enabled' => true]], 300);
 
         IngressFixtures::relay($this->bridge($mqtt, $queue), self::TOPIC, self::message('session', ['connected' => true, 'mtu' => 61]));
 
@@ -169,7 +170,8 @@ final class LefuTorreBridgeTest extends TestCase
     public function testAFrameAfterARestartResumesTheSession(): void
     {
         $mqtt = new RecordingHubMqttBridge();
-        $queue = new OneShotDownlinkQueue('heartRateMeasurement', ['id' => 'op-1', 'command' => 'heartRateMeasurement', 'payload' => ['enabled' => true]]);
+        $queue = new RedisPendingDownlinkQueue(new InMemoryRedisClient());
+        $queue->enqueue(self::SCALE, 'heartRateMeasurement', ['id' => 'op-1', 'command' => 'heartRateMeasurement', 'payload' => ['enabled' => true]], 300);
         $bridge = $this->bridge($mqtt, $queue);
 
         IngressFixtures::relay($bridge, self::TOPIC, self::frame('fff3', '010d0c00000000000000000000000000'));
@@ -357,7 +359,7 @@ final class LefuTorreBridgeTest extends TestCase
 
     private function bridge(
         RecordingHubMqttBridge $mqtt,
-        ?PendingDownlinkQueue $queue = null,
+        ?RedisPendingDownlinkQueue $queue = null,
         ?DeviceStoreContract $store = null,
         bool $links = true,
         ?callable $users = null,

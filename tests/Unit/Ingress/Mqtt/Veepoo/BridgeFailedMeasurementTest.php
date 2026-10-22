@@ -6,8 +6,9 @@ namespace Tests\Unit\Ingress\Mqtt\Veepoo;
 
 use Hub\State\DeviceStoreContract;
 use Hub\Device\PendingDownlink;
-use Hub\Device\PendingDownlinkQueue;
+use Hub\Device\RedisPendingDownlinkQueue;
 use PHPUnit\Framework\TestCase;
+use Tests\Support\Doubles\InMemoryRedisClient;
 use Tests\Support\Doubles\IngressFixtures;
 use Tests\Support\Doubles\RecordingHubMqttBridge;
 use Tests\Support\Doubles\VeepooFixtures;
@@ -21,9 +22,7 @@ final class BridgeFailedMeasurementTest extends TestCase
     /** E só esse: as outras medições em fila não sabem nada sobre esta. */
     public function testOnlyTheRequestThatFailedLeavesTheQueue(): void
     {
-        $queue = new FakeQueue();
-        $queue->add('measure.heartRate.start');
-        $queue->add('measure.oxygen.start');
+        $queue = self::queue('measure.heartRate.start', 'measure.oxygen.start');
         $bridge = VeepooFixtures::bridge(new RecordingHubMqttBridge(), $queue);
 
         IngressFixtures::relay($bridge, self::TOPIC, self::session());
@@ -32,14 +31,13 @@ final class BridgeFailedMeasurementTest extends TestCase
             'notWear' => true,
         ]));
 
-        self::assertSame(['measure.oxygen.start'], $queue->operations());
+        self::assertSame(['measure.oxygen.start'], self::operations($queue));
     }
 
     /** Bateria fraca e sensor anómalo são razões do aparelho, e valem o mesmo. */
     public function testADeviceFailureAlsoClosesTheRequest(): void
     {
-        $queue = new FakeQueue();
-        $queue->add('measure.bloodPressure.start');
+        $queue = self::queue('measure.bloodPressure.start');
         $bridge = VeepooFixtures::bridge(new RecordingHubMqttBridge(), $queue);
 
         IngressFixtures::relay($bridge, self::TOPIC, self::session());
@@ -48,27 +46,25 @@ final class BridgeFailedMeasurementTest extends TestCase
             'deviceDetectionInfo' => 'atLowVoltage',
         ]));
 
-        self::assertSame([], $queue->operations());
+        self::assertSame([], self::operations($queue));
     }
 
     /** Um traçado todo a zeros chega em `ecg_wave` sem tipo do SDK, mas o pedido que o originou é sempre o mesmo. */
     public function testAnEcgWithoutSignalClosesTheRequest(): void
     {
-        $queue = new FakeQueue();
-        $queue->add('measure.ecg.start');
+        $queue = self::queue('measure.ecg.start');
         $bridge = VeepooFixtures::bridge(new RecordingHubMqttBridge(), $queue);
 
         IngressFixtures::relay($bridge, self::TOPIC, self::session());
         IngressFixtures::relay($bridge, self::TOPIC, VeepooFixtures::message('ecg_wave', ['samples' => [0, 0, 0, 0], 'samplingHz' => 500]));
 
-        self::assertSame([], $queue->operations());
+        self::assertSame([], self::operations($queue));
     }
 
     /** Estar ocupada é passageiro: a medição a decorrer acaba e o pedido continua de pé. */
     public function testABusyBandKeepsTheRequestQueued(): void
     {
-        $queue = new FakeQueue();
-        $queue->add('measure.heartRate.start');
+        $queue = self::queue('measure.heartRate.start');
         $bridge = VeepooFixtures::bridge(new RecordingHubMqttBridge(), $queue);
 
         IngressFixtures::relay($bridge, self::TOPIC, self::session());
@@ -77,14 +73,13 @@ final class BridgeFailedMeasurementTest extends TestCase
             'deviceBusy' => true,
         ]));
 
-        self::assertSame(['measure.heartRate.start'], $queue->operations());
+        self::assertSame(['measure.heartRate.start'], self::operations($queue));
     }
 
     /** O ecrã tem de mostrar o pedido por falhado, e com a razão. */
     public function testTheScreenIsToldWhyTheRequestDied(): void
     {
-        $queue = new FakeQueue();
-        $queue->add('measure.heartRate.start');
+        $queue = self::queue('measure.heartRate.start');
         $marked = [];
         $store = $this->createMock(DeviceStoreContract::class);
         $store->method('markLatestCommand')->willReturnCallback(
@@ -114,14 +109,13 @@ final class BridgeFailedMeasurementTest extends TestCase
     public function testAMeasurementThatCameBackSilentIsReportedAsAFailure(): void
     {
         $mqtt = new RecordingHubMqttBridge();
-        $queue = new FakeQueue();
-        $queue->add('measure.heartRate.start');
+        $queue = self::queue('measure.heartRate.start');
         $bridge = VeepooFixtures::bridge($mqtt, $queue);
 
         IngressFixtures::relay($bridge, self::TOPIC, self::session());
         IngressFixtures::relay($bridge, self::TOPIC, self::confirmation('measure.heartRate.start', 'no_response'));
 
-        self::assertSame([], $queue->operations(), 'o pedido não pode ficar em fila');
+        self::assertSame([], self::operations($queue), 'o pedido não pode ficar em fila');
 
         $failures = $mqtt->ofType('device.measurement_failed', 'events');
         self::assertCount(1, $failures);
@@ -132,14 +126,13 @@ final class BridgeFailedMeasurementTest extends TestCase
     public function testAConfirmationWithoutTheFieldIsStillASuccess(): void
     {
         $mqtt = new RecordingHubMqttBridge();
-        $queue = new FakeQueue();
-        $queue->add('config:find_device');
+        $queue = self::queue('config:find_device');
         $bridge = VeepooFixtures::bridge($mqtt, $queue);
 
         IngressFixtures::relay($bridge, self::TOPIC, self::session());
-        IngressFixtures::relay($bridge, self::TOPIC, VeepooFixtures::message('command_result', ['dedupeKey' => 'config:find_device-key', 'operation' => 'config:find_device']));
+        IngressFixtures::relay($bridge, self::TOPIC, VeepooFixtures::message('command_result', ['dedupeKey' => self::dedupeKey('config:find_device'), 'operation' => 'config:find_device']));
 
-        self::assertSame([], $queue->operations());
+        self::assertSame([], self::operations($queue));
         self::assertSame([], $mqtt->ofType('device.measurement_failed', 'events'));
     }
 
@@ -147,8 +140,7 @@ final class BridgeFailedMeasurementTest extends TestCase
     public function testACommandTheGatewayCouldNotDeliverFailsWithItsReason(): void
     {
         $mqtt = new RecordingHubMqttBridge();
-        $queue = new FakeQueue();
-        $queue->add('config:find_device');
+        $queue = self::queue('config:find_device');
         $marked = [];
         $store = $this->createMock(DeviceStoreContract::class);
         $store->method('markLatestCommand')->willReturnCallback(
@@ -161,7 +153,7 @@ final class BridgeFailedMeasurementTest extends TestCase
         IngressFixtures::relay($bridge, self::TOPIC, self::session());
         IngressFixtures::relay($bridge, self::TOPIC, self::commandResult('config:find_device', ['ok' => false, 'error' => 'disconnected']));
 
-        self::assertSame([], $queue->operations());
+        self::assertSame([], self::operations($queue));
         $last = end($marked);
         self::assertSame('failed', $last['status'] ?? null);
         self::assertSame('disconnected', $last['error'] ?? null);
@@ -185,14 +177,13 @@ final class BridgeFailedMeasurementTest extends TestCase
     public function testAMeasurementTheGatewayCouldNotDeliverFailsWithItsReason(): void
     {
         $mqtt = new RecordingHubMqttBridge();
-        $queue = new FakeQueue();
-        $queue->add('measure.heartRate.start');
+        $queue = self::queue('measure.heartRate.start');
         $bridge = VeepooFixtures::bridge($mqtt, $queue);
 
         IngressFixtures::relay($bridge, self::TOPIC, self::session());
         IngressFixtures::relay($bridge, self::TOPIC, self::commandResult('measure.heartRate.start', ['ok' => false, 'error' => 'not_connected']));
 
-        self::assertSame([], $queue->operations());
+        self::assertSame([], self::operations($queue));
         self::assertSame(['reason' => 'not_connected'], $mqtt->ofType('device.measurement_failed', 'events')[0]['payload']['error']);
     }
 
@@ -200,8 +191,7 @@ final class BridgeFailedMeasurementTest extends TestCase
     public function testAMeasurementThatNeverProducedAReadingIsReportedAsAFailure(): void
     {
         $mqtt = new RecordingHubMqttBridge();
-        $queue = new FakeQueue();
-        $queue->add('measure.heartRate.start');
+        $queue = self::queue('measure.heartRate.start');
         $bridge = VeepooFixtures::bridge($mqtt, $queue);
 
         IngressFixtures::relay($bridge, self::TOPIC, self::session());
@@ -210,7 +200,7 @@ final class BridgeFailedMeasurementTest extends TestCase
         }
         IngressFixtures::relay($bridge, self::TOPIC, self::confirmation('measure.heartRate.start', null));
 
-        self::assertSame([], $queue->operations());
+        self::assertSame([], self::operations($queue));
 
         $failures = $mqtt->ofType('device.measurement_failed', 'events');
         self::assertCount(1, $failures);
@@ -221,8 +211,7 @@ final class BridgeFailedMeasurementTest extends TestCase
     public function testAMeasurementThatProducedAReadingIsConfirmed(): void
     {
         $mqtt = new RecordingHubMqttBridge();
-        $queue = new FakeQueue();
-        $queue->add('measure.heartRate.start');
+        $queue = self::queue('measure.heartRate.start');
         $bridge = VeepooFixtures::bridge($mqtt, $queue);
 
         IngressFixtures::relay($bridge, self::TOPIC, self::session());
@@ -230,7 +219,7 @@ final class BridgeFailedMeasurementTest extends TestCase
         IngressFixtures::relay($bridge, self::TOPIC, self::measurement(['sdkType' => 51, 'heartRate' => 87]));
         IngressFixtures::relay($bridge, self::TOPIC, self::confirmation('measure.heartRate.start', null));
 
-        self::assertSame([], $queue->operations());
+        self::assertSame([], self::operations($queue));
         self::assertSame([], $mqtt->ofType('device.measurement_failed', 'events'));
     }
 
@@ -240,15 +229,14 @@ final class BridgeFailedMeasurementTest extends TestCase
     public function testTheReadingOfOneRequestDoesNotVouchForTheNext(): void
     {
         $mqtt = new RecordingHubMqttBridge();
-        $queue = new FakeQueue();
-        $queue->add('measure.heartRate.start');
+        $queue = self::queue('measure.heartRate.start');
         $bridge = VeepooFixtures::bridge($mqtt, $queue);
 
         IngressFixtures::relay($bridge, self::TOPIC, self::session());
         IngressFixtures::relay($bridge, self::TOPIC, self::measurement(['sdkType' => 51, 'heartRate' => 87]));
         IngressFixtures::relay($bridge, self::TOPIC, self::confirmation('measure.heartRate.start', null));
 
-        $queue->add('measure.heartRate.start');
+        $queue->enqueue(self::BRACELET, 'measure.heartRate.start', null, 300);
         IngressFixtures::relay($bridge, self::TOPIC, self::confirmation('measure.heartRate.start', null));
 
         $failures = $mqtt->ofType('device.measurement_failed', 'events');
@@ -260,15 +248,14 @@ final class BridgeFailedMeasurementTest extends TestCase
     public function testTheNextRequestCanFailOnItsOwn(): void
     {
         $mqtt = new RecordingHubMqttBridge();
-        $queue = new FakeQueue();
-        $queue->add('measure.heartRate.start');
+        $queue = self::queue('measure.heartRate.start');
         $bridge = VeepooFixtures::bridge($mqtt, $queue);
 
         IngressFixtures::relay($bridge, self::TOPIC, self::session());
         IngressFixtures::relay($bridge, self::TOPIC, self::measurement(['sdkType' => 51, 'notWear' => true]));
         IngressFixtures::relay($bridge, self::TOPIC, self::confirmation('measure.heartRate.start', null));
 
-        $queue->add('measure.heartRate.start');
+        $queue->enqueue(self::BRACELET, 'measure.heartRate.start', null, 300);
         IngressFixtures::relay($bridge, self::TOPIC, self::confirmation('measure.heartRate.start', null));
 
         $reasons = array_map(
@@ -283,15 +270,14 @@ final class BridgeFailedMeasurementTest extends TestCase
     public function testAnEcgThatCaughtSignalIsNotReportedAsAFailure(): void
     {
         $mqtt = new RecordingHubMqttBridge();
-        $queue = new FakeQueue();
-        $queue->add('measure.ecg.start');
+        $queue = self::queue('measure.ecg.start');
         $bridge = VeepooFixtures::bridge($mqtt, $queue);
 
         IngressFixtures::relay($bridge, self::TOPIC, self::session());
         IngressFixtures::relay($bridge, self::TOPIC, VeepooFixtures::message('ecg_wave', ['samples' => [12, -4, 33, 128, -71], 'samplingHz' => 500]));
         IngressFixtures::relay($bridge, self::TOPIC, self::confirmation('measure.ecg.start', null));
 
-        self::assertSame([], $queue->operations());
+        self::assertSame([], self::operations($queue));
         self::assertSame([], $mqtt->ofType('device.measurement_failed', 'events'));
     }
 
@@ -299,8 +285,7 @@ final class BridgeFailedMeasurementTest extends TestCase
     public function testTheMarkOfADeadRequestExpires(): void
     {
         $mqtt = new RecordingHubMqttBridge();
-        $queue = new FakeQueue();
-        $queue->add('measure.heartRate.start');
+        $queue = self::queue('measure.heartRate.start');
         $now = 1000;
         $bridge = VeepooFixtures::bridge($mqtt, $queue, clock: static function () use (&$now): float {
             return (float)$now;
@@ -312,7 +297,7 @@ final class BridgeFailedMeasurementTest extends TestCase
         $now += 200;
         $bridge->dispatchQueued();
 
-        $queue->add('measure.heartRate.start');
+        $queue->enqueue(self::BRACELET, 'measure.heartRate.start', null, 300);
         IngressFixtures::relay($bridge, self::TOPIC, self::confirmation('measure.heartRate.start', null));
 
         $reasons = array_map(
@@ -327,8 +312,7 @@ final class BridgeFailedMeasurementTest extends TestCase
     public function testADeadRequestOutranksTheReadingThatCameAfterIt(): void
     {
         $mqtt = new RecordingHubMqttBridge();
-        $queue = new FakeQueue();
-        $queue->add('measure.heartRate.start');
+        $queue = self::queue('measure.heartRate.start');
         $bridge = VeepooFixtures::bridge($mqtt, $queue);
 
         IngressFixtures::relay($bridge, self::TOPIC, self::session());
@@ -343,7 +327,7 @@ final class BridgeFailedMeasurementTest extends TestCase
     private static function confirmation(string $operation, ?string $outcome): string
     {
         return VeepooFixtures::message('command_result', array_filter([
-            'dedupeKey' => $operation . '-key',
+            'dedupeKey' => self::dedupeKey($operation),
             'operation' => $operation,
             'outcome' => $outcome,
         ], static fn(mixed $v): bool => $v !== null));
@@ -352,7 +336,7 @@ final class BridgeFailedMeasurementTest extends TestCase
     /** @param array<string, mixed> $fields */
     private static function commandResult(string $operation, array $fields): string
     {
-        return VeepooFixtures::message('command_result', ['dedupeKey' => $operation . '-key', 'operation' => $operation] + $fields);
+        return VeepooFixtures::message('command_result', ['dedupeKey' => self::dedupeKey($operation), 'operation' => $operation] + $fields);
     }
 
     /** @param array<string, mixed> $payload */
@@ -365,51 +349,25 @@ final class BridgeFailedMeasurementTest extends TestCase
     {
         return VeepooFixtures::message('session', ['authenticated' => true]);
     }
-}
 
-/** A fila tira só o pedido indicado, para distinguir «tirou o pedido certo» de «tirou tudo». */
-final class FakeQueue implements PendingDownlinkQueue
-{
-    /** @var list<PendingDownlink> */
-    private array $items = [];
-
-    public function add(string $operation): void
+    private static function queue(string ...$operations): RedisPendingDownlinkQueue
     {
-        $this->items[] = new PendingDownlink('', $operation . '-key', $operation, null, 0, 0);
+        $queue = new RedisPendingDownlinkQueue(new InMemoryRedisClient());
+        foreach ($operations as $operation) {
+            $queue->enqueue(self::BRACELET, $operation, null, 300);
+        }
+
+        return $queue;
     }
 
     /** @return list<string> */
-    public function operations(): array
+    private static function operations(RedisPendingDownlinkQueue $queue): array
     {
-        return array_map(static fn(PendingDownlink $d): string => $d->bytes, $this->items);
+        return array_map(static fn(PendingDownlink $d): string => $d->bytes, array_values($queue->pendingFor(self::BRACELET)));
     }
 
-    public function enqueue(string $imei, string $bytes, ?array $command, int $ttlSeconds): PendingDownlink
+    private static function dedupeKey(string $operation): string
     {
-        return new PendingDownlink($imei, $bytes . '-key', $bytes, $command, 0, $ttlSeconds);
-    }
-
-    /** @return list<PendingDownlink> */
-    public function pendingFor(string $imei): array
-    {
-        return array_map(
-            static fn(PendingDownlink $d): PendingDownlink => new PendingDownlink(
-                $imei,
-                $d->dedupeKey,
-                $d->bytes,
-                $d->command,
-                $d->queuedAt,
-                $d->expiresAt,
-            ),
-            $this->items,
-        );
-    }
-
-    public function remove(PendingDownlink $downlink): void
-    {
-        $this->items = array_values(array_filter(
-            $this->items,
-            static fn(PendingDownlink $d): bool => $d->dedupeKey !== $downlink->dedupeKey,
-        ));
+        return 'raw:' . hash('sha256', $operation);
     }
 }

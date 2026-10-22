@@ -7,7 +7,7 @@ namespace Hub\Ingress\Mqtt\Gateway;
 use DateTimeImmutable;
 use Hub\Device\HubMqttBridge;
 use Hub\Device\PendingDownlink;
-use Hub\Device\PendingDownlinkQueue;
+use Hub\Device\RedisPendingDownlinkQueue;
 use Hub\Log\Logger;
 use Hub\State\DeviceCommandLog;
 
@@ -30,7 +30,7 @@ final class GattDownlinks
      *     as escritas GATT de cada operação, montadas pelo protocolo do aparelho
      */
     public function __construct(
-        private readonly ?PendingDownlinkQueue $downlinks,
+        private readonly ?RedisPendingDownlinkQueue $downlinks,
         private readonly HubMqttBridge $mqttBridge,
         private readonly ?DeviceCommandLog $deviceStore,
         private readonly string $topicFilter,

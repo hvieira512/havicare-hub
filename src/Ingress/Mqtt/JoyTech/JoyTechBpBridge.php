@@ -6,7 +6,7 @@ namespace Hub\Ingress\Mqtt\JoyTech;
 
 use Hub\Device\CommercialModelResolver;
 use Hub\Device\HubMqttBridge;
-use Hub\Device\PendingDownlinkQueue;
+use Hub\Device\RedisPendingDownlinkQueue;
 use Hub\Domain\ProtocolRegistry;
 use Hub\Domain\GatewayDeviceLinkLookup;
 use Hub\Ingress\Mqtt\Gateway\GattBridge;
@@ -72,7 +72,7 @@ final class JoyTechBpBridge extends GattBridge
         Whitelist $whitelist,
         HubMqttBridge $mqttBridge,
         GatewayDeviceLinkLookup $links,
-        ?PendingDownlinkQueue $queue,
+        ?RedisPendingDownlinkQueue $queue,
         string $topicFilter,
         null|(DeviceReportStore&DeviceCommandLog) $deviceStore = null,
         ?callable $clock = null,

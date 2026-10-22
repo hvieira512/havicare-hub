@@ -10,7 +10,7 @@ use Hub\Dashboard\DashboardHttpOptions;
 use Hub\Dashboard\DashboardHttpServer;
 use Hub\State\DeviceStore;
 use Hub\Device\MessageFanout;
-use Hub\Device\PendingDownlinkQueue;
+use Hub\Device\RedisPendingDownlinkQueue;
 use Hub\Log\Logger;
 use Hub\Registry\Whitelist;
 use Hub\Runtime\DashboardServerFactory;
@@ -75,7 +75,7 @@ abstract class DashboardHttpTestCase extends MysqlDashboardTestCase
      */
     protected function makeServerWithDatabase(
         ?\Hub\Device\DeviceHubServer $hub = null,
-        ?PendingDownlinkQueue $queue = null,
+        ?RedisPendingDownlinkQueue $queue = null,
         bool $apiAuthRequired = true,
         int $apiTokenTtlSeconds = 3600,
         int $apiRefreshTokenTtlSeconds = 2592000,

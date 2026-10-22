@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Tests\Support\Doubles;
 
 use Hub\Device\CommercialModelResolver;
-use Hub\Device\PendingDownlinkQueue;
+use Hub\Device\RedisPendingDownlinkQueue;
 use Hub\Ingress\Mqtt\Gateway\ObservationStateStore;
 use Hub\Ingress\Mqtt\Veepoo\VeepooBridge;
 use Hub\State\DeviceStoreContract;
@@ -30,7 +30,7 @@ final class VeepooFixtures
     /** @param array<array-key, array<string, mixed>>|null $devices a whitelist, por omissão o gateway e a pulseira */
     public static function bridge(
         ?RecordingHubMqttBridge $mqtt = null,
-        ?PendingDownlinkQueue $queue = null,
+        ?RedisPendingDownlinkQueue $queue = null,
         ?DeviceStoreContract $store = null,
         ?callable $clock = null,
         ?ObservationStateStore $state = null,

@@ -7,7 +7,6 @@ namespace Tests\Unit\Hub;
 use Hub\Device\DeviceHubServer;
 use Hub\State\DeviceStore;
 use Hub\Device\HubMqttBridge;
-use Hub\Device\PendingDownlinkQueue;
 use Hub\Device\RedisPendingDownlinkQueue;
 use Hub\Protocol\Adapter\WonlexAdapter;
 use Hub\Registry\Denylist;
@@ -275,8 +274,9 @@ final class DeviceHubMqttContractTest extends TestCase
     public function testOfflineDownlinkDropsWithQueueUnavailableWhenRedisFails(): void
     {
         $mqtt = new ContractRecordingHubMqttBridge();
-        $queue = $this->createStub(PendingDownlinkQueue::class);
-        $queue->method('enqueue')->willThrowException(new \RuntimeException('Redis unavailable'));
+        $redis = new InMemoryRedisClient();
+        $redis->failOn = 'hset';
+        $queue = new RedisPendingDownlinkQueue($redis);
         $hub = new DeviceHubServer(
             $this->whitelist,
             $mqtt,

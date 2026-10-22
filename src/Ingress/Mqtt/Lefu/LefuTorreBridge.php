@@ -7,7 +7,7 @@ namespace Hub\Ingress\Mqtt\Lefu;
 use Hub\Command\Configuration\Payload\LefuTorreScaleUsers;
 use Hub\Device\CommercialModelResolver;
 use Hub\Device\HubMqttBridge;
-use Hub\Device\PendingDownlinkQueue;
+use Hub\Device\RedisPendingDownlinkQueue;
 use Hub\Domain\GatewayDeviceLinkLookup;
 use Hub\Ingress\Mqtt\Gateway\GattBridge;
 use Hub\Ingress\Mqtt\Gateway\GattDeviceContext;
@@ -65,7 +65,7 @@ final class LefuTorreBridge extends GattBridge
         Whitelist $whitelist,
         HubMqttBridge $mqttBridge,
         GatewayDeviceLinkLookup $links,
-        ?PendingDownlinkQueue $queue,
+        ?RedisPendingDownlinkQueue $queue,
         string $topicFilter,
         null|(DeviceReportStore&DeviceCommandLog) $deviceStore = null,
         ?callable $clock = null,

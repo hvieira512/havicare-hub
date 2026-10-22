@@ -10,7 +10,6 @@ use Hub\Ingress\Mqtt\Veepoo\DownlinkDispatcher;
 use Hub\State\DeviceStore;
 use PHPUnit\Framework\TestCase;
 use Tests\Support\Doubles\InMemoryRedisClient;
-use Tests\Support\Doubles\OneShotDownlinkQueue;
 use Tests\Support\Doubles\RecordingHubMqttBridge;
 
 /** A mesma ordem a dois aparelhos tem a mesma chave; o travão de reenvio é de cada um. */
@@ -22,7 +21,7 @@ final class ResendThrottleTest extends TestCase
     public function testTheSecondBraceletGetsTheSameCommandAtOnce(): void
     {
         $mqtt = new RecordingHubMqttBridge();
-        $dispatcher = new DownlinkDispatcher(new OneShotDownlinkQueue('config:find_device'), $mqtt, null, self::TOPIC);
+        $dispatcher = new DownlinkDispatcher(self::queued('config:find_device', '9f69c4866e6c', '3a8dda1bc715'), $mqtt, null, self::TOPIC);
 
         $dispatcher->dispatchPending('9f69c4866e6c', self::GATEWAY);
         $dispatcher->dispatchPending('3a8dda1bc715', self::GATEWAY);
@@ -34,7 +33,7 @@ final class ResendThrottleTest extends TestCase
     {
         $mqtt = new RecordingHubMqttBridge();
         $downlinks = new GattDownlinks(
-            new OneShotDownlinkQueue('calibrateClock'),
+            self::queued('calibrateClock', '748b34837b1e', '748b3483cda4'),
             $mqtt,
             null,
             self::TOPIC,
@@ -159,5 +158,15 @@ final class ResendThrottleTest extends TestCase
     private static function recipients(RecordingHubMqttBridge $mqtt): array
     {
         return array_map(static fn (array $c): string => (string)$c['payload']['deviceId'], $mqtt->gatewayCommands);
+    }
+
+    private static function queued(string $operation, string ...$deviceKeys): RedisPendingDownlinkQueue
+    {
+        $queue = new RedisPendingDownlinkQueue(new InMemoryRedisClient());
+        foreach ($deviceKeys as $deviceKey) {
+            $queue->enqueue($deviceKey, $operation, null, 300);
+        }
+
+        return $queue;
     }
 }

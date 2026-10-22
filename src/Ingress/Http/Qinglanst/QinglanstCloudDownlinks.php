@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Hub\Ingress\Http\Qinglanst;
 
 use Hub\Device\PendingDownlink;
-use Hub\Device\PendingDownlinkQueue;
+use Hub\Device\RedisPendingDownlinkQueue;
 use Hub\Log\Logger;
 use React\Promise\PromiseInterface;
 
@@ -56,7 +56,7 @@ final class QinglanstCloudDownlinks
      * @param callable(string, string, array<string, mixed>): mixed $mark o estado de um comando
      */
     public function __construct(
-        private readonly PendingDownlinkQueue $queue,
+        private readonly RedisPendingDownlinkQueue $queue,
         private readonly QinglanstApiClient $client,
         private readonly QinglanstCloudCommands $commands,
         callable $radar,

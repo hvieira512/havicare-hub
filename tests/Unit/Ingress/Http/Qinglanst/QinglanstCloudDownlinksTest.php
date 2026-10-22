@@ -5,11 +5,10 @@ declare(strict_types=1);
 namespace Tests\Unit\Ingress\Http\Qinglanst;
 
 use Hub\Device\PendingDownlink;
-use Hub\Device\PendingDownlinkQueue;
+use Hub\Device\RedisPendingDownlinkQueue;
 use Hub\Ingress\Http\Qinglanst\QinglanstApiClient;
 use Hub\Ingress\Http\Qinglanst\QinglanstCloudCommands;
 use Hub\Ingress\Http\Qinglanst\QinglanstCloudDownlinks;
-use Hub\Device\RedisPendingDownlinkQueue;
 use Tests\Support\Doubles\InMemoryRedisClient;
 use PHPUnit\Framework\TestCase;
 use React\Promise\PromiseInterface;
@@ -26,6 +25,8 @@ final class QinglanstCloudDownlinksTest extends TestCase
 
     /** @var list<string> */
     private array $reads = [];
+
+    private int $queueReads = 0;
 
     public function testASettingIsWrittenAndConfirmedByTheCloudAnswer(): void
     {
@@ -160,7 +161,7 @@ final class QinglanstCloudDownlinksTest extends TestCase
     /** As mensagens do radar chegam várias por segundo: a fila só se lê de poucos em poucos segundos. */
     public function testTheMessagesOfARadarReadTheQueueOnlyEveryFewSeconds(): void
     {
-        $queue = new CountingRadarQueue();
+        $queue = new RedisPendingDownlinkQueue(new InMemoryRedisClient());
         $downlinks = $this->downlinks($queue, new ScriptedCloudClient(prop: 200, writes: []));
 
         foreach (range(1, 10) as $message) {
@@ -168,16 +169,21 @@ final class QinglanstCloudDownlinksTest extends TestCase
         }
         $this->await($downlinks->dispatchPending(self::IMEI, now: true));
 
-        self::assertSame(2, $queue->reads);
+        self::assertSame(2, $this->queueReads);
     }
 
-    private function downlinks(PendingDownlinkQueue $queue, QinglanstApiClient $client): QinglanstCloudDownlinks
+    private function downlinks(RedisPendingDownlinkQueue $queue, QinglanstApiClient $client): QinglanstCloudDownlinks
     {
         return new QinglanstCloudDownlinks(
             $queue,
             $client,
             new QinglanstCloudCommands(),
-            static fn (string $imei): ?array => ['uid' => $imei, 'credentials' => ['base_url' => 'https://qinglanst.com/prod-api', 'username' => 'u', 'password' => 'p', 'app_id' => 'a', 'app_secret' => 's']],
+            // O radar resolve-se logo antes de cada leitura da fila.
+            function (string $imei): array {
+                $this->queueReads++;
+
+                return ['uid' => $imei, 'credentials' => ['base_url' => 'https://qinglanst.com/prod-api', 'username' => 'u', 'password' => 'p', 'app_id' => 'a', 'app_secret' => 's']];
+            },
             function (string $imei): PromiseInterface {
                 $this->reads[] = $imei;
 
@@ -283,26 +289,5 @@ final class DeferredCloudClient extends QinglanstApiClient
         while ($this->pending !== []) {
             array_shift($this->pending)->resolve(['code' => 200, 'msg' => '']);
         }
-    }
-}
-
-final class CountingRadarQueue implements PendingDownlinkQueue
-{
-    public int $reads = 0;
-
-    public function enqueue(string $imei, string $bytes, ?array $command, int $ttlSeconds): PendingDownlink
-    {
-        throw new \LogicException('not used');
-    }
-
-    public function pendingFor(string $imei): array
-    {
-        $this->reads++;
-
-        return [];
-    }
-
-    public function remove(PendingDownlink $downlink): void
-    {
     }
 }

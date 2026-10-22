@@ -4,10 +4,11 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Ingress\Mqtt\Veepoo;
 
+use Hub\Device\RedisPendingDownlinkQueue;
 use Hub\State\DeviceStoreContract;
 use PHPUnit\Framework\TestCase;
+use Tests\Support\Doubles\InMemoryRedisClient;
 use Tests\Support\Doubles\IngressFixtures;
-use Tests\Support\Doubles\OneShotDownlinkQueue;
 use Tests\Support\Doubles\RecordingHubMqttBridge;
 use Tests\Support\Doubles\VeepooFixtures;
 
@@ -76,10 +77,8 @@ final class BridgeSessionTest extends TestCase
     public function testTheDesiredValueTravelsWithTheCommand(): void
     {
         $mqtt = new RecordingHubMqttBridge();
-        $queue = new OneShotDownlinkQueue(
-            'config:heart_rate_continuous',
-            ['command' => 'config:heart_rate_continuous', 'payload' => ['enabled' => false]],
-        );
+        $queue = new RedisPendingDownlinkQueue(new InMemoryRedisClient());
+        $queue->enqueue(self::BRACELET, 'config:heart_rate_continuous', ['command' => 'config:heart_rate_continuous', 'payload' => ['enabled' => false]], 300);
 
         IngressFixtures::relay(VeepooFixtures::bridge($mqtt, $queue), self::TOPIC, self::session(true));
 
