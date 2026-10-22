@@ -92,6 +92,22 @@ final class WonlexContactCodec
         return $areaCode !== '' ? '+' . $areaCode . $phone : $phone;
     }
 
+    /**
+     * Os números públicos de uma lista de contactos, números soltos ou objetos, sem vazios nem repetidos.
+     *
+     * @param array<array-key, mixed> $items
+     * @return list<string>
+     */
+    public static function phones(array $items): array
+    {
+        $phones = array_map(
+            static fn(mixed $item): string => is_array($item) ? self::publicPhone($item) : self::normalizePhone((string)$item),
+            $items,
+        );
+
+        return array_values(array_unique(array_filter($phones, static fn(string $phone): bool => $phone !== '')));
+    }
+
     public static function normalizePhone(string $phone): string
     {
         $phone = trim($phone);

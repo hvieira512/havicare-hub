@@ -505,21 +505,8 @@ final class DeviceConfigurationUpdateService
             ?? $value['numbers']
             ?? $value['contacts']
             ?? $value;
-        if (!is_array($items) || !array_is_list($items)) {
-            return [];
-        }
 
-        $numbers = [];
-        foreach ($items as $item) {
-            $phone = is_array($item)
-                ? WonlexContactCodec::publicPhone($item)
-                : WonlexContactCodec::normalizePhone((string)$item);
-            if ($phone !== '' && !in_array($phone, $numbers, true)) {
-                $numbers[] = $phone;
-            }
-        }
-
-        return $numbers;
+        return is_array($items) && array_is_list($items) ? WonlexContactCodec::phones($items) : [];
     }
 
     /**
@@ -531,11 +518,9 @@ final class DeviceConfigurationUpdateService
      */
     private function wonlexSelectedFamilyNumbers(array $currentByKey): array
     {
-        return array_values(array_filter(array_map(
-            static fn(array $contact): string => ($contact['sosSwitch'] ?? false)
-                ? WonlexContactCodec::publicPhone($contact)
-                : '',
-            $this->wonlexPhonebookContacts($currentByKey)
-        )));
+        return WonlexContactCodec::phones(array_filter(
+            $this->wonlexPhonebookContacts($currentByKey),
+            static fn(array $contact): bool => (bool)($contact['sosSwitch'] ?? false),
+        ));
     }
 }
