@@ -78,16 +78,10 @@ async function showModelDetail(model) {
     showModelsPane(2);
 }
 
-/** Um clique numa folha abre a ficha; a linha é um `div` com `role="button"`, e o teclado é tratado à mão. */
+/** Um clique numa folha abre a ficha. */
 function handleModelListClick(event) {
     const row = event.target.closest("[data-action=\"modelCapabilities\"]");
-    if (!row) return;
-    if (event.type === "keydown") {
-        if (event.key !== "Enter" && event.key !== " ") return;
-        // O espaço numa linha accionável rola a página se ninguém o travar.
-        event.preventDefault();
-    }
-    void openModelDetail(parseInt(row.dataset.id));
+    if (row) void openModelDetail(parseInt(row.dataset.id));
 }
 
 function renderModelDetailInfo(model) {
@@ -272,9 +266,7 @@ function initModelDetail() {
     els.modelDetailFields.addEventListener("change", syncModelDetailDirty);
     els.modelDetailImageInput.addEventListener("change", handleModelDetailImageChange);
     els.modelDetailDeleteBtn.addEventListener("click", () => void deleteCurrentModel());
-    // O `keydown` ao lado do `click` porque a folha do catálogo não é um `<button>`.
     els.modelCatalog.addEventListener("click", handleModelListClick);
-    els.modelCatalog.addEventListener("keydown", handleModelListClick);
 }
 
 export {
