@@ -157,8 +157,7 @@ final class BridgeRepeatedDetectionTest extends TestCase
     }
 
     /**
-     * Uma pessoa na trama de posições: a postura no byte 13, o último movimento no 14 e a área
-     * no 15.
+     * Uma pessoa na trama de posições: postura no byte 13, último movimento no 14 e área no 15.
      *
      * @return list<int>
      */

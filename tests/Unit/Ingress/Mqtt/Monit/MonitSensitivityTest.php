@@ -24,8 +24,7 @@ final class MonitSensitivityTest extends TestCase
     private const SEVERITY = ['clean' => 0, 'attention' => 1, 'change_required' => 2];
 
     /**
-     * Vectores de canais que cobrem as fronteiras: seco, saturado, um canal quente, e a
-     * leitura real capturada do sensor em produção.
+     * Canais nas fronteiras: seco, saturado, um canal quente, e uma leitura real do sensor.
      *
      * @var list<list<int>>
      */

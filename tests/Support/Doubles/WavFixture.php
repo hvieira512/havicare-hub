@@ -4,10 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Support\Doubles;
 
-/**
- * Um WAV de silêncio para o transcodificador do lembrete de medicação: o 4P Touch quer AMR-NB,
- * feito por ffmpeg a partir de PCM 8 kHz mono 16 bits, e só o cabeçalho importa.
- */
+/** Um WAV de silêncio PCM 8 kHz mono, de que o ffmpeg faz o AMR-NB do lembrete do 4P Touch. */
 final class WavFixture
 {
     public static function silenceBase64(

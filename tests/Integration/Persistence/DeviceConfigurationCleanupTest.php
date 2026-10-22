@@ -8,10 +8,7 @@ use Hub\Infrastructure\Persistence\Repository\WhitelistRepository;
 use PDO;
 use Tests\Support\MysqlDashboardTestCase;
 
-/**
- * As configurações de um dispositivo desaparecem com ele, senão um IMEI registado outra vez
- * herda as do dono anterior; passa-se pelo `unregister`, e não por um `DELETE` à mão.
- */
+/** O `unregister` apaga as configurações do dispositivo, que senão passavam ao próximo dono do IMEI. */
 final class DeviceConfigurationCleanupTest extends MysqlDashboardTestCase
 {
     private const IMEI = '861265061009822';

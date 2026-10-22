@@ -7,10 +7,7 @@ namespace Tests\Unit\Runtime;
 use Hub\Config;
 use PHPUnit\Framework\TestCase;
 
-/**
- * A secção `gateway` configura a ingestão de gateways, de que as pulseiras Veepoo também
- * dependem, e por isso não leva o nome de um fornecedor.
- */
+/** A secção `gateway` serve também as pulseiras Veepoo, e por isso não leva nome de fornecedor. */
 final class GatewayIngressConfigTest extends TestCase
 {
     /** @var list<string> */

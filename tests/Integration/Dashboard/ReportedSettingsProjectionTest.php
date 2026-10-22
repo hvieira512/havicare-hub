@@ -8,10 +8,7 @@ use Hub\Infrastructure\Persistence\Repository\ApiDataAccess;
 use Hub\State\DeviceConfigurationProjection;
 use Tests\Support\MysqlDashboardTestCase;
 
-/**
- * Uma leitura que traz várias configurações de uma vez guarda-se uma a uma: o M228 responde
- * ao `0x05` com todas, e o mapeamento pelo tipo da resposta só serve uma.
- */
+/** Uma leitura com várias configurações, como a resposta ao `0x05` do M228, guarda-se uma a uma. */
 final class ReportedSettingsProjectionTest extends MysqlDashboardTestCase
 {
     private const IMEI = '869243062262262';

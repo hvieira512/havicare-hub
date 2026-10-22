@@ -41,10 +41,7 @@ final class PillDispenserRangesAgreeTest extends TestCase
         self::assertNotSame('', DeviceCommandCatalog::buildDownlink('zayata-m228', self::IMEI, $command, [$field => $edge]));
     }
 
-    /**
-     * E o construtor da trama também: o painel da dashboard chega-lhe sem passar pelo
-     * validador.
-     */
+    /** E o construtor da trama, a que o painel da dashboard chega sem passar pelo validador. */
     #[DataProvider('ranges')]
     public function testTheFrameBuilderRefusesWhatIsOutside(
         string $key,

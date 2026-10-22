@@ -6,10 +6,7 @@ namespace Tests\Integration\Support;
 
 use Tests\Support\MysqlDashboardTestCase;
 
-/**
- * Os testes recebem uma base clonada de um modelo, e não uma acabada de migrar: o clone tem de
- * ser indistinguível do esquema a sério.
- */
+/** A base clonada do modelo é indistinguível de uma acabada de migrar. */
 final class DatabaseTemplateCloneTest extends MysqlDashboardTestCase
 {
     public function testCloneKeepsForeignKeysWithTheirCascadeRules(): void

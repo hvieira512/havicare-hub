@@ -7,10 +7,7 @@ namespace Tests\Unit\Dashboard;
 use Hub\Domain\Capability\CapabilityCatalog;
 use PHPUnit\Framework\TestCase;
 
-/**
- * Cada capacidade de telemetria tem ícone e tom no `CARD_STYLE`, senão o cartão sai cinzento
- * sem erro. Vive em PHP porque o catálogo é a fonte.
- */
+/** Cada capacidade de telemetria tem ícone e tom no `CARD_STYLE`, senão o cartão sai cinzento. */
 final class TelemetryCardStyleTest extends TestCase
 {
     private const CATALOG = __DIR__ . '/../../../src/Dashboard/dashboard/components/cards/telemetry.js';

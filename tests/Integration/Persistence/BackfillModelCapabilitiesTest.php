@@ -8,10 +8,7 @@ use Hub\Infrastructure\Persistence\ReferenceCatalogSeeder;
 use PDO;
 use Tests\Support\MysqlDashboardTestCase;
 
-/**
- * Uma capacidade acrescentada ao catálogo depois de um modelo ser semeado tem de lhe chegar: a
- * semeadura enche lacunas a cada `migrate`, sem precisar de migração própria.
- */
+/** Uma capacidade nova no catálogo chega aos modelos já semeados a cada `migrate`. */
 final class BackfillModelCapabilitiesTest extends MysqlDashboardTestCase
 {
     /** @return array{PDO, int} */

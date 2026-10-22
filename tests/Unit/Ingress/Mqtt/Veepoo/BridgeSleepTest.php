@@ -42,10 +42,7 @@ final class BridgeSleepTest extends TestCase
         );
     }
 
-    /**
-     * A forma da noite que a MF91 devolveu, com dez minutos em vez de 639: uma entrada de curva por
-     * minuto, e as contagens somam os troços declarados.
-     */
+    /** A noite como a MF91 a devolve, encurtada a dez minutos de curva. */
     private static function sleepAsTheBraceletSendsIt(): string
     {
         return json_encode([

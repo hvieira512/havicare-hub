@@ -13,10 +13,7 @@ use Hub\Registry\Whitelist;
 use Hub\State\DeviceStoreContract;
 use Tests\Support\MysqlDashboardTestCase;
 
-/**
- * Apagar o que não existe diz que não existe, em todos os recursos: quem apagou o aparelho
- * errado não pode receber a mesma resposta de quem apagou o certo.
- */
+/** Apagar o que não existe diz que não existe, em todos os recursos, e não responde como um apagar certo. */
 final class DeleteOfSomethingAbsentTest extends MysqlDashboardTestCase
 {
     public function testDeletingADeviceThatIsNotRegisteredIsNotFound(): void
@@ -40,8 +37,7 @@ final class DeleteOfSomethingAbsentTest extends MysqlDashboardTestCase
     }
 
     /**
-     * Pelo estado HTTP e não pelo código: cada recurso tem o seu nome de erro -- uns dizem
-     * `not_found` e outros `{recurso}_not_found` --, e o que tem de ser igual é a resposta.
+     * Pelo estado HTTP e não pelo código de erro, que cada recurso nomeia à sua maneira.
      *
      * @param array<string, mixed> $result
      */

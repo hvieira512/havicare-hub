@@ -7,10 +7,7 @@ namespace Tests\Support\Doubles;
 use Predis\ClientInterface;
 use Predis\Command\CommandInterface;
 
-/**
- * O substituto em memória do Predis, a cobrir o subconjunto de comandos que a store da
- * dashboard usa.
- */
+/** O Predis em memória, com os comandos que os stores do hub usam. */
 final class InMemoryRedisClient implements ClientInterface
 {
     /** @var array<string, array<string, bool>> */

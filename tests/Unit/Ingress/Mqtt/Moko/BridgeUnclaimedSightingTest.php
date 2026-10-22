@@ -42,8 +42,7 @@ final class BridgeUnclaimedSightingTest extends TestCase
     }
 
     /**
-     * Um slot que nenhum decoder reclama. O TLM da W6 é exactamente isto: sempre ligado,
-     * sempre ignorado.
+     * Um slot que nenhum decoder reclama, como o TLM da W6.
      *
      * @param array<string, mixed> $overrides
      */

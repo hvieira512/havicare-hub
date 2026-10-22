@@ -9,16 +9,10 @@ use Hub\Api\Auth\LoginThrottle;
 use Tests\Support\DashboardHttpTestCase;
 use Tests\Support\Doubles\InMemoryRedisClient;
 
-/**
- * O tempo de resposta do login não pode dizer se uma conta existe: todas as tentativas custam
- * o hash, e por isso dependem dos tetos do `LoginThrottle`.
- */
+/** O tempo do login não diz se a conta existe: todas as tentativas custam o hash. */
 final class DashboardLoginTimingTest extends DashboardHttpTestCase
 {
-    /**
-     * O limite é inferior de propósito: afirma que houve trabalho de hash, e uma máquina lenta
-     * torna a asserção mais fácil e não mais frágil.
-     */
+    /** Um limite inferior, que afirma o trabalho de hash e que uma máquina lenta só torna mais fácil. */
     private const BCRYPT_FLOOR_SECONDS = 0.03;
 
     public function testAnUnknownUsernameCostsTheSameHashWorkAsARealOne(): void
@@ -72,10 +66,7 @@ final class DashboardLoginTimingTest extends DashboardHttpTestCase
         self::assertSame(1001, $payload['token']['licenseId'] ?? null);
     }
 
-    /**
-     * Sem tetos, porque este teste faz várias tentativas seguidas contra a mesma conta e o
-     * mesmo endereço, e o que aqui se mede é o tempo do hash e não o do travão.
-     */
+    /** Sem tetos, porque aqui se mede o tempo do hash em tentativas seguidas e não o do travão. */
     private function serverWithoutThrottling(): callable
     {
         return $this->makeServerWithDatabase(

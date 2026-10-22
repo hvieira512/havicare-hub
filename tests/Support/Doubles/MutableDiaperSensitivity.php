@@ -7,10 +7,7 @@ namespace Tests\Support\Doubles;
 use Hub\Domain\DiaperSensitivity;
 use Hub\Domain\DiaperSensitivityLookup;
 
-/**
- * Um lookup de sensibilidade cujo valor se muda a meio de um teste, como a API faria: classe
- * com nome para o `$settings` ficar à vista, o que uma anónima devolvida como interface esconde.
- */
+/** Uma sensibilidade que o teste muda a meio, como a API faria. */
 final class MutableDiaperSensitivity implements DiaperSensitivityLookup
 {
     /** @var array{pollutionRange: int, pollutionValue: int} */

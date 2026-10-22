@@ -11,10 +11,7 @@ use Tests\Support\DashboardHttpTestCase;
 use Tests\Support\Doubles\InMemoryRedisClient;
 use Tests\Support\Doubles\WavFixture;
 
-/**
- * A forma do detalhe de um dispositivo, a resposta que mais clientes lêem campo a campo: os
- * testes comparam estruturas inteiras em vez de espreitar uma chave.
- */
+/** A forma do detalhe de um dispositivo, comparada por estruturas inteiras em vez de chave a chave. */
 final class DashboardDeviceDetailTest extends DashboardHttpTestCase
 {
     public function testDeviceDetailEndpointReturnsSparseCapabilitiesAndStoredValues(): void

@@ -6,10 +6,7 @@ namespace Tests\Support\Doubles;
 
 use Hub\Device\HubMqttBridge;
 
-/**
- * Regista o que um ingress publica, em vez de falar com um broker; cada publicação fica na
- * mesma forma, para uma alteração ao `HubMqttBridge` só se reflectir aqui.
- */
+/** Regista o que um ingress publica, sem broker, cada publicação na mesma forma. */
 class RecordingHubMqttBridge extends HubMqttBridge
 {
     /** @var list<array{company: string, licenseId: int, deviceType: string, imei: string}> */

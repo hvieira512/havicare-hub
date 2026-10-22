@@ -8,10 +8,7 @@ use Hub\Api\Http\ModelImageUrl;
 use Hub\Api\Services\ModelImageStore;
 use PHPUnit\Framework\TestCase;
 
-/**
- * A base de dados guarda o nome do ficheiro, e a rota vive no código: o que é igual em todas
- * as linhas não se repete em cada uma.
- */
+/** A base guarda o nome do ficheiro e o código a rota, que é igual em todas as linhas. */
 final class ModelImageNamingTest extends TestCase
 {
     private const FILE = '464e9b90a30f30aee389cd9de5926977.jpg';

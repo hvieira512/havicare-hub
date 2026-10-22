@@ -65,8 +65,7 @@ final class BridgeW6bTest extends TestCase
     }
 
     /**
-     * O gateway também se reporta a si próprio, por isso as afirmações olham só para o que
-     * foi publicado para a pulseira.
+     * Só o que foi publicado para a pulseira, porque o gateway também se reporta.
      *
      * @param list<array<string, mixed>> $published
      * @return list<array<string, mixed>>

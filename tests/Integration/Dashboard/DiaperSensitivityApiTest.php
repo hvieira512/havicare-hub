@@ -13,10 +13,7 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\Support\Doubles\InMemoryRedisClient;
 use Tests\Support\MysqlDashboardTestCase;
 
-/**
- * A sensibilidade do medidor de fraldas é uma `HubAppliedCapability`: o sensor é um beacon
- * não-conectável, e cada alteração ficaria pendente à espera de um ack que nunca chega.
- */
+/** A sensibilidade da fralda aplica-se no hub: o sensor é um beacon e nunca confirmaria a alteração. */
 final class DiaperSensitivityApiTest extends MysqlDashboardTestCase
 {
     private const SENSOR = 'eec5000202f9';
@@ -28,8 +25,7 @@ final class DiaperSensitivityApiTest extends MysqlDashboardTestCase
     }
 
     /**
-     * O serviço e o PDO da mesma base: cada `createDashboardDatabase()` clona o template para
-     * uma base nova.
+     * O serviço e o PDO da mesma base, clonada de novo em cada `createDashboardDatabase()`.
      *
      * @return array{DeviceService, \PDO}
      */

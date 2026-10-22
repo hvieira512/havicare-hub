@@ -8,10 +8,7 @@ use Hub\Infrastructure\Persistence\Repository\ApiDataAccess;
 use Hub\State\DeviceConfigurationProjection;
 use Tests\Support\MysqlDashboardTestCase;
 
-/**
- * Um tipo de resposta que várias configurações declaram não nomeia nenhuma: no dispensador nove
- * partilham o `write_config_ack`, e é melhor não guardar do que guardar na linha errada.
- */
+/** Um tipo de resposta que várias configurações declaram não se guarda, para não cair na linha errada. */
 final class AmbiguousReplyTypeTest extends MysqlDashboardTestCase
 {
     private const IMEI = '869243062262262';

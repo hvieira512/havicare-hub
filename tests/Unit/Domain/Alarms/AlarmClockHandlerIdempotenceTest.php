@@ -50,8 +50,7 @@ final class AlarmClockHandlerIdempotenceTest extends TestCase
     }
 
     /**
-     * O payload por omissão de cada handler é nativo, e é o que o apresentador serve a um
-     * dispositivo que nunca guardou nada. Também ele passa pelo `fromNative` duas vezes.
+     * O payload por omissão de cada handler, que o apresentador serve a quem nunca guardou nada.
      *
      * @param array<string, mixed> $native
      */

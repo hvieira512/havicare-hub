@@ -9,10 +9,7 @@ use Hub\Api\Request\ApiUserWriteRequest;
 use Hub\Api\Request\DeviceAssociationRequest;
 use PHPUnit\Framework\TestCase;
 
-/**
- * Uma constraint que o gerador não conheça é ignorada em silêncio: continua a validar em
- * execução, mas não fica descrita no documento.
- */
+/** Uma constraint que o gerador não conhece continua a validar, mas não fica no documento. */
 final class SchemaFromRequestTest extends TestCase
 {
     public function testNotBlankBecomesRequired(): void

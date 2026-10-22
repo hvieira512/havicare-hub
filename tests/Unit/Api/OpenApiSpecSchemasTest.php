@@ -7,10 +7,7 @@ namespace Tests\Unit\Api;
 use Hub\Api\OpenApiSpec;
 use PHPUnit\Framework\TestCase;
 
-/**
- * Os esquemas e as rotas que os referenciam editam-se em ficheiros diferentes: um `$ref` que
- * não resolve parte a build, e um esquema que ninguém referencia não se acumula.
- */
+/** Todo o `$ref` resolve e todo o esquema é referenciado, embora vivam em ficheiros diferentes. */
 final class OpenApiSpecSchemasTest extends TestCase
 {
     public function testEverySchemaReferenceResolves(): void

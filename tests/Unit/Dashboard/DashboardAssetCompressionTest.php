@@ -8,10 +8,7 @@ use GuzzleHttp\Psr7\ServerRequest;
 use Hub\Dashboard\DashboardHttpServer;
 use PHPUnit\Framework\TestCase;
 
-/**
- * O `Accept-Encoding` decide se o estático sai comprimido, e o corpo comprimido leva ETag
- * próprio para uma cache pelo meio não entregar uma variante a quem pediu a outra.
- */
+/** O `Accept-Encoding` decide a compressão, e a variante comprimida leva ETag próprio. */
 final class DashboardAssetCompressionTest extends TestCase
 {
     private const SOURCE = "const answer = 42;\n// texto repetido para haver o que comprimir\n";

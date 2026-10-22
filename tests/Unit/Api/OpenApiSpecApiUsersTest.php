@@ -7,10 +7,7 @@ namespace Tests\Unit\Api;
 use Hub\Api\OpenApiSpec;
 use PHPUnit\Framework\TestCase;
 
-/**
- * Um parâmetro que o serviço aceita e a especificação não menciona é uma capacidade que
- * ninguém sabe que existe.
- */
+/** Um parâmetro que o serviço aceita e a especificação cala é uma capacidade que ninguém conhece. */
 final class OpenApiSpecApiUsersTest extends TestCase
 {
     /** @return array<string, mixed> */

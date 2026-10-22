@@ -13,8 +13,7 @@ use PHPUnit\Framework\TestCase;
 final class DestructiveConfirmationTest extends TestCase
 {
     /**
-     * As capacidades cujo efeito não se desfaz a partir da dashboard: o aparelho deixa de
-     * comunicar, perde o que estava a fazer, ou liga a um número sem avisar quem o traz.
+     * As capacidades cujo efeito a dashboard não desfaz: o aparelho cala-se, perde o que fazia, ou liga sem avisar.
      *
      * @var list<string>
      */

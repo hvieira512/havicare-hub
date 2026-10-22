@@ -8,10 +8,7 @@ use GuzzleHttp\Psr7\ServerRequest;
 use Hub\Dashboard\DashboardHttpServer;
 use Tests\Support\DashboardHttpTestCase;
 
-/**
- * O que o servidor entrega: a página, os recursos estáticos, as imagens dos modelos e as regras
- * de cache das rotas.
- */
+/** A página, os estáticos, as imagens dos modelos e as regras de cache que o servidor entrega. */
 final class DashboardHttpServerTest extends DashboardHttpTestCase
 {
     public function testDashboardPageRendersPhpComponentsRepeatedly(): void

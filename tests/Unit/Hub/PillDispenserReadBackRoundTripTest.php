@@ -69,8 +69,7 @@ final class PillDispenserReadBackRoundTripTest extends TestCase
     }
 
     /**
-     * As configurações de um valor só, todas de uma vez. A trama escrita traz uma TAG e a
-     * resposta traz a mesma: se uma delas mudar de tipo ou de escala, fecha aqui.
+     * As configurações de um só valor: a TAG escrita volta na resposta com o mesmo tipo e escala.
      *
      * @return iterable<string, array{string, array<string, mixed>, string, array<string, mixed>}>
      */

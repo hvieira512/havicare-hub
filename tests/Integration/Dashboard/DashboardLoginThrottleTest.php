@@ -10,10 +10,7 @@ use Psr\Http\Message\ResponseInterface;
 use Tests\Support\DashboardHttpTestCase;
 use Tests\Support\Doubles\InMemoryRedisClient;
 
-/**
- * O `password_verify` custa ~146 ms, é síncrono e corre no event loop da ingestão TCP: sem
- * tetos, sete tentativas por segundo param o processo inteiro.
- */
+/** O `password_verify` bloqueia o event loop ~146 ms, e sem tetos sete tentativas por segundo param o hub. */
 final class DashboardLoginThrottleTest extends DashboardHttpTestCase
 {
     /** O teto verifica-se antes do `password_verify`, mesmo com a password certa. */
@@ -128,10 +125,7 @@ final class DashboardLoginThrottleTest extends DashboardHttpTestCase
         );
     }
 
-    /**
-     * As janelas vão a uma hora de propósito: a janela vive na chave, como `intdiv(time(), s)`,
-     * e uma curta faria o teste depender de atravessar uma fronteira do relógio.
-     */
+    /** Janelas de uma hora, para o teste não depender de atravessar uma fronteira de `intdiv(time(), s)`. */
     private function serverWithThrottle(
         int $maxPerAddress = 20,
         int $maxPerUsername = 10,

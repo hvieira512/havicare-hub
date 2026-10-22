@@ -10,10 +10,7 @@ use PHPUnit\Framework\TestCase;
 use Tests\Support\Doubles\FakeMqttSubscriber;
 use Tests\Support\CapturesLog;
 
-/**
- * O banner de arranque diz, meses depois, com que configuração se corria. A Veepoo lê a
- * secção de configuração dos gateways, que não tem o nome dela.
- */
+/** O banner de arranque regista com que configuração se corria, incluindo a secção dos gateways. */
 final class StartupBannerTest extends TestCase
 {
     use CapturesLog;

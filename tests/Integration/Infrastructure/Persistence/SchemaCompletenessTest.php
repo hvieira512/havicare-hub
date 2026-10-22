@@ -8,10 +8,7 @@ use Hub\Domain\DeviceTypeCatalog;
 use PDO;
 use Tests\Support\MysqlDashboardTestCase;
 
-/**
- * O `database/schema.sql` corre antes das migrações e tem de concordar com elas: divergindo,
- * recria o que uma migração largou, ou falta numa base nova quando a migração for apagada.
- */
+/** O `database/schema.sql` concorda com as migrações que correm depois dele. */
 final class SchemaCompletenessTest extends MysqlDashboardTestCase
 {
     public function testSchemaFileAloneDescribesTheMigratedDatabase(): void

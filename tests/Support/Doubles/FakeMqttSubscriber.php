@@ -6,10 +6,7 @@ namespace Tests\Support\Doubles;
 
 use PhpMqtt\Client\MqttClient;
 
-/**
- * Um `MqttClient` que nunca toca num socket, para os bridges de ingress que subscrevem no
- * construtor ou no `start()`.
- */
+/** Um `MqttClient` que nunca toca num socket, para os bridges que subscrevem ao arrancar. */
 final class FakeMqttSubscriber extends MqttClient
 {
     /** @var list<array{topicFilter: string, qualityOfService: int}> */

@@ -7,10 +7,7 @@ namespace Tests\Support;
 use Hub\Domain\Capability\CapabilityCatalog;
 use Hub\Infrastructure\Persistence\Repository\ApiDataAccess;
 
-/**
- * Uma linha de configuração desejada na forma nativa, sem alteração por trás: o `stage()` guarda o
- * desejado na forma pública, e estes testes partem do que o aparelho guarda.
- */
+/** Uma configuração desejada na forma nativa, como o aparelho a guarda, sem passar pelo `stage()`. */
 final class ConfigurationFixtures
 {
     /** @param array<string, mixed> $payload */

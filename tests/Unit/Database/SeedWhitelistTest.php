@@ -6,10 +6,7 @@ namespace Tests\Unit\Database;
 
 use PHPUnit\Framework\TestCase;
 
-/**
- * O `0` e o `'null'` são sentinelas de memória que o `WhitelistRepository` converte na
- * fronteira: na base, sem dono é `NULL`.
- */
+/** O `0` e o `'null'` convertem-se em `NULL` na fronteira do `WhitelistRepository`. */
 final class SeedWhitelistTest extends TestCase
 {
     private const SEED = __DIR__ . '/../../../database/seed.sql';
@@ -47,10 +44,7 @@ final class SeedWhitelistTest extends TestCase
         self::assertSame([], $offenders, 'estas linhas gravam sentinelas em vez de NULL');
     }
 
-    /**
-     * Uma licença só identifica um inquilino no par empresa+número, e metade do par não quer
-     * dizer nada.
-     */
+    /** Uma licença só identifica um inquilino no par empresa+número. */
     public function testNoRowHasALicenceWithoutACompanyOrTheReverse(): void
     {
         $offenders = [];

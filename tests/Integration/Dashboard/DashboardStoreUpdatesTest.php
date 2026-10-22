@@ -8,18 +8,12 @@ use Hub\State\DeviceStore;
 use Predis\Client as RedisClient;
 use Tests\Support\MysqlDashboardTestCase;
 
-/**
- * O stream de um dispositivo é por push, e por isso só vê uma mudança se o store a anunciar.
- * Isto prende quais as escritas que anunciam e quais é que ficam caladas.
- */
+/** Que escritas do store se anunciam ao stream por push de um dispositivo, e quais ficam caladas. */
 final class DashboardStoreUpdatesTest extends MysqlDashboardTestCase
 {
     private const DEVICE = 'fbd87c59ba8b';
 
-    /**
-     * Não começa por `hub:` de propósito: o `REDIS_HOST` pode apontar para o Redis de produção,
-     * cujas chaves `hub:` não têm prazo de validade.
-     */
+    /** Fora de `hub:`, porque o `REDIS_HOST` pode ser o da produção, cujas chaves não expiram. */
     private const KEY_ROOT = 'test:dashboard-store-updates';
 
     /** @var list<RedisClient> */

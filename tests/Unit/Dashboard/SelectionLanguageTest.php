@@ -6,10 +6,7 @@ namespace Tests\Unit\Dashboard;
 
 use PHPUnit\Framework\TestCase;
 
-/**
- * As cinco caixas que se escolhem com o rato partilham os estados numa regra do `shell.css`;
- * o ficheiro da área de cada uma leva só a geometria.
- */
+/** As cinco caixas escolhidas com o rato partilham os estados no `shell.css`, e cada área leva só a geometria. */
 final class SelectionLanguageTest extends TestCase
 {
     private const BOXES = [

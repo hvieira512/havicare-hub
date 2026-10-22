@@ -4,10 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Support\Doubles;
 
-/**
- * Uma porta TCP livre em `127.0.0.1`, ou `null` quando o ambiente não deixa abrir sockets
- * locais e o teste deve ser ignorado. Há uma corrida teórica até o ingress se ligar à porta.
- */
+/** Uma porta TCP livre em `127.0.0.1`, ou `null` quando o ambiente não deixa abrir sockets. */
 final class LocalTcpPort
 {
     public static function free(): ?int

@@ -6,17 +6,13 @@ namespace Tests\Unit\Api;
 
 use PHPUnit\Framework\TestCase;
 
-/**
- * Criar um recurso devolve sempre `201`, declarado na rota: um handler que devolve uma
- * `Response` já traz o seu estado, e o da rota deixa de valer.
- */
+/** Criar um recurso devolve `201`, declarado na rota e não numa `Response` do handler. */
 final class CreationStatusIsUniformTest extends TestCase
 {
     private const ROUTES_DIR = __DIR__ . '/../../../src/Api/Routes';
 
     /**
-     * As rotas que criam um recurso endereçável. O critério é o método do serviço: um
-     * `create()`. O `block()` da denylist e o `preview()` da descoberta são acções.
+     * As rotas cujo serviço chama `create()`; o `block()` e o `preview()` são acções.
      *
      * @var list<string>
      */

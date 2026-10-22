@@ -9,10 +9,7 @@ use React\EventLoop\Loop;
 use React\Stream\ReadableStreamInterface;
 use Tests\Support\DashboardHttpTestCase;
 
-/**
- * O stream de eventos de um dispositivo. Corre o event loop a sério, e por isso vive à parte:
- * um temporizador esquecido aqui aparece como lentidão noutro ficheiro.
- */
+/** O stream de um dispositivo, à parte porque corre o event loop a sério. */
 final class DashboardStreamTest extends DashboardHttpTestCase
 {
     public function testStreamPushesUpdatesAsTheyAreWrittenAndReleasesItsListenerOnClose(): void
@@ -310,10 +307,7 @@ final class DashboardStreamTest extends DashboardHttpTestCase
         return $frame;
     }
 
-    /**
-     * Lê o instantâneo, corre o `$write` e lê até a actualização chegar; o prazo fica abaixo do
-     * recurso periódico, e um frame aqui só pode vir do store a anunciar a escrita.
-     */
+    /** Corre o `$write` e lê até ao frame, com prazo abaixo do periódico para o frame só vir do anúncio. */
     private function collectSseFramesUntilUpdate(
         \Psr\Http\Message\ResponseInterface $response,
         callable $write

@@ -7,10 +7,7 @@ namespace Tests\Unit\Registry;
 use PHPUnit\Framework\TestCase;
 use Tests\Support\Doubles\IngressFixtures;
 
-/**
- * O `deviceId` de um 4P Touch deduz-se do IMEI, e por isso o ramo `four-p-touch` do
- * `resolve()` restringe o tipo, como os ramos `ncs` e `radar`.
- */
+/** O `resolve()` de um 4P Touch restringe o tipo, porque o `deviceId` se deduz do IMEI. */
 final class WhitelistFourPTouchResolveTest extends TestCase
 {
     public function testDoesNotResolveToADeviceOfAnotherType(): void

@@ -13,8 +13,7 @@ use PHPUnit\Framework\TestCase;
 final class PillDispenserControlTagsAreServedTest extends TestCase
 {
     /**
-     * A resposta ao `0x0C` do M228 de ensaio a 22 de setembro de 2026, escrita à mão: lida da tabela
-     * do código não provava nada. Actualiza-se depois de perguntar ao firmware.
+     * A resposta ao `0x0C` do M228 de ensaio em 22 de setembro de 2026, escrita à mão e não lida do código.
      *
      * @var list<int>
      */
@@ -66,8 +65,7 @@ final class PillDispenserControlTagsAreServedTest extends TestCase
     }
 
     /**
-     * Um corpo genérico que sirva a todos os comandos: o que aqui se mede é a família da TAG
-     * que sai, e não o valor que ela leva.
+     * Um corpo genérico para todos os comandos, porque aqui se mede a família da TAG e não o valor.
      *
      * @return array<string, mixed>
      */

@@ -8,10 +8,7 @@ use GuzzleHttp\Psr7\ServerRequest;
 use Hub\Dashboard\DashboardHttpServer;
 use PHPUnit\Framework\TestCase;
 
-/**
- * A versão dos módulos vai no caminho porque a Cloudflare reescreve o `no-cache` da origem, e
- * o prefixo herda-se pelos `import` relativos sem passo de compilação.
- */
+/** A versão dos módulos vai no caminho, que a Cloudflare não reescreve e os `import` relativos herdam. */
 final class DashboardAssetVersionTest extends TestCase
 {
     public function testThePageLoadsTheModuleGraphFromAVersionedPath(): void

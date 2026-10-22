@@ -8,10 +8,7 @@ use Hub\Api\Http\CollectionColumns;
 use Hub\Api\Request\ApiUserWriteRequest;
 use PHPUnit\Framework\TestCase;
 
-/**
- * O descritor com que cada listagem diz o que se ordena, filtra e edita, derivado de onde a
- * capacidade vive em vez de escrito à mão.
- */
+/** O descritor de cada listagem deriva-se de onde a capacidade vive, e não se escreve à mão. */
 final class CollectionColumnsTest extends TestCase
 {
     /**

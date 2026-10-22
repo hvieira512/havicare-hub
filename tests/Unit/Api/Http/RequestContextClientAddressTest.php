@@ -8,10 +8,7 @@ use GuzzleHttp\Psr7\ServerRequest;
 use Hub\Api\Http\RequestContext;
 use PHPUnit\Framework\TestCase;
 
-/**
- * Com o nginx à frente o `REMOTE_ADDR` é sempre `127.0.0.1`, e o `LoginThrottle` conta por
- * endereço: sem o endereço real, todos partilham o mesmo balde de tentativas.
- */
+/** Atrás de um proxy o `LoginThrottle` conta pelo endereço real, e não por `127.0.0.1`. */
 final class RequestContextClientAddressTest extends TestCase
 {
     /** Sem proxy pelo meio, o endereço é o da ligação. */

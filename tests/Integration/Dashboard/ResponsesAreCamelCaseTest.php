@@ -7,10 +7,7 @@ namespace Tests\Integration\Dashboard;
 use GuzzleHttp\Psr7\ServerRequest;
 use Tests\Support\DashboardHttpTestCase;
 
-/**
- * Os nomes de campo da API são camelCase. As chaves que são valores — capacidades, configurações,
- * facetas — e os campos do token congelados pelo hitCare ficam de fora.
- */
+/** Os campos da API são camelCase; as chaves que são valores e os campos congelados pelo hitCare ficam de fora. */
 final class ResponsesAreCamelCaseTest extends DashboardHttpTestCase
 {
     /** Mapas cujas chaves são identificadores do domínio, e não nomes de campo. */
