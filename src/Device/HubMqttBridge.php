@@ -129,16 +129,7 @@ class HubMqttBridge
             $this->messages->dispatch(MessageFanout::scope($company, $licenseId, $channel), $topic, $json);
         }
 
-        try {
-            $this->publisher->publish($topic, $json, $qualityOfService, $retain);
-        } catch (\Throwable $e) {
-            if ($this->reconnectPublisher === null) {
-                throw $e;
-            }
-
-            $this->reconnect($e);
-            $this->publisher->publish($topic, $json, $qualityOfService, $retain);
-        }
+        $this->withPublisher(static fn (MqttClient $publisher) => $publisher->publish($topic, $json, $qualityOfService, $retain));
     }
 
     /**
@@ -176,17 +167,7 @@ class HubMqttBridge
     public function clearRetainedStatus(string $company, int $licenseId, string $deviceType, string $imei): void
     {
         $topic = $this->topic($this->deviceTopic($company, $licenseId, $deviceType, $imei, 'status'));
-
-        try {
-            $this->publisher->publish($topic, '', MqttClient::QOS_AT_LEAST_ONCE, true);
-        } catch (\Throwable $e) {
-            if ($this->reconnectPublisher === null) {
-                throw $e;
-            }
-
-            $this->reconnect($e);
-            $this->publisher->publish($topic, '', MqttClient::QOS_AT_LEAST_ONCE, true);
-        }
+        $this->withPublisher(static fn (MqttClient $publisher) => $publisher->publish($topic, '', MqttClient::QOS_AT_LEAST_ONCE, true));
     }
 
     public function logPublishFailure(string $channel, string $imei, \Throwable $e): void
@@ -200,13 +181,27 @@ class HubMqttBridge
      */
     public function drainPublisher(): void
     {
+        $this->withPublisher(static fn (MqttClient $publisher) => $publisher->loopOnce(microtime(true), false), retry: false);
+    }
+
+    /**
+     * Usa o publicador; se a ligação caiu, volta a ligar e, com `$retry`, tenta uma vez mais.
+     *
+     * @param \Closure(MqttClient): mixed $use
+     */
+    private function withPublisher(\Closure $use, bool $retry = true): void
+    {
         try {
-            $this->publisher->loopOnce(microtime(true), false);
+            $use($this->publisher);
         } catch (\Throwable $e) {
             if ($this->reconnectPublisher === null) {
                 throw $e;
             }
+
             $this->reconnect($e);
+            if ($retry) {
+                $use($this->publisher);
+            }
         }
     }
 
