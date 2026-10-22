@@ -112,14 +112,18 @@ wait_for_mosquitto() {
   scenario_fail "stream_failure" "mosquitto did not become ready"
 }
 
-# O contentor arrancar não é o hub estar a ouvir: entre um e outro correm migrações e abrem-se
-# as subscrições MQTT, e ligar antes leva «connection refused».
+# Pronto é a 9000 a responder: antes dela o contentor corre o composer install, as migrações, o
+# seed e as subscrições MQTT. Um contentor que sai no arranque falha logo, sem esgotar o prazo.
 wait_for_hub_tcp() {
   local probe='$s=@fsockopen("127.0.0.1", 9000, $e, $m, 1); if ($s) { fclose($s); exit(0); } exit(1);'
+  local deadline=$((SECONDS + 120))
 
-  for _ in $(seq 1 40); do
+  while [ "$SECONDS" -lt "$deadline" ]; do
     if docker compose exec -T hub php -r "$probe" >/dev/null 2>&1; then
       return 0
+    fi
+    if [ "$(docker compose ps -a --format '{{.State}}' hub)" = "exited" ]; then
+      scenario_fail "routing_failure" "hub container exited during startup"
     fi
     sleep 1
   done

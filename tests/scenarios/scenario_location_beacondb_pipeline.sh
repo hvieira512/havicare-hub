@@ -178,12 +178,7 @@ REQUEST_COUNT_BEFORE="$(docker compose exec -T hub sh -lc "wc -l < /tmp/beacondb
 # Reiniciar o hub também pára o fornecedor simulado: resolver a mesma evidência sem pedido ao
 # fornecedor prova que a cache persiste no Redis.
 docker compose restart hub >/dev/null
-for _ in $(seq 1 20); do
-  if docker compose exec -T hub php -r '$s=@fsockopen("127.0.0.1",9000,$e,$m,1); if ($s) { fclose($s); exit(0); } exit(1);'; then
-    break
-  fi
-  sleep 1
-done
+wait_for_hub_tcp
 
 docker compose exec -T hub php -r '
 require "vendor/autoload.php";

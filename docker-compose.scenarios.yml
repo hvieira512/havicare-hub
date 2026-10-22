@@ -25,6 +25,9 @@ services:
   hub:
     container_name: !reset null
     restart: !override "no"
+    # Sem o vigia do `bin/dev.sh`: um ficheiro mexido a meio reiniciava o hub depois de pronto, e
+    # um hub que morre deve parar o cenário em vez de renascer em silêncio.
+    command: !override sh -lc "composer install --no-interaction || composer install --no-interaction; php bin/migrate.php && php bin/seed-inventory.php && exec php bin/server-hub.php"
     ports: !override
       - "8181:8081"
 
