@@ -24,8 +24,8 @@ final class BraceletPresence
     public function __construct(
         private readonly HubMqttBridge $mqttBridge,
         private readonly ?DeviceReportStore $deviceStore,
-        private readonly string $protocol = 'veepoo-ble',
-        private readonly string $deviceType = 'bracelet',
+        private readonly string $protocol,
+        private readonly string $deviceType,
     ) {
     }
 

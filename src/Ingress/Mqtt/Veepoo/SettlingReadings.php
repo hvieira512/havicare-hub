@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Hub\Ingress\Mqtt\Veepoo;
 
+use Hub\Ingress\Mqtt\Gateway\GattDeviceContext;
+
 /**
  * O ciclo de vida de uma medição a assentar, entre a primeira trama e a confirmação. Não
  * publica: guarda e diz quando sai, e quem emite é a bridge.
@@ -20,7 +22,7 @@ final class SettlingReadings
      * A leitura mais recente de cada pedido em curso, por aparelho: o resultado é o valor com
      * que a medição assentou, o mesmo que a app mostra.
      *
-     * @var array<string, array<string, array{at: float, telemetry: array<string, mixed>, context: BraceletContext}>>
+     * @var array<string, array<string, array{at: float, telemetry: array<string, mixed>, context: GattDeviceContext}>>
      */
     private array $settling = [];
 
@@ -42,7 +44,7 @@ final class SettlingReadings
      *
      * @param array<string, mixed> $telemetry
      */
-    public function hold(BraceletContext $context, string $operation, array $telemetry): void
+    public function hold(GattDeviceContext $context, string $operation, array $telemetry): void
     {
         $this->settling[$context->deviceKey][$operation] = [
             'at' => ($this->clock)(),
@@ -90,7 +92,7 @@ final class SettlingReadings
      * As leituras cuja confirmação passou do prazo, uma de cada vez: uma publicação que
      * rebente deixa as restantes onde estão.
      *
-     * @return \Generator<int, array{context: BraceletContext, telemetry: array<string, mixed>}>
+     * @return \Generator<int, array{context: GattDeviceContext, telemetry: array<string, mixed>}>
      */
     public function release(): \Generator
     {

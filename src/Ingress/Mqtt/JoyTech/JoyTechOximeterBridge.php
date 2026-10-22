@@ -6,12 +6,10 @@ namespace Hub\Ingress\Mqtt\JoyTech;
 
 use Hub\Device\CommercialModelResolver;
 use Hub\Device\HubMqttBridge;
-use Hub\Device\TelemetryEnvelope;
 use Hub\Domain\GatewayDeviceLinkLookup;
-use Hub\Ingress\Mqtt\DispatchesQueued;
+use Hub\Ingress\Mqtt\Gateway\GattBridge;
 use Hub\Ingress\Mqtt\Gateway\GattDeviceContext;
-use Hub\Ingress\Mqtt\MqttBridgeBase;
-use Hub\Ingress\Mqtt\Veepoo\BraceletPresence;
+use Hub\Support\Values;
 use Hub\Registry\Denylist;
 use Hub\Registry\Whitelist;
 use Hub\State\DeviceCommandLog;
@@ -22,7 +20,7 @@ use PhpMqtt\Client\MqttClient;
  * Ingestão dos oxímetros de dedo JoyTech entregues por um gateway GATT. O aparelho manda a leitura
  * corrente 11 vezes por segundo, sem trama de fim; uma medição sai uma vez, quando acaba.
  */
-final class JoyTechOximeterBridge extends MqttBridgeBase implements DispatchesQueued
+final class JoyTechOximeterBridge extends GattBridge
 {
     private const PROTOCOL = 'joytech-spo2';
 
@@ -45,13 +43,11 @@ final class JoyTechOximeterBridge extends MqttBridgeBase implements DispatchesQu
     /** @var array<string, array{context: GattDeviceContext, firstAt: float, lastAt: float, samples: list<array{float, int, int}>}> */
     private array $measurements = [];
 
-    private readonly BraceletPresence $presence;
-
     public function __construct(
         MqttClient $subscriber,
         Whitelist $whitelist,
         HubMqttBridge $mqttBridge,
-        private readonly GatewayDeviceLinkLookup $links,
+        GatewayDeviceLinkLookup $links,
         string $topicFilter,
         ?callable $reconnectSubscriber = null,
         null|(DeviceReportStore&DeviceCommandLog) $deviceStore = null,
@@ -63,15 +59,17 @@ final class JoyTechOximeterBridge extends MqttBridgeBase implements DispatchesQu
             $subscriber,
             $whitelist,
             $mqttBridge,
+            $links,
             $topicFilter,
             'joytech-oximeter',
+            self::PROTOCOL,
+            self::DEVICE_TYPE,
             $reconnectSubscriber,
             $deviceStore,
-            denylist: $denylist,
-            clock: $clock,
-            commercialModelResolver: $commercialModelResolver,
+            $clock,
+            $commercialModelResolver,
+            $denylist,
         );
-        $this->presence = new BraceletPresence($mqttBridge, $deviceStore, self::PROTOCOL, self::DEVICE_TYPE);
     }
 
     public function dispatchQueued(): void
@@ -84,27 +82,16 @@ final class JoyTechOximeterBridge extends MqttBridgeBase implements DispatchesQu
         }
     }
 
-    protected function handleMessage(string $topic, string $payload): void
+    /** O gateway entrega os outros JoyTech pela mesma fonte: o nome do aparelho distingue-os. */
+    protected function accepts(array $message): bool
     {
-        $message = json_decode($payload, true);
-        // O gateway entrega os outros JoyTech pela mesma fonte: o nome do aparelho distingue-os.
-        if (
-            !is_array($message)
-            || ($message['source'] ?? null) !== 'joytech-node'
-            || !str_starts_with(trim((string)($message['device']['model'] ?? '')), 'XM')
-        ) {
-            return;
-        }
+        return ($message['source'] ?? null) === 'joytech-node'
+            && str_starts_with(trim((string)($message['device']['model'] ?? '')), 'XM');
+    }
 
-        $context = $this->resolveGattDevice($topic, $message, $this->links, self::PROTOCOL, self::DEVICE_TYPE);
-        if ($context === null) {
-            return;
-        }
-
-        $this->mqttBridge->publishRaw($context->deviceKey, $message, self::DEVICE_TYPE, $context->licenseId, $context->company);
-
-        $data = is_array($message['payload'] ?? null) ? $message['payload'] : [];
-        match ($message['kind'] ?? null) {
+    protected function handle(GattDeviceContext $context, string $kind, array $data, int $offsetMinutes, array $message): void
+    {
+        match ($kind) {
             'session' => $this->session($context, ($data['connected'] ?? false) === true),
             'frame' => $this->frame($context, (string)($data['hex'] ?? '')),
             default => null,
@@ -114,12 +101,12 @@ final class JoyTechOximeterBridge extends MqttBridgeBase implements DispatchesQu
     private function session(GattDeviceContext $context, bool $connected): void
     {
         if ($connected) {
-            $this->presence->markOnline($context->deviceKey, $context->device, $context->licenseId, $context->company);
+            $this->presence($context)->markOnline($context->deviceKey, $context->device, $context->licenseId, $context->company);
             return;
         }
 
         $this->finish($context->deviceKey);
-        $this->presence->markOffline($context->deviceKey, $context->device, $context->licenseId, $context->company);
+        $this->presence($context)->markOffline($context->deviceKey, $context->device, $context->licenseId, $context->company);
     }
 
     /** O 0x88: SpO2 em %, pulso em bpm, PI, barra e onda, um byte cada. O PI vem sempre a zero. */
@@ -156,27 +143,7 @@ final class JoyTechOximeterBridge extends MqttBridgeBase implements DispatchesQu
         }
 
         $occurredAt = gmdate('Y-m-d\TH:i:s\Z', (int)$measurement['lastAt']);
-        $this->emit($measurement['context'], 'blood_oxygen', ['spo2Percent' => self::median(array_column($measurement['samples'], 1))], $occurredAt);
-        $this->emit($measurement['context'], 'heart_rate', ['bpm' => self::median(array_column($measurement['samples'], 2))], $occurredAt);
-    }
-
-    /** @param list<int> $values a de cima, num número par: é sempre um valor que o aparelho mostrou */
-    private static function median(array $values): int
-    {
-        sort($values);
-
-        return $values[intdiv(count($values), 2)];
-    }
-
-    /** @param array<string, mixed> $data */
-    private function emit(GattDeviceContext $context, string $type, array $data, string $occurredAt): void
-    {
-        $telemetry = TelemetryEnvelope::for($type, $context->deviceKey, $context->device, self::PROTOCOL, self::NATIVE_TYPE, $data, $context->gatewayKey);
-        $telemetry['occurredAt'] = $occurredAt;
-        $this->mqttBridge->publishTelemetry($context->deviceKey, $telemetry, self::DEVICE_TYPE, $context->licenseId, $context->company);
-        $this->deviceStore?->append($context->deviceKey, 'telemetry', $telemetry + [
-            'deviceType' => self::DEVICE_TYPE,
-            'licenseId' => $context->licenseId,
-        ]);
+        $this->telemetry($measurement['context'], 'blood_oxygen', self::NATIVE_TYPE, ['spo2Percent' => Values::median(array_column($measurement['samples'], 1))], $occurredAt);
+        $this->telemetry($measurement['context'], 'heart_rate', self::NATIVE_TYPE, ['bpm' => Values::median(array_column($measurement['samples'], 2))], $occurredAt);
     }
 }
