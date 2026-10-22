@@ -415,7 +415,7 @@ Havicare (secção 7), como a balança e a JoyTech.
 | `src/Ingress/Mqtt/Veepoo/SettlingReadings.php` | As leituras ainda a estabilizar, que não saem |
 | `src/Ingress/Mqtt/Veepoo/MeasurementFailureReporter.php` | A medição que falhou, e porquê |
 | `src/Ingress/Mqtt/Veepoo/DownlinkDispatcher.php` | Os comandos em fila para a pulseira |
-| `src/Ingress/Mqtt/Moko/BraceletTelemetry.php` | Bateria e movimento, comuns às duas |
+| `src/Ingress/Mqtt/Moko/BraceletNormalizer.php` | Bateria, movimento e o toque, das duas pulseiras MOKO |
 | `src/Ingress/Mqtt/Moko/ProximityTracker.php` | A janela de RSSI |
 | `src/Ingress/Mqtt/Gateway/RedisObservationStateStore.php` | De-duplicação, refrescamento, transições |
 | `src/Ingress/Mqtt/Gateway/GattDownlinks.php` | As escritas GATT da balança e da JoyTech: uma de cada vez, e o reenvio |

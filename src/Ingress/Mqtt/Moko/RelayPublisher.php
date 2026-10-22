@@ -154,9 +154,7 @@ final class RelayPublisher
             }
             try {
                 $this->publishProximity(
-                    $this->commercialModelResolver === null
-                        ? $device
-                        : $this->withCommercialName($device),
+                    $this->commercialModelResolver?->enrich($device) ?? $device,
                     $gateway,
                     self::relayedProtocol($device),
                     ['state' => 'unknown', 'samples' => 0],
@@ -261,14 +259,5 @@ final class RelayPublisher
     private function proximity(): ProximityTracker
     {
         return $this->proximity ??= new ProximityTracker();
-    }
-
-    /**
-     * @param array<string, mixed> $device
-     * @return array<string, mixed>
-     */
-    private function withCommercialName(array $device): array
-    {
-        return $this->commercialModelResolver?->enrich($device) ?? $device;
     }
 }

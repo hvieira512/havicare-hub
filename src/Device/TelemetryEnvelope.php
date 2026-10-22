@@ -24,11 +24,15 @@ final class TelemetryEnvelope
         string $nativeType,
         array $data,
         string $gatewayId = '',
+        ?int $rssiDbm = null,
     ): array {
         $source = ['protocol' => $protocol, 'nativeType' => $nativeType];
         // O gateway só entra quando existe: um relógio fala directamente.
         if ($gatewayId !== '') {
             $source['gatewayId'] = $gatewayId;
+        }
+        if ($rssiDbm !== null) {
+            $source['rssiDbm'] = $rssiDbm;
         }
 
         return [

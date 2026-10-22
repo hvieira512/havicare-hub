@@ -85,9 +85,8 @@ final class MokoBridge extends MqttBridgeBase implements DispatchesQueued
         $this->monitNormalizer = new MonitNormalizer();
         $this->gatewayNormalizer = new GatewayNormalizer();
         $this->w6bDecoder = new W6bDecoder();
-        $this->w6bNormalizer = new W6bNormalizer();
         $this->w6Decoder = new W6Decoder();
-        $this->w6Normalizer = new W6Normalizer();
+        $this->braceletNormalizer = new BraceletNormalizer();
     }
 
     private readonly GatewayDeviceLinkLookup $links;
@@ -101,9 +100,8 @@ final class MokoBridge extends MqttBridgeBase implements DispatchesQueued
     private readonly MonitNormalizer $monitNormalizer;
     private readonly GatewayNormalizer $gatewayNormalizer;
     private readonly W6bDecoder $w6bDecoder;
-    private readonly W6bNormalizer $w6bNormalizer;
     private readonly W6Decoder $w6Decoder;
-    private readonly W6Normalizer $w6Normalizer;
+    private readonly BraceletNormalizer $braceletNormalizer;
 
     /** Um gateway que reencaminha sessões GATT está vivo enquanto publica, como um MOKO. */
     private function relayingGatewaySeen(string $gatewayMac): void
@@ -435,10 +433,11 @@ final class MokoBridge extends MqttBridgeBase implements DispatchesQueued
                 : (int)$transition['previous'];
         }
 
-        $normalized = $this->w6bNormalizer->normalize(
+        $normalized = $this->braceletNormalizer->normalize(
             $decoded,
             $device,
             (string)$gateway['imei'],
+            'moko-w6b',
             $previousTriggerCount,
         );
 
@@ -474,7 +473,7 @@ final class MokoBridge extends MqttBridgeBase implements DispatchesQueued
             unset($decoded['alarm']);
         }
 
-        $normalized = $this->w6Normalizer->normalize($decoded, $device, (string)$gateway['imei']);
+        $normalized = $this->braceletNormalizer->normalize($decoded, $device, (string)$gateway['imei'], 'moko-w6');
 
         $this->relay->publishTelemetry($device, $gateway, 'moko-w6', $normalized, $decoded['rssiDbm'] ?? null);
         $this->relay->publishEvents($device, $gateway, $normalized['events']);
