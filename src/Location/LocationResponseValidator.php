@@ -10,6 +10,12 @@ final class LocationResponseValidator
     {
     }
 
+    /** Dentro do globo, e não o 0,0 que um aparelho sem posição manda. */
+    public static function validCoordinates(float $lat, float $lon): bool
+    {
+        return $lat >= -90.0 && $lat <= 90.0 && $lon >= -180.0 && $lon <= 180.0 && !($lat === 0.0 && $lon === 0.0);
+    }
+
     /**
      * @param array<string, mixed> $response
      * @return array{hasCoordinates: true, lat: float, lon: float, accuracyMeters: float}
@@ -29,7 +35,7 @@ final class LocationResponseValidator
 
         $lat = (float)$lat;
         $lon = (float)$lon;
-        if ($lat < -90.0 || $lat > 90.0 || $lon < -180.0 || $lon > 180.0 || ($lat === 0.0 && $lon === 0.0)) {
+        if (!self::validCoordinates($lat, $lon)) {
             throw new \RuntimeException('Location provider returned invalid coordinates');
         }
         if (!is_numeric($accuracy) || (float)$accuracy < 0.0 || (float)$accuracy > $this->maxAccuracyMeters) {

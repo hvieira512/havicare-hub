@@ -2,8 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Hub\Location;
+namespace Tests\Support\Doubles;
 
+use Hub\Location\LocationProviderContract;
 use React\Promise\PromiseInterface;
 
 final class CallbackLocationProvider implements LocationProviderContract

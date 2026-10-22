@@ -161,8 +161,8 @@ limites, não forem exatamente `0,0`, e a precisão for **melhor que 500 m**.
 
 ### A cache
 
-Chaveada pela evidência de rádio, não pelo dispositivo — dois aparelhos no mesmo
-sítio partilham a resposta.
+Vive no Redis (`hub:location:resolution:*`), chaveada pela evidência de rádio e não
+pelo dispositivo — dois aparelhos no mesmo sítio partilham a resposta.
 
 A chave é calculada **removendo o que é volátil**: força do sinal, nome da rede,
 canal, frequência. Sem isso, a mesma sala dava uma chave diferente a cada
@@ -181,8 +181,12 @@ mesmo sítio ao mesmo tempo, sai **um** pedido.
 
 ## 6. Proteger o serviço de fora
 
+Os valores estão no código, como omissão de cada peça; da configuração só vêm
+o `BEACONDB_ENDPOINT` e o `BEACONDB_USER_AGENT`.
+
 | Proteção | Valor |
 |---|---|
+| Tempo limite do pedido | 2 s |
 | Pedidos em simultâneo | 5 |
 | Fila máxima | 1000 |
 | Falhas seguidas até abrir o circuito | 3 |

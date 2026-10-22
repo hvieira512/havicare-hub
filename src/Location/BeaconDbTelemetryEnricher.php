@@ -10,8 +10,6 @@ use function React\Promise\resolve;
 
 final class BeaconDbTelemetryEnricher implements LocationTelemetryEnricherContract
 {
-    private LocationProviderContract $provider;
-    private LocationResolutionCacheContract $cache;
     private LocationResponseValidator $responseValidator;
 
     /** @var array<string, PromiseInterface<array{httpStatus: int, body: array<string, mixed>}>> */
@@ -19,16 +17,12 @@ final class BeaconDbTelemetryEnricher implements LocationTelemetryEnricherContra
 
     public function __construct(
         private readonly BeaconDbRequestBuilder $requestBuilder,
-        LocationProviderContract|callable $provider,
+        private readonly LocationProviderContract $provider,
+        private readonly RedisLocationResolutionCache $cache,
         private readonly float $maxAccuracyMeters = 500.0,
         private readonly int $cacheTtlSeconds = 86400,
         private readonly int $failureCacheTtlSeconds = 60,
-        ?LocationResolutionCacheContract $cache = null,
     ) {
-        $this->provider = $provider instanceof LocationProviderContract
-            ? $provider
-            : new CallbackLocationProvider($provider);
-        $this->cache = $cache ?? new ArrayLocationResolutionCache();
         $this->responseValidator = new LocationResponseValidator($this->maxAccuracyMeters);
     }
 
@@ -95,11 +89,7 @@ final class BeaconDbTelemetryEnricher implements LocationTelemetryEnricherContra
             && isset($data['lat'], $data['lon'])
             && is_numeric($data['lat'])
             && is_numeric($data['lon'])
-            && (float)$data['lat'] >= -90.0
-            && (float)$data['lat'] <= 90.0
-            && (float)$data['lon'] >= -180.0
-            && (float)$data['lon'] <= 180.0
-            && !((float)$data['lat'] === 0.0 && (float)$data['lon'] === 0.0);
+            && LocationResponseValidator::validCoordinates((float)$data['lat'], (float)$data['lon']);
     }
 
     /** @param array<string, mixed> $request */

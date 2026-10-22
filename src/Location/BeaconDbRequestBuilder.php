@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Hub\Location;
 
+use Hub\Device\LocationNormalizer;
+
 final class BeaconDbRequestBuilder
 {
     /**
@@ -128,14 +130,12 @@ final class BeaconDbRequestBuilder
         return array_values($wifi);
     }
 
+    /** A BeaconDB só conhece estas três. */
     private function radioType(mixed $value): ?string
     {
-        return match (strtolower(trim((string)$value))) {
-            'gsm' => 'gsm',
-            'wcdma', 'umts' => 'wcdma',
-            'lte' => 'lte',
-            default => null,
-        };
+        $radio = LocationNormalizer::normalizeRadioType($value);
+
+        return in_array($radio, ['gsm', 'wcdma', 'lte'], true) ? $radio : null;
     }
 
     private function integer(mixed $value): ?int
@@ -155,8 +155,8 @@ final class BeaconDbRequestBuilder
 
     private function mac(mixed $value): ?string
     {
-        $hex = strtolower((string)preg_replace('/[^0-9a-f]/i', '', trim((string)$value)));
-        if (strlen($hex) !== 12 || $hex === '000000000000' || $hex === 'ffffffffffff') {
+        $hex = str_replace(':', '', LocationNormalizer::mac($value) ?? '');
+        if ($hex === '' || $hex === '000000000000' || $hex === 'ffffffffffff') {
             return null;
         }
 

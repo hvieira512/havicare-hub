@@ -8,7 +8,7 @@ namespace Hub;
  * @phpstan-type TcpIngressConfig array{host: string, port: int}
  * @phpstan-type DashboardConfig array{cors_allowed_origins: list<string>, host: string, port: int, api_auth_required: bool, api_token_ttl_seconds: int, api_refresh_token_ttl_seconds: int, history_limit: int, command_timeout_seconds: int, device_idle_timeout_seconds: int, max_open_streams: int, max_open_streams_per_user: int, login_max_per_address: int, login_max_per_username: int, login_max_global: int}
  * @phpstan-type HubRuntimeConfig array{downlink_queue_ttl_seconds: int}
- * @phpstan-type LocationResolutionConfig array{enabled: bool, endpoint: string, user_agent: string, timeout_seconds: float, max_accuracy_meters: float, cache_ttl_seconds: int, failure_cache_ttl_seconds: int, max_concurrency: int, max_queue: int, circuit_failure_threshold: int, circuit_open_seconds: int, rate_limit_open_seconds: int, radio_map_enabled: bool, radio_map_hash_key: string}
+ * @phpstan-type LocationResolutionConfig array{enabled: bool, endpoint: string, user_agent: string, radio_map_enabled: bool, radio_map_hash_key: string}
  * @phpstan-type NcsConfig array{enabled: bool, topic_filter: string}
  * @phpstan-type GatewayConfig array{enabled: bool, topic_filter: string, dedupe_ttl_seconds: int, telemetry_refresh_seconds: int, idle_timeout_seconds: int}
  * @phpstan-type QinglanstConfig array{enabled: bool, host: string, port: int, username: string, password: string, topic_filter: string, client_id_prefix: string, tls_enabled: bool, tls_verify_peer: bool, tls_ca_file: string, tls_cert_file: string, tls_key_file: string, dashboard_seen_min_interval_ms: int, idle_timeout_seconds: int}
@@ -58,19 +58,6 @@ class Config
         $downlinkQueueTtl = $downlinkQueueTtlRaw === false || trim((string)$downlinkQueueTtlRaw) === ''
             ? 300
             : max(1, (int)$downlinkQueueTtlRaw);
-        $beaconDbCacheTtlEnv = getenv('BEACONDB_CACHE_TTL_SECONDS');
-        $beaconDbCacheTtl = $beaconDbCacheTtlEnv === false || trim((string)$beaconDbCacheTtlEnv) === ''
-            ? 86400
-            : max(0, (int)$beaconDbCacheTtlEnv);
-        $beaconDbFailureCacheTtlEnv = getenv('BEACONDB_FAILURE_CACHE_TTL_SECONDS');
-        $beaconDbFailureCacheTtl = $beaconDbFailureCacheTtlEnv === false || trim((string)$beaconDbFailureCacheTtlEnv) === ''
-            ? 60
-            : max(0, (int)$beaconDbFailureCacheTtlEnv);
-        $locationProviderMaxConcurrency = max(1, (int)(getenv('LOCATION_PROVIDER_MAX_CONCURRENCY') ?: 5));
-        $locationProviderMaxQueue = max(0, (int)(getenv('LOCATION_PROVIDER_MAX_QUEUE') ?: 1000));
-        $locationCircuitFailureThreshold = max(1, (int)(getenv('LOCATION_CIRCUIT_FAILURE_THRESHOLD') ?: 3));
-        $locationCircuitOpenSeconds = max(1, (int)(getenv('LOCATION_CIRCUIT_OPEN_SECONDS') ?: 300));
-        $locationRateLimitOpenSeconds = max(1, (int)(getenv('LOCATION_RATE_LIMIT_OPEN_SECONDS') ?: 3600));
 
         return new self([
             'tcp_ingress' => [
@@ -109,15 +96,6 @@ class Config
                 'enabled' => self::flag('LOCATION_RESOLUTION_ENABLED', true),
                 'endpoint' => getenv('BEACONDB_ENDPOINT') ?: 'https://api.beacondb.net/v1/geolocate',
                 'user_agent' => getenv('BEACONDB_USER_AGENT') ?: 'Havicare Hub/1.0',
-                'timeout_seconds' => max(0.1, (float)(getenv('BEACONDB_TIMEOUT_SECONDS') ?: 2.0)),
-                'max_accuracy_meters' => max(0.0, (float)(getenv('BEACONDB_MAX_ACCURACY_METERS') ?: 500.0)),
-                'cache_ttl_seconds' => $beaconDbCacheTtl,
-                'failure_cache_ttl_seconds' => $beaconDbFailureCacheTtl,
-                'max_concurrency' => $locationProviderMaxConcurrency,
-                'max_queue' => $locationProviderMaxQueue,
-                'circuit_failure_threshold' => $locationCircuitFailureThreshold,
-                'circuit_open_seconds' => $locationCircuitOpenSeconds,
-                'rate_limit_open_seconds' => $locationRateLimitOpenSeconds,
                 'radio_map_enabled' => self::flag('RADIO_MAP_ENABLED', true),
                 'radio_map_hash_key' => getenv('RADIO_MAP_HASH_KEY') ?: '',
             ],

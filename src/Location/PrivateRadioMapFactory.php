@@ -15,7 +15,6 @@ final class PrivateRadioMapFactory
             new PdoPrivateRadioMapStore($pdo),
             $requestBuilder ?? new BeaconDbRequestBuilder(),
             trim((string)($config['radio_map_hash_key'] ?? '')),
-            (float)($config['max_accuracy_meters'] ?? 500.0),
         );
     }
 }

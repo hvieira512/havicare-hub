@@ -6,7 +6,7 @@ namespace Tests\Unit\Location;
 
 use Hub\Location\RedisProviderCircuitStateStore;
 use Tests\Support\Doubles\InMemoryRedisClient;
-use Hub\Location\CallbackLocationProvider;
+use Tests\Support\Doubles\CallbackLocationProvider;
 use Hub\Location\CircuitBreakingLocationProvider;
 use Hub\Location\LocationProviderException;
 use PHPUnit\Framework\TestCase;
