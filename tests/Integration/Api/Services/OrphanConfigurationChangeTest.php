@@ -11,10 +11,7 @@ use Hub\Api\Services\DeviceCapabilityPresenter;
 use Hub\Domain\Capability\CapabilityRegistry;
 use Tests\Support\MysqlDashboardTestCase;
 
-/**
- * Tirar uma capacidade do catálogo deixa para trás as mudanças por confirmar dela: a
- * suplantação só acontece quando alguém volta a escrever a mesma chave.
- */
+/** Tirar uma capacidade do catálogo deixa as mudanças por confirmar dela até alguém voltar a escrever a chave. */
 final class OrphanConfigurationChangeTest extends MysqlDashboardTestCase
 {
     private const IMEI = '869243062262262';

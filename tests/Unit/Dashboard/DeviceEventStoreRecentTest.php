@@ -8,10 +8,7 @@ use Hub\State\DeviceEventStore;
 use PHPUnit\Framework\TestCase;
 use Tests\Support\Doubles\InMemoryRedisClient;
 
-/**
- * Com um cursor, `recent()` devolve só o que entrou depois — e pára na primeira entrada
- * antiga, porque a lista é monótona.
- */
+/** Com um cursor, `recent()` devolve só o que entrou depois e pára na primeira entrada antiga. */
 final class DeviceEventStoreRecentTest extends TestCase
 {
     private function store(): DeviceEventStore

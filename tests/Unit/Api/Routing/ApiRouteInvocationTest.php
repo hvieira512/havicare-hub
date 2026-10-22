@@ -9,10 +9,7 @@ use Hub\Api\Routing\ApiRoute;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\ServerRequestInterface;
 
-/**
- * Uma rota chama o handler com os parâmetros do caminho e depois o pedido, e quem não quer os
- * argumentos declara menos. Trocá-los só falharia em execução.
- */
+/** O handler recebe os parâmetros do caminho e depois o pedido, e pode declarar menos. */
 final class ApiRouteInvocationTest extends TestCase
 {
     public function testTheHandlerGetsTheParametersAndThenTheRequest(): void

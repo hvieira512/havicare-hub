@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Tests\Unit\Hub;
 
 use Hub\Device\DeviceEventDecoder;
-use Hub\Device\DeviceSession;
 use Hub\Protocol\Adapter\PillDispenserAdapter;
 use PHPUnit\Framework\TestCase;
+use Tests\Support\Doubles\PillDispenserFixtures;
 
 final class PillDispenserNormalizationTest extends TestCase
 {
@@ -26,7 +26,7 @@ final class PillDispenserNormalizationTest extends TestCase
             ],
         ]);
 
-        $events = (new DeviceEventDecoder())->decode($this->session(), $decoded);
+        $events = (new DeviceEventDecoder())->decode(PillDispenserFixtures::session(), $decoded);
 
         self::assertCount(1, $events);
         self::assertSame('medication_intake', $events[0]['feature']);
@@ -59,7 +59,7 @@ final class PillDispenserNormalizationTest extends TestCase
             ],
         ]);
 
-        $events = (new DeviceEventDecoder())->decode($this->session(), $decoded);
+        $events = (new DeviceEventDecoder())->decode(PillDispenserFixtures::session(), $decoded);
         $byFeature = [];
         foreach ($events as $event) {
             $byFeature[$event['feature']] = $event['value'];
@@ -88,7 +88,7 @@ final class PillDispenserNormalizationTest extends TestCase
             ],
         ]);
 
-        $events = (new DeviceEventDecoder())->decode($this->session(), $decoded);
+        $events = (new DeviceEventDecoder())->decode(PillDispenserFixtures::session(), $decoded);
         $byFeature = [];
         foreach ($events as $event) {
             $byFeature[$event['feature']] = $event['value'];
@@ -114,7 +114,7 @@ final class PillDispenserNormalizationTest extends TestCase
         $decoded = $adapter->decodeIncoming($frame);
         self::assertIsArray($decoded);
 
-        $events = (new DeviceEventDecoder())->decode($this->session(), $decoded);
+        $events = (new DeviceEventDecoder())->decode(PillDispenserFixtures::session(), $decoded);
 
         self::assertSame('device_config', $events[0]['feature']);
         self::assertSame(['0x1031'], $events[0]['value']['refusedTags']);
@@ -131,7 +131,7 @@ final class PillDispenserNormalizationTest extends TestCase
             ],
         ]);
 
-        $events = (new DeviceEventDecoder())->decode($this->session(), $decoded);
+        $events = (new DeviceEventDecoder())->decode(PillDispenserFixtures::session(), $decoded);
         $byFeature = [];
         foreach ($events as $event) {
             $byFeature[$event['feature']] = $event['value'];
@@ -157,7 +157,7 @@ final class PillDispenserNormalizationTest extends TestCase
         ]);
 
         $events = [];
-        foreach ((new DeviceEventDecoder())->decode($this->session(), $decoded) as $event) {
+        foreach ((new DeviceEventDecoder())->decode(PillDispenserFixtures::session(), $decoded) as $event) {
             $events[$event['feature']] = $event['value'];
         }
 
@@ -182,19 +182,5 @@ final class PillDispenserNormalizationTest extends TestCase
         self::assertIsArray($decoded);
 
         return $decoded;
-    }
-
-    private function session(): DeviceSession
-    {
-        return new DeviceSession(
-            new PillFakeConnection(),
-            true,
-            'AABBCCDDEEFF',
-            'zayata-m228',
-            'Zayata',
-            'M228',
-            'Zayata M228',
-            'pill_dispenser',
-        );
     }
 }

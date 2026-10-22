@@ -20,10 +20,7 @@ use Tests\Support\MysqlDashboardTestCase;
 use function React\Promise\reject;
 use function React\Promise\resolve;
 
-/**
- * As credenciais da cloud dos radares são de cada licença: com a conta de outra, os radares
- * respondem `777`, offline, mesmo quando estão a publicar.
- */
+/** As credenciais da cloud dos radares são de cada licença: com as de outra, os radares respondem `777`, offline. */
 final class RadarCredentialsServiceTest extends MysqlDashboardTestCase
 {
     private RadarCredentialsService $service;

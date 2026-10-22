@@ -9,6 +9,7 @@ use Hub\Ingress\Mqtt\Veepoo\VeepooBridge;
 use PHPUnit\Framework\TestCase;
 use Tests\Support\Doubles\IngressFixtures;
 use Tests\Support\Doubles\RecordingHubMqttBridge;
+use Tests\Support\Doubles\VeepooFixtures;
 
 /** O gateway relê o dia corrente de cinco em cinco minutos, e sem porta cada entrega republicaria as mesmas medições. */
 final class BridgeDailyBlockReplayTest extends TestCase
@@ -93,21 +94,12 @@ final class BridgeDailyBlockReplayTest extends TestCase
         ], JSON_THROW_ON_ERROR);
     }
 
-    private function bridge(
-        RecordingHubMqttBridge $mqtt,
-        ?ArrayObservationStateStore $state = null,
-    ): VeepooBridge {
-        return new VeepooBridge(
-            IngressFixtures::whitelist([
-                self::GATEWAY => IngressFixtures::device('Havicare', 'Veepoo Gateway', 'gateway'),
-                self::BRACELET => IngressFixtures::device('Wonlex', 'MF91', 'bracelet'),
-                'dba376003185' => IngressFixtures::device('Wonlex', 'MF91', 'bracelet'),
-            ]),
-            $mqtt,
-            IngressFixtures::links(true),
-            null,
-            $state ?? new ArrayObservationStateStore(),
-            'havicare-hub/null/0/gw/+/raw',
-        );
+    private function bridge(RecordingHubMqttBridge $mqtt, ?ArrayObservationStateStore $state = null): VeepooBridge
+    {
+        return VeepooFixtures::bridge($mqtt, state: $state, devices: [
+            self::GATEWAY => IngressFixtures::device('Havicare', 'Veepoo Gateway', 'gateway'),
+            self::BRACELET => IngressFixtures::device('Wonlex', 'MF91', 'bracelet'),
+            'dba376003185' => IngressFixtures::device('Wonlex', 'MF91', 'bracelet'),
+        ]);
     }
 }

@@ -7,10 +7,7 @@ namespace Tests\Integration\Infrastructure\Persistence;
 use Hub\Infrastructure\Persistence\Repository\ApiDataAccess;
 use Tests\Support\MysqlDashboardTestCase;
 
-/**
- * O catálogo de referência de uma base acabada de construir, que nasce do `CapabilityCatalog` e
- * do `SupplierCapabilityTemplate`: uma mudança que os parta parte aqui, e não em produção.
- */
+/** O catálogo de referência de uma base nova, para uma mudança ao `CapabilityCatalog` partir aqui e não em produção. */
 final class ReferenceCatalogTest extends MysqlDashboardTestCase
 {
     /** A ordem das secções é escolhida, e não alfabética: a telemetria vem antes da saúde. */

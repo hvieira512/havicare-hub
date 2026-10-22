@@ -7,10 +7,7 @@ namespace Tests\Integration\Dashboard;
 use GuzzleHttp\Psr7\ServerRequest;
 use Tests\Support\DashboardHttpTestCase;
 
-/**
- * O âmbito por licença, o que o perfil permite e as associações de dispositivos: aqui um engano
- * dá os dados de outra pessoa, e os casos negativos contam tanto como os positivos.
- */
+/** O âmbito por licença, o perfil e as associações: aqui um engano entrega os dados de outra pessoa. */
 final class DashboardApiTenancyTest extends DashboardHttpTestCase
 {
     public function testCreateDeviceReturnsConflictWhenImeiAlreadyExists(): void

@@ -9,10 +9,7 @@ use Hub\Api\Http\CorsPolicy;
 use PHPUnit\Framework\TestCase;
 use React\Http\Message\Response;
 
-/**
- * O `*` por omissão é seguro enquanto a autenticação for `Bearer` em cabeçalho: o browser não
- * anexa credenciais sozinho, e não há CSRF a partir de uma página de terceiros.
- */
+/** O `*` é seguro enquanto a autenticação for `Bearer`, que o browser não anexa sozinho. */
 final class CorsPolicyTest extends TestCase
 {
     public function testAnEmptyListKeepsTheOpenPolicy(): void

@@ -9,10 +9,7 @@ use Hub\Domain\DiaperSensitivity;
 use PDO;
 use Tests\Support\MysqlDashboardTestCase;
 
-/**
- * O contrato de que a ingestão depende: há sempre um par utilizável para devolver, e uma
- * alteração pela API vê-se dentro do TTL da cache sem reiniciar nada.
- */
+/** Há sempre um par de sensibilidade utilizável, e uma alteração pela API vê-se dentro do TTL da cache. */
 final class DiaperSensitivityRepositoryTest extends MysqlDashboardTestCase
 {
     private const SENSOR = 'eec5000202f9';

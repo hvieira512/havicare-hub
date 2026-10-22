@@ -16,15 +16,11 @@ use Hub\Registry\Whitelist;
 use Hub\Runtime\DashboardServerFactory;
 use Tests\Support\Doubles\InMemoryRedisClient;
 
-/**
- * A cadeia HTTP da dashboard montada como em produção, com o registo de API num ficheiro que o
- * teste lê. Sem `strict_types` de propósito: a coerção da licença em texto faz parte do teste.
- */
+/** A cadeia HTTP da dashboard como em produção; sem `strict_types` porque a coerção da licença é testada. */
 abstract class DashboardHttpTestCase extends MysqlDashboardTestCase
 {
     /**
-     * O `password_hash` com o custo por omissão leva ~190ms, e por isso guarda-se um hash por
-     * palavra-passe durante o processo.
+     * Um hash por palavra-passe durante o processo, porque o `password_hash` custa ~190ms.
      *
      * @var array<string, string>
      */
@@ -73,8 +69,7 @@ abstract class DashboardHttpTestCase extends MysqlDashboardTestCase
     }
 
     /**
-     * Devolve a cadeia inteira: o CORS e o registo do `/api/` são middleware montado pela
-     * `DashboardServerFactory`. O `MessageFanout` é o que a ingestão usa para publicar.
+     * A cadeia inteira, com o CORS e o registo do `/api/`, e o `MessageFanout` com que a ingestão publica.
      *
      * @return array{0: callable, 1: ApiDataAccess, 2: DeviceStore, 3: MessageFanout}
      */

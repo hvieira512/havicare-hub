@@ -14,10 +14,7 @@ use Hub\Api\Services\ModelService;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\Support\MysqlDashboardTestCase;
 
-/**
- * As listagens descrevem-se como a de utilizadores: `columns` diz o que se ordena e
- * filtra, `filters.counts` quantas linhas cada valor de escolha tem.
- */
+/** As listagens descrevem em `columns` o que se ordena e filtra, e em `filters.counts` quantas linhas tem cada valor. */
 final class CollectionDescriptorApiTest extends MysqlDashboardTestCase
 {
     /** @return iterable<string, array{0: callable(ApiDataAccess): array<string, mixed>, 1: string}> */

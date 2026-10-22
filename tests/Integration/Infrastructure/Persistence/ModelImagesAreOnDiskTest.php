@@ -6,10 +6,7 @@ namespace Tests\Integration\Infrastructure\Persistence;
 
 use Tests\Support\MysqlDashboardTestCase;
 
-/**
- * A linha na base e o ficheiro em `var/dashboard/model-images` são semeados por caminhos
- * diferentes, e quando um deles não corre a dashboard mostra uma imagem partida sem erro.
- */
+/** A linha na base e o ficheiro da imagem semeiam-se à parte, e sem um deles a imagem sai partida. */
 final class ModelImagesAreOnDiskTest extends MysqlDashboardTestCase
 {
     private const SOURCE = __DIR__ . '/../../../../database/seed-model-images';

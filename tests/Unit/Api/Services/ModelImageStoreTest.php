@@ -9,10 +9,7 @@ use GuzzleHttp\Psr7\Utils;
 use Hub\Api\Services\ModelImageStore;
 use PHPUnit\Framework\TestCase;
 
-/**
- * O GD aloca `largura × altura × 4` bytes antes de qualquer verificação, e um fatal de memória
- * derruba o hub inteiro: as dimensões lêem-se do cabeçalho e recusam-se antes de descodificar.
- */
+/** As dimensões lêem-se do cabeçalho e recusam-se antes de o GD alocar a imagem e derrubar o hub. */
 final class ModelImageStoreTest extends TestCase
 {
     public function testAnImageDeclaringMorePixelsThanTheBudgetIsRefusedBeforeDecoding(): void
@@ -112,10 +109,7 @@ final class ModelImageStoreTest extends TestCase
         return new UploadedFile(Utils::streamFor($bytes), strlen($bytes), UPLOAD_ERR_OK, 'model.png', 'image/png');
     }
 
-    /**
-     * A assinatura e o IHDR de um PNG, que é tudo o que é preciso para as dimensões serem
-     * legíveis. Sem dados de imagem de propósito: se o travão funcionar, ninguém os procura.
-     */
+    /** Só a assinatura e o IHDR de um PNG, que bastam para ler as dimensões. */
     private static function pngHeader(int $width, int $height): string
     {
         $ihdr = 'IHDR' . pack('NN', $width, $height) . pack('CCCCC', 8, 2, 0, 0, 0);

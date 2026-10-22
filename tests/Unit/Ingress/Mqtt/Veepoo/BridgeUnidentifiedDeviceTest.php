@@ -8,9 +8,8 @@ use Hub\Ingress\Mqtt\Veepoo\VeepooBridge;
 use Hub\State\DeviceStoreContract;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
-use Tests\Support\Doubles\ArrayObservationStateStore;
 use Tests\Support\Doubles\IngressFixtures;
-use Tests\Support\Doubles\RecordingHubMqttBridge;
+use Tests\Support\Doubles\VeepooFixtures;
 
 /** Uma trama sem MAC, de pulseira por autenticar ou de ligação acabada de cair, não tem aparelho a registar. */
 final class BridgeUnidentifiedDeviceTest extends TestCase
@@ -61,28 +60,15 @@ final class BridgeUnidentifiedDeviceTest extends TestCase
             }
         );
 
-        IngressFixtures::relay($this->bridge($store), self::TOPIC, json_encode([
-            'source' => 'veepoo-node',
-            'kind' => 'battery',
-            'device' => ['mac' => 'aabbccddeeff'],
-            'payload' => ['VPDeviceIsPercent' => true, 'VPDeviceElectricPercent' => 57],
-        ], JSON_THROW_ON_ERROR));
+        IngressFixtures::relay($this->bridge($store), self::TOPIC, VeepooFixtures::message('battery', ['VPDeviceIsPercent' => true, 'VPDeviceElectricPercent' => 57], 'aabbccddeeff'));
 
         self::assertSame(['aabbccddeeff'], $recorded);
     }
 
     private function bridge(DeviceStoreContract $store): VeepooBridge
     {
-        return new VeepooBridge(
-            IngressFixtures::whitelist([
-                self::GATEWAY => IngressFixtures::device('Havicare', 'Veepoo Gateway', 'gateway'),
-            ]),
-            new RecordingHubMqttBridge(),
-            IngressFixtures::links(true),
-            null,
-            new ArrayObservationStateStore(),
-            'havicare-hub/null/0/gw/+/raw',
-            $store,
-        );
+        return VeepooFixtures::bridge(store: $store, devices: [
+            self::GATEWAY => IngressFixtures::device('Havicare', 'Veepoo Gateway', 'gateway'),
+        ]);
     }
 }

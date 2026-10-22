@@ -187,8 +187,7 @@ final class BridgeMonitAlarmTest extends TestCase
     }
 
     /**
-     * Só os alarmes da fralda. O gateway publica o seu `device.connected` na primeira
-     * mensagem em que é visto, e não é isso que estes testes medem.
+     * Só os alarmes da fralda, sem o `device.connected` do gateway.
      *
      * @return list<array<string, mixed>>
      */

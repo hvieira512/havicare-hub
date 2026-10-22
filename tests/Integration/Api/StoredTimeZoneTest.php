@@ -9,10 +9,7 @@ use Hub\State\DeviceConfigurationProjection;
 use Tests\Support\ConfigurationFixtures;
 use Tests\Support\MysqlDashboardTestCase;
 
-/**
- * A hora que se manda ao M228 é local, e o fuso vem do que o hub guardou: um valor reportado
- * fica debaixo de `data`, e só o desejado é um mapa simples.
- */
+/** A hora que se manda ao M228 é local, no fuso que o hub guardou, reportado debaixo de `data` ou desejado simples. */
 final class StoredTimeZoneTest extends MysqlDashboardTestCase
 {
     private const IMEI = '869243062262262';

@@ -4,31 +4,29 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Ingress\Mqtt\Veepoo;
 
-use Hub\Device\PendingDownlink;
-use Hub\Device\PendingDownlinkQueue;
-use Tests\Support\Doubles\ArrayObservationStateStore;
-use Hub\Ingress\Mqtt\Veepoo\VeepooBridge;
-use PHPUnit\Framework\TestCase;
+use Hub\Device\RedisPendingDownlinkQueue;
 use Tests\Support\Doubles\IngressFixtures;
+use Tests\Support\Doubles\InMemoryRedisClient;
+use PHPUnit\Framework\TestCase;
 use Tests\Support\Doubles\RecordingHubMqttBridge;
+use Tests\Support\Doubles\VeepooFixtures;
 
 /** A pulseira é alcançável entre sessões, e esperar pelo anúncio seguinte custaria até um intervalo de heartbeat por ordem. */
 final class BridgeQueuedDispatchTest extends TestCase
 {
-    private const GATEWAY = 'bef341903987';
     private const BRACELET = '9f69c4866e6c';
     private const TOPIC = 'havicare-hub/null/0/gw/bef341903987/raw';
 
     public function testACommandQueuedAfterTheSessionIsDeliveredWithoutWaitingForTheNextOne(): void
     {
         $mqtt = new RecordingHubMqttBridge();
-        $queue = self::queue();
-        $bridge = $this->bridge($mqtt, $queue);
+        $queue = new RedisPendingDownlinkQueue(new InMemoryRedisClient());
+        $bridge = VeepooFixtures::bridge($mqtt, $queue);
 
         IngressFixtures::relay($bridge, self::TOPIC, self::session(true));
         self::assertSame([], $mqtt->gatewayCommands, 'a fila estava vazia quando a sessão chegou');
 
-        $queue->push('config:find_device', ['command' => 'config:find_device', 'payload' => ['enabled' => true]]);
+        $queue->enqueue(self::BRACELET, 'config:find_device', ['command' => 'config:find_device', 'payload' => ['enabled' => true]], 300);
         $bridge->dispatchQueued();
 
         self::assertCount(1, $mqtt->gatewayCommands);
@@ -40,11 +38,11 @@ final class BridgeQueuedDispatchTest extends TestCase
     public function testAnUnconfirmedCommandIsNotResentOnEveryTick(): void
     {
         $mqtt = new RecordingHubMqttBridge();
-        $queue = self::queue();
-        $bridge = $this->bridge($mqtt, $queue);
+        $queue = new RedisPendingDownlinkQueue(new InMemoryRedisClient());
+        $bridge = VeepooFixtures::bridge($mqtt, $queue);
 
         IngressFixtures::relay($bridge, self::TOPIC, self::session(true));
-        $queue->push('config:find_device', ['command' => 'config:find_device', 'payload' => ['enabled' => true]]);
+        $queue->enqueue(self::BRACELET, 'config:find_device', ['command' => 'config:find_device', 'payload' => ['enabled' => true]], 300);
 
         for ($i = 0; $i < 5; $i++) {
             $bridge->dispatchQueued();
@@ -57,10 +55,10 @@ final class BridgeQueuedDispatchTest extends TestCase
     public function testNothingIsDeliveredBeforeAnySession(): void
     {
         $mqtt = new RecordingHubMqttBridge();
-        $queue = self::queue();
-        $queue->push('config:find_device', ['command' => 'config:find_device', 'payload' => ['enabled' => true]]);
+        $queue = new RedisPendingDownlinkQueue(new InMemoryRedisClient());
+        $queue->enqueue(self::BRACELET, 'config:find_device', ['command' => 'config:find_device', 'payload' => ['enabled' => true]], 300);
 
-        $this->bridge($mqtt, $queue)->dispatchQueued();
+        VeepooFixtures::bridge($mqtt, $queue)->dispatchQueued();
 
         self::assertSame([], $mqtt->gatewayCommands);
     }
@@ -69,13 +67,13 @@ final class BridgeQueuedDispatchTest extends TestCase
     public function testNothingIsDeliveredAfterTheSessionIsLost(): void
     {
         $mqtt = new RecordingHubMqttBridge();
-        $queue = self::queue();
-        $bridge = $this->bridge($mqtt, $queue);
+        $queue = new RedisPendingDownlinkQueue(new InMemoryRedisClient());
+        $bridge = VeepooFixtures::bridge($mqtt, $queue);
 
         IngressFixtures::relay($bridge, self::TOPIC, self::session(true));
         IngressFixtures::relay($bridge, self::TOPIC, self::session(false));
 
-        $queue->push('config:find_device', ['command' => 'config:find_device', 'payload' => ['enabled' => true]]);
+        $queue->enqueue(self::BRACELET, 'config:find_device', ['command' => 'config:find_device', 'payload' => ['enabled' => true]], 300);
         $bridge->dispatchQueued();
 
         self::assertSame([], $mqtt->gatewayCommands);
@@ -84,7 +82,7 @@ final class BridgeQueuedDispatchTest extends TestCase
     /** A chave só se marca entregue depois de a publicação passar, para um gateway inalcançável não calar a ordem trinta segundos. */
     public function testACommandWhosePublishFailsIsRetriedOnTheNextTick(): void
     {
-        $queue = self::queue();
+        $queue = new RedisPendingDownlinkQueue(new InMemoryRedisClient());
         $mqtt = new class extends RecordingHubMqttBridge {
             public bool $failing = true;
 
@@ -96,10 +94,10 @@ final class BridgeQueuedDispatchTest extends TestCase
                 parent::publishGatewayCommand($topic, $payload);
             }
         };
-        $bridge = $this->bridge($mqtt, $queue);
+        $bridge = VeepooFixtures::bridge($mqtt, $queue);
 
         IngressFixtures::relay($bridge, self::TOPIC, self::session(true));
-        $queue->push('config:find_device', ['command' => 'config:find_device', 'payload' => ['enabled' => true]]);
+        $queue->enqueue(self::BRACELET, 'config:find_device', ['command' => 'config:find_device', 'payload' => ['enabled' => true]], 300);
 
         try {
             $bridge->dispatchQueued();
@@ -118,11 +116,11 @@ final class BridgeQueuedDispatchTest extends TestCase
     public function testTheRequestIdentityTravelsToTheGateway(): void
     {
         $mqtt = new RecordingHubMqttBridge();
-        $queue = self::queue();
-        $bridge = $this->bridge($mqtt, $queue);
+        $queue = new RedisPendingDownlinkQueue(new InMemoryRedisClient());
+        $bridge = VeepooFixtures::bridge($mqtt, $queue);
 
         IngressFixtures::relay($bridge, self::TOPIC, self::session(true));
-        $queue->push('measure.heartRate.start', ['id' => 'a1b2c3d4']);
+        $queue->enqueue(self::BRACELET, 'measure.heartRate.start', ['id' => 'a1b2c3d4'], 300);
         $bridge->dispatchQueued();
 
         self::assertCount(1, $mqtt->gatewayCommands);
@@ -130,72 +128,9 @@ final class BridgeQueuedDispatchTest extends TestCase
         self::assertSame('measure.heartRate.start', $mqtt->gatewayCommands[0]['payload']['operation']);
     }
 
-    private static function queue(): QueueWithPush
-    {
-        return new QueueWithPush();
-    }
 
     private static function session(bool $authenticated): string
     {
-        return json_encode([
-            'source' => 'veepoo-node',
-            'kind' => 'session',
-            'device' => ['mac' => self::BRACELET],
-            'payload' => ['authenticated' => $authenticated],
-        ], JSON_THROW_ON_ERROR);
-    }
-
-    private function bridge(RecordingHubMqttBridge $mqtt, PendingDownlinkQueue $queue): VeepooBridge
-    {
-        return new VeepooBridge(
-            IngressFixtures::whitelist([
-                self::GATEWAY => IngressFixtures::device('Havicare', 'Veepoo Gateway', 'gateway'),
-                self::BRACELET => IngressFixtures::device('Wonlex', 'MF91', 'bracelet'),
-            ]),
-            $mqtt,
-            IngressFixtures::links(true),
-            $queue,
-            new ArrayObservationStateStore(),
-            'havicare-hub/null/0/gw/+/raw',
-        );
-    }
-}
-
-/** A fila em memória, com um `push` para o teste encher a fila depois da sessão aberta. */
-final class QueueWithPush implements PendingDownlinkQueue
-{
-    /** @var list<PendingDownlink> */
-    private array $items = [];
-
-    /** @param array<string, mixed>|null $command */
-    public function push(string $bytes, ?array $command): void
-    {
-        $this->items[] = new PendingDownlink('', 'test-dedupe', $bytes, $command, 0, 0);
-    }
-
-    public function enqueue(string $imei, string $bytes, ?array $command, int $ttlSeconds): PendingDownlink
-    {
-        return new PendingDownlink($imei, 'test-dedupe', $bytes, $command, 0, $ttlSeconds);
-    }
-
-    /** @return list<PendingDownlink> */
-    public function pendingFor(string $imei): array
-    {
-        return array_map(
-            static fn(PendingDownlink $d): PendingDownlink => new PendingDownlink(
-                $imei,
-                $d->dedupeKey,
-                $d->bytes,
-                $d->command,
-                $d->queuedAt,
-                $d->expiresAt,
-            ),
-            $this->items,
-        );
-    }
-
-    public function remove(PendingDownlink $downlink): void
-    {
-        $this->items = [];
+        return VeepooFixtures::message('session', ['authenticated' => $authenticated]);
     }
 }

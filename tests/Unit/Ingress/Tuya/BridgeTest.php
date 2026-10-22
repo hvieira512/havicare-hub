@@ -233,8 +233,7 @@ final class BridgeTest extends TestCase
     }
 
     /**
-     * A trama como o Pulsar a entrega: a mensagem de negócio cifrada com a chave do projeto,
-     * dentro de um envelope em base64.
+     * A trama como o Pulsar a entrega: a mensagem cifrada com a chave do projeto, num envelope em base64.
      *
      * @param array<string, mixed> $business
      */

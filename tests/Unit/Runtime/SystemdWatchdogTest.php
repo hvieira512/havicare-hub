@@ -8,10 +8,7 @@ use Hub\Runtime\SystemdWatchdog;
 use PHPUnit\Framework\TestCase;
 use React\EventLoop\Loop;
 
-/**
- * O sinal de vida sai de dentro do loop, e por isso prova que ele gira e não só que o
- * processo existe.
- */
+/** O sinal de vida sai de dentro do loop, e prova que ele gira. */
 final class SystemdWatchdogTest extends TestCase
 {
     private string $socketPath = '';

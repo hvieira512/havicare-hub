@@ -13,10 +13,7 @@ use PHPUnit\Framework\TestCase;
 
 abstract class MysqlDashboardTestCase extends TestCase
 {
-    /**
-     * Construir o esquema custa ~820ms, por isso constrói-se uma vez por processo numa
-     * base-modelo; o clone é um só `exec` com o DDL e as inserções já prontos.
-     */
+    /** O esquema constrói-se uma vez por processo numa base-modelo, e cada teste recebe um clone. */
     private static ?string $templateCloneSql = null;
 
     /** @var list<string> */
@@ -53,10 +50,7 @@ abstract class MysqlDashboardTestCase extends TestCase
         }
     }
 
-    /**
-     * O DDL e as inserções que reconstroem a base-modelo, montados uma vez por processo; o
-     * `CREATE TABLE ... LIKE` larga as chaves estrangeiras, e daí repetir o DDL a sério.
-     */
+    /** O DDL e as inserções da base-modelo; o DDL repete-se porque o `CREATE TABLE ... LIKE` larga as chaves estrangeiras. */
     private function templateCloneSql(): string
     {
         if (self::$templateCloneSql !== null) {
@@ -181,10 +175,7 @@ abstract class MysqlDashboardTestCase extends TestCase
         );
     }
 
-    /**
-     * Larga as bases que este teste criou, em `#[After]` e não no `tearDown`: uma subclasse que
-     * se esqueça do `parent::tearDown()` deixaria as bases para trás.
-     */
+    /** Larga as bases do teste em `#[After]`, que corre mesmo sem o `parent::tearDown()`. */
     #[After]
     protected function dropTemporaryDatabases(): void
     {
@@ -257,8 +248,7 @@ abstract class MysqlDashboardTestCase extends TestCase
     }
 
     /**
-     * Os índices pela forma e não pelo nome: uma chave única em `(a, b)` é a mesma venha do
-     * `schema.sql` ou de um `ALTER TABLE` que deixou o MySQL nomeá-la.
+     * Os índices pela forma e não pelo nome, que o MySQL escolhe num `ALTER TABLE`.
      *
      * @return array<string, mixed>
      */

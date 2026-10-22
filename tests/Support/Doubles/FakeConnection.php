@@ -2,14 +2,20 @@
 
 declare(strict_types=1);
 
-namespace Tests\Unit\Hub;
+namespace Tests\Support\Doubles;
 
 use Hub\Device\ConnectionInterface;
 
 /** Escrita à mão porque o `resourceId` é uma propriedade com hook que o `createStub` não sabe implementar. */
-final class PillFakeConnection implements ConnectionInterface
+final class FakeConnection implements ConnectionInterface
 {
-    public int $resourceId = 1;
+    /** @var list<string> */
+    public array $sent = [];
+    public bool $closed = false;
+
+    public function __construct(public int $resourceId = 1)
+    {
+    }
 
     public function remoteAddress(): ?string
     {
@@ -18,11 +24,13 @@ final class PillFakeConnection implements ConnectionInterface
 
     public function send(string $data): static
     {
+        $this->sent[] = $data;
         return $this;
     }
 
     public function close(): static
     {
+        $this->closed = true;
         return $this;
     }
 }

@@ -5,14 +5,13 @@ declare(strict_types=1);
 namespace Tests\Unit\Device;
 
 use Hub\Device\DeviceEventDecoder;
-use Hub\Device\DeviceSession;
 use Hub\Device\Firmware\FirmwareUpgrade;
 use Hub\Device\Firmware\FirmwareUpgradeStore;
 use Hub\Ingress\Tcp\Supplier\Zayata\PillDispenserTcpProtocol;
 use Hub\Protocol\Adapter\PillDispenserAdapter;
 use PHPUnit\Framework\TestCase;
 use Tests\Support\Doubles\InMemoryFirmwareUpgradeStore;
-use Tests\Unit\Hub\PillFakeConnection;
+use Tests\Support\Doubles\PillDispenserFixtures;
 
 /** O aparelho é que liga ao hub, e cada trama que manda é a oportunidade de enviar o pacote seguinte pela sessão dele. */
 final class FirmwareUpgradeOverTheSessionTest extends TestCase
@@ -36,7 +35,7 @@ final class FirmwareUpgradeOverTheSessionTest extends TestCase
         $store = $this->store(['status' => 'requested', 'offset' => 0]);
         $protocol = new PillDispenserTcpProtocol(new PillDispenserAdapter(), new DeviceEventDecoder(), $store);
 
-        $message = $protocol->handleIncoming($this->session(), $this->frame(0x02, 0));
+        $message = $protocol->handleIncoming(PillDispenserFixtures::session(self::IMEI), $this->frame(0x02, 0));
 
         $types = array_map(
             fn ($response): string => (string)(new PillDispenserAdapter())->decodeIncoming($response->bytes)['type'],
@@ -51,7 +50,7 @@ final class FirmwareUpgradeOverTheSessionTest extends TestCase
     {
         $store = $this->store(['status' => 'starting', 'offset' => 0]);
         $protocol = new PillDispenserTcpProtocol(new PillDispenserAdapter(), new DeviceEventDecoder(), $store);
-        $message = $protocol->handleIncoming($this->session(), $this->frame(0x8E, 0));
+        $message = $protocol->handleIncoming(PillDispenserFixtures::session(self::IMEI), $this->frame(0x8E, 0));
 
         $bytes = ($message?->responses ?? [])[0]->bytes ?? '';
 
@@ -65,7 +64,7 @@ final class FirmwareUpgradeOverTheSessionTest extends TestCase
         $store = $this->store(['status' => 'sending', 'offset' => 252]);
         $protocol = new PillDispenserTcpProtocol(new PillDispenserAdapter(), new DeviceEventDecoder(), $store);
 
-        $message = $protocol->handleIncoming($this->session(), $this->frame(0x8F, 0x08));
+        $message = $protocol->handleIncoming(PillDispenserFixtures::session(self::IMEI), $this->frame(0x8F, 0x08));
 
         self::assertSame([], $message?->responses);
         self::assertSame('failed', $store->state['status']);
@@ -77,7 +76,7 @@ final class FirmwareUpgradeOverTheSessionTest extends TestCase
     {
         $protocol = new PillDispenserTcpProtocol(new PillDispenserAdapter(), new DeviceEventDecoder());
 
-        $message = $protocol->handleIncoming($this->session(), $this->frame(0x02, 0));
+        $message = $protocol->handleIncoming(PillDispenserFixtures::session(self::IMEI), $this->frame(0x02, 0));
 
         self::assertCount(1, $message?->responses ?? []);
         $ack = (new PillDispenserAdapter())->decodeIncoming($message->responses[0]->bytes);
@@ -88,7 +87,7 @@ final class FirmwareUpgradeOverTheSessionTest extends TestCase
     private function respondTo(FirmwareUpgradeStore $store, int $packetType, int $status): array
     {
         $protocol = new PillDispenserTcpProtocol(new PillDispenserAdapter(), new DeviceEventDecoder(), $store);
-        $message = $protocol->handleIncoming($this->session(), $this->frame($packetType, $status));
+        $message = $protocol->handleIncoming(PillDispenserFixtures::session(self::IMEI), $this->frame($packetType, $status));
 
         $responses = $message?->responses ?? [];
         self::assertNotSame([], $responses, 'a transferência tem de mandar um pacote');
@@ -123,19 +122,5 @@ final class FirmwareUpgradeOverTheSessionTest extends TestCase
             'checksum' => 123456,
             'timeout' => 1800,
         ]);
-    }
-
-    private function session(): DeviceSession
-    {
-        return new DeviceSession(
-            new PillFakeConnection(),
-            true,
-            self::IMEI,
-            'zayata-m228',
-            'Zayata',
-            'M228',
-            'Zayata M228',
-            'pill_dispenser',
-        );
     }
 }

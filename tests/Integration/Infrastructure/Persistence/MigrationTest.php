@@ -11,10 +11,7 @@ use Hub\Infrastructure\Persistence\Migration\Migration;
 use Hub\Infrastructure\Persistence\Migration\MigrationRunner;
 use Tests\Support\MysqlDashboardTestCase;
 
-/**
- * A mecânica das migrações: correm uma vez, ficam registadas, e o guarda sabe dizer se falta
- * alguma. O estado da baseline afirma-se no `SchemaCompletenessTest` e no `ReferenceCatalogTest`.
- */
+/** As migrações correm uma vez, ficam registadas, e o guarda sabe dizer se falta alguma. */
 final class MigrationTest extends MysqlDashboardTestCase
 {
     public function testDatabaseConnectionDoesNotApplySchemaOrMigrations(): void

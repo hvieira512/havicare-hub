@@ -343,10 +343,7 @@ final class JoyTechBpBridgeTest extends TestCase
     /** @return list<array<string, mixed>> */
     private static function telemetry(RecordingHubMqttBridge $mqtt, string $type): array
     {
-        return array_values(array_map(
-            static fn (array $entry): array => $entry['payload'],
-            array_filter($mqtt->telemetry, static fn (array $entry): bool => ($entry['payload']['type'] ?? null) === $type),
-        ));
+        return array_column($mqtt->ofType($type), 'payload');
     }
 
     private static function reading(int $systolic, int $diastolic, int $pulse, int ...$timeAndGroup): string

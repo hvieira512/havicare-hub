@@ -6,10 +6,7 @@ namespace Tests\Support\Doubles;
 
 use Hub\Device\HubMqttBridge;
 
-/**
- * Regista o que um ingress publica, em vez de falar com um broker; cada publicação fica na
- * mesma forma, para uma alteração ao `HubMqttBridge` só se reflectir aqui.
- */
+/** Regista o que um ingress publica, sem broker, cada publicação na mesma forma. */
 class RecordingHubMqttBridge extends HubMqttBridge
 {
     /** @var list<array{company: string, licenseId: int, deviceType: string, imei: string}> */
@@ -64,6 +61,17 @@ class RecordingHubMqttBridge extends HubMqttBridge
     public function telemetryTypes(): array
     {
         return array_map(static fn (array $entry): string => (string)$entry['type'], $this->telemetry);
+    }
+
+    /**
+     * O que saiu num canal com este `type`, por ordem.
+     *
+     * @param 'telemetry'|'events'|'statuses'|'raw' $channel
+     * @return list<array<string, mixed>>
+     */
+    public function ofType(string $type, string $channel = 'telemetry'): array
+    {
+        return array_values(array_filter($this->{$channel}, static fn (array $entry): bool => $entry['type'] === $type));
     }
 
     /**

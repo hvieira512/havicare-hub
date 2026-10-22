@@ -9,6 +9,7 @@ use Hub\Device\DeviceSession;
 use Hub\Protocol\Adapter\VivistarAdapter;
 use Hub\Ingress\Tcp\Supplier\Vivistar\VivistarTcpProtocol;
 use PHPUnit\Framework\TestCase;
+use Tests\Support\Doubles\FakeConnection;
 
 final class VivistarTcpProtocolTest extends TestCase
 {
@@ -39,26 +40,6 @@ final class VivistarTcpProtocolTest extends TestCase
 
     private function session(string $imei): DeviceSession
     {
-        return new DeviceSession(new VivistarFakeConnection(), true, $imei, 'vivistar-iw');
-    }
-}
-
-final class VivistarFakeConnection implements \Hub\Device\ConnectionInterface
-{
-    public int $resourceId = 1;
-
-    public function remoteAddress(): ?string
-    {
-        return null;
-    }
-
-    public function send(string $data): static
-    {
-        return $this;
-    }
-
-    public function close(): static
-    {
-        return $this;
+        return new DeviceSession(new FakeConnection(), true, $imei, 'vivistar-iw');
     }
 }

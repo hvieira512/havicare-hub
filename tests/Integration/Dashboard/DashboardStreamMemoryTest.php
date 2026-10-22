@@ -10,10 +10,7 @@ use Psr\Http\Message\ResponseInterface;
 use React\Stream\ReadableStreamInterface;
 use Tests\Support\DashboardHttpTestCase;
 
-/**
- * O teto de ligações é o orçamento dividido pelo custo de uma ligação, e por isso esse custo
- * fica medido aqui.
- */
+/** O custo de uma ligação ao stream, que divide o orçamento no teto de ligações. */
 final class DashboardStreamMemoryTest extends DashboardHttpTestCase
 {
     /** Quantas ligações a medição abre. Alto o suficiente para o custo fixo não dominar. */

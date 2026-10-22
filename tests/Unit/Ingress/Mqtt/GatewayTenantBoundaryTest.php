@@ -11,6 +11,7 @@ use PHPUnit\Framework\TestCase;
 use Tests\Support\Doubles\FakeMqttSubscriber;
 use Tests\Support\Doubles\IngressFixtures;
 use Tests\Support\Doubles\RecordingHubMqttBridge;
+use Tests\Support\Doubles\VeepooFixtures;
 
 /** A regra do mesmo cliente e licença está escrita duas vezes, em `MokoBridge::linkedDevice()` e no `VeepooBridge::handle()`. */
 final class GatewayTenantBoundaryTest extends TestCase
@@ -115,17 +116,10 @@ final class GatewayTenantBoundaryTest extends TestCase
     /** @param array<string, string> $bracelet */
     private function veepoo(RecordingHubMqttBridge $mqtt, array $bracelet): VeepooBridge
     {
-        return new VeepooBridge(
-            IngressFixtures::whitelist([
-                self::VEEPOO_GATEWAY => IngressFixtures::device('Havicare', 'Veepoo Gateway', 'gateway'),
-                self::MF91 => $bracelet,
-            ]),
-            $mqtt,
-            IngressFixtures::links(true),
-            null,
-            new ArrayObservationStateStore(),
-            'havicare-hub/null/0/gw/+/raw',
-        );
+        return VeepooFixtures::bridge($mqtt, devices: [
+            self::VEEPOO_GATEWAY => IngressFixtures::device('Havicare', 'Veepoo Gateway', 'gateway'),
+            self::MF91 => $bracelet,
+        ]);
     }
 
     private function scanPayload(): string
@@ -155,12 +149,7 @@ final class GatewayTenantBoundaryTest extends TestCase
 
     private function sessionPayload(): string
     {
-        return json_encode([
-            'source' => 'veepoo-node',
-            'kind' => 'session',
-            'device' => ['mac' => self::MF91],
-            'payload' => ['authenticated' => true],
-        ], JSON_THROW_ON_ERROR);
+        return VeepooFixtures::message('session', ['authenticated' => true], self::MF91);
     }
 
     /**

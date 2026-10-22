@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Hub;
 
-use Hub\Device\ConnectionInterface;
 use Hub\Device\DeviceHubServer;
 use Hub\Device\RedisPendingDownlinkQueue;
 use Hub\Protocol\Adapter\PillDispenserAdapter;
@@ -14,6 +13,7 @@ use Tests\Support\Doubles\InMemoryRedisClient;
 use PHPUnit\Framework\TestCase;
 use Tests\Support\Doubles\IngressFixtures;
 use Tests\Support\Doubles\RecordingHubMqttBridge;
+use Tests\Support\Doubles\FakeConnection;
 
 /** O M228 apaga o evento quando recebe a confirmação: ela só sai com o evento publicado. */
 final class PillDispenserAckAfterPublishTest extends TestCase
@@ -105,7 +105,7 @@ final class PillDispenserAckAfterPublishTest extends TestCase
         $acks = $this->acks($mqtt, [$this->frame(0x01, 1), $this->frame(0x02, 2, $fault), $this->frame(0x02, 2, $fault)]);
 
         self::assertSame(['register_ack', 'heartbeat_ack'], $acks);
-        self::assertCount(1, array_filter($mqtt->events, static fn (array $event): bool => $event['type'] === 'device_fault'));
+        self::assertCount(1, $mqtt->ofType('device_fault', 'events'));
     }
 
     /** O alerta de bateria fraca que não saiu volta a sair na repetição, e o heartbeat espera por ele. */
@@ -127,7 +127,7 @@ final class PillDispenserAckAfterPublishTest extends TestCase
         $acks = $this->acks($mqtt, [$this->frame(0x01, 1), $this->frame(0x02, 2, $low), $this->frame(0x02, 2, $low)]);
 
         self::assertSame(['register_ack', 'heartbeat_ack'], $acks);
-        self::assertCount(1, array_filter($mqtt->events, static fn (array $event): bool => $event['type'] === 'low_battery'));
+        self::assertCount(1, $mqtt->ofType('low_battery', 'events'));
     }
 
     /** O arranque de uma actualização segue com a confirmação: retida uma, fica por mandar a outra. */
@@ -174,28 +174,7 @@ final class PillDispenserAckAfterPublishTest extends TestCase
      */
     private function acks(RecordingHubMqttBridge $mqtt, array $frames, ?DeviceStore $store = null, ?RedisPendingDownlinkQueue $queue = null, ?InMemoryFirmwareUpgradeStore $upgrades = null): array
     {
-        $connection = new class implements ConnectionInterface {
-            public int $resourceId = 1;
-
-            /** @var list<string> */
-            public array $sent = [];
-
-            public function remoteAddress(): ?string
-            {
-                return null;
-            }
-
-            public function send(string $data): static
-            {
-                $this->sent[] = $data;
-                return $this;
-            }
-
-            public function close(): static
-            {
-                return $this;
-            }
-        };
+        $connection = new FakeConnection();
         $hub = new DeviceHubServer(
             IngressFixtures::whitelist([self::IMEI => IngressFixtures::device('Zayata', 'M228', 'pill_dispenser')]),
             $mqtt,

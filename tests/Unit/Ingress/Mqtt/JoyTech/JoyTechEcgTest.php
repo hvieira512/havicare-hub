@@ -33,7 +33,7 @@ final class JoyTechEcgTest extends TestCase
         $mqtt = new RecordingHubMqttBridge();
         $this->replay($this->bridge($mqtt), self::capture());
 
-        $ecg = array_values(array_filter(array_column($mqtt->telemetry, 'payload'), static fn (array $t): bool => $t['type'] === 'ecg'));
+        $ecg = array_column($mqtt->ofType('ecg'), 'payload');
         self::assertCount(1, $ecg);
         self::assertCount(7504, $ecg[0]['data']['samples']);
         self::assertSame([210, 156, 101, 52, 1, -45], array_slice($ecg[0]['data']['samples'], 0, 6));
@@ -146,8 +146,8 @@ final class JoyTechEcgTest extends TestCase
         IngressFixtures::relay($bridge, self::TOPIC, self::message('session', ['connected' => true]));
         $this->replay($bridge, array_slice($capture, -1));
 
-        self::assertSame([], array_filter(array_column($mqtt->telemetry, 'payload'), static fn (array $t): bool => $t['type'] === 'ecg'));
-        self::assertSame([], array_filter(array_column($dropped->telemetry, 'payload'), static fn (array $t): bool => $t['type'] === 'ecg'));
+        self::assertSame([], $mqtt->ofType('ecg'));
+        self::assertSame([], $dropped->ofType('ecg'));
     }
 
     /** Um atraso a caminho do hub não interrompe o exame: as amostras chegam todas, só que tarde. */
@@ -161,7 +161,7 @@ final class JoyTechEcgTest extends TestCase
         $mqtt = new RecordingHubMqttBridge();
         $this->replay($this->bridge($mqtt), $late);
 
-        self::assertCount(1, array_filter(array_column($mqtt->telemetry, 'payload'), static fn (array $t): bool => $t['type'] === 'ecg'));
+        self::assertCount(1, $mqtt->ofType('ecg'));
     }
 
     /** @param list<array{0: int, 1: string}> $frames */

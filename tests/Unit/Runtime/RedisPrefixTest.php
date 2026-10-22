@@ -9,10 +9,7 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Predis\Client as RedisClient;
 
-/**
- * O prefixo das chaves do Redis permite dois hubs no mesmo servidor, e vai no cliente para
- * nenhum store nascer sem ele.
- */
+/** O prefixo do Redis vai no cliente, para dois hubs partilharem o servidor e nenhum store nascer sem ele. */
 final class RedisPrefixTest extends TestCase
 {
     /** Vazio é produção: as chaves têm de ficar exactamente onde sempre estiveram. */
@@ -40,8 +37,7 @@ final class RedisPrefixTest extends TestCase
     }
 
     /**
-     * As raízes que o hub usa, uma por store; o
-     * `testTheKeyspaceListCoversEveryRootDeclaredInTheCode` compara-as com o código.
+     * As raízes de chaves do hub, uma por store, que o teste do keyspace compara com o código.
      *
      * @return array<string, array{string}>
      */

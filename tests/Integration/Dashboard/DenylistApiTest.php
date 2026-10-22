@@ -7,10 +7,7 @@ namespace Tests\Integration\Dashboard;
 use GuzzleHttp\Psr7\ServerRequest;
 use Tests\Support\DashboardHttpTestCase;
 
-/**
- * A denylist pela API: um administrador bloqueia uma identidade (e as notificações desse
- * aparelho somem), lista, e desbloqueia. Fechada a inquilinos -- é rota de administrador.
- */
+/** Um administrador bloqueia, lista e desbloqueia identidades, e as notificações do bloqueado somem. */
 final class DenylistApiTest extends DashboardHttpTestCase
 {
     public function testAdminBlocksClearsNotificationsListsAndUnblocks(): void

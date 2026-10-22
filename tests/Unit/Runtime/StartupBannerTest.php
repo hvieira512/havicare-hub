@@ -5,33 +5,15 @@ declare(strict_types=1);
 namespace Tests\Unit\Runtime;
 
 use Hub\Device\HubMqttBridge;
-use Hub\Log\Logger;
 use Hub\Runtime\StartupBanner;
 use PHPUnit\Framework\TestCase;
 use Tests\Support\Doubles\FakeMqttSubscriber;
+use Tests\Support\CapturesLog;
 
 /** O banner de arranque diz, meses depois, com que configuração se corria. */
 final class StartupBannerTest extends TestCase
 {
-    private string $logFile;
-
-    protected function setUp(): void
-    {
-        $path = tempnam(sys_get_temp_dir(), 'banner-log-');
-        if ($path === false) {
-            throw new \RuntimeException('could not create the temporary log file');
-        }
-        $this->logFile = $path;
-        putenv('LOG_FILE=' . $path);
-        Logger::reset();
-    }
-
-    protected function tearDown(): void
-    {
-        putenv('LOG_FILE');
-        Logger::reset();
-        @unlink($this->logFile);
-    }
+    use CapturesLog;
 
     /** O arranque diz os identificadores MQTT, que dois hubs iguais disputariam no broker. */
     public function testTheBannerNamesTheMqttClientIdentities(): void

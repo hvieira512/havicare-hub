@@ -7,10 +7,7 @@ namespace Tests\Integration\Dashboard;
 use GuzzleHttp\Psr7\ServerRequest;
 use Tests\Support\DashboardHttpTestCase;
 
-/**
- * Um campo a falhar responde o código e a mensagem de sempre, com o `fields` por acréscimo; só
- * com vários é que a mensagem passa a genérica.
- */
+/** Um campo a falhar responde o código e a mensagem de sempre mais o `fields`; com vários, a mensagem é genérica. */
 final class ApiWriteValidationTest extends DashboardHttpTestCase
 {
     /** @return array{0: callable, 1: string} */

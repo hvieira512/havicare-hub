@@ -7,10 +7,7 @@ namespace Tests\Integration\Dashboard;
 use GuzzleHttp\Psr7\ServerRequest;
 use Tests\Support\DashboardHttpTestCase;
 
-/**
- * Quem entra na API, com que credencial, e o que fica no registo: a credencial que se aceita é
- * a que não pode aparecer no ficheiro.
- */
+/** Quem entra na API e com que credencial, que nunca pode aparecer no registo. */
 final class DashboardApiAuthTest extends DashboardHttpTestCase
 {
     /** O pedido mal formado é 400 e a credencial recusada é 401. */

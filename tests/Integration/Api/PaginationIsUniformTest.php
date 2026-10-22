@@ -9,10 +9,7 @@ use Hub\Api\Services\ModelService;
 use Hub\Infrastructure\Persistence\Repository\ApiDataAccess;
 use Tests\Support\MysqlDashboardTestCase;
 
-/**
- * Toda a colecção que cresce com o uso devolve o mesmo envelope; ficam de fora os catálogos
- * fixos, o feed de notificações e os `links` de um dispositivo.
- */
+/** Toda a colecção que cresce com o uso devolve o mesmo envelope; catálogos fixos, notificações e `links` ficam de fora. */
 final class PaginationIsUniformTest extends MysqlDashboardTestCase
 {
     public function testEveryGrowingCollectionReturnsTheSameEnvelope(): void

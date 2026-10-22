@@ -11,10 +11,7 @@ use React\EventLoop\Loop;
 use React\Stream\ReadableStreamInterface;
 use Tests\Support\DashboardHttpTestCase;
 
-/**
- * O stream de um inquilino inteiro: tudo o que o MQTT leva da sua empresa e licença, e nada
- * fora dela. Corre o event loop a sério, e por isso vive à parte do resto da suite.
- */
+/** O stream de um inquilino leva tudo o que é da sua empresa e licença e nada de fora; corre o loop a sério. */
 final class DashboardTenantStreamTest extends DashboardHttpTestCase
 {
     /** Um inquilino só recebe o seu par empresa e licença, e não o mesmo número noutra empresa. */
@@ -267,10 +264,7 @@ final class DashboardTenantStreamTest extends DashboardHttpTestCase
         );
     }
 
-    /**
-     * Corre o `$publish` e deixa o loop andar: a dispersão é diferida para fora do tique da
-     * ingestão, e um frame só aparece depois de o loop girar.
-     */
+    /** Corre o `$publish` e deixa o loop girar, porque a dispersão sai fora do tique da ingestão. */
     private function collect(ResponseInterface $response, callable $publish): string
     {
         $body = $response->getBody();

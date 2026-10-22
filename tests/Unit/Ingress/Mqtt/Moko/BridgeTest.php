@@ -5,11 +5,9 @@ declare(strict_types=1);
 namespace Tests\Unit\Ingress\Mqtt\Moko;
 
 use Hub\State\DeviceStoreContract;
-use Hub\Device\HubMqttBridge;
 use Tests\Support\Doubles\ArrayObservationStateStore;
 use Hub\Ingress\Mqtt\Moko\MokoBridge;
 use Hub\Ingress\Mqtt\Moko\MokoGatewayOptions;
-use PhpMqtt\Client\MqttClient;
 use PHPUnit\Framework\TestCase;
 use Tests\Support\Doubles\InMemoryRedisClient;
 use Hub\State\DeviceStore;
@@ -151,7 +149,7 @@ final class BridgeTest extends TestCase
 
         $this->bridge($mqtt, true)->handleReceivedMessage('havicare-hub/null/0/gw/c5e390f30bce/raw', (string)$frame);
 
-        $lowBattery = array_values(array_filter($mqtt->events, static fn (array $event): bool => $event['type'] === 'low_battery'));
+        $lowBattery = $mqtt->ofType('low_battery', 'events');
         self::assertSame([], $mqtt->telemetry);
         self::assertCount(1, $lowBattery);
         self::assertSame(['voltageMv' => 3380], $lowBattery[0]['payload']['data']);

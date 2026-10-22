@@ -5,10 +5,10 @@ declare(strict_types=1);
 namespace Tests\Unit\Hub;
 
 use Hub\Device\DeviceEventDecoder;
-use Hub\Device\DeviceSession;
 use Hub\Ingress\Tcp\Supplier\Zayata\PillDispenserTcpProtocol;
 use Hub\Protocol\Adapter\PillDispenserAdapter;
 use PHPUnit\Framework\TestCase;
+use Tests\Support\Doubles\PillDispenserFixtures;
 
 /** O heartbeat do M228 repete as TAGs de estado a cada minuto, e uma condição que dura dá um evento só quando começa. */
 final class PillDispenserRepeatedConditionsTest extends TestCase
@@ -85,7 +85,7 @@ final class PillDispenserRepeatedConditionsTest extends TestCase
         foreach ($tags as $tag => $value) {
             $tlv[$tag] = ['value' => chr($value)];
         }
-        $message = $protocol->handleIncoming($this->session(), $adapter->encodeOutgoing([
+        $message = $protocol->handleIncoming(PillDispenserFixtures::session(), $adapter->encodeOutgoing([
             'packetType' => 0x02,
             'mac' => 'AABBCCDDEEFF',
             'tlv' => $tlv,
@@ -105,19 +105,5 @@ final class PillDispenserRepeatedConditionsTest extends TestCase
     private function protocol(): PillDispenserTcpProtocol
     {
         return new PillDispenserTcpProtocol(new PillDispenserAdapter(), new DeviceEventDecoder());
-    }
-
-    private function session(): DeviceSession
-    {
-        return new DeviceSession(
-            new PillFakeConnection(),
-            true,
-            'AABBCCDDEEFF',
-            'zayata-m228',
-            'Zayata',
-            'M228',
-            'Zayata M228',
-            'pill_dispenser',
-        );
     }
 }

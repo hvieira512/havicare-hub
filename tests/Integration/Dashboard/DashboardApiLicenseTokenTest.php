@@ -7,10 +7,7 @@ namespace Tests\Integration\Dashboard;
 use GuzzleHttp\Psr7\ServerRequest;
 use Tests\Support\DashboardHttpTestCase;
 
-/**
- * Um administrador emite um token de inquilino sem conhecer a password dele; a rota só serve se
- * nunca emitir um token igual ou mais forte do que o de quem a chama.
- */
+/** Um administrador emite um token de inquilino sem a password dele, nunca mais forte do que o seu. */
 final class DashboardApiLicenseTokenTest extends DashboardHttpTestCase
 {
     /** O token tem o âmbito do par empresa e licença, e não só do número da licença. */

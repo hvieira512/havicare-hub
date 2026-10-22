@@ -8,15 +8,11 @@ use Hub\Ingress\Mqtt\Gateway\GatewayRelay;
 use Hub\Domain\GatewayDeviceLinkLookup;
 use Hub\Registry\Whitelist;
 
-/**
- * O andaime que os testes de ingress partilham: a `Whitelist` em memória, e o
- * `GatewayDeviceLinkLookup`. Cada teste declara os seus dispositivos.
- */
+/** A `Whitelist` e o `GatewayDeviceLinkLookup` em memória que os testes de ingress partilham. */
 final class IngressFixtures
 {
     /**
-     * Um dispositivo como a whitelist o guarda: a licença e a empresa vêm juntas, e um
-     * dispositivo sem cliente passa as duas vazias.
+     * Um dispositivo como a whitelist o guarda, com licença e empresa juntas.
      *
      * @return array<string, string>
      */
@@ -61,8 +57,7 @@ final class IngressFixtures
     }
 
     /**
-     * A chave é `array-key` e não `string`: um IMEI é só dígitos, e o PHP converte-o em
-     * inteiro ao pô-lo num array.
+     * Chave `array-key`, porque o PHP converte em inteiro um IMEI só de dígitos.
      *
      * @param array<array-key, array<string, mixed>> $devices indexados pela chave do dispositivo
      */
@@ -110,10 +105,7 @@ final class IngressFixtures
         ], JSON_THROW_ON_ERROR);
     }
 
-    /**
-     * Payload de 20 bytes do fabricante para uma condição: delta máximo < 4 é `clean`, quatro ou mais
-     * canais com delta >= 12 é `change_required`, e o resto é `attention`.
-     */
+    /** O payload MECS-PRO de uma condição: delta < 4 é `clean`, quatro canais a 12 é `change_required`, o resto `attention`. */
     private static function monitAdvertisement(string $sensor, string $condition, int $battery): string
     {
         $baseline = array_fill(0, 10, 1);

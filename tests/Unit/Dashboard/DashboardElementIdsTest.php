@@ -6,16 +6,10 @@ namespace Tests\Unit\Dashboard;
 
 use PHPUnit\Framework\TestCase;
 
-/**
- * Cada `els.qualquerCoisa` que o JavaScript lê existe na página: um `id` em falta rebenta o
- * arranque da dashboard, ou cala um botão onde há `?.`.
- */
+/** Cada `els.qualquerCoisa` que o JavaScript lê existe na página. */
 final class DashboardElementIdsTest extends TestCase
 {
-    /**
-     * Os `id` que o JavaScript compõe a partir de um prefixo, e quem os compõe. Os dois
-     * `PagerSummary` ficam de fora: com `withSummary: false` não se desenham.
-     */
+    /** Os `id` que o JavaScript compõe de um prefixo; os `PagerSummary` sem resumo não se desenham. */
     private const COMPOSED_IDS = [
         'telemetryPagerControls' => 'devices/detail.js',
         'downlinkPagerControls' => 'devices/detail.js',
@@ -64,8 +58,7 @@ final class DashboardElementIdsTest extends TestCase
     }
 
     /**
-     * Os nomes que o JavaScript lê da página (`els.nome` e `getElementById("nome")`), e onde. Um
-     * `getElementById` com variável é de um `id` que o próprio JavaScript desenhou.
+     * Os nomes que o JavaScript lê da página, por `els.nome` ou `getElementById("nome")`, e onde.
      *
      * @return array<string, list<string>> nome do elemento => ficheiros que o lêem
      */
@@ -107,10 +100,7 @@ final class DashboardElementIdsTest extends TestCase
         return $files;
     }
 
-    /**
-     * A página inteira, desenhada uma vez por processo, com o `$dashboardApiAuthRequired` que o
-     * `DashboardHttpServer::page()` lhe dá.
-     */
+    /** A página inteira, desenhada uma vez por processo como o `DashboardHttpServer::page()` a desenha. */
     private function page(): string
     {
         if (self::$renderedPage !== null) {

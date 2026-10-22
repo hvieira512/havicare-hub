@@ -9,12 +9,12 @@ use Hub\Ingress\Mqtt\Moko\MokoBridge;
 use Hub\Ingress\Mqtt\Ncs\NcsBridge;
 use Hub\Ingress\Mqtt\Veepoo\MeasurementNormalizer;
 use Hub\Ingress\Mqtt\Qinglanst\QinglanstBridge;
-use Hub\Ingress\Mqtt\Veepoo\VeepooBridge;
 use PHPUnit\Framework\TestCase;
 use Tests\Support\Doubles\ArrayObservationStateStore;
 use Tests\Support\Doubles\FakeMqttSubscriber;
 use Tests\Support\Doubles\IngressFixtures;
 use Tests\Support\Doubles\RecordingHubMqttBridge;
+use Tests\Support\Doubles\VeepooFixtures;
 
 /** O canal de cada capacidade no MQTT contra o `isEvent` do catálogo, nas quatro pontes. */
 final class CapabilityChannelTest extends TestCase
@@ -120,17 +120,7 @@ final class CapabilityChannelTest extends TestCase
     public function testTheVeepooBraceletPublishesEachCapabilityOnTheChannelTheCatalogDeclares(): void
     {
         $mqtt = new RecordingHubMqttBridge();
-        $bridge = new VeepooBridge(
-            IngressFixtures::whitelist([
-                self::VEEPOO_GATEWAY => IngressFixtures::device('Havicare', 'Veepoo Gateway', 'gateway'),
-                self::BRACELET => IngressFixtures::device('Wonlex', 'MF91', 'bracelet'),
-            ]),
-            $mqtt,
-            IngressFixtures::links(),
-            null,
-            new ArrayObservationStateStore(),
-            'havicare-hub/null/0/gw/+/raw',
-        );
+        $bridge = VeepooFixtures::bridge($mqtt);
 
         IngressFixtures::relay($bridge, self::veepooTopic(), json_encode([
             'source' => 'veepoo-node',
@@ -140,22 +130,12 @@ final class CapabilityChannelTest extends TestCase
         ], JSON_THROW_ON_ERROR));
 
         foreach ([['sdkType' => 51, 'heartRate' => 74], ['sdkType' => 31, 'bloodOxygen' => 97]] as $measurement) {
-            IngressFixtures::relay($bridge, self::veepooTopic(), json_encode([
-                'source' => 'veepoo-node',
-                'kind' => 'measurement',
-                'device' => ['mac' => self::BRACELET],
-                'payload' => $measurement,
-            ], JSON_THROW_ON_ERROR));
+            IngressFixtures::relay($bridge, self::veepooTopic(), VeepooFixtures::message('measurement', $measurement));
 
             // Uma medição a assentar só sai quando o pedido que a mandou fazer se fecha.
             $operation = MeasurementNormalizer::operationForSdkType((int)$measurement['sdkType']);
             if ($operation !== null) {
-                IngressFixtures::relay($bridge, self::veepooTopic(), json_encode([
-                    'source' => 'veepoo-node',
-                    'kind' => 'command_result',
-                    'device' => ['mac' => self::BRACELET],
-                    'payload' => ['dedupeKey' => $operation . '-key', 'operation' => $operation],
-                ], JSON_THROW_ON_ERROR));
+                IngressFixtures::relay($bridge, self::veepooTopic(), VeepooFixtures::message('command_result', ['dedupeKey' => $operation . '-key', 'operation' => $operation]));
             }
         }
 
@@ -166,8 +146,7 @@ final class CapabilityChannelTest extends TestCase
     }
 
     /**
-     * O que o catálogo não declara é do ciclo de vida do hub -- `device.connected` e afins -- e não
-     * tem capacidade com que ser comparado.
+     * O que o catálogo não declara, como `device.connected`, é do ciclo de vida do hub.
      *
      * @return array{events: list<string>, telemetry: list<string>}
      */

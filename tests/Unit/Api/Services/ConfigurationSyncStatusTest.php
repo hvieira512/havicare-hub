@@ -8,10 +8,7 @@ use Hub\Api\Services\ConfigurationSyncStatus;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
-/**
- * Se um dispositivo aplicou o que o hub pediu: o achatamento em caminhos comparáveis, a
- * igualdade entre pretendido e reportado, e o estado de ciclo de vida que a API serve.
- */
+/** Se o dispositivo aplicou o pedido: os caminhos comparáveis, a igualdade e o estado que a API serve. */
 final class ConfigurationSyncStatusTest extends TestCase
 {
     public function testFlattensWritableCapabilitiesToSectionDotKeyPaths(): void
