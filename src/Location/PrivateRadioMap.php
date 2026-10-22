@@ -14,7 +14,7 @@ final class PrivateRadioMap
     private const CLUSTER_RADIUS_METERS = 150.0;
 
     public function __construct(
-        private readonly PrivateRadioMapStoreContract $store,
+        private readonly PdoPrivateRadioMapStore $store,
         private readonly BeaconDbRequestBuilder $requestBuilder,
         private readonly string $hashKey,
         private readonly float $maximumResolutionAccuracyMeters = 500.0,

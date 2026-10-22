@@ -4,7 +4,8 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Location;
 
-use Tests\Support\Doubles\ArrayProviderCircuitStateStore;
+use Hub\Location\RedisProviderCircuitStateStore;
+use Tests\Support\Doubles\InMemoryRedisClient;
 use Hub\Location\CallbackLocationProvider;
 use Hub\Location\CircuitBreakingLocationProvider;
 use Hub\Location\LocationProviderException;
@@ -18,7 +19,7 @@ final class CircuitBreakingLocationProviderTest extends TestCase
     public function testOpensAfterConsecutiveRetryableFailures(): void
     {
         $calls = 0;
-        $store = new ArrayProviderCircuitStateStore();
+        $store = new RedisProviderCircuitStateStore(new InMemoryRedisClient());
         $provider = new CircuitBreakingLocationProvider(
             new CallbackLocationProvider(function () use (&$calls) {
                 $calls++;
@@ -41,7 +42,7 @@ final class CircuitBreakingLocationProviderTest extends TestCase
     public function testRateLimitOpensImmediatelyAndHonorsRetryAfter(): void
     {
         $calls = 0;
-        $store = new ArrayProviderCircuitStateStore();
+        $store = new RedisProviderCircuitStateStore(new InMemoryRedisClient());
         $provider = new CircuitBreakingLocationProvider(
             new CallbackLocationProvider(function () use (&$calls) {
                 $calls++;
@@ -62,7 +63,7 @@ final class CircuitBreakingLocationProviderTest extends TestCase
     public function testNonRetryableFailureDoesNotOpenCircuit(): void
     {
         $calls = 0;
-        $store = new ArrayProviderCircuitStateStore();
+        $store = new RedisProviderCircuitStateStore(new InMemoryRedisClient());
         $provider = new CircuitBreakingLocationProvider(
             new CallbackLocationProvider(function () use (&$calls) {
                 $calls++;
@@ -84,7 +85,7 @@ final class CircuitBreakingLocationProviderTest extends TestCase
     public function testSuccessResetsFailureCounter(): void
     {
         $calls = 0;
-        $store = new ArrayProviderCircuitStateStore();
+        $store = new RedisProviderCircuitStateStore(new InMemoryRedisClient());
         $provider = new CircuitBreakingLocationProvider(
             new CallbackLocationProvider(function () use (&$calls) {
                 $calls++;

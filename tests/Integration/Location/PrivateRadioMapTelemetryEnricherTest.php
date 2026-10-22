@@ -2,23 +2,23 @@
 
 declare(strict_types=1);
 
-namespace Tests\Unit\Location;
+namespace Tests\Integration\Location;
 
-use Tests\Support\Doubles\ArrayPrivateRadioMapStore;
 use Hub\Location\BeaconDbRequestBuilder;
 use Hub\Location\LocationTelemetryEnricherContract;
 use Hub\Location\PrivateRadioMap;
 use Hub\Location\PrivateRadioMapTelemetryEnricher;
-use PHPUnit\Framework\TestCase;
+use Hub\Location\PdoPrivateRadioMapStore;
+use Tests\Support\MysqlDashboardTestCase;
 use React\Promise\PromiseInterface;
 
 use function React\Promise\resolve;
 
-final class PrivateRadioMapTelemetryEnricherTest extends TestCase
+final class PrivateRadioMapTelemetryEnricherTest extends MysqlDashboardTestCase
 {
     public function testPrivateResolutionRunsBeforePublicFallback(): void
     {
-        $map = new PrivateRadioMap(new ArrayPrivateRadioMapStore(), new BeaconDbRequestBuilder(), 'key');
+        $map = new PrivateRadioMap(new PdoPrivateRadioMapStore($this->createDashboardDatabase()->pdo()), new BeaconDbRequestBuilder(), 'key');
         $map->seed(['10:11:12:13:14:15', '20:21:22:23:24:25'], 41.7, -8.8, 30);
         $fallback = new class implements LocationTelemetryEnricherContract {
             public int $calls = 0;
@@ -42,7 +42,7 @@ final class PrivateRadioMapTelemetryEnricherTest extends TestCase
 
     public function testUnknownEvidenceFallsBackToPublicProvider(): void
     {
-        $map = new PrivateRadioMap(new ArrayPrivateRadioMapStore(), new BeaconDbRequestBuilder(), 'key');
+        $map = new PrivateRadioMap(new PdoPrivateRadioMapStore($this->createDashboardDatabase()->pdo()), new BeaconDbRequestBuilder(), 'key');
         $fallback = new class implements LocationTelemetryEnricherContract {
             public int $calls = 0;
             public function enrich(array $telemetry): PromiseInterface
@@ -67,7 +67,7 @@ final class PrivateRadioMapTelemetryEnricherTest extends TestCase
 
     public function testGpsIsLearnedButPublishedWithoutBeingReplaced(): void
     {
-        $map = new PrivateRadioMap(new ArrayPrivateRadioMapStore(), new BeaconDbRequestBuilder(), 'key');
+        $map = new PrivateRadioMap(new PdoPrivateRadioMapStore($this->createDashboardDatabase()->pdo()), new BeaconDbRequestBuilder(), 'key');
         $fallback = new class implements LocationTelemetryEnricherContract {
             public int $calls = 0;
             public function enrich(array $telemetry): PromiseInterface

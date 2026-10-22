@@ -9,7 +9,7 @@ use Hub\Device\DeviceEventPayloadBuilder;
 use Hub\Device\DeviceSession;
 use Hub\Protocol\Adapter\DeviceAdapterInterface;
 
-abstract class AbstractTcpProtocol implements TcpProtocolInterface
+abstract class TcpProtocol
 {
     public function __construct(
         protected readonly DeviceAdapterInterface $adapter,
@@ -22,24 +22,9 @@ abstract class AbstractTcpProtocol implements TcpProtocolInterface
         return $this->adapter->protocol();
     }
 
-    public function canDecode(string $raw): bool
-    {
-        return $this->adapter->canDecode($raw);
-    }
-
-    public function decodeIncoming(string $raw, array $context = []): ?array
-    {
-        return $this->adapter->decodeIncoming($raw, $context);
-    }
-
-    public function encodeOutgoing(array $payload, array $context = []): string
-    {
-        return $this->adapter->encodeOutgoing($payload, $context);
-    }
-
     public function handleIncoming(DeviceSession $session, string $raw): ?TcpMessage
     {
-        $decoded = $this->decodeIncoming($raw, ['session' => $session->identityContext()]);
+        $decoded = $this->adapter->decodeIncoming($raw, ['session' => $session->identityContext()]);
         if (!is_array($decoded)) {
             return null;
         }
@@ -56,15 +41,21 @@ abstract class AbstractTcpProtocol implements TcpProtocolInterface
         );
     }
 
-    /** Por omissão, nenhuma trama comenta configuração. */
+    /**
+     * Se esta trama é o aparelho a dizer que aceitou ou recusou uma configuração; `null` é
+     * «não disse», e não «recusou». Por omissão, nenhuma trama comenta configuração.
+     *
+     * @param array<string, mixed> $decoded
+     */
     public function replyAccepted(array $decoded): ?bool
     {
         return null;
     }
 
+    /** @return array{nativeType?: string, protocol?: string, ident?: string|int}|null */
     public function commandMetadata(string $bytes): ?array
     {
-        $decoded = $this->decodeIncoming($bytes);
+        $decoded = $this->adapter->decodeIncoming($bytes);
         if (!is_array($decoded)) {
             return null;
         }

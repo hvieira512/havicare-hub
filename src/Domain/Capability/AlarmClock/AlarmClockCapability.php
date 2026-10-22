@@ -5,20 +5,21 @@ declare(strict_types=1);
 namespace Hub\Domain\Capability\AlarmClock;
 
 use Hub\Domain\Capability\CapabilityContract;
+use Hub\Domain\Capability\CapabilityProtocolHandler;
 
 /**
  * O contrato da capacidade `alarm_clock`: `items`, `meta` e `merge`, em que a lista vazia limpa
- * os alarmes. A conversão por fornecedor é dos `AlarmClockHandler`.
+ * os alarmes. A conversão por fornecedor é de cada `CapabilityProtocolHandler`.
  */
 final class AlarmClockCapability implements CapabilityContract
 {
     use AlarmClockHelpers;
 
-    /** @var array<string, AlarmClockHandler> protocolo → handler */
+    /** @var array<string, CapabilityProtocolHandler> protocolo → handler */
     private array $handlers;
 
     /**
-     * @param array<string, AlarmClockHandler> $handlers  indexados pelo protocolo
+     * @param array<string, CapabilityProtocolHandler> $handlers  indexados pelo protocolo
      */
     public function __construct(array $handlers = [])
     {

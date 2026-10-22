@@ -11,7 +11,7 @@ declare(strict_types=1);
 require __DIR__ . '/../vendor/autoload.php';
 
 use Hub\Device\Firmware\FirmwareUpgrade;
-use Hub\Device\Firmware\RedisFirmwareUpgradeStore;
+use Hub\Device\Firmware\FirmwareUpgradeStore;
 use Hub\Runtime\CliBootstrap;
 use Hub\Runtime\HubServices;
 use Predis\Client as RedisClient;
@@ -49,7 +49,7 @@ if (!$apply) {
 }
 
 $config = CliBootstrap::config(__DIR__ . '/..');
-$store = new RedisFirmwareUpgradeStore(new RedisClient(
+$store = new FirmwareUpgradeStore(new RedisClient(
     HubServices::redisParameters($config['redis']),
     HubServices::redisOptions($config['redis']),
 ));

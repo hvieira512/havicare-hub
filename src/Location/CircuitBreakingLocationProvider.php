@@ -12,7 +12,7 @@ final class CircuitBreakingLocationProvider implements LocationProviderContract
 {
     public function __construct(
         private readonly LocationProviderContract $provider,
-        private readonly ProviderCircuitStateStoreContract $stateStore,
+        private readonly RedisProviderCircuitStateStore $stateStore,
         private readonly int $failureThreshold = 3,
         private readonly int $openSeconds = 300,
         private readonly int $rateLimitOpenSeconds = 3600,

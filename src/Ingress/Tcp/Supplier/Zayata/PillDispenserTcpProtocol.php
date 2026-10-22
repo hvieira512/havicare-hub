@@ -9,7 +9,7 @@ use Hub\Device\DeviceEventDecoder;
 use Hub\Device\DeviceSession;
 use Hub\Device\Firmware\FirmwareUpgrade;
 use Hub\Device\Firmware\FirmwareUpgradeStore;
-use Hub\Ingress\Tcp\AbstractTcpProtocol;
+use Hub\Ingress\Tcp\TcpProtocol;
 use Hub\Ingress\Tcp\TcpMessage;
 use Hub\Ingress\Tcp\TcpResponse;
 use Hub\Log\Logger;
@@ -19,7 +19,7 @@ use Hub\Protocol\Adapter\DeviceAdapterInterface;
  * O M228 espera confirmação de cada pacote `0x01`–`0x04`: o mesmo tipo com o bit alto, a ecoar
  * a identidade e o número de série. O bit 1 do Flag dispensa a resposta.
  */
-final class PillDispenserTcpProtocol extends AbstractTcpProtocol
+final class PillDispenserTcpProtocol extends TcpProtocol
 {
     private const ACKNOWLEDGED_TYPES = ['register', 'heartbeat', 'event', 'change'];
 
@@ -169,7 +169,7 @@ final class PillDispenserTcpProtocol extends AbstractTcpProtocol
     private function acknowledgement(array $decoded): string
     {
 
-        return $this->encodeOutgoing([
+        return $this->adapter->encodeOutgoing([
             'packetType' => ((int)($decoded['packetType'] ?? 0)) | 0x80,
             'deviceNumber' => (int)($decoded['deviceNumber'] ?? 0),
             'serial' => (int)($decoded['ident'] ?? 0),
@@ -218,7 +218,7 @@ final class PillDispenserTcpProtocol extends AbstractTcpProtocol
             return null;
         }
 
-        return new TcpResponse($this->encodeOutgoing([
+        return new TcpResponse($this->adapter->encodeOutgoing([
             'packetType' => $step['packetType'],
             'deviceNumber' => (int)($decoded['deviceNumber'] ?? 0),
             'serial' => (int)($step['state']['serial'] ?? 0),

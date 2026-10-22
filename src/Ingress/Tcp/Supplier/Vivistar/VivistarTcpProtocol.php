@@ -7,10 +7,10 @@ namespace Hub\Ingress\Tcp\Supplier\Vivistar;
 use Hub\Device\DeviceEventDecoder;
 use Hub\Device\DeviceSession;
 use Hub\Protocol\Adapter\DeviceAdapterInterface;
-use Hub\Ingress\Tcp\AbstractTcpProtocol;
+use Hub\Ingress\Tcp\TcpProtocol;
 use Hub\Ingress\Tcp\TcpResponse;
 
-final class VivistarTcpProtocol extends AbstractTcpProtocol
+final class VivistarTcpProtocol extends TcpProtocol
 {
     public function __construct(
         DeviceAdapterInterface $adapter,
@@ -27,7 +27,7 @@ final class VivistarTcpProtocol extends AbstractTcpProtocol
         $type = (string)($decoded['type'] ?? '');
 
         if ($type === 'login') {
-            return [new TcpResponse($this->encodeOutgoing(['type' => 'login_ok']))];
+            return [new TcpResponse($this->adapter->encodeOutgoing(['type' => 'login_ok']))];
         }
 
         $ack = match ($type) {

@@ -9,7 +9,7 @@ use PHPUnit\Framework\TestCase;
 
 final class CapabilityRegistryTest extends TestCase
 {
-    /** Por omissão uma configuração é um downlink; só o que se marca com `HubAppliedCapability` o hub aplica sozinho. */
+    /** Por omissão uma configuração é um downlink; só a sensibilidade das fraldas o hub aplica sozinho. */
     public function testACapabilityTravelsToTheDeviceUnlessItSaysOtherwise(): void
     {
         $registry = new CapabilityRegistry();

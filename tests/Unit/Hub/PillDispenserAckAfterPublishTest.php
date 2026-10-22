@@ -6,10 +6,10 @@ namespace Tests\Unit\Hub;
 
 use Hub\Device\ConnectionInterface;
 use Hub\Device\DeviceHubServer;
+use Hub\Device\Firmware\FirmwareUpgradeStore;
 use Hub\Device\RedisPendingDownlinkQueue;
 use Hub\Protocol\Adapter\PillDispenserAdapter;
 use Hub\State\DeviceStore;
-use Tests\Support\Doubles\InMemoryFirmwareUpgradeStore;
 use Tests\Support\Doubles\InMemoryRedisClient;
 use PHPUnit\Framework\TestCase;
 use Tests\Support\Doubles\IngressFixtures;
@@ -144,7 +144,8 @@ final class PillDispenserAckAfterPublishTest extends TestCase
                 parent::publishTelemetry($imei, $payload, $deviceType, $licenseId, $company);
             }
         };
-        $upgrades = new InMemoryFirmwareUpgradeStore(['status' => 'requested', 'offset' => 0, 'firmware' => base64_encode(str_repeat('f', 600)), 'size' => 600, 'checksum' => 1, 'timeout' => 1800]);
+        $upgrades = new FirmwareUpgradeStore(new InMemoryRedisClient());
+        $upgrades->save(self::IMEI, ['status' => 'requested', 'offset' => 0, 'firmware' => base64_encode(str_repeat('f', 600)), 'size' => 600, 'checksum' => 1, 'timeout' => 1800]);
         $battery = [0x8103 => ['value' => "\x50"]];
 
         $acks = $this->acks($mqtt, [$this->frame(0x01, 1, $battery), $this->frame(0x01, 1, $battery)], upgrades: $upgrades);
@@ -172,7 +173,7 @@ final class PillDispenserAckAfterPublishTest extends TestCase
      * @param list<string> $frames
      * @return list<string>
      */
-    private function acks(RecordingHubMqttBridge $mqtt, array $frames, ?DeviceStore $store = null, ?RedisPendingDownlinkQueue $queue = null, ?InMemoryFirmwareUpgradeStore $upgrades = null): array
+    private function acks(RecordingHubMqttBridge $mqtt, array $frames, ?DeviceStore $store = null, ?RedisPendingDownlinkQueue $queue = null, ?FirmwareUpgradeStore $upgrades = null): array
     {
         $connection = new class implements ConnectionInterface {
             public int $resourceId = 1;

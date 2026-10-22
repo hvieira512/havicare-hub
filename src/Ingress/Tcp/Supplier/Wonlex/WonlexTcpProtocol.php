@@ -7,10 +7,10 @@ namespace Hub\Ingress\Tcp\Supplier\Wonlex;
 use Hub\Device\DeviceEventDecoder;
 use Hub\Device\DeviceSession;
 use Hub\Protocol\Adapter\DeviceAdapterInterface;
-use Hub\Ingress\Tcp\AbstractTcpProtocol;
+use Hub\Ingress\Tcp\TcpProtocol;
 use Hub\Ingress\Tcp\TcpResponse;
 
-final class WonlexTcpProtocol extends AbstractTcpProtocol
+final class WonlexTcpProtocol extends TcpProtocol
 {
     /** @var callable(DeviceSession): array<string, mixed>|null */
     private $stateProvider;
@@ -35,7 +35,7 @@ final class WonlexTcpProtocol extends AbstractTcpProtocol
         $state = $this->state($session);
 
         if ($type === 'login') {
-            $responses[] = new TcpResponse($this->encodeOutgoing([
+            $responses[] = new TcpResponse($this->adapter->encodeOutgoing([
                 'type' => 'login',
                 'ident' => $this->replyIdent($decoded['ident'] ?? null),
                 'ref' => 's:reply',
@@ -52,7 +52,7 @@ final class WonlexTcpProtocol extends AbstractTcpProtocol
         }
 
         if ($type === 'heartbeat') {
-            $responses[] = new TcpResponse($this->encodeOutgoing([
+            $responses[] = new TcpResponse($this->adapter->encodeOutgoing([
                 'type' => 'heartbeat',
                 'ident' => $this->replyIdent($decoded['ident'] ?? null),
                 'ref' => 's:reply',
@@ -88,7 +88,7 @@ final class WonlexTcpProtocol extends AbstractTcpProtocol
                 'value' => $this->sleepSummary($sleep),
             ], $ident, $timestamp)];
         }
-        $responses[] = new TcpResponse($this->encodeOutgoing([
+        $responses[] = new TcpResponse($this->adapter->encodeOutgoing([
             'type' => $type,
             'ident' => $ident,
             'ref' => 's:reply',
@@ -123,7 +123,7 @@ final class WonlexTcpProtocol extends AbstractTcpProtocol
         int $ident,
         int $timestamp
     ): TcpResponse {
-        return new TcpResponse($this->encodeOutgoing([
+        return new TcpResponse($this->adapter->encodeOutgoing([
             'type' => $type,
             'ident' => $ident,
             'ref' => 's:down',

@@ -14,7 +14,7 @@ use Tests\Support\Doubles\InMemoryRedisClient;
 use Tests\Support\MysqlDashboardTestCase;
 
 /**
- * A sensibilidade do medidor de fraldas é uma `HubAppliedCapability`: o sensor é um beacon
+ * A sensibilidade do medidor de fraldas o hub aplica-a sozinho: o sensor é um beacon
  * não-conectável, e cada alteração ficaria pendente à espera de um ack que nunca chega.
  */
 final class DiaperSensitivityApiTest extends MysqlDashboardTestCase

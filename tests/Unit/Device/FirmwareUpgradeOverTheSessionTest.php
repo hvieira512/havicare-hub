@@ -11,7 +11,7 @@ use Hub\Device\Firmware\FirmwareUpgradeStore;
 use Hub\Ingress\Tcp\Supplier\Zayata\PillDispenserTcpProtocol;
 use Hub\Protocol\Adapter\PillDispenserAdapter;
 use PHPUnit\Framework\TestCase;
-use Tests\Support\Doubles\InMemoryFirmwareUpgradeStore;
+use Tests\Support\Doubles\InMemoryRedisClient;
 use Tests\Unit\Hub\PillFakeConnection;
 
 /** O aparelho é que liga ao hub, e cada trama que manda é a oportunidade de enviar o pacote seguinte pela sessão dele. */
@@ -68,8 +68,8 @@ final class FirmwareUpgradeOverTheSessionTest extends TestCase
         $message = $protocol->handleIncoming($this->session(), $this->frame(0x8F, 0x08));
 
         self::assertSame([], $message?->responses);
-        self::assertSame('failed', $store->state['status']);
-        self::assertSame(0x08, $store->state['error']);
+        self::assertSame('failed', $store->load(self::IMEI)['status'] ?? null);
+        self::assertSame(0x08, $store->load(self::IMEI)['error'] ?? null);
     }
 
     /** Sem transferência pedida, o heartbeat continua a ser confirmado como sempre. */
@@ -115,14 +115,17 @@ final class FirmwareUpgradeOverTheSessionTest extends TestCase
     }
 
     /** @param array<string, mixed> $state */
-    private function store(array $state): InMemoryFirmwareUpgradeStore
+    private function store(array $state): FirmwareUpgradeStore
     {
-        return new InMemoryFirmwareUpgradeStore($state + [
+        $store = new FirmwareUpgradeStore(new InMemoryRedisClient());
+        $store->save(self::IMEI, $state + [
             'firmware' => base64_encode(str_repeat('f', self::SIZE)),
             'size' => self::SIZE,
             'checksum' => 123456,
             'timeout' => 1800,
         ]);
+
+        return $store;
     }
 
     private function session(): DeviceSession

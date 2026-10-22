@@ -301,7 +301,7 @@ ir, porque o sensor é um beacon BLE que só transmite, e o que ela muda é a
 regra com que o hub deriva o estado da fralda.
 
 **O frontend não sabe disto, e é de propósito.** Quem decide é a capacidade em
-PHP, marcada com `HubAppliedCapability`: o `DeviceConfigurationUpdateService`
+PHP, que o `CapabilityRegistry::travelsToDevice` dá como aplicada no hub: o `DeviceConfigurationUpdateService`
 guarda o valor e dá-o por aplicado sem comandos, o bloco recebe `command: ""`
 no catálogo, e o painel lê disso as duas únicas diferenças que se vêem — o
 botão diz "Guardar" em vez de "Enviar", e não se mostra vocabulário de
@@ -324,7 +324,7 @@ PHP.
 | uma listagem plana que se filtra | uma linha por registo no ficheiro do ecrã, com os filtros do `columns` da API por cima |
 | um handler de clique | ao lado do módulo que desenha o que ele trata |
 | um campo novo de configuração | um descritor em `devices/config/inputs/<grupo>.js` |
-| uma configuração que o hub aplica sem downlink | nada de especial no frontend: é a capacidade em PHP que se marca com `HubAppliedCapability` |
+| uma configuração que o hub aplica sem downlink | nada de especial no frontend: é a capacidade em PHP, acrescentada ao `CapabilityRegistry::travelsToDevice` |
 | um ecrã novo nas definições | `settings/<nome>.js`, ligado no `settings/index.js` |
 | estado que sobrevive a um render | `state.js`, no sub-objeto do ecrã |
 

@@ -6,7 +6,7 @@ namespace Hub\Location;
 
 use PDO;
 
-final class PdoPrivateRadioMapStore implements PrivateRadioMapStoreContract
+final class PdoPrivateRadioMapStore
 {
     // Teto do cache: a chave é o hash do BSSID, e sem limite cresce com cada ponto de acesso
     // distinto que o processo de longa vida chega a ver.
@@ -20,6 +20,10 @@ final class PdoPrivateRadioMapStore implements PrivateRadioMapStoreContract
     {
     }
 
+    /**
+     * @param list<string> $bssidHashes
+     * @return array<string, array<string, mixed>> entradas pelo hash do BSSID
+     */
     public function findMany(array $bssidHashes): array
     {
         $hashes = array_values(array_unique(array_filter(
@@ -76,6 +80,7 @@ final class PdoPrivateRadioMapStore implements PrivateRadioMapStoreContract
         return $found;
     }
 
+    /** @param array<string, array<string, mixed>> $entries entradas pelo hash do BSSID */
     public function saveMany(array $entries): void
     {
         if ($entries === []) {

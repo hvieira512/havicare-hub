@@ -8,10 +8,10 @@ use Hub\Device\DeviceEventDecoder;
 use Hub\Device\DeviceSession;
 use Hub\Protocol\Adapter\DeviceAdapterInterface;
 use Hub\Protocol\Adapter\FourPTouchAdapter;
-use Hub\Ingress\Tcp\AbstractTcpProtocol;
+use Hub\Ingress\Tcp\TcpProtocol;
 use Hub\Ingress\Tcp\TcpResponse;
 
-final class FourPTouchTcpProtocol extends AbstractTcpProtocol
+final class FourPTouchTcpProtocol extends TcpProtocol
 {
     public function __construct(
         DeviceAdapterInterface $adapter,
@@ -46,7 +46,7 @@ final class FourPTouchTcpProtocol extends AbstractTcpProtocol
             return [];
         }
 
-        return [new TcpResponse($this->encodeOutgoing([
+        return [new TcpResponse($this->adapter->encodeOutgoing([
             'type' => $type,
             'imei' => $decoded['ident'] ?? $session->imei,
             'deviceId' => $decoded['ident'] ?? $session->imei,
