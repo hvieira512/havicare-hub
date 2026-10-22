@@ -4,12 +4,12 @@ import {
     getNotifications,
     markNotificationsRead,
 } from "./api/index.js";
-import { getDashboardApiToken } from "./api/http.js";
+import { isSignedIn } from "./api/http.js";
 import { ago, when } from "./format.js";
 import { countLabel } from "./i18n.js";
-import { html, raw } from "./html.js";
+import { html } from "./html.js";
 import { apiError, confirmDestructive, toast } from "./dialogs.js";
-import { loadSettingsModal } from "./settings/index.js";
+import { els, whileVisible } from "./dom.js";
 
 const POLL_INTERVAL_MS = 15_000;
 
@@ -41,6 +41,7 @@ const notificationType = (type) =>
 
 let elements = null;
 let addDevice = null;
+let openDenylist = null;
 let notifications = [];
 
 const renderBadge = (count) => {
@@ -97,14 +98,14 @@ export function notificationRow(notification) {
                 <i class="fa-solid ${kind.icon} text-danger mt-1 flex-shrink-0" aria-hidden="true"></i>
                 <div class="min-w-0 flex-grow-1">
                     <span class="d-block fw-semibold">${kind.title}</span>
-                    ${raw(deviceLine)}
-                    ${raw(detailsLine)}
+                    ${deviceLine}
+                    ${detailsLine}
                     <span class="d-flex justify-content-between gap-2 small text-secondary mt-1">
                         <span>${kind.count(attempts)}</span>
                         <span>${ago(notification.lastSeenAt)}</span>
                     </span>
                     <div class="d-flex gap-2 mt-2">
-                        ${raw(deviceActions)}
+                        ${deviceActions}
                         <button class="btn btn-sm btn-outline-secondary flex-shrink-0 ms-auto" type="button" data-notification-dismiss="${id}" title="Eliminar notificação" aria-label="Eliminar notificação">
                             <i class="fa-solid fa-trash-can" aria-hidden="true"></i>
                         </button>
@@ -135,10 +136,7 @@ const render = () => {
 };
 
 const load = async () => {
-    if (
-        document.body.dataset.dashboardAuthRequired === "true" &&
-        !getDashboardApiToken()?.access_token
-    ) {
+    if (!isSignedIn()) {
         return false;
     }
 
@@ -159,10 +157,7 @@ const load = async () => {
 
 /** O poll de fundo só pede a contagem para a pastilha; a lista refaz-se quando o menu abre. */
 const refreshBadge = async () => {
-    if (
-        document.body.dataset.dashboardAuthRequired === "true" &&
-        !getDashboardApiToken()?.access_token
-    ) {
+    if (!isSignedIn()) {
         return;
     }
     const result = await getNotifications(1);
@@ -270,7 +265,7 @@ const handleNotificationClick = (event) => {
 
     if (button.dataset.notificationDenylist !== undefined) {
         closeDropdown();
-        void loadSettingsModal("denylist");
+        openDenylist();
         return;
     }
 
@@ -292,14 +287,15 @@ const handleNotificationClick = (event) => {
     else registerDeviceAction(notification);
 };
 
-export function initNotifications({ els, openAddDevice }) {
+export function initNotifications(context) {
     elements = {
         dropdown: els.dashboardNotificationsDropdown,
         badge: els.dashboardNotificationsBadge,
         summary: els.dashboardNotificationsSummary,
         list: els.dashboardNotificationsList,
     };
-    addDevice = openAddDevice;
+    addDevice = context.openAddDevice;
+    openDenylist = context.openDenylist;
 
     elements.dropdown.addEventListener("shown.bs.dropdown", () => {
         void handleDropdownShown();
@@ -308,13 +304,6 @@ export function initNotifications({ els, openAddDevice }) {
     window.addEventListener("hub-dashboard-api-token-updated", () => {
         void load();
     });
-    // Um separador escondido não sonda, e ao voltar relê-se já.
-    const refreshBadgeWhenVisible = () => {
-        if (!document.hidden) {
-            void refreshBadge();
-        }
-    };
-    window.setInterval(refreshBadgeWhenVisible, POLL_INTERVAL_MS);
-    document.addEventListener("visibilitychange", refreshBadgeWhenVisible);
+    whileVisible(() => void refreshBadge(), POLL_INTERVAL_MS);
     void load();
 }

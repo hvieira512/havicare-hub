@@ -53,7 +53,6 @@ import {
 } from "./stream.js";
 import {
     html,
-    raw,
 } from "../html.js";
 import {
     normalizePhoneControl,
@@ -70,13 +69,8 @@ import {
     selectImei,
     state,
 } from "../state.js";
-import {
-    SELECTED_DEVICE_STORAGE_KEY,
-    clearStorageKey,
-    saveTextStorage,
-} from "../storage.js";
+import { els } from "../dom.js";
 
-let els;
 let deviceModal;
 
 /** O painel de configurações entra por `import()` quando se abre o separador: uma porta só. */
@@ -90,7 +84,6 @@ export function loadConfigPanel() {
         import("./config/handlers.js"),
     ])
         .then(([catalog, panel, handlers]) => {
-            panel.initDeviceConfigPanel({ els });
             loadedPanel = { catalog, panel, handlers };
             return loadedPanel;
         })
@@ -107,7 +100,6 @@ export function configPanelIfLoaded() {
 }
 
 export function initDeviceModal(context) {
-    els = context.els;
     deviceModal = context.deviceModal;
 }
 
@@ -263,7 +255,7 @@ function renderDeviceModalIdentity(device, deviceModel, deviceType) {
 
     // O estado é um ponto e não uma pastilha, para a linha caber; quem não vê o ponto lê a palavra.
     els.deviceModalIdentity.innerHTML = html`
-        <span class="modal-device-thumb d-flex align-items-center justify-content-center flex-shrink-0 rounded-3">${raw(modelImageHtml(deviceModel, 24))}</span>
+        <span class="modal-device-thumb d-flex align-items-center justify-content-center flex-shrink-0 rounded-3">${modelImageHtml(deviceModel, 24)}</span>
         <span class="min-w-0">
             <h5 class="modal-title mb-0 tabular-nums text-truncate" id="deviceModalLabel">${imei}</h5>
             <span class="modal-device-meta d-flex align-items-center gap-2 min-w-0">
@@ -488,9 +480,6 @@ export async function saveDevice() {
 
     if (state.selectedImei === originalImei) {
         selectImei(imei);
-        if (state.selectedImei) {
-            saveTextStorage(SELECTED_DEVICE_STORAGE_KEY, state.selectedImei);
-        }
         await loadDevice(imei);
     }
     deviceModal.hide();
@@ -513,7 +502,6 @@ export async function handleDeleteDeviceBtnClick() {
     if (state.selectedImei === imei) {
         disconnectDeviceStream();
         clearSelection();
-        clearStorageKey(SELECTED_DEVICE_STORAGE_KEY);
     }
     if (isDeviceSelectorOpen()) {
         await loadSummary();

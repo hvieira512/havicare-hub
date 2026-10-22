@@ -1,11 +1,9 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { autoEls } from "./support/els.js";
+import { cacheElements } from "../../src/Dashboard/dashboard/dom.js";
 
 const { state } = await import("../../src/Dashboard/dashboard/state.js");
-const { initSettingsModels } = await import(
-    "../../src/Dashboard/dashboard/settings/models/shell.js",
-);
 const {
     handleModelDetailImageChange,
     renderModelDetailInfo,
@@ -59,8 +57,7 @@ function setupDom() {
     // O que a ficha toca e não está na marcação deste teste nasce aqui: o que se prende é o
     // recarregamento, e não quais os elementos que ela pinta pelo caminho.
     const els = autoEls(undefined, found);
-    initSettingsModels({ els, ui: {} });
-    state.modelModalSuppliers = [{ id: 5, name: "Wonlex" }, { id: 9, name: "4P Touch" }];
+    cacheElements(els);
     state.settingsModal.currentCapabilitiesModel = MODEL;
     return els;
 }

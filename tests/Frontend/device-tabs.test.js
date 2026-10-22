@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { autoEls } from "./support/els.js";
+import { cacheElements } from "../../src/Dashboard/dashboard/dom.js";
 
 const { bindDeviceEvents } = await import("../../src/Dashboard/dashboard/wiring/devices.js");
 
@@ -33,7 +34,9 @@ const click = (button) => button.dispatchEvent(new window.Event("click", { bubbl
 test("telemetry is the tab that opens first", () => {
     const els = tabEls();
 
-    bindDeviceEvents({ els, ui: {} });
+    cacheElements(els);
+
+    bindDeviceEvents({ ui: {} });
 
     assert.equal(els.dashboardApp.dataset.deviceTab, "telemetry");
     assert.equal(els.deviceTabTelemetry.classList.contains("active"), true);
@@ -41,7 +44,8 @@ test("telemetry is the tab that opens first", () => {
 
 test("picking the readings switches the screen to activity, and going back to telemetry undoes it", () => {
     const els = tabEls();
-    bindDeviceEvents({ els, ui: {} });
+    cacheElements(els);
+    bindDeviceEvents({ ui: {} });
 
     click(els.deviceTabReadings);
 

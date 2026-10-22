@@ -6,16 +6,16 @@ import {
 import { ensureLicensesLoaded } from "../licenses.js";
 import { stateBadge } from "../components/state-badge.js";
 import { state } from "../state.js";
-import { html, raw } from "../html.js";
+import { html } from "../html.js";
 import { apiError, confirmDestructive, promptPassword, reportApiError, toast } from "../dialogs.js";
 import { clearInvalid } from "../validation.js";
-import { setSettingsNavCount } from "./shell.js";
+import { handleSettingsPaginationClick, setSettingsNavCount } from "./shell.js";
 import { renderPagination } from "../pagination.js";
 import { editorOf, focusEditor, whileBusy } from "./row-editor.js";
 import { countLabel } from "../i18n.js";
+import { els } from "../dom.js";
 
 /** Os utilizadores da API; a busca, os filtros e a paginação são do servidor. */
-let els;
 let licenses = [];
 let users = [];
 let adminCount = 0;
@@ -69,7 +69,7 @@ function apiUserRow(user) {
                 <span class="d-block text-truncate fw-semibold" title="${user.username}">${user.username}</span>
                 <span class="d-block small text-secondary text-truncate">${contextOf(user)}</span>
             </div>
-            ${raw(badge)}
+            ${badge}
             <div class="dropdown flex-shrink-0">
                 <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Ações de ${user.username}"><i class="fa-solid fa-ellipsis-vertical" aria-hidden="true"></i></button>
                 <ul class="dropdown-menu dropdown-menu-end">
@@ -89,10 +89,10 @@ function filterOptions(column, chosen, allLabel) {
         const tally = count === null || count === undefined ? "" : ` (${count})`;
         const selected = String(value) === String(chosen) ? " selected" : "";
 
-        return html`<option value="${value}"${raw(selected)}>${labelOf(value)}${tally}</option>`;
+        return html`<option value="${value}"${selected}>${labelOf(value)}${tally}</option>`;
     });
 
-    return html`<option value="">${allLabel}</option>${raw(options.join(""))}`;
+    return html`<option value="">${allLabel}</option>${options}`;
 }
 
 export function apiUserFilterControls(columns, chosen = {}) {
@@ -100,7 +100,7 @@ export function apiUserFilterControls(columns, chosen = {}) {
         .map((column) => filterControl(column, chosen[column.field] ?? ""))
         .filter((control) => control !== "");
 
-    return html`<div class="row g-2 mb-3">${raw(controls.join(""))}</div>`;
+    return html`<div class="row g-2 mb-3">${controls}</div>`;
 }
 
 function filterControl(column, chosen) {
@@ -122,12 +122,19 @@ function filterControl(column, chosen) {
 
     return html`
         <div class="col-6 col-sm-auto">
-            <select class="form-select form-select-sm" data-filter="${column.field}" aria-label="Filtrar por ${spec.label}">${raw(filterOptions(column, chosen, spec.all))}</select>
+            <select class="form-select form-select-sm" data-filter="${column.field}" aria-label="Filtrar por ${spec.label}">${filterOptions(column, chosen, spec.all)}</select>
         </div>`;
 }
 
-export function initSettingsApiUsers(context) {
-    els = context.els;
+export function initSettingsApiUsers() {
+    els.newApiUserBtn?.addEventListener("click", newApiUser);
+    // No invólucro e não na lista: apanha o formulário de criar, os menus das linhas e os filtros.
+    els.apiUserList.addEventListener("click", handleApiUserListClick);
+    els.apiUserList.addEventListener("change", handleApiUserListChange);
+    els.apiUserList.addEventListener("input", handleApiUserListInput);
+    els.settingsApiUsersPagination?.addEventListener("click", (event) =>
+        handleSettingsPaginationClick(event, state.settingsModal.apiUsersPagination, "settingsApiUsersPage", loadSettingsApiUsersSection),
+    );
 }
 
 const showError = (error) => toast("error", error.message);
@@ -295,13 +302,10 @@ export async function deleteApiUser(user) {
 }
 
 const licenseOptions = (licenseList, chosen) =>
-    "<option value=\"\">Selecionar licença</option>" +
-    licenseList
-        .map((license) => html`<option value="${license.id}"${raw(String(license.id) === String(chosen ?? "") ? " selected" : "")}>${`${license.companyName || "-"} / ${license.licenseId} — ${license.name || ""}`}</option>`)
-        .join("");
+    html`<option value="">Selecionar licença</option>${licenseList.map((license) => html`<option value="${license.id}"${String(license.id) === String(chosen ?? "") ? " selected" : ""}>${`${license.companyName || "-"} / ${license.licenseId} — ${license.name || ""}`}</option>`)}`;
 
 const roleOptions = (chosen) =>
-    ROLES.map((role) => html`<option value="${role}"${raw(role === chosen ? " selected" : "")}>${VALUE_LABELS[role]}</option>`).join("");
+    ROLES.map((role) => html`<option value="${role}"${role === chosen ? " selected" : ""}>${VALUE_LABELS[role]}</option>`);
 
 /** O formulário de um utilizador; sem `user` é o de criar, o único que pede password. */
 export function apiUserForm(user, licenseList) {
@@ -318,19 +322,19 @@ export function apiUserForm(user, licenseList) {
     const enabledAttr = user ? html` data-enabled="${isEnabled(user) ? "1" : "0"}"` : "";
 
     return html`
-        <div class="border rounded-3 p-3 mb-2 bg-body-tertiary" data-editor="apiUser" data-id="${user?.id ?? ""}"${raw(enabledAttr)}>
+        <div class="border rounded-3 p-3 mb-2 bg-body-tertiary" data-editor="apiUser" data-id="${user?.id ?? ""}"${enabledAttr}>
             <div class="row g-2">
                 <div class="col-12 col-md-3">
                     <label class="section-label" for="apiUserNewUsername">Utilizador</label>
                     <input type="text" class="form-control form-control-sm" id="apiUserNewUsername" data-field="username" value="${user?.username ?? ""}" autocomplete="off">
-                </div>${raw(passwordField)}
+                </div>${passwordField}
                 <div class="col-12 col-md-2">
                     <label class="section-label" for="apiUserNewRole">Perfil</label>
-                    <select class="form-select form-select-sm" id="apiUserNewRole" data-field="role">${raw(roleOptions(role))}</select>
+                    <select class="form-select form-select-sm" id="apiUserNewRole" data-field="role">${roleOptions(role)}</select>
                 </div>
                 <div class="col-12 col-md-4">
                     <label class="section-label" for="apiUserNewLicense">Licença</label>
-                    <select class="form-select form-select-sm" id="apiUserNewLicense" data-field="licenseRefId"${raw(role === "hub_admin" ? " disabled" : "")}>${raw(licenseOptions(licenseList, user?.licenseRefId))}</select>
+                    <select class="form-select form-select-sm" id="apiUserNewLicense" data-field="licenseRefId"${role === "hub_admin" ? " disabled" : ""}>${licenseOptions(licenseList, user?.licenseRefId)}</select>
                 </div>
             </div>
             <div class="d-flex justify-content-end gap-2 mt-3">

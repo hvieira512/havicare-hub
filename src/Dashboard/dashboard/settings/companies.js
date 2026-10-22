@@ -8,10 +8,10 @@ import {
 } from "../api/index.js";
 import { ensureLicensesLoaded, invalidateLicenses } from "../licenses.js";
 import { state } from "../state.js";
-import { html, raw } from "../html.js";
+import { html } from "../html.js";
 import { apiError, confirmDestructive, reportApiError, toast } from "../dialogs.js";
 import { clearInvalid } from "../validation.js";
-import { setSettingsNavCount } from "./shell.js";
+import { handleSettingsPaginationClick, setSettingsNavCount } from "./shell.js";
 import { renderPagination } from "../pagination.js";
 import { editorOf, focusEditor, inlineEditor, whileBusy } from "./row-editor.js";
 import {
@@ -26,9 +26,9 @@ import {
     tryRadarCredentials,
 } from "./radar-credentials.js";
 import { countLabel } from "../i18n.js";
+import { els } from "../dom.js";
 
 /** As licenças, dentro de cada empresa; a linha que se toca é a que se transforma. */
-let els;
 // A página de empresas à vista, para redesenhar depois de mexer numa licença.
 let currentCompanies = [];
 let currentLicenses = [];
@@ -36,8 +36,12 @@ let currentLicenses = [];
 // Uma vaga só para os dois tipos de linha: abrir uma empresa fecha a licença aberta, e ao contrário.
 const editor = inlineEditor(() => renderCompanySection());
 
-export function initSettingsCompanies(context) {
-    els = context.els;
+export function initSettingsCompanies() {
+    els.newCompanyBtn?.addEventListener("click", newCompany);
+    els.companyListBody.addEventListener("click", handleCompanyListClick);
+    els.settingsCompanyPagination?.addEventListener("click", (event) =>
+        handleSettingsPaginationClick(event, state.settingsModal.companyPagination, "settingsCompanyPage", loadSettingsCompanySection),
+    );
 }
 
 export async function loadSettingsCompanySection(companiesPage = 1) {
@@ -86,12 +90,12 @@ async function reloadLicenses() {
 function rowActionsMenu(label, items) {
     const entries = items.map((item) => (item === "divider"
         ? html`<li><hr class="dropdown-divider"></li>`
-        : html`<li><button type="button" class="dropdown-item${raw(item.danger ? " text-danger" : "")}" data-action="${item.action}" ${raw(item.attrs)}>${item.label}</button></li>`));
+        : html`<li><button type="button" class="dropdown-item${item.danger ? " text-danger" : ""}" data-action="${item.action}" ${item.attrs}>${item.label}</button></li>`));
 
     return html`
         <div class="dropdown flex-shrink-0">
             <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-toggle="dropdown" aria-expanded="false" aria-label="${label}"><i class="fa-solid fa-ellipsis-vertical" aria-hidden="true"></i></button>
-            <ul class="dropdown-menu dropdown-menu-end shadow">${raw(entries.join(""))}</ul>
+            <ul class="dropdown-menu dropdown-menu-end shadow">${entries}</ul>
         </div>`;
 }
 
@@ -103,7 +107,7 @@ function licenseMetaHtml(license) {
         ? html` · <span class="text-success">cloud dos radares ligada</span>`
         : "";
 
-    return html`<div class="small text-secondary">${meta}${raw(cloud)}</div>`;
+    return html`<div class="small text-secondary">${meta}${cloud}</div>`;
 }
 
 function licenseViewRow(license) {
@@ -120,9 +124,9 @@ function licenseViewRow(license) {
         <div class="tree-row position-relative d-flex align-items-center justify-content-between gap-2">
             <div class="min-w-0">
                 <div class="fw-medium text-truncate">${name}</div>
-                ${raw(licenseMetaHtml(license))}
+                ${licenseMetaHtml(license)}
             </div>
-            ${raw(menu)}
+            ${menu}
         </div>`;
 }
 
@@ -162,7 +166,7 @@ function companyHeaderView(company, owned) {
             <div class="fw-semibold">${company.name}</div>
             <div class="d-flex align-items-center gap-2">
                 <span class="small text-secondary">${countLabel(owned.length, "licença", "licenças")}</span>
-                ${raw(menu)}
+                ${menu}
             </div>
         </div>`;
 }
@@ -185,16 +189,14 @@ function companyCard(company) {
     const owned = currentLicenses.filter(
         (license) => String(license.companyId) === String(company.id),
     );
-    const rows = owned
-        .map((license) => {
-            if (editor.at("license", license.id)) return licenseEditorRow(license, company.id);
-            // As credenciais abrem por baixo da licença, que continua à vista.
-            if (editor.at(RADAR_EDITOR_KIND, license.id)) {
-                return licenseViewRow(license) + radarCredentialsEditorRow(license);
-            }
-            return licenseViewRow(license);
-        })
-        .join("");
+    const rows = owned.map((license) => {
+        if (editor.at("license", license.id)) return licenseEditorRow(license, company.id);
+        // As credenciais abrem por baixo da licença, que continua à vista.
+        if (editor.at(RADAR_EDITOR_KIND, license.id)) {
+            return [licenseViewRow(license), radarCredentialsEditorRow(license)];
+        }
+        return licenseViewRow(license);
+    });
     // O rascunho de uma licença nova nasce no fim das da empresa em que se carregou no `+`.
     const draft = editor.at("license") && editor.open.companyId === String(company.id)
         ? licenseEditorRow(null, company.id)
@@ -203,10 +205,10 @@ function companyCard(company) {
     return html`
         <div class="card mb-2">
         <div class="card-body p-3">
-        ${raw(editor.at("company", company.id)
+        ${editor.at("company", company.id)
             ? companyHeaderEditor(company)
-            : companyHeaderView(company, owned))}
-        ${raw(rows)}${raw(draft)}
+            : companyHeaderView(company, owned)}
+        ${rows}${draft}
         </div>
         </div>`;
 }
@@ -221,11 +223,9 @@ function renderCompanySection() {
         setSettingsNavCount("Company", owned);
     }
 
-    els.companyListBody.innerHTML =
-        (editor.at("company")
-            ? html`<div class="card mb-2"><div class="card-body p-3">${raw(companyHeaderEditor(null))}</div></div>`
-            : "") +
-            companies.map(companyCard).join("");
+    els.companyListBody.innerHTML = html`${editor.at("company")
+        ? html`<div class="card mb-2"><div class="card-body p-3">${companyHeaderEditor(null)}</div></div>`
+        : ""}${companies.map(companyCard)}`;
 
     focusEditor(els.companyListBody);
 }

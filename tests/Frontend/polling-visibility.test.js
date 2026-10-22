@@ -1,5 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { cacheElements } from "../../src/Dashboard/dashboard/dom.js";
 
 /**
  * Com o separador escondido não se sonda, e ao voltar relê-se de imediato, como no
@@ -57,16 +58,14 @@ const { initNotifications } = await import("../../src/Dashboard/dashboard/notifi
 const { startSelectedDevicePolling } = await import("../../src/Dashboard/dashboard/app.js");
 const { state } = await import("../../src/Dashboard/dashboard/state.js");
 
-const notificationTicks = capturedInterval(window, () => {
-    initNotifications({
-        els: {
-            dashboardNotificationsDropdown: divWithId("dashboardNotificationsDropdown"),
-            dashboardNotificationsBadge: divWithId("dashboardNotificationsBadge"),
-            dashboardNotificationsSummary: divWithId("dashboardNotificationsSummary"),
-            dashboardNotificationsList: divWithId("dashboardNotificationsList"),
-        },
-        openAddDevice: () => {},
+const notificationTicks = capturedInterval(globalThis, () => {
+    cacheElements({
+        dashboardNotificationsDropdown: divWithId("dashboardNotificationsDropdown"),
+        dashboardNotificationsBadge: divWithId("dashboardNotificationsBadge"),
+        dashboardNotificationsSummary: divWithId("dashboardNotificationsSummary"),
+        dashboardNotificationsList: divWithId("dashboardNotificationsList"),
     });
+    initNotifications({ openAddDevice: () => {}, openDenylist: () => {} });
 });
 
 state.selectedImei = "351266770073676";

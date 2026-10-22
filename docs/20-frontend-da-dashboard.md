@@ -23,8 +23,7 @@ módulo, e uma tabela ao lado dela seria a mesma matéria escrita duas vezes.
 src/Dashboard/
 ├── index.php          a página
 ├── main.js            o <script type="module"> que a página carrega
-├── main.css           os modais: dispositivo, definições, assistente
-├── assets/css/        o resto do CSS, por área: base, shell, device, login
+├── assets/css/        o CSS, por área: base, shell, device, config, login e modals
 ├── components/        os partials PHP que produzem a marcação
 ├── assets/            o logo, as fontes e as bibliotecas de terceiros
 ├── dashboard/         todo o JavaScript  ← o resto deste documento
@@ -41,13 +40,11 @@ São só estas, e explicam onde cada ficheiro está:
 2. **Um módulo que só uma funcionalidade usa vive dentro dela.** Sobe à raiz de
    `dashboard/` quando aparecer o segundo consumidor — e não antes.
 3. **Só a raiz de composição conhece toda a gente.** É o `app.js` mais o
-   `wiring/`: cacheia os elementos, cria os modais, entrega o `els` a cada
-   funcionalidade e liga os ouvintes. O `wiring/` existe porque o `app.js`
-   tinha 567 linhas e quase noventa ouvintes; dividi-lo por área moveu linhas,
-   não acoplamento. Os módulos do `wiring/` são raiz de composição como o
-   `app.js` e podem importar de onde precisarem — é precisamente por isso que
-   os ouvintes vivem lá e não dentro das funcionalidades, já que quase todos
-   atravessam duas ou três e a regra 1 proíbe-os de se conhecerem.
+   `wiring/devices.js`: cacheia os elementos, cria os modais e liga os
+   ouvintes que atravessam funcionalidades. Os ouvintes do dispositivo vivem lá
+   porque quase todos atravessam duas ou três partes do `devices/`. Os das
+   definições não atravessam nada, e cada secção liga os seus no `initX()`,
+   que o `settings/index.js` chama.
 
 4. **Uma peça de interface nasce em `components/` se for pura e mais do que uma
    área a desenhar; nasce ao lado da funcionalidade se só ela a desenhar.**
@@ -79,7 +76,7 @@ Cada pasta com mais do que um ficheiro repete a regra 3 à sua escala:
 ### Porque é que a regra 4 existe
 
 Um cartão de dispositivo estava espalhado por quatro sítios: a marcação numa
-função do `list.js`, o estilo no `main.css` global, o ouvinte no `wiring/`, e
+função do `list.js`, o estilo num CSS global, o ouvinte no `wiring/`, e
 os dados no `state`. Mudar um widget obrigava a abrir quatro ficheiros, e nada
 dizia que os quatro pedaços eram a mesma coisa.
 
@@ -127,10 +124,9 @@ menos 170 linhas.
 ```
 dashboard/
 ├── app.js                  a raiz de composição
-├── wiring/                 os ouvintes, por área -- raiz de composição, como o app.js
-│   ├── devices.js          lista, filtros, modal, painel de configuração, detalhe
-│   └── settings.js         modelos, capacidades, utilizadores da API, empresas
-├── dom.js                  cacheElements(): todos os elementos com id, num objeto
+├── wiring/
+│   └── devices.js          os ouvintes da lista, filtros, modal, configuração e detalhe
+├── dom.js                  o `els`: todos os elementos com id, num objeto
 │
 │   ── o núcleo partilhado: o que duas ou mais funcionalidades usam ──
 ├── state.js                o objeto de estado, um só, com um sub-objeto por ecrã
@@ -214,7 +210,7 @@ dashboard/
     ├── companies.js        o separador Licenças: empresas com as suas licenças dentro
     ├── api-users.js        o separador Utilizadores API
     └── models/             o separador Catálogo, que são três painéis
-        ├── shell.js        o contexto e a troca de painel
+        ├── shell.js        a troca de painel
         ├── list.js         painel 1: a árvore tipo → fornecedor → modelo
         ├── form.js         painel 2: criar um modelo novo
         └── detail.js       painel 3: a ficha de um modelo e as suas capacidades
@@ -225,16 +221,13 @@ dashboard/
 Todos seguem a mesma forma, e vale a pena reconhecê-la antes de abrir qualquer
 ficheiro.
 
-**O `els`.** `dom.js` corre uma vez e devolve um objeto com todos os elementos
-da página. O `app.js` entrega-o a cada módulo através de uma função
-`initX(context)`, que o guarda num `let els` do próprio módulo. Nenhum módulo
-faz `getElementById` por sua conta.
+**O `els`.** O `dom.js` exporta um objeto só com todos os elementos da página,
+que o `cacheElements()` do `app.js` enche uma vez ao arranque. Cada módulo
+importa-o, e nenhum faz `getElementById` por sua conta. Num teste, o
+`cacheElements(view)` põe lá os elementos que o teste montou.
 
 ```js
-let els;
-export function initGatewayLinksUi(context) {
-    els = context.els;
-}
+import { els } from "../dom.js";
 ```
 
 Um `id` que não exista dá `undefined`, e não um erro: renomeá-lo num template
@@ -247,9 +240,9 @@ JavaScript lê exista mesmo.
 
 **O estado.** Tudo o que sobrevive a um render está em `state.js`, com um
 sub-objeto por ecrã (`state.settingsModal`, `state.deviceModal`,
-`state.summary`). Uma variável de módulo guarda o `els` e, nalgumas secções das
-definições, a página que está à vista — essa morre quando o modal fecha, e é
-por isso que não sobe ao `state`.
+`state.summary`). O que só um módulo lê fica numa variável dele — nalgumas
+secções das definições, a página que está à vista, que morre quando o modal
+fecha.
 
 A forma de cada sub-objeto declara-se uma vez, no `blankDeviceModal` e no
 `blankSettingsModal`. O `Object.seal` só apanha gralhas no primeiro nível, e
@@ -385,16 +378,13 @@ afirmam que certas linhas lá estão. Mover uma função entre ficheiros parte-o
 - **O que fica no `components/cards/telemetry.js` é o registo e as
   primitivas**, que são genuinamente uma coisa só: o mapa dos cartões por tipo,
   o ícone, o tom e a badge de estado. Partir isso por tamanho só espalharia.
-- **O CSS está dividido por área**, em sete ficheiros: `assets/css/base.css`
-  (tokens e fontes), `shell.css` (moldura, navbar, cartões), `device.css` (o
-  ecrã do dispositivo), `config.css` (o modal do dispositivo e o painel de
-  configuração), `alarms.css` (os campos de um alarme), `login.css`, e o
-  `main.css` fica com os modais. A ordem no `<head>` é essa, e é a cascata: o
-  `config.css` carrega depois do `device.css` e é daí que lhe ganha. O
-  `main.css` ficou em último e na raiz porque `/main.css` é uma rota fixa no
-  `DashboardHttpServer::publicAssetPath()` — os ficheiros da raiz não são
-  apanhados por padrão, só o `/main.css` e o `/main.js`. Sem build, cada
-  ficheiro é mais um pedido, e por isso são sete e não vinte.
+- **O CSS está dividido por área**, em seis ficheiros de `assets/css/`:
+  `base.css` (tokens e fontes), `shell.css` (moldura, navbar, cartões),
+  `device.css` (o ecrã do dispositivo), `config.css` (o modal do dispositivo, o
+  painel de configuração e os campos de um alarme), `login.css`, e o
+  `modals.css` com os modais. A ordem no `<head>` é essa, e é a cascata: o
+  `config.css` carrega depois do `device.css` e é daí que lhe ganha. Sem build,
+  cada ficheiro é mais um pedido, e por isso são seis e não vinte.
 
   A excepção é **a linguagem de selecção**, que vive toda no `shell.css`: as
   cinco caixas que se escolhem — o mosaico de tipos, o cartão de dispositivo, a

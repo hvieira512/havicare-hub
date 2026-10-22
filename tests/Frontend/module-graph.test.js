@@ -4,7 +4,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { reachableFrom } from "./support/module-graph.js";
+import { reachableFrom, specifiersOf } from "./support/module-graph.js";
 
 /**
  * Um nome que nenhum módulo exporta (`SyntaxError`) ou um caminho que não existe
@@ -55,4 +55,17 @@ test("every dashboard module is reachable from an entry point", () => {
         orphans.map((file) => path.relative(MODULE_ROOT, file)),
         [],
     );
+});
+
+/** Regra 1 do capítulo 20: só o `app.js` e o `wiring/` apresentam as funcionalidades umas às outras. */
+const FEATURES = ["devices", "settings", "auth", "wiring"];
+
+test("the root modules do not import a feature", () => {
+    const crossings = fs.readdirSync(MODULE_ROOT)
+        .filter((name) => name.endsWith(".js") && name !== "app.js")
+        .flatMap((name) => specifiersOf(fs.readFileSync(path.join(MODULE_ROOT, name), "utf8"))
+            .filter((specifier) => FEATURES.some((feature) => specifier.startsWith(`./${feature}/`)))
+            .map((specifier) => `${name} -> ${specifier}`));
+
+    assert.deepEqual(crossings, []);
 });

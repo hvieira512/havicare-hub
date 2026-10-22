@@ -479,12 +479,7 @@ function resolveConfigStored(entry, rowsByKey) {
 }
 
 function capabilityForEntry(entry, capabilities) {
-    for (const section of Object.values(capabilities || {})) {
-        const capability = section?.[entry.capabilityKey];
-        if (capability && typeof capability === "object") {
-            return capability;
-        }
-    }
-
-    return null;
+    return Object.values(capabilities || {})
+        .map((section) => section?.[entry.capabilityKey])
+        .find((capability) => capability && typeof capability === "object") ?? null;
 }

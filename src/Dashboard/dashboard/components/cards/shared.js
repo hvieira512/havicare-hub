@@ -1,5 +1,5 @@
 import { fieldLabel, fieldValue } from "../../format.js";
-import { html, raw } from "../../html.js";
+import { html } from "../../html.js";
 
 export function compactDetails(data, keys) {
     return joinMarkup(
@@ -15,7 +15,8 @@ export function compactDetails(data, keys) {
     );
 }
 
-/** Juntar fragmentos devolve texto, que seria escapado outra vez: o resultado é marcação. */
+/** Os fragmentos com o separador entre eles; filtrados pelo texto, que um fragmento vazio é um objecto. */
 export const joinMarkup = (parts, separator = " · ") =>
-    // Filtrado pelo texto e não pela verdade: um fragmento vazio é um objecto.
-    raw(parts.filter((part) => String(part ?? "") !== "").join(separator));
+    html`${parts
+        .filter((part) => String(part ?? "") !== "")
+        .flatMap((part, index) => (index === 0 ? [part] : [separator, part]))}`;

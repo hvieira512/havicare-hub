@@ -19,12 +19,12 @@ import {
 } from "../../devices/classification-ui.js";
 import { createWizard } from "../../devices/wizard.js";
 import { deviceTypeLabel, normalizeDeviceType } from "../../domain.js";
-import { getSettingsModelsRuntime } from "./shell.js";
 import {
     backToModelList,
-    loadSettingsModelFilters,
     showNewModelSlide,
 } from "./list.js";
+import { els } from "../../dom.js";
+import { loadModelFilters } from "../shell.js";
 
 /** O modelo novo, em três passos; nasce com o template de capacidades do fornecedor para o tipo. */
 
@@ -82,7 +82,6 @@ function suppliersForDeviceType(deviceType) {
 }
 
 function render() {
-    const { els } = getSettingsModelsRuntime();
     const step = wizard.step();
 
     els.modelWizardStepCount.textContent = `${step} de ${STEPS.length}`;
@@ -168,7 +167,6 @@ function renderInfo(answers) {
 }
 
 function renderFooter() {
-    const { els } = getSettingsModelsRuntime();
     const step = wizard.step();
 
     els.modelWizardBackBtn.classList.toggle("d-none", !wizard.canGoBack());
@@ -247,9 +245,7 @@ function handleModelWizardSave() {
 
 /** As capacidades predefinidas do fornecedor para o tipo: o que o modelo herda ao nascer. */
 async function refreshTemplate() {
-    const { els } = getSettingsModelsRuntime();
     const { deviceType, supplier } = wizard.answers();
-    state.modelModal.templateSummary = "";
 
     if (!supplier?.id || !deviceType) {
         els.modelWizardTemplateSummary.textContent = "";
@@ -261,27 +257,24 @@ async function refreshTemplate() {
 
     const response = await ensureModelTemplate(supplier.id, deviceType);
     if (response.error) {
-        state.modelModal.templateSummary = apiError(response);
-        els.modelWizardTemplateSummary.textContent = state.modelModal.templateSummary;
+        els.modelWizardTemplateSummary.textContent = apiError(response);
         return;
     }
 
     // O modelo nasce com o template: o servidor aplica-o quando o pedido não escolhe capacidades.
-    state.modelModal.templateSummary =
+    els.modelWizardTemplateSummary.textContent =
         `${(response.enabledCapabilities || []).length} capacidades predefinidas para ${response.supplier || supplier.name} (${deviceTypeLabel(deviceType)}).`;
-    els.modelWizardTemplateSummary.textContent = state.modelModal.templateSummary;
 }
 
 function resetModelWizard() {
     setModelPreviewObjectUrl();
     chosenImage = null;
     wizard.reset();
-    state.modelModal.templateSummary = "";
 }
 
 async function openNewModelForm() {
     if (!state.settingsModal.sectionLoaded.modelFilters) {
-        await loadSettingsModelFilters();
+        await loadModelFilters();
     }
     resetModelWizard();
     render();
@@ -314,12 +307,23 @@ async function saveModel() {
     backToModelList();
 }
 
+function initModelForm() {
+    els.modelWizardAsk.addEventListener("click", handleModelWizardClick);
+    els.modelWizardAsk.addEventListener("input", handleModelWizardInput);
+    els.modelWizardAsk.addEventListener("change", handleModelWizardChange);
+    els.modelWizardTrail.addEventListener("click", handleModelWizardTrailClick);
+    els.modelWizardBackBtn.addEventListener("click", modelWizardBack);
+    els.modelWizardSaveBtn.addEventListener("click", handleModelWizardSave);
+    els.modelsNewModelBtn.addEventListener("click", openNewModelForm);
+}
+
 export {
     handleModelWizardChange,
     handleModelWizardClick,
     handleModelWizardInput,
     handleModelWizardSave,
     handleModelWizardTrailClick,
+    initModelForm,
     modelWizardBack,
     openNewModelForm,
     resetModelWizard,

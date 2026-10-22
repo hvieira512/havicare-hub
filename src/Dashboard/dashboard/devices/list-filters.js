@@ -1,11 +1,7 @@
 import { changeDeviceFilter, setDeviceFilters, state } from "../state.js";
-import {
-    FILTERS_STORAGE_KEY,
-    clearStorageKey,
-    saveJsonStorage,
-} from "../storage.js";
-import { html, raw } from "../html.js";
+import { html } from "../html.js";
 import { filterChips } from "../components/chips.js";
+import { filterBranch, filterOption } from "../components/filter-tree.js";
 import { deviceTypeTiles } from "../components/device-type-tiles.js";
 import {
     companyLabel,
@@ -15,16 +11,10 @@ import {
     modelDisplayName,
     normalizeDeviceType,
 } from "../domain.js";
+import { els } from "../dom.js";
+import { loadSummary } from "./list.js";
 
-/** O painel de filtros da listagem; quem volta a pedir a lista entra pelo `onChange`. */
-
-let els;
-let onChange = () => {};
-
-export function initListFilters(context) {
-    els = context.els;
-    onChange = context.onChange;
-}
+/** O painel de filtros da listagem. */
 
 const repeatMarkup = (count, markup) => Array.from({ length: count }, () => markup).join("");
 
@@ -87,33 +77,22 @@ function renderDeviceTypeFilter() {
     });
 }
 
-function filterOptionMarkup({
-    key,
-    value,
-    label,
-    count,
-    selected,
-    partial = false,
-    nested = false,
-    disabled = false,
-}) {
-    const classes = [
-        "filter-option d-flex align-items-center text-start rounded-2",
-        nested ? "filter-option-nested" : "",
-        selected ? "selected" : "",
-        partial ? "partial" : "",
-    ]
-        .filter(Boolean)
-        .join(" ");
+/** Uma caixa de filtro: o grupo e o valor viajam no botão, para o ouvinte delegado. */
+function deviceFilterOption({ key, value, selected, disabled = false, ...rest }) {
+    return filterOption({
+        ...rest,
+        selected,
+        attrs: html`data-action="toggleDeviceFilter" data-filter-key="${key}" data-filter-value="${value}" aria-pressed="${selected ? "true" : "false"}"${disabled ? " disabled" : ""}`,
+    });
+}
 
-    return html`
-        <button type="button" class="${classes}" data-action="toggleDeviceFilter"
-            data-filter-key="${key}" data-filter-value="${value}" aria-pressed="${selected ? "true" : "false"}"
-            ${disabled ? "disabled" : ""}>
-        <span class="filter-option-box d-grid flex-shrink-0"><i class="fa-solid ${partial && !selected ? "fa-minus" : "fa-check"}"></i></span>
-        <span class="flex-fill min-w-0 text-truncate">${label}</span>
-        <span class="count-number flex-shrink-0">${count}</span>
-        </button>`;
+/** Cada pai com os filhos por baixo; vazia, diz que não há nada. */
+function filterTree(groups, emptyText) {
+    if (groups.length === 0) {
+        return html`<div class="small text-secondary px-1 py-2">${emptyText}</div>`;
+    }
+
+    return html`${groups.map(({ parent, children = [] }) => html`${deviceFilterOption(parent)}${children.length ? filterBranch(children.map(deviceFilterOption)) : ""}`)}`;
 }
 
 /** Desenhada como a das licenças, mas os dois níveis são filtros distintos. */
@@ -121,116 +100,73 @@ function renderDeviceSupplierFilter() {
     const tree = state.summary.deviceFilterCounts?.supplierModels || { suppliers: [] };
     const selectedSuppliers = state.deviceFilters.supplier;
     const selectedModels = state.deviceFilters.model;
-    const rows = [];
 
-    for (const entry of tree.suppliers || []) {
+    const groups = (tree.suppliers || []).map((entry) => {
         const supplier = String(entry.supplier);
         const models = entry.models || [];
         const supplierSelected = selectedSuppliers.includes(supplier);
-        const someModelSelected = models.some((model) =>
-            selectedModels.includes(String(model.model)),
-        );
 
-        rows.push(
-            filterOptionMarkup({
+        return {
+            parent: {
                 key: "supplier",
                 value: supplier,
                 label: supplier,
                 count: entry.count,
                 selected: supplierSelected,
-                partial: !supplierSelected && someModelSelected,
-            }),
-        );
+                partial: !supplierSelected && models.some((model) => selectedModels.includes(String(model.model))),
+            },
+            children: models.map((model) => ({
+                key: "model",
+                value: String(model.model),
+                label: modelDisplayName(supplier, String(model.model)),
+                count: model.count,
+                selected: supplierSelected || selectedModels.includes(String(model.model)),
+                nested: true,
+            })),
+        };
+    });
 
-        if (models.length === 0) {
-            continue;
-        }
-
-        const branch = models
-            .map((model) => {
-                const value = String(model.model);
-                return filterOptionMarkup({
-                    key: "model",
-                    value,
-                    label: modelDisplayName(supplier, value),
-                    count: model.count,
-                    selected: supplierSelected || selectedModels.includes(value),
-                    nested: true,
-                });
-            })
-            .join("");
-
-        rows.push(html`<div class="filter-branch position-relative d-flex flex-column">${raw(branch)}</div>`);
-    }
-
-    els.deviceSupplierFilter.innerHTML = rows.length
-        ? rows.join("")
-        : "<div class=\"small text-secondary px-1 py-2\">Não há fornecedores para mostrar.</div>";
+    els.deviceSupplierFilter.innerHTML = filterTree(groups, "Não há fornecedores para mostrar.");
 }
 
 /** Marcar algumas licenças deixa a empresa no traço do meio; o «sem licença» vem primeiro. */
 function renderDeviceLicenseFilter() {
     const tree = state.summary.deviceFilterCounts?.license || { companies: [], none: 0 };
     const selected = state.deviceFilters.license;
-    const rows = [];
+    const groups = [];
 
     if (tree.none > 0) {
-        rows.push(
-            filterOptionMarkup({
-                key: "license",
-                value: "none",
-                label: "Sem licença",
-                count: tree.none,
-                selected: selected.includes("none"),
-            }),
-        );
+        groups.push({
+            parent: { key: "license", value: "none", label: "Sem licença", count: tree.none, selected: selected.includes("none") },
+        });
     }
 
     for (const company of tree.companies || []) {
         const name = String(company.company);
         const licenses = company.licenses || [];
-        const licenseValues = licenses.map((license) => `${name}:${license.licenseId}`);
         const companySelected = selected.includes(name);
-        const someLicenseSelected = licenseValues.some((value) => selected.includes(value));
 
-        rows.push(
-            filterOptionMarkup({
+        groups.push({
+            parent: {
                 key: "license",
                 value: name,
                 label: companyLabel(name),
                 count: company.count,
                 selected: companySelected,
-                partial: !companySelected && someLicenseSelected,
-            }),
-        );
-
-        if (licenses.length === 0) {
-            continue;
-        }
-
-        const branch = licenses
-            .map((license) => {
-                const value = `${name}:${license.licenseId}`;
-                return filterOptionMarkup({
-                    key: "license",
-                    value,
-                    label: licenseDisplayLabel(
-                        license.licenseId,
-                        state.licenses || [],
-                    ),
-                    count: license.count,
-                    selected: companySelected || selected.includes(value),
-                    nested: true,
-                });
-            })
-            .join("");
-
-        rows.push(html`<div class="filter-branch position-relative d-flex flex-column">${raw(branch)}</div>`);
+                partial: !companySelected && licenses.some((license) => selected.includes(`${name}:${license.licenseId}`)),
+            },
+            children: licenses.map((license) => ({
+                key: "license",
+                value: `${name}:${license.licenseId}`,
+                label: licenseDisplayLabel(license.licenseId, state.licenses || []),
+                count: license.count,
+                selected: companySelected || selected.includes(`${name}:${license.licenseId}`),
+                nested: true,
+            })),
+        });
     }
 
-    els.deviceLicenseFilter.innerHTML = rows.length
-        ? rows.join("")
-        : "<div class=\"small text-secondary px-1 py-2\">Não há licenças para mostrar.</div>";
+    els.deviceLicenseFilter.innerHTML = filterTree(groups, "Não há licenças para mostrar.");
 }
 
 /** O contador do topo conta os grupos com filtro aplicado, e não os valores marcados. */
@@ -324,8 +260,7 @@ export async function handleDeviceFilterChipRemove(event) {
 
     if (key === "online") {
         changeDeviceFilter("online", null);
-        saveJsonStorage(FILTERS_STORAGE_KEY, state.deviceFilters);
-        await onChange();
+        await loadSummary();
         return;
     }
     if (!(key in state.deviceFilters)) return;
@@ -386,8 +321,7 @@ async function toggleDeviceFilter(key, value) {
             (state.deviceFilters.model || []).filter((model) => !owned.includes(model)),
         );
     }
-    saveJsonStorage(FILTERS_STORAGE_KEY, state.deviceFilters);
-    await onChange();
+    await loadSummary();
 }
 
 function modelsForSupplier(supplier) {
@@ -426,8 +360,7 @@ export async function handleDeviceFilterClick(event) {
 export async function handleDeviceOnlineFilterChange(event) {
     const value = event.target.value;
     changeDeviceFilter("online", value === "all" ? null : value === "online");
-    saveJsonStorage(FILTERS_STORAGE_KEY, state.deviceFilters);
-    await onChange();
+    await loadSummary();
 }
 
 export async function clearDeviceFilters() {
@@ -438,8 +371,7 @@ export async function clearDeviceFilters() {
         license: [],
         online: null,
     });
-    clearStorageKey(FILTERS_STORAGE_KEY);
-    await onChange();
+    await loadSummary();
 }
 
 export function storedFilterList(value) {

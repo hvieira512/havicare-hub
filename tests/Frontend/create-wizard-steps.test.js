@@ -2,6 +2,7 @@ import test, { beforeEach } from "node:test";
 import assert from "node:assert/strict";
 
 import { parseFragment } from "./support/dom.js";
+import { cacheElements } from "../../src/Dashboard/dashboard/dom.js";
 
 const { state } = await import("../../src/Dashboard/dashboard/state.js");
 const { initCreateWizard, openWizard } =
@@ -43,7 +44,8 @@ function harness() {
 
     els = {};
     for (const id of IDS) els[id] = root.querySelector(`#${id}`);
-    initCreateWizard({ els, wizardModal: { show: () => {}, hide: () => {} } });
+    cacheElements(els);
+    initCreateWizard({ wizardModal: { show: () => {}, hide: () => {} } });
 }
 
 const text = (node) => (node?.textContent || "").replace(/\s+/g, " ").trim();
@@ -154,7 +156,7 @@ test("with no gateways in the licence, the notice shows as text, not markup", ()
 
 test("a gateway of the same licence appears as a card to choose", () => {
     state.wizardGateways = [
-        { imei: "d48c49f7909c", model: "MKGW3", company: "hitcare", licenseId: "1001" },
+        { imei: "d48c49f7909c", deviceType: "gateway", model: "MKGW3", company: "hitcare", licenseId: "1001" },
     ];
     walkToDiaperIdentity();
 

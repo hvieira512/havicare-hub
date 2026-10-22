@@ -1,35 +1,22 @@
 import {
     getApiUsers as apiGetApiUsers,
+    getModelFilters as apiGetModelFilters,
     getModels as apiGetModels,
 } from "../api/index.js";
-import { ensureLicensesLoaded } from "../licenses.js";
 import { state } from "../state.js";
+import { ensureLicensesLoaded } from "../licenses.js";
 import { resolvePaginationPage } from "../pagination.js";
+import { els } from "../dom.js";
 
 /** A casca do modal de definições; não conhece nenhuma secção, e por isso todas a importam. */
-let els;
 let ui;
 
 export function initSettingsShell(context) {
-    els = context.els;
     ui = context.ui;
 }
 
 export function showSettingsModal() {
     ui.settingsModal.show();
-}
-
-export function activateSettingsSection(section) {
-    state.settingsModal.section = section;
-    const button =
-        {
-            models: els.settingsModelsTabBtn,
-            capabilities: els.settingsCapabilitiesTabBtn,
-            company: els.settingsCompanyTabBtn,
-            denylist: els.settingsDenylistTabBtn,
-            apiUsers: els.settingsApiUsersTabBtn,
-        }[section] || els.settingsModelsTabBtn;
-    bootstrap.Tab.getOrCreateInstance(button).show();
 }
 
 /** As contagens do menu ao abrir o modal; falha em silêncio, e cada separador enche a sua. */
@@ -63,21 +50,20 @@ export function setSettingsNavCount(key, total) {
     element.classList.toggle("d-none", !shows);
 }
 
-export function handleSettingsPaginationClick(event, paginationKey, loadFn) {
-    const nextPage = resolvePaginationPage(
-        event,
-        state.settingsModal[paginationKey],
-        paginationActionPrefix(paginationKey),
-    );
-    if (nextPage === null) return;
-    void loadFn(nextPage);
+/** O clique no paginador de uma secção; o ouvinte está no contentor, e o clique borbulha uma vez. */
+export function handleSettingsPaginationClick(event, pagination, actionPrefix, load) {
+    const nextPage = resolvePaginationPage(event, pagination, actionPrefix);
+    if (nextPage !== null) void load(nextPage);
 }
 
-function paginationActionPrefix(paginationKey) {
-    return (
-        {
-            apiUsersPagination: "settingsApiUsersPage",
-            companyPagination: "settingsCompanyPage",
-        }[paginationKey] || ""
-    );
+/** Os fornecedores de cada tipo, uma vez por abertura; quem cria um modelo baixa o `sectionLoaded`. */
+export async function loadModelFilters() {
+    if (state.settingsModal.sectionLoaded.modelFilters) {
+        return state.settingsModal.modelFilters;
+    }
+
+    const response = await apiGetModelFilters();
+    state.settingsModal.modelFilters = response.data || [];
+    state.settingsModal.sectionLoaded.modelFilters = true;
+    return state.settingsModal.modelFilters;
 }

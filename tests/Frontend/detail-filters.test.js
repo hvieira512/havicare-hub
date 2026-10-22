@@ -1,6 +1,7 @@
 import test, { beforeEach, describe } from "node:test";
 import assert from "node:assert/strict";
 import { autoEls } from "./support/els.js";
+import { cacheElements } from "../../src/Dashboard/dashboard/dom.js";
 
 const { state, resetDetailFiltersDraft, selectImei, updateDetailFiltersDraft } =
     await import("../../src/Dashboard/dashboard/state.js");
@@ -22,7 +23,8 @@ const els = autoEls((name) => (name === "detailFilterType" || name === "detailFi
 /** O rascunho é o que está nos campos antes de «Aplicar», e um `""` de propósito conta. */
 describe("draft", () => {
     beforeEach(() => {
-        initDetailFilters({ els, onChange: () => {} });
+        cacheElements(els);
+        initDetailFilters();
         state.detailFilters = { from: "2026-09-20T08:00", to: "", type: "all", q: "" };
         resetDetailFiltersDraft();
     });
@@ -120,7 +122,7 @@ describe("ranges", () => {
      * Ninguém escreve uma data para ver o dia de hoje: os alcances prontos aplicam-se ao toque e
      * o intervalo à mão fica para quem precisa mesmo dele.
      */
-    let changes;
+    let view;
 
     function severitySelect() {
         const select = document.createElement("select");
@@ -151,16 +153,11 @@ describe("ranges", () => {
     };
 
     beforeEach(() => {
-        changes = 0;
         state.detailFilters = { from: "", to: "", type: "all", q: "" };
-        initDetailFilters({
-            els: filterEls(),
-            onChange: () => {
-                changes += 1;
-            },
-            renderDownlinkRequests: () => {},
-            renderTelemetryList: () => {},
-        });
+        state.selectedDetail = null;
+        view = autoEls(undefined, filterEls());
+        cacheElements(view);
+        initDetailFilters();
     });
 
     test("today starts at local midnight, not twenty-four hours ago", () => {
@@ -178,9 +175,11 @@ describe("ranges", () => {
     });
 
     test("the range applies on tap, without going through Aplicar", () => {
+        view.requestGrid.innerHTML = "<p>antes</p>";
+
         applyDetailRange("30d");
 
-        assert.equal(changes, 1);
+        assert.equal(view.requestGrid.innerHTML, "", "o detalhe devia ter sido redesenhado");
         assert.equal(state.telemetryPage, 1);
     });
 
@@ -226,20 +225,16 @@ describe("ranges", () => {
     test("the type applies when chosen, without going through Aplicar", () => {
         const els = filterEls();
         els.detailFilterType.innerHTML = "<option value=\"all\">Todos</option><option value=\"sleep_state\">Estado do sono</option>";
-        initDetailFilters({
-            els,
-            onChange: () => {
-                changes += 1;
-            },
-            renderDownlinkRequests: () => {},
-            renderTelemetryList: () => {},
-        });
+        view = autoEls(undefined, els);
+        view.requestGrid.innerHTML = "<p>antes</p>";
+        cacheElements(view);
+        initDetailFilters();
 
         els.detailFilterType.value = "sleep_state";
         applyDetailType();
 
         assert.equal(state.detailFilters.type, "sleep_state");
-        assert.equal(changes, 1);
+        assert.equal(view.requestGrid.innerHTML, "", "o detalhe devia ter sido redesenhado");
     });
 });
 
@@ -263,7 +258,8 @@ describe("device switch", () => {
     });
 
     beforeEach(() => {
-        initDetailFilters({ els, onChange: () => {} });
+        cacheElements(els);
+        initDetailFilters();
         state.selectedImei = "aaa111";
         state.detailFilters = { from: "", to: "", type: "blood_pressure", q: "78" };
         state.detailFiltersDraft = { ...state.detailFilters };

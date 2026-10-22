@@ -14,13 +14,13 @@ import { renderVitals } from "./radar-vitals.js";
 import { loadScript } from "../load-script.js";
 import { state } from "../state.js";
 import { countLabel } from "../i18n.js";
+import { els } from "../dom.js";
 
 /**
  * A planta de um radar com os sinais vitais ao lado. Posições e leituras vêm do stream que o
  * detalhe já abriu, sem sondagem; a cloud do fabricante só se consulta no «Sincronizar».
  */
 
-let els;
 let modal;
 let scene = null;
 let editor = null;
@@ -34,7 +34,6 @@ const RELOAD_AFTER_SEND_MS = [5000, 20000];
 const EDIT_MARGIN_DM = 10;
 
 export function initRadarMapModal(context) {
-    els = context.els;
     modal = context.modals.radarMap;
 
     editButton = document.createElement("button");

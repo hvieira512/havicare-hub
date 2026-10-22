@@ -24,12 +24,16 @@ import {
     modelInternalName,
 } from "../../domain.js";
 import { loadCapabilityCatalog } from "../capabilities.js";
-import { getSettingsModelsRuntime, showModelsPane } from "./shell.js";
+import { showModelsPane } from "./shell.js";
 import { backToModelList } from "./list.js";
 import { renderCapabilitiesSection } from "./capabilities-editor.js";
 import { countLabel } from "../../i18n.js";
+import { els } from "../../dom.js";
 
 /** A ficha de um modelo: a identidade em cima e o editor de capacidades em baixo, cada um com o seu Guardar. */
+
+let pristineFields = null;
+let suppliers = [];
 
 async function openModelDetail(modelId) {
     const model = await apiGetModel(modelId);
@@ -42,7 +46,6 @@ async function openModelDetail(modelId) {
 
 /** Mostra o modelo como o servidor o diz: as capacidades que lá vêm já são as que valem. */
 async function showModelDetail(model) {
-    const { els } = getSettingsModelsRuntime();
     await loadCapabilityCatalog(model.deviceType || "watch");
 
     state.settingsModal.currentCapabilitiesModel = model;
@@ -75,20 +78,13 @@ async function showModelDetail(model) {
     showModelsPane(2);
 }
 
-/** Um clique numa folha abre a ficha; a linha é um `div` com `role="button"`, e o teclado é tratado à mão. */
+/** Um clique numa folha abre a ficha. */
 function handleModelListClick(event) {
     const row = event.target.closest("[data-action=\"modelCapabilities\"]");
-    if (!row) return;
-    if (event.type === "keydown") {
-        if (event.key !== "Enter" && event.key !== " ") return;
-        // O espaço numa linha accionável rola a página se ninguém o travar.
-        event.preventDefault();
-    }
-    void openModelDetail(parseInt(row.dataset.id));
+    if (row) void openModelDetail(parseInt(row.dataset.id));
 }
 
 function renderModelDetailInfo(model) {
-    const { els } = getSettingsModelsRuntime();
     const label = modelCommercialName(model);
     if (els.modelDetailImageInput) els.modelDetailImageInput.value = "";
     els.modelDetailImage.innerHTML = modelPreviewHtml(model, label);
@@ -114,21 +110,21 @@ function renderModelDetailInfo(model) {
     );
 
     // A fotografia do estado limpo, para se saber se algo mudou sem comparar campo a campo.
-    state.settingsModal.modelDetailPristine = readModelDetailFields();
+    pristineFields = readModelDetailFields();
     syncModelDetailDirty();
     void renderModelDetailDeleteHint(model);
 }
 
 /** Os fornecedores com o seu id, para o `supplierId`; a ficha alcança-se sem passar pelo separador deles. */
 function modelDetailSuppliers() {
-    return state.modelModalSuppliers || [];
+    return suppliers;
 }
 
 async function ensureModelDetailSuppliers() {
-    if ((state.modelModalSuppliers || []).length > 0) return;
+    if (suppliers.length > 0) return;
     const response = await allPages(apiGetSuppliers);
     if (response.error) toast("error", apiError(response));
-    state.modelModalSuppliers = response.data || [];
+    suppliers = response.data || [];
 }
 
 function renderModelDetailSelect(select, options, selected) {
@@ -143,7 +139,6 @@ function renderModelDetailSelect(select, options, selected) {
 }
 
 function readModelDetailFields() {
-    const { els } = getSettingsModelsRuntime();
     return {
         commercialName: String(els.modelDetailCommercialName?.value || "").trim(),
         internalModel: String(els.modelDetailInternalModel?.value || "").trim(),
@@ -154,7 +149,6 @@ function readModelDetailFields() {
 }
 
 function handleModelDetailImageChange() {
-    const { els } = getSettingsModelsRuntime();
     const model = state.settingsModal.currentCapabilitiesModel;
     const file = els.modelDetailImageInput?.files?.[0];
     setModelPreviewObjectUrl(file ? URL.createObjectURL(file) : null);
@@ -166,8 +160,7 @@ function handleModelDetailImageChange() {
 }
 
 function syncModelDetailDirty() {
-    const { els } = getSettingsModelsRuntime();
-    const pristine = state.settingsModal.modelDetailPristine;
+    const pristine = pristineFields;
     if (!pristine || !els.modelDetailSaveBtn) return;
     const current = readModelDetailFields();
     const dirty = Object.keys(pristine).some((key) => pristine[key] !== current[key]);
@@ -178,8 +171,7 @@ function syncModelDetailDirty() {
 }
 
 function resetModelDetailFields() {
-    const { els } = getSettingsModelsRuntime();
-    const pristine = state.settingsModal.modelDetailPristine;
+    const pristine = pristineFields;
     if (!pristine) return;
     clearInvalid(els.modelDetailFields);
     els.modelDetailCommercialName.value = pristine.commercialName;
@@ -191,7 +183,6 @@ function resetModelDetailFields() {
 }
 
 async function saveModelDetail() {
-    const { els } = getSettingsModelsRuntime();
     const model = state.settingsModal.currentCapabilitiesModel;
     if (!model) return;
     const fields = readModelDetailFields();
@@ -227,7 +218,6 @@ async function saveModelDetail() {
 
 /** Quantos dispositivos usam o modelo, ao lado do botão de apagar. */
 async function renderModelDetailDeleteHint(model) {
-    const { els } = getSettingsModelsRuntime();
     if (!els.modelDetailDeleteHint) return;
     const internal = modelInternalName(model);
     const result = await apiGetDevices({ model: internal, limit: 1 });
@@ -243,7 +233,6 @@ async function renderModelDetailDeleteHint(model) {
 async function deleteCurrentModel() {
     const model = state.settingsModal.currentCapabilitiesModel;
     if (!model) return;
-    const { els } = getSettingsModelsRuntime();
     const { isConfirmed } = await confirmDestructive(
         `Apagar o modelo ${modelCommercialName(model)}?`,
         els.modelDetailDeleteHint?.textContent || "",
@@ -270,8 +259,19 @@ function removeModelFromCatalog(modelId) {
     }
 }
 
+function initModelDetail() {
+    els.modelDetailSaveBtn.addEventListener("click", saveModelDetail);
+    els.modelDetailResetBtn.addEventListener("click", resetModelDetailFields);
+    els.modelDetailFields.addEventListener("input", syncModelDetailDirty);
+    els.modelDetailFields.addEventListener("change", syncModelDetailDirty);
+    els.modelDetailImageInput.addEventListener("change", handleModelDetailImageChange);
+    els.modelDetailDeleteBtn.addEventListener("click", () => void deleteCurrentModel());
+    els.modelCatalog.addEventListener("click", handleModelListClick);
+}
+
 export {
     deleteCurrentModel,
+    initModelDetail,
     handleModelDetailImageChange,
     handleModelListClick,
     renderModelDetailInfo,

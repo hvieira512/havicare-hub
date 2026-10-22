@@ -3,9 +3,10 @@ import assert from "node:assert/strict";
 
 import { flush, installDeferredFetch } from "./support/deferred-fetch.js";
 import { parseFragment } from "./support/dom.js";
+import { cacheElements } from "../../src/Dashboard/dashboard/dom.js";
 
 const { state } = await import("../../src/Dashboard/dashboard/state.js");
-const { initDeviceConfigPanel, saveDeviceConfigurations } =
+const { saveDeviceConfigurations } =
     await import("../../src/Dashboard/dashboard/devices/config/panel.js");
 
 /** Um painel com uma definição editada: o valor no ecrã difere da fotografia. */
@@ -20,7 +21,7 @@ function editedPane() {
 }
 
 beforeEach(() => {
-    initDeviceConfigPanel({ els: {} });
+    cacheElements({});
     state.deviceModal.imei = "aaa111";
     state.deviceModal.configurations = { aaa111: {} };
 });

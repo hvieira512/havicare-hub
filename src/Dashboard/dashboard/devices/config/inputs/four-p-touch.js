@@ -1,4 +1,4 @@
-import { html, raw } from "../../../html.js";
+import { html } from "../../../html.js";
 import { field } from "../../../components/form-field.js";
 import { languageLabel } from "../../../i18n.js";
 import { boolValue } from "../normalizers.js";
@@ -33,7 +33,7 @@ function languageTimezoneInput(entry, desired, meta) {
     return html`
         <div class="row g-3">
             ${field(entryFieldLabel(entry, meta, "language"), html`<select class="form-select" data-config-field="language">
-                ${languages.map((option) => html`<option value="${option.value}"${raw(option.value === current ? " selected" : "")}>${option.label}</option>`)}
+                ${languages.map((option) => html`<option value="${option.value}"${option.value === current ? " selected" : ""}>${option.label}</option>`)}
             </select>`, { cls: "col-md-6" })}
             ${field(entryFieldLabel(entry, meta, "utcOffsetHours"), boundedNumber(entry, meta, "utcOffsetHours", desired, { unit: "UTC" }), { cls: "col-md-6" })}
         </div>`;
@@ -62,7 +62,7 @@ function fallSensitivityLevelsInput(entry, desired, meta) {
                 ${field(entryFieldLabel(entry, meta, "sensitivity"), choiceField({ field: "sensitivity", value: desired.sensitivity, options: sensitivity }))}
             </div>
             ${field(entryFieldLabel(entry, meta, "levels"), html`<select class="form-select" data-config-field="levels" data-action="fallTotalLevels">
-                ${levels.map((option) => html`<option value="${option.value}"${raw(Number(option.value) === total ? " selected" : "")}>${option.label}</option>`)}
+                ${levels.map((option) => html`<option value="${option.value}"${Number(option.value) === total ? " selected" : ""}>${option.label}</option>`)}
             </select>`, { cls: "col-12 col-md-3" })}
         </div>`;
 }

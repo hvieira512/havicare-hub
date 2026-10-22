@@ -5,6 +5,7 @@ import {
     licenseBadgeValue,
     licensePickerHtml,
 } from "./classification-ui.js";
+import { els } from "../dom.js";
 
 /** A classificação no modal de edição: a verdade vive nos elementos do formulário. */
 
@@ -14,14 +15,12 @@ const TRAIL_QUESTIONS = [
     { key: "owner", label: "Licença" },
 ];
 
-let els;
 let onLicenseChange = () => {};
 let licenseGroups = [];
 let step = 2;
 let openQuestion = null;
 
 export function initEditWizard(context) {
-    els = context.els;
     onLicenseChange = context.onLicenseChange || (() => {});
 
     els.deviceTrail?.addEventListener("click", handleTrailClick);

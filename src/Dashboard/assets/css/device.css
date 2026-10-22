@@ -632,7 +632,7 @@
     cursor: default;
 }
 
-/* A miniatura empresta a medida e o raio ao esqueleto, mas não o fundo: o `main.css` vem
+/* A miniatura empresta a medida e o raio ao esqueleto, mas não o fundo: o `modals.css` vem
    depois do Bootstrap e ganharia ao `.placeholder`. */
 .device-card-skeleton .device-card-thumb {
     background-color: currentcolor;
@@ -683,7 +683,7 @@
     color: var(--bs-secondary-color);
 }
 
-/* A chapa acompanha a fotografia no escuro, como as chapas pequenas do `main.css`. O esqueleto
+/* A chapa acompanha a fotografia no escuro, como as chapas pequenas do `modals.css`. O esqueleto
    fica de fora: pinta-se com `currentcolor`. */
 [data-bs-theme="dark"] .device-card-thumb:not(.placeholder):has(img) {
     background: #fff;

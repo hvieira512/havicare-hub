@@ -1,11 +1,9 @@
 import test, { beforeEach } from "node:test";
 import assert from "node:assert/strict";
 import { autoEls } from "./support/els.js";
+import { cacheElements } from "../../src/Dashboard/dashboard/dom.js";
 
 const { state } = await import("../../src/Dashboard/dashboard/state.js");
-const { initSettingsModels } = await import(
-    "../../src/Dashboard/dashboard/settings/models/shell.js",
-);
 const { renderCapabilitiesSection } = await import(
     "../../src/Dashboard/dashboard/settings/models/capabilities-editor.js",
 );
@@ -50,7 +48,7 @@ let els;
 
 beforeEach(() => {
     els = autoEls();
-    initSettingsModels({ els, ui: {} });
+    cacheElements(els);
     state.settingsModal.currentCapabilitiesModel = MODEL;
     state.settingsModal.capabilityCatalog = CATALOG;
     state.settingsModal.capabilityModelTemplateKeys = CATALOG.map((entry) => entry.key);

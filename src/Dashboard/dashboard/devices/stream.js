@@ -1,5 +1,5 @@
 import { state } from "../state.js";
-import { authHeaders, getDashboardApiToken } from "../api/http.js";
+import { authHeaders, isSignedIn } from "../api/http.js";
 
 let onRenderSelection = () => {};
 let onCommandsUpdated = () => {};
@@ -42,10 +42,7 @@ function handleVisibilityChange() {
         return;
     }
 
-    if (
-        document.body.dataset.dashboardAuthRequired === "true" &&
-        !getDashboardApiToken()?.access_token
-    ) {
+    if (!isSignedIn()) {
         return;
     }
 
@@ -175,10 +172,7 @@ function scheduleReconnect() {
     if (!currentImei || reconnectTimer !== null) {
         return;
     }
-    if (
-        document.body.dataset.dashboardAuthRequired === "true" &&
-        !getDashboardApiToken()?.access_token
-    ) {
+    if (!isSignedIn()) {
         return;
     }
 
@@ -201,10 +195,7 @@ function handleTokenUpdated() {
     if (!currentImei) {
         return;
     }
-    if (
-        document.body.dataset.dashboardAuthRequired === "true" &&
-        !getDashboardApiToken()?.access_token
-    ) {
+    if (!isSignedIn()) {
         closeDeviceStream();
         return;
     }

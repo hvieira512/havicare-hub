@@ -3,12 +3,11 @@ import assert from "node:assert/strict";
 
 import { flush, installDeferredFetch } from "./support/deferred-fetch.js";
 import { autoEls } from "./support/els.js";
+import { cacheElements } from "../../src/Dashboard/dashboard/dom.js";
 
 const { blankDeviceModal, state } = await import("../../src/Dashboard/dashboard/state.js");
 const { editDevice, initDeviceModal, saveDevice } =
     await import("../../src/Dashboard/dashboard/devices/device-modal.js");
-const { initGatewayLinksUi } =
-    await import("../../src/Dashboard/dashboard/devices/gateway-links-ui.js");
 
 // Tudo `input`: os divs servem na mesma para `innerHTML`, e só o input tem `value`.
 const els = autoEls(() => "input");
@@ -23,8 +22,9 @@ const detailFor = (imei) => ({
 const errorResponse = () => Response.json({ error: { message: "Servidor indisponível." } });
 
 beforeEach(() => {
-    initDeviceModal({ els, deviceModal: { show() {}, hide() {} } });
-    initGatewayLinksUi({ els });
+    cacheElements(els);
+    initDeviceModal({ deviceModal: { show() {}, hide() {} } });
+    cacheElements(els);
     // Os dois catálogos em cache tiram do caminho pedidos que não são os desta corrida.
     state.deviceTypeSuppliersModels = [
         { deviceType: "watch", suppliers: [{ name: "wonlex", models: [{ internalModel: "D41" }] }] },

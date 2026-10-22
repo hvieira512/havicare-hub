@@ -19,7 +19,7 @@ import {
 } from "../format.js";
 import { html } from "../html.js";
 import { joinMarkup } from "../components/cards/shared.js";
-import { renderInto } from "../dom.js";
+import { els, renderInto } from "../dom.js";
 import { capabilityLabel } from "../capability-catalog.js";
 import { apiError, toast } from "../dialogs.js";
 import { deviceLicenseBlock, deviceLicenseLabel } from "../components/device-license.js";
@@ -37,32 +37,17 @@ import { activityTable } from "./activity-table.js";
 import { protocolHelpCallPressModes } from "./config/protocol-catalog.js";
 import { renderPagination } from "../pagination.js";
 import { loadMoreButton, pagedRows } from "../components/pagination.js";
-import { SELECTED_DEVICE_STORAGE_KEY, clearStorageKey, saveTextStorage } from "../storage.js";
 import { disposeTooltips, refreshTooltips } from "../tooltips.js";
 import { gatewaySignalRows } from "./gateway-signal.js";
 import { renderConnectionHistory } from "./connection-history.js";
 import {
     allDetailItems,
     filterDetailItems,
-    initDetailFilters,
     populateDetailFilterTypes,
     syncDetailFilterControls,
 } from "./detail-filters.js";
 
 const NCS_EVENT_CARD_TYPES = ["help_call", "reset"];
-
-let els;
-
-function initDeviceDetailView(context) {
-    els = context.els;
-    // O que redesenha entra por aqui, e não por um import de volta.
-    initDetailFilters({
-        els,
-        onChange: renderSelection,
-        renderDownlinkRequests,
-        renderTelemetryList,
-    });
-}
 
 function renderSelection() {
     els.deviceSelectionEmptyState.classList.toggle(
@@ -102,18 +87,12 @@ function renderSelection() {
     const allItems = allDetailItems();
     const filtered = filterDetailItems(allItems);
     const deviceType = normalizeDeviceType(deviceModel?.deviceType || "watch");
-    const alarmEvents = filtered
-        .filter((item) => item._source === "event")
-        .map((item) => item.raw);
-    const telemetry = filtered
-        .filter((item) => item._source === "telemetry")
-        .map((item) => item.raw);
-    const commands = filtered
-        .filter((item) => item._source === "command")
-        .map((item) => item.raw);
-    const connectionEvents = filtered
-        .filter((item) => item._source === "connection")
-        .map((item) => item.raw);
+    const bySource = Object.groupBy(filtered, (item) => item._source);
+    const rawOf = (source) => (bySource[source] || []).map((item) => item.raw);
+    const alarmEvents = rawOf("event");
+    const telemetry = rawOf("telemetry");
+    const commands = rawOf("command");
+    const connectionEvents = rawOf("connection");
 
     // O cartão leva também a última de cada tipo, para uma leitura rara não sumir com a lista.
     const latest = filterDetailItems((state.selectedDetail.recent?.latestTelemetry || [])
@@ -627,19 +606,10 @@ function downlinkActivityRow(command) {
 
 /** Marcação em texto, para uma tooltip. As entidades desfazem-se: quem a recebe escapa-a. */
 function plainText(markup) {
-    return String(markup)
-        .replace(/<br\s*\/?>/gi, " · ")
-        .replace(/<[^>]*>/g, "")
-        .replace(/&(amp|lt|gt|quot|#039);/g, (entity) => UNESCAPED[entity]);
+    const parsed = document.createElement("template");
+    parsed.innerHTML = String(markup).replace(/<br\s*\/?>/gi, " · ");
+    return parsed.content.textContent;
 }
-
-const UNESCAPED = {
-    "&amp;": "&",
-    "&lt;": "<",
-    "&gt;": ">",
-    "&quot;": "\"",
-    "&#039;": "'",
-};
 
 function expectedReplies(command) {
     return Array.isArray(command.expectedReplyTypes) &&
@@ -661,25 +631,12 @@ async function requestTelemetryFeature(feature) {
     }
 }
 
-function saveSelectedDeviceToStorage() {
-    if (state.selectedImei) {
-        saveTextStorage(SELECTED_DEVICE_STORAGE_KEY, state.selectedImei);
-    }
-}
-
-function clearSelectedDeviceFromStorage() {
-    clearStorageKey(SELECTED_DEVICE_STORAGE_KEY);
-}
-
 export {
-    clearSelectedDeviceFromStorage,
     downlinkActivityRow,
-    initDeviceDetailView,
     renderDownlinkRequests,
     renderRequestCardGroup,
     renderSelection,
     renderTelemetryList,
     telemetryRequestCards,
-    saveSelectedDeviceToStorage,
     requestTelemetryFeature,
 };

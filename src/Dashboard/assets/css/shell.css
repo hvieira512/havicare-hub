@@ -280,8 +280,14 @@
     }
 }
 
-/* A folha do catálogo abre a ficha do modelo, e por isso reage ao rato. */
+/* A folha do catálogo abre a ficha do modelo. É um `<button>`: larga como a linha, e sem a
+   moldura nem o fundo do navegador. */
 .catalog-model {
+    width: calc(100% + 2rem);
+    border-width: 1px 0 0;
+    background-color: transparent;
+    color: inherit;
+    text-align: start;
     cursor: pointer;
 }
 
@@ -295,7 +301,7 @@
     height: 28px;
 }
 
-/* A chapa acompanha a fotografia no escuro, como as chapas pequenas do `main.css`; o raio
+/* A chapa acompanha a fotografia no escuro, como as chapas pequenas do `modals.css`; o raio
    torna-a uma chapa e não um rectângulo do tamanho da imagem. */
 [data-bs-theme="dark"] .catalog-model-image:has(img) {
     background: #fff;

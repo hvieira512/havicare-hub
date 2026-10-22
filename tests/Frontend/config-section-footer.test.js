@@ -6,10 +6,10 @@ import { renderDeviceConfigurationRoot } from "../../src/Dashboard/dashboard/dev
 import {
     captureConfigPristine,
     changedConfigEntries,
-    initDeviceConfigPanel,
     syncConfigCounts,
 } from "../../src/Dashboard/dashboard/devices/config/panel.js";
 import { resetConfigPane } from "../../src/Dashboard/dashboard/devices/config/handlers.js";
+import { cacheElements } from "../../src/Dashboard/dashboard/dom.js";
 
 /** O envio é da secção; só tem botão próprio o que dispara em vez de se guardar. */
 
@@ -53,7 +53,7 @@ const render = () => {
     })));
     document.body.replaceChildren(host);
     captureConfigPristine(host);
-    initDeviceConfigPanel({ els: {} });
+    cacheElements({});
     syncConfigCounts(host);
     return host;
 };

@@ -4,8 +4,7 @@ import {
     getRadarCredentials as apiGetRadarCredentials,
     saveRadarCredentials as apiSaveRadarCredentials,
 } from "../api/index.js";
-import { state } from "../state.js";
-import { html, raw } from "../html.js";
+import { html } from "../html.js";
 import { clearInvalid } from "../validation.js";
 import { errorCodeText } from "../api/errors.js";
 
@@ -13,16 +12,19 @@ import { errorCodeText } from "../api/errors.js";
 
 export const EDITOR_KIND = "radarCredentials";
 
+/** O que está guardado da licença aberta; os segredos não vêm. */
+let loaded = null;
+
 /** Traz o que está guardado antes de abrir a linha. Os segredos não vêm: a API não os dá. */
 export async function loadRadarCredentials(licenseRefId) {
     const result = await apiGetRadarCredentials(licenseRefId);
-    state.settingsModal.radarCredentials = result.error ? null : (result.data ?? null);
+    loaded = result.error ? null : (result.data ?? null);
 
     return result;
 }
 
 export function clearRadarCredentials() {
-    state.settingsModal.radarCredentials = null;
+    loaded = null;
 }
 
 /** Um segredo guardado diz que está lá; o campo em branco quer dizer «fica como está». */
@@ -30,14 +32,14 @@ function secretField(id, field, label, stored) {
     return html`
         <div class="col-12 col-sm-6">
             <label class="section-label" for="${id}">${label}</label>
-            ${raw(stored
+            ${stored
                 ? html`
             <div class="d-flex align-items-center gap-2" data-secret-kept="${field}">
                 <span class="small text-body-secondary flex-grow-1"><i class="fa-solid fa-circle-check text-success me-1" aria-hidden="true"></i>guardada</span>
                 <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none" data-action="replaceRadarSecret" data-secret="${field}">Substituir</button>
             </div>`
                 : html`
-            <input type="password" class="form-control form-control-sm" id="${id}" data-field="${field}" autocomplete="new-password">`)}
+            <input type="password" class="form-control form-control-sm" id="${id}" data-field="${field}" autocomplete="new-password">`}
         </div>`;
 }
 
@@ -69,7 +71,7 @@ export function radarCheckMessage({ radars, responding, error }) {
 
 /** A linha aberta; num telefone toma o cartão todo. */
 export function radarCredentialsEditorRow(license) {
-    const stored = state.settingsModal.radarCredentials;
+    const stored = loaded;
 
     return html`
         <div class="tree-row radar-credentials-row position-relative" data-editor="${EDITOR_KIND}" data-id="${license.id}">
@@ -88,16 +90,16 @@ export function radarCredentialsEditorRow(license) {
                     <label class="section-label" for="radarRowUsername">Utilizador</label>
                     <input type="text" class="form-control form-control-sm" id="radarRowUsername" data-field="username" value="${stored?.username || ""}" autocomplete="off">
                 </div>
-                ${raw(secretField("radarRowPassword", "password", "Palavra-passe", stored?.hasPassword))}
+                ${secretField("radarRowPassword", "password", "Palavra-passe", stored?.hasPassword)}
                 <div class="col-12 col-sm-6">
                     <label class="section-label" for="radarRowAppId">App ID</label>
                     <input type="text" class="form-control form-control-sm" id="radarRowAppId" data-field="appId" value="${stored?.appId || ""}" autocomplete="off">
                 </div>
-                ${raw(secretField("radarRowAppSecret", "appSecret", "App secret", stored?.hasAppSecret))}
+                ${secretField("radarRowAppSecret", "appSecret", "App secret", stored?.hasAppSecret)}
             </div>
             <div id="radarCheckResult" class="small mt-3 d-none" role="status"></div>
             <div class="d-flex align-items-center flex-wrap gap-2 mt-3">
-                ${raw(stored?.configured ? html`<button type="button" class="btn btn-outline-danger btn-quiet-danger btn-sm me-auto order-last order-sm-0" data-action="forgetRadarCredentials" data-id="${license.id}">Esquecer</button>` : "")}
+                ${stored?.configured ? html`<button type="button" class="btn btn-outline-danger btn-quiet-danger btn-sm me-auto order-last order-sm-0" data-action="forgetRadarCredentials" data-id="${license.id}">Esquecer</button>` : ""}
                 <button type="button" class="btn btn-outline-secondary btn-sm order-last order-sm-0 ${stored?.configured ? "" : "ms-auto"}" data-action="cancelEdit">Cancelar</button>
                 <button type="button" class="btn btn-outline-primary btn-sm flex-grow-1 flex-sm-grow-0" data-action="checkRadarCredentials" data-id="${license.id}">Testar ligação</button>
                 <button type="button" class="btn btn-primary btn-sm flex-grow-1 flex-sm-grow-0" data-action="saveRadarCredentialsRow">Guardar</button>

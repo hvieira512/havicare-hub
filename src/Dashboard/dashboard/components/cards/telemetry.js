@@ -1,6 +1,6 @@
 import { displayPersonIndex, fieldLabel, fieldValue, timeOnly } from "../../format.js";
 import { fallLabel, zoneLabel } from "../../domain.js";
-import { html, raw } from "../../html.js";
+import { html } from "../../html.js";
 import { compactDetails, joinMarkup } from "./shared.js";
 import { state } from "../../state.js";
 import { connectivityIcon, connectivityValue } from "./gateway.js";
@@ -470,9 +470,9 @@ function reportedSettingsBody(settings) {
     const rows = settings.map(([key, value]) => html`<div class="reported-setting d-flex justify-content-between gap-3" data-setting="${key}">
 <span class="text-secondary">${capabilityLabel(key)}</span>
 <span class="text-end">${settingSummary(key, value)}</span>
-</div>`).join("");
+</div>`);
 
-    return html`<div class="reported-settings mt-3">${raw(rows)}</div>`;
+    return html`<div class="reported-settings mt-3">${rows}</div>`;
 }
 
 const HOUR = (hour, minute) => `${String(hour ?? 0).padStart(2, "0")}:${String(minute ?? 0).padStart(2, "0")}`;

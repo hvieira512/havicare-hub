@@ -1,9 +1,9 @@
 import test, { beforeEach } from "node:test";
 import assert from "node:assert/strict";
+import { cacheElements } from "../../src/Dashboard/dashboard/dom.js";
 
 const { state } = await import("../../src/Dashboard/dashboard/state.js");
 const {
-    initDeviceDetailView,
     renderTelemetryList,
     renderDownlinkRequests,
 } = await import("../../src/Dashboard/dashboard/devices/detail.js");
@@ -84,7 +84,7 @@ function downlinkRequest(index) {
 
 test("three pages give three buttons, and the summary counts the first", () => {
     const els = telemetryEls();
-    initDeviceDetailView({ els });
+    cacheElements(els);
 
     const size = state.telemetryPageSize;
     const total = entriesForPages(size, 3);
@@ -99,14 +99,14 @@ test("three pages give three buttons, and the summary counts the first", () => {
         ["telemetryPrev", "telemetryGo", "telemetryGo", "telemetryGo", "telemetryNext"],
     );
     assert.deepEqual(
-        buttons.map((button) => button.dataset.page).filter(Boolean),
-        ["1", "2", "3"],
+        buttons.map((button) => button.dataset.page),
+        ["0", "1", "2", "3", "2"],
     );
 });
 
 test("on the last page the summary counts only what remains and next is disabled", () => {
     const els = telemetryEls();
-    initDeviceDetailView({ els });
+    cacheElements(els);
     state.telemetryPage = 3;
 
     const size = state.telemetryPageSize;
@@ -120,7 +120,7 @@ test("on the last page the summary counts only what remains and next is disabled
 
 test("the requests pager carries its prefix in the actions", () => {
     const els = downlinkEls();
-    initDeviceDetailView({ els });
+    cacheElements(els);
 
     const size = state.downlinkPageSize;
     const total = entriesForPages(size, 3);

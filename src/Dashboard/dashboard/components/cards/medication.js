@@ -1,6 +1,6 @@
 import { fieldValue } from "../../format.js";
 import { medicationPlanTimes } from "../../devices/medication-plan.js";
-import { html, raw } from "../../html.js";
+import { html } from "../../html.js";
 import { runoutAt, runoutLabel } from "../../devices/medication-runout.js";
 import { state } from "../../state.js";
 import { countLabel } from "../../i18n.js";
@@ -79,7 +79,7 @@ export function medicationDoseStrip(alarms) {
 <div class="dose-hour">${hours.get(slot) || `Alarme ${slot}`}</div>
 <div class="dose-state">${fieldValue("state", doseState)}</div>
 </div>`;
-    }).join("");
+    });
 
     // Os lugares por marcar juntam-se num só.
     const spare = free.length === 0
@@ -90,7 +90,7 @@ export function medicationDoseStrip(alarms) {
 <div class="dose-state">Livres</div>
 </div>`;
 
-    return html`<div class="dose-strip d-grid mt-3">${raw(columns)}${raw(spare)}</div>`;
+    return html`<div class="dose-strip d-grid mt-3">${columns}${spare}</div>`;
 }
 
 /** A posição do carrossel como o prato a conta, «dia 7» e não `21`; sem plano, o número cru. */

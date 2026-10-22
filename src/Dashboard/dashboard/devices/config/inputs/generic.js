@@ -1,4 +1,4 @@
-import { html, raw } from "../../../html.js";
+import { html } from "../../../html.js";
 import { field } from "../../../components/form-field.js";
 import { renderPhoneControl } from "../../../phone.js";
 import { boolValue } from "../normalizers.js";
@@ -92,7 +92,7 @@ function selectInput(entry, desired, meta) {
     const current = String(desired?.[name] ?? "");
     const choices = fieldChoices(entry, meta, name).map((option) => {
         const value = String(option.value);
-        return html`<option value="${value}"${value === current ? raw(" selected") : ""}>${option.label}</option>`;
+        return html`<option value="${value}"${value === current ? " selected" : ""}>${option.label}</option>`;
     });
 
     return html`<select class="form-select" data-config-field="${name}">${choices}</select>`;
@@ -108,7 +108,7 @@ function timeZoneInput(entry, desired) {
     const current = String(desired?.[name] ?? "");
     const zones = (entry.options?.[name] ?? []).map((option) => {
         const zone = String(option.value);
-        return html`<option value="${zone}"${zone === current ? raw(" selected") : ""}>${zone} — ${zoneOffset(zone)}</option>`;
+        return html`<option value="${zone}"${zone === current ? " selected" : ""}>${zone} — ${zoneOffset(zone)}</option>`;
     });
 
     return html`<select class="form-select" data-config-field="${name}">${zones}</select>`;

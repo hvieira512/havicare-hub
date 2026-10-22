@@ -20,7 +20,6 @@ final class DashboardAssetVersionTest extends TestCase
             $page,
             'o ponto de entrada tem de trazer a versão, senão o grafo todo fica sem ela',
         );
-        self::assertStringContainsString('href="/v/cafe1234cafe/main.css"', $page);
         self::assertStringContainsString('href="/v/cafe1234cafe/assets/css/base.css"', $page);
     }
 

@@ -229,3 +229,16 @@
 .radar-boundary-field {
     width: 7.5rem;
 }
+
+/* ===== os campos de um alarme =====
+   Os campos de um alarme aberto quebram linha quando precisam; o Bootstrap não tem
+   utilitários de `flex-basis`. */
+
+.alarm-field-time {
+    flex: 0 0 7rem;
+}
+
+.alarm-field-grow {
+    flex: 1 1 12rem;
+    min-width: 0;
+}

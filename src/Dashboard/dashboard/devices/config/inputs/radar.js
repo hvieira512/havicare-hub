@@ -1,4 +1,4 @@
-import { html, raw } from "../../../html.js";
+import { html } from "../../../html.js";
 import { boolValue } from "../normalizers.js";
 import { readCheckbox, readNumber } from "../readers.js";
 import { choiceField, enabledSwitch, entryFieldLabel, entryText, fieldChoices, numberField, readChoice } from "./shared.js";
@@ -28,7 +28,7 @@ function sensitivitySlider(entry, desired, meta) {
 function valueRange(entry, desired) {
     const [low, high] = fieldsOf(entry, 2);
     const { min = 0, max = "", unit = "" } = entry.options ?? {};
-    const input = (name, label) => html`<input class="form-control" type="number" min="${min}"${max === "" ? "" : raw(` max="${Number(max)}"`)} step="1" data-config-field="${name}" aria-label="${label}" value="${String(desired[name] ?? "")}">`;
+    const input = (name, label) => html`<input class="form-control" type="number" min="${min}"${max === "" ? "" : html` max="${Number(max)}"`} step="1" data-config-field="${name}" aria-label="${label}" value="${String(desired[name] ?? "")}">`;
     return html`
         <div class="d-flex justify-content-end">
             <div class="input-group flex-nowrap w-auto">

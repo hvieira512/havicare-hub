@@ -33,7 +33,7 @@ export function confirmDestructive(title, text = "", confirmText = "Apagar") {
         showCancelButton: true,
         confirmButtonText: confirmText,
         cancelButtonText: "Cancelar",
-        confirmButtonColor: "#dc3545",
+        confirmButtonColor: window.getComputedStyle(document.documentElement).getPropertyValue("--bs-danger"),
         reverseButtons: true,
     });
 }

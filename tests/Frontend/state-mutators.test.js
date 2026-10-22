@@ -2,9 +2,16 @@ import test, { beforeEach } from "node:test";
 import assert from "node:assert/strict";
 
 const {
+    FILTERS_STORAGE_KEY,
+    SELECTED_DEVICE_STORAGE_KEY,
+} = await import("../../src/Dashboard/dashboard/storage.js");
+const {
     changeDeviceFilter,
+    clearSelection,
     refreshSelectedDetail,
     resetDetailFiltersDraft,
+    selectImei,
+    setDeviceFilters,
     setModelPreviewObjectUrl,
     setSelectedDetail,
     state,
@@ -118,4 +125,21 @@ test("the sealed state throws on a missing key and lets nested ones through", ()
 
     assert.equal(state.deviceModal.imei, "999");
     assert.equal(state.settingsModal.section, "models");
+});
+
+/** O aparelho escolhido e os filtros sobrevivem a recarregar a página. */
+test("the chosen device is remembered, and forgotten when the selection clears", () => {
+    selectImei("351266770073676");
+    assert.equal(localStorage.getItem(SELECTED_DEVICE_STORAGE_KEY), "351266770073676");
+
+    clearSelection();
+    assert.equal(localStorage.getItem(SELECTED_DEVICE_STORAGE_KEY), null);
+});
+
+test("a changed filter is remembered, and so is clearing them all", () => {
+    changeDeviceFilter("deviceType", ["watch"]);
+    assert.deepEqual(JSON.parse(localStorage.getItem(FILTERS_STORAGE_KEY)).deviceType, ["watch"]);
+
+    setDeviceFilters({ deviceType: [], supplier: [], model: [], license: [], online: null });
+    assert.deepEqual(JSON.parse(localStorage.getItem(FILTERS_STORAGE_KEY)).deviceType, []);
 });

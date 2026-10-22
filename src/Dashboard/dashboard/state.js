@@ -1,3 +1,11 @@
+import {
+    FILTERS_STORAGE_KEY,
+    SELECTED_DEVICE_STORAGE_KEY,
+    clearStorageKey,
+    saveJsonStorage,
+    saveTextStorage,
+} from "./storage.js";
+
 /** O modal de dispositivo em branco: o `editDevice` substitui o estado inteiro. */
 export function blankDeviceModal(overrides = {}) {
     return {
@@ -38,15 +46,8 @@ export function blankDeviceModal(overrides = {}) {
 /** O modal de definições em branco; a secção aberta sobrevive, e quem repõe passa-a de volta. */
 export function blankSettingsModal(overrides = {}) {
     return {
-        radarCredentials: null,
-        capabilityDeviceType: "",
         capabilityCatalog: [],
-        activeCapabilityCatalogSection: "",
         activeCapabilitySection: "",
-        capabilitySupplier: "",
-        capabilityQuery: "",
-        capabilityTemplateEnabledKeys: [],
-        capabilitySuppliersForDeviceType: [],
         capabilityModelTemplateKeys: [],
         capabilityEnabledCapabilities: [],
         capabilityRequestableCapabilities: [],
@@ -54,7 +55,6 @@ export function blankSettingsModal(overrides = {}) {
         modelFilters: [],
         modelCatalog: [],
         modelsSearchQuery: "",
-        modelDetailPristine: null,
         sectionLoaded: {
             models: false,
             modelFilters: false,
@@ -67,6 +67,10 @@ export function blankSettingsModal(overrides = {}) {
         apiUsersPagination: null,
         ...overrides,
     };
+}
+
+export function blankDetailFilters() {
+    return { from: "", to: "", type: "all", severity: "all", q: "" };
 }
 
 export const state = {
@@ -94,20 +98,8 @@ export const state = {
     deviceListPageSize: 20,
     deviceTypeSuppliersModels: [],
     protocols: [],
-    detailFilters: {
-        from: "",
-        to: "",
-        type: "all",
-        severity: "all",
-        q: "",
-    },
-    detailFiltersDraft: {
-        from: "",
-        to: "",
-        type: "all",
-        severity: "all",
-        q: "",
-    },
+    detailFilters: blankDetailFilters(),
+    detailFiltersDraft: blankDetailFilters(),
     // Listas, porque os filtros aceitam vários valores; a licença guarda "empresa", "empresa:número" ou "none".
     deviceFilters: {
         deviceType: [],
@@ -124,11 +116,6 @@ export const state = {
     deviceModal: blankDeviceModal(),
     // O `imei` diz de quem é a planta aberta: o modal sobrevive a uma troca de dispositivo.
     radarMap: { imei: "", layout: null },
-    modelModalSuppliers: [],
-    modelModal: {
-        capabilities: [],
-        templateSummary: "",
-    },
     protocolCatalogs: {},
     // As licenças, uma vez por sessão; o filtro da listagem também as lê.
     licenses: [],
@@ -159,8 +146,6 @@ export function resetActivityPaging() {
     state.downlinkCumulative = false;
 }
 
-const blankDetailFilters = () => ({ from: "", to: "", type: "all", severity: "all", q: "" });
-
 export function selectImei(imei) {
     if (state.selectedImei !== imei) {
         resetActivityPaging();
@@ -169,6 +154,7 @@ export function selectImei(imei) {
         state.detailFiltersDraft = blankDetailFilters();
     }
     state.selectedImei = imei;
+    if (imei) saveTextStorage(SELECTED_DEVICE_STORAGE_KEY, imei);
 }
 
 export function clearSelection() {
@@ -177,6 +163,7 @@ export function clearSelection() {
     resetActivityPaging();
     state.detailFilters = blankDetailFilters();
     state.detailFiltersDraft = blankDetailFilters();
+    clearStorageKey(SELECTED_DEVICE_STORAGE_KEY);
 }
 
 const clampPage = (page, totalPages) =>
@@ -225,16 +212,18 @@ export function resetDeviceListPage() {
     state.deviceListPage = 1;
 }
 
-/** Uma chave dos filtros a mudar. A volta à primeira página é do par, não do chamador. */
+/** Uma chave dos filtros a mudar; a volta à primeira página e o guardar são do par, não do chamador. */
 export function changeDeviceFilter(key, value) {
     state.deviceFilters = { ...state.deviceFilters, [key]: value };
     state.deviceListPage = 1;
+    saveJsonStorage(FILTERS_STORAGE_KEY, state.deviceFilters);
 }
 
 /** Os filtros inteiros: o que ficou guardado da sessão anterior, ou o limpar de todos. */
 export function setDeviceFilters(filters) {
     state.deviceFilters = filters;
     state.deviceListPage = 1;
+    saveJsonStorage(FILTERS_STORAGE_KEY, filters);
 }
 
 /** O rascunho volta ao aplicado, por cópia: a mesma referência aplicava o filtro sem o botão. */

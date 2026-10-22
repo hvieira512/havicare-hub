@@ -22,7 +22,8 @@ describe("search", () => {
 
     beforeEach(() => {
         globalThis.fetch = async () => Response.json({ data: [], pagination: { page: 1, totalPages: 1, total: 0, limit: 20 } });
-        initDeviceList({ els, ui, onChange: () => {} });
+        cacheElements(els);
+        initDeviceList({ ui });
         // Licenças já carregadas: a promessa partilhada pode ter ficado pendurada noutro bloco.
         state.licenses = [{ id: 1 }];
         state.selectedImei = "";
@@ -94,8 +95,8 @@ describe("automatic opening", () => {
         state.selectedImei = null;
         globalThis.fetch = hangingFetch;
         const opened = [];
+        cacheElements();
         initDeviceList({
-            els: cacheElements(),
             ui: { deviceSelectorModal: { show: () => opened.push("show") } },
         });
         return opened;
@@ -155,7 +156,8 @@ describe("failure to load", () => {
         }
 
         globalThis.fetch = hangingFetch;
-        initDeviceList({ els, ui: { deviceSelectorModal: { show: () => {} } }, services: {} });
+        cacheElements(els);
+        initDeviceList({ ui: { deviceSelectorModal: { show: () => {} } }, services: {} });
 
         state.summary = {
             devices: [],
@@ -228,8 +230,8 @@ describe("opening", () => {
 
         let shown = false;
         globalThis.fetch = hangingFetch;
+        cacheElements(els);
         initDeviceList({
-            els,
             ui: {
                 deviceSelectorModal: {
                     show: () => {

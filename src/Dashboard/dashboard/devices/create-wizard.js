@@ -34,14 +34,15 @@ import {
     wizardTrailHtml,
 } from "./classification-ui.js";
 import { gatewayCardMarkup } from "./gateway-links-ui.js";
+import { eligibleGateways, normalizeKey } from "./gateway-links.js";
 import {
     ensureDeviceTypeSuppliersModelsLoaded,
     loadSummary,
 } from "./list.js";
+import { els } from "../dom.js";
 
 /** O assistente de adicionar, uma pergunta por passo; o que varia por tipo vem do `DEVICE_TYPES`. */
 
-let els;
 let wizard;
 let wizardModal = null;
 let licenseGroups = [];
@@ -99,7 +100,6 @@ const TRAIL_QUESTIONS = QUESTIONS.map((question) => ({
 const questionOfStep = (step) => QUESTIONS.find((question) => question.step === step);
 
 export function initCreateWizard(context) {
-    els = context.els;
     wizardModal = context.wizardModal;
     wizard = createWizard({ questions: QUESTIONS, steps: STEPS });
 
@@ -284,7 +284,8 @@ function identityFields(answers) {
 
 function renderIdentity(answers) {
     const fields = identityFields(answers);
-    const gateways = eligibleGatewayList(answers);
+    // A autorização é por empresa e licença.
+    const gateways = eligibleGateways(state.wizardGateways, answers.owner?.company, answers.owner?.licenseId);
 
     return html`
         <div>
@@ -309,9 +310,7 @@ function renderIdentity(answers) {
                                 .map((gateway) =>
                                     gatewayCardMarkup(
                                         gateway,
-                                        (answers.gateways || []).includes(
-                                            String(gateway.imei || "").toLowerCase(),
-                                        ),
+                                        (answers.gateways || []).includes(normalizeKey(gateway.imei)),
                                     ),
                                 )
                         : html`<div class="gateway-picker-empty small text-secondary">Nenhum gateway nesta empresa e licença.</div>`}
@@ -319,16 +318,6 @@ function renderIdentity(answers) {
                 <div class="form-text">Só os selecionados podem reportar dados deste sensor.</div>
                </div>`
             : ""}`;
-}
-
-/** A autorização é por empresa e licença. */
-function eligibleGatewayList(answers) {
-    const owner = answers.owner || {};
-    return (state.wizardGateways || []).filter(
-        (gateway) =>
-            String(gateway.company ?? "") === String(owner.company ?? "") &&
-            String(gateway.licenseId ?? "") === String(owner.licenseId ?? ""),
-    );
 }
 
 function renderFooter() {
@@ -475,13 +464,7 @@ function seedFromNotification(source, tree = []) {
 async function loadWizardGateways() {
     const result = await allPages(apiGetDevices, { deviceType: "gateway" });
     if (result.error) toast("error", apiError(result));
-    state.wizardGateways = (result.data || []).map((device) => ({
-        imei: String(device.imei || "").toLowerCase(),
-        model: device.model || "",
-        image: device.image || "",
-        company: device.company ?? "",
-        licenseId: device.licenseId ?? "",
-    }));
+    state.wizardGateways = result.data || [];
 }
 
 /**

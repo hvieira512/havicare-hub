@@ -208,7 +208,7 @@ final class DashboardHttpServer
     {
         $parts = array_map(
             static fn(string $path): string => self::assetFingerprint(__DIR__ . '/' . $path),
-            ['main.js', 'main.css', 'dashboard', 'assets/css', 'assets/js'],
+            ['main.js', 'dashboard', 'assets/css', 'assets/js'],
         );
 
         return hash('xxh128', implode('|', $parts));
@@ -315,7 +315,6 @@ final class DashboardHttpServer
 
         // O `html` fica fora das extensões públicas: serviria qualquer HTML de dentro de `assets/`.
         $routes = [
-            '/main.css' => [__DIR__, 'main.css'],
             '/main.js' => [__DIR__, 'main.js'],
         ];
         if (isset($routes[$requestPath])) {

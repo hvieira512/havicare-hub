@@ -5,60 +5,21 @@ export const THEME_STORAGE_KEY = "hub-dashboard-theme";
 // O instante da última atividade, partilhado entre separadores para o relógio de inatividade ser um só.
 export const LAST_ACTIVITY_STORAGE_KEY = "hub-dashboard-last-activity";
 
-/** O armazém chega como função porque num Safari privado a própria leitura atira. */
-function readItem(store, key) {
+/** Num Safari privado o `localStorage` atira até ao ler: falhar vale «nada guardado». */
+function attempt(work) {
     try {
-        return store().getItem(key);
+        return work();
     } catch {
         return null;
     }
 }
 
-function writeItem(store, key, value) {
-    try {
-        store().setItem(key, value);
-    } catch {}
-}
+export const loadJsonStorage = (key) => attempt(() => JSON.parse(localStorage.getItem(key)));
 
-function removeItem(store, key) {
-    try {
-        store().removeItem(key);
-    } catch {}
-}
+export const saveJsonStorage = (key, value) => attempt(() => localStorage.setItem(key, JSON.stringify(value)));
 
-function writeJson(store, key, value) {
-    try {
-        store().setItem(key, JSON.stringify(value));
-    } catch {}
-}
+export const loadTextStorage = (key) => attempt(() => localStorage.getItem(key)) || null;
 
-const local = () => localStorage;
+export const saveTextStorage = (key, value) => attempt(() => localStorage.setItem(key, value));
 
-const parseJson = (stored) => {
-    try {
-        return stored ? JSON.parse(stored) : null;
-    } catch {
-        return null;
-    }
-};
-
-export function loadJsonStorage(key) {
-    return parseJson(readItem(local, key));
-}
-
-export function saveJsonStorage(key, value) {
-    writeJson(local, key, value);
-}
-
-export function loadTextStorage(key) {
-    const stored = readItem(local, key);
-    return stored ? String(stored) : null;
-}
-
-export function saveTextStorage(key, value) {
-    writeItem(local, key, value);
-}
-
-export function clearStorageKey(key) {
-    removeItem(local, key);
-}
+export const clearStorageKey = (key) => attempt(() => localStorage.removeItem(key));

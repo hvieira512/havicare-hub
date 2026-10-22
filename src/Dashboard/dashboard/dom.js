@@ -1,8 +1,19 @@
 /** Todos os elementos com `id`, por `id`; o `DashboardElementIdsTest` confere-os com a marcação. */
-export function cacheElements() {
-    const els = {};
-    for (const el of document.querySelectorAll("[id]")) els[el.id] = el;
+export let els = {};
+
+/** Enche o `els` com os elementos da página, ou com os que um teste lhe der. */
+export function cacheElements(found = null) {
+    els = found ?? Object.fromEntries([...document.querySelectorAll("[id]")].map((el) => [el.id, el]));
     return els;
+}
+
+/** Corre o `fn` a cada `ms` e ao voltar ao separador; escondido, não corre. */
+export function whileVisible(fn, ms) {
+    const run = () => {
+        if (!document.hidden) fn();
+    };
+    setInterval(run, ms);
+    document.addEventListener("visibilitychange", run);
 }
 
 const lastHtml = new WeakMap();

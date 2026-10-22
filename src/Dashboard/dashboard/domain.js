@@ -184,19 +184,12 @@ export function suppliersForDeviceType(deviceType, models = []) {
 }
 
 export function capabilitiesGroupedBySection(catalog) {
-    const grouped = new Map();
-    for (const entry of catalog || []) {
-        const section = String(entry.section || "").trim();
-        if (!section) {
-            continue;
-        }
-        if (!grouped.has(section)) {
-            grouped.set(section, []);
-        }
-        grouped.get(section).push(entry);
-    }
+    const grouped = Map.groupBy(
+        (catalog || []).filter((entry) => String(entry.section || "").trim() !== ""),
+        (entry) => String(entry.section).trim(),
+    );
 
-    return [...grouped.entries()].map(([section, entries]) => ({
+    return [...grouped].map(([section, entries]) => ({
         section,
         label: sectionLabel(section),
         entries,

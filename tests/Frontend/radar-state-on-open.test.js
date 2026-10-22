@@ -3,9 +3,10 @@ import assert from "node:assert/strict";
 
 import { flush } from "./support/deferred-fetch.js";
 import { parseFragment } from "./support/dom.js";
+import { cacheElements } from "../../src/Dashboard/dashboard/dom.js";
 
 const { state } = await import("../../src/Dashboard/dashboard/state.js");
-const { initDeviceConfigPanel, requestRadarStateOnOpen } =
+const { requestRadarStateOnOpen } =
     await import("../../src/Dashboard/dashboard/devices/config/panel.js");
 
 /** Abrir as configurações de um radar pede-lhe o estado, pelo mesmo caminho do botão «Ler». */
@@ -21,7 +22,7 @@ beforeEach(() => {
     const root = parseFragment(`
         <section data-config-section data-config-key="read_device_state" data-capability-key="read_device_state"
                  data-config-input="action" data-config-transient="1"></section>`);
-    initDeviceConfigPanel({ els: { deviceConfigRoot: root } });
+    cacheElements({ deviceConfigRoot: root });
     state.deviceModal.imei = "AD8A613B0493";
     state.deviceModal.protocol = "qinglanst-radar";
     state.deviceModal.actionDeliveries = {};
@@ -39,7 +40,7 @@ test("opening a radar's settings requests its state once", async () => {
 });
 
 test("a device without a state reading requests nothing", async () => {
-    initDeviceConfigPanel({ els: { deviceConfigRoot: parseFragment("<section data-config-section data-config-key=\"find_device\"></section>") } });
+    cacheElements({ deviceConfigRoot: parseFragment("<section data-config-section data-config-key=\"find_device\"></section>") });
 
     requestRadarStateOnOpen();
     await flush();

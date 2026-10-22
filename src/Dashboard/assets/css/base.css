@@ -180,12 +180,8 @@ body[data-swal2-theme] {
     }
 
     /* 44px é o alvo de toque mínimo, e os botões desta página são quase todos `btn-sm`,
-       que dá 31. O texto continua pequeno; o que cresce é a área de toque. */
-    .btn {
-        min-height: 44px;
-    }
-
-    /* Um campo também é alvo de toque, e ao lado de um botão a diferença vê-se. */
+       que dá 31. O texto continua pequeno; o que cresce é a área de toque, também a dos campos. */
+    .btn,
     .form-control,
     .form-select,
     .input-group-sm > .form-control,

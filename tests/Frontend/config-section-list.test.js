@@ -5,7 +5,6 @@ import { parseFragment } from "./support/dom.js";
 import { renderDeviceConfigurationRoot } from "../../src/Dashboard/dashboard/devices/config/index.js";
 import {
     captureConfigPristine,
-    initDeviceConfigPanel,
     syncConfigCounts,
 } from "../../src/Dashboard/dashboard/devices/config/panel.js";
 import {
@@ -13,6 +12,7 @@ import {
     selectConfigSection,
 } from "../../src/Dashboard/dashboard/devices/config/handlers.js";
 import { blankDeviceModal, state } from "../../src/Dashboard/dashboard/state.js";
+import { cacheElements } from "../../src/Dashboard/dashboard/dom.js";
 
 /** As secções variam por fornecedor e chegam a seis: em tira horizontal não cabem a 342 px. */
 
@@ -76,7 +76,7 @@ test("each section has its panel, and only the active one is open", () => {
 
 test("the section with an edited setting says so in its row, and the others stay quiet", () => {
     const root = render();
-    initDeviceConfigPanel({ els: {} });
+    cacheElements({});
 
     const edited = root.querySelector("[data-config-section][data-config-key=\"step_goal\"]");
     edited.querySelector("[data-config-field]").value = "12000";
@@ -104,7 +104,7 @@ test("the tab counts the unsent changes of every section", () => {
     const root = render();
     const badge = document.createElement("span");
     badge.className = "d-none";
-    initDeviceConfigPanel({ els: { deviceConfigCount: badge } });
+    cacheElements({ deviceConfigCount: badge });
 
     syncConfigCounts(root);
     assert.ok(badge.classList.contains("d-none"), "sem alterações o separador não conta nada");

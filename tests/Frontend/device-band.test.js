@@ -1,9 +1,10 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { autoEls } from "./support/els.js";
+import { cacheElements } from "../../src/Dashboard/dashboard/dom.js";
 
 const { setSelectedDetail, state } = await import("../../src/Dashboard/dashboard/state.js");
-const { initDeviceDetailView, renderSelection } = await import(
+const { renderSelection } = await import(
     "../../src/Dashboard/dashboard/devices/detail.js",
 );
 
@@ -31,7 +32,7 @@ const model = {
 };
 
 function select(els, detail) {
-    initDeviceDetailView({ els });
+    cacheElements(els);
     setSelectedDetail(detail);
     state.selectedDetail.recent = { telemetry: [], events: [], commands: [] };
     renderSelection();
@@ -63,7 +64,7 @@ test("offline and without a licence, the band still says what it knows", () => {
 
 test("with no device chosen, the band and the tabs go away", () => {
     const els = detailEls();
-    initDeviceDetailView({ els });
+    cacheElements(els);
     state.selectedDetail = null;
 
     renderSelection();

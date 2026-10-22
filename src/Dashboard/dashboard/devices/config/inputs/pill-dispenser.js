@@ -1,6 +1,6 @@
 import { field } from "../../../components/form-field.js";
 import { medicationPlanTimes } from "../../medication-plan.js";
-import { html, raw } from "../../../html.js";
+import { html } from "../../../html.js";
 import { choiceField, enabledSwitch, entryFieldLabel, entryText, fieldChoices, readChoice } from "./shared.js";
 import { readCheckbox, readText } from "../readers.js";
 
@@ -40,9 +40,9 @@ const slotCell = (index, plan, nameLabel) =>
             <div class="border rounded-3 px-2 py-1" data-alarm-slot="${String(index)}">
                 <div class="d-flex align-items-center gap-2">
                     <div class="text-secondary small flex-shrink-0">${String(index + 1)}</div>
-                    ${raw(timeField(`time-${index}`, plan?.hour, plan?.minute))}
+                    ${timeField(`time-${index}`, plan?.hour, plan?.minute)}
                 </div>
-                <div class="mt-1">${raw(nameField(index, plan?.name, nameLabel))}</div>
+                <div class="mt-1">${nameField(index, plan?.name, nameLabel)}</div>
             </div>
         </div>`;
 
@@ -57,7 +57,7 @@ function alarmsInput(entry, desired, meta) {
         slotCell(index, bySlot.get(index + 1), nameLabel),
     );
 
-    return html`<div class="row row-cols-1 row-cols-sm-2 row-cols-xl-3 g-2">${raw(cells.join(""))}</div>`;
+    return html`<div class="row row-cols-1 row-cols-sm-2 row-cols-xl-3 g-2">${cells}</div>`;
 }
 
 /** Deixa cair os slots em branco; cada plano leva o número do seu alarme e o nome, quando há. */
@@ -116,8 +116,8 @@ export const INPUTS = {
         render: (entry, desired) =>
             enabledSwitch(Boolean(desired?.enabled)) +
             html`<div class="row row-cols-1 row-cols-sm-auto g-2 mt-1">
-                <div class="col">${raw(field("Início", dateField("startDate", desired?.startDate)))}</div>
-                <div class="col">${raw(field("Fim", dateField("endDate", desired?.endDate)))}</div>
+                <div class="col">${field("Início", dateField("startDate", desired?.startDate))}</div>
+                <div class="col">${field("Fim", dateField("endDate", desired?.endDate))}</div>
             </div>`,
         read: (section) => ({
             enabled: readCheckbox(section, "enabled"),
@@ -133,8 +133,8 @@ export const INPUTS = {
         render: (entry, desired) =>
             enabledSwitch(Boolean(desired?.enabled)) +
             html`<div class="row row-cols-1 row-cols-sm-auto g-2 mt-1">
-                <div class="col">${raw(field("Início", timeField("start", desired?.startHour, desired?.startMinute)))}</div>
-                <div class="col">${raw(field("Fim", timeField("end", desired?.endHour, desired?.endMinute)))}</div>
+                <div class="col">${field("Início", timeField("start", desired?.startHour, desired?.startMinute))}</div>
+                <div class="col">${field("Fim", timeField("end", desired?.endHour, desired?.endMinute))}</div>
             </div>`,
         read: (section) => {
             const start = fromTimeValue(readText(section, "start"));

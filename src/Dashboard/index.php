@@ -37,9 +37,8 @@ require_once __DIR__ . '/components/modal.php';
         '/assets/css/shell.css',
         '/assets/css/device.css',
         '/assets/css/config.css',
-        '/assets/css/alarms.css',
         '/assets/css/login.css',
-        'main.css',
+        '/assets/css/modals.css',
     ];
     ?>
     <?php foreach ($stylesheets as $stylesheet) : ?>

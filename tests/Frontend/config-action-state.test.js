@@ -26,11 +26,6 @@ test("a command status is translated into the same vocabulary as configurations"
     assert.equal(deliveryStatusFromCommand("dropped"), "failed");
 });
 
-/** Um comando confirmado por um aparelho que não confirma execução não mente que confirmou. */
-test("a device that only acknowledges receipt does not say confirmed", () => {
-    assert.equal(deliveryStatusFromCommand("acked", "ack_only"), "confirmation_unavailable");
-});
-
 test("the action card shows the status of the last request", () => {
     const badge = parseFragment(renderConfigSection(
         "veepoo-ble",

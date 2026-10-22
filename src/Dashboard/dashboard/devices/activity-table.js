@@ -1,4 +1,4 @@
-import { html, raw } from "../html.js";
+import { html } from "../html.js";
 import { emptyPanel } from "../components/empty-panel.js";
 import { renderInto } from "../dom.js";
 import { dayKey, dayLabel } from "../format.js";
@@ -9,7 +9,7 @@ import { dayKey, dayLabel } from "../format.js";
 const openActivityRows = new Set();
 
 /** Com `table-layout: fixed` as larguras saem da primeira linha, que é um cabeçalho com `colspan`. */
-const COLGROUP = `<colgroup>
+const COLGROUP = html`<colgroup>
     <col class="telemetry-col-icon">
     <col>
     <col class="telemetry-col-value">
@@ -24,8 +24,8 @@ export function activityTable(rootEl, rows, emptyText, idPrefix) {
 
     const written = renderInto(rootEl, rows.length
         ? html`<table class="table table-sm align-middle mb-0 telemetry-table">
-            ${raw(COLGROUP)}
-            <tbody>${raw(groupedByDay(rows, idPrefix))}</tbody>
+            ${COLGROUP}
+            <tbody>${groupedByDay(rows, idPrefix)}</tbody>
            </table>`
         : emptyPanel(emptyText));
 
@@ -43,16 +43,14 @@ function groupedByDay(rows, idPrefix) {
     });
 
     let openDay = null;
-    return rows
-        .map((row, index) => {
-            const key = dayKey(row.at);
-            const header = key && key !== openDay
-                ? dayHeader(dayLabel(row.at), counts.get(key) ?? 0)
-                : "";
-            if (key) openDay = key;
-            return header + activityRow(row, `${idPrefix}${index}`);
-        })
-        .join("");
+    return rows.map((row, index) => {
+        const key = dayKey(row.at);
+        const header = key && key !== openDay
+            ? dayHeader(dayLabel(row.at), counts.get(key) ?? 0)
+            : "";
+        if (key) openDay = key;
+        return html`${header}${activityRow(row, `${idPrefix}${index}`)}`;
+    });
 }
 
 function dayHeader(label, count) {
@@ -110,7 +108,7 @@ function activityRow({
     timeTitle = "",
 }, panelId) {
     // Abaixo do `lg` a hora desce para baixo do nome, para o valor caber na linha.
-    const stackedTime = html`<span class="d-lg-none">${raw(sub ? " · " : "")}${time}</span>`;
+    const stackedTime = html`<span class="d-lg-none">${sub ? " · " : ""}${time}</span>`;
     const subClass = sub ? "telemetry-row-details" : "telemetry-row-time d-lg-none";
     const subLine = html`<span class="${subClass} text-secondary lh-sm fw-normal d-block text-truncate"${subTitle ? html` title="${subTitle}"` : ""}>${sub}${stackedTime}</span>`;
     // As pastilhas não se cortam a meio, escondem-se; o texto corta-se com reticências.
@@ -124,15 +122,15 @@ function activityRow({
     const openable = expanded !== "";
     const isOpen = openable && openActivityRows.has(key);
     const rowAttrs = openable
-        ? raw(html` class="telemetry-row-openable" role="button" tabindex="0" aria-expanded="${isOpen ? "true" : "false"}" aria-controls="${panelId}" data-row-toggle="${panelId}" data-row-key="${key}"`)
-        : raw("");
+        ? html` class="telemetry-row-openable" role="button" tabindex="0" aria-expanded="${isOpen ? "true" : "false"}" aria-controls="${panelId}" data-row-toggle="${panelId}" data-row-key="${key}"`
+        : "";
     const caret = openable
-        ? raw(html`<i class="fa-solid fa-chevron-down telemetry-row-caret text-secondary ms-2" aria-hidden="true"></i>`)
-        : raw("");
+        ? html`<i class="fa-solid fa-chevron-down telemetry-row-caret text-secondary ms-2" aria-hidden="true"></i>`
+        : "";
     // Uma linha por campo; o texto chega simples e escapa-se aqui.
     const panel = openable
         ? html`<tr id="${panelId}" class="telemetry-row-panel${isOpen ? "" : " d-none"}">
-            <td colspan="4">${raw(String(expanded).split("\n").map((line) => html`<div>${line}</div>`).join(""))}</td>
+            <td colspan="4">${String(expanded).split("\n").map((line) => html`<div>${line}</div>`)}</td>
            </tr>`
         : "";
 
@@ -147,15 +145,15 @@ function activityRow({
         <td class="fw-medium">
             <span class="telemetry-row-stack d-flex flex-column justify-content-center min-w-0">
                 <span class="d-block text-truncate" title="${name}">${name}</span>
-                ${raw(subLine)}
+                ${subLine}
             </span>
         </td>
-        <td class="tabular-nums"${raw(valueTitle ? html` title="${valueTitle}"` : "")}>
+        <td class="tabular-nums"${valueTitle ? html` title="${valueTitle}"` : ""}>
             <span class="telemetry-row-stack d-flex flex-column justify-content-center min-w-0">
                 <span class="d-block text-truncate">${value}</span>
-                ${raw(detailLine)}
+                ${detailLine}
             </span>
         </td>
         <td class="text-end text-nowrap tabular-nums text-secondary" title="${timeTitle}"><span class="d-none d-lg-inline">${time}</span>${caret}</td>
-        </tr>${raw(panel)}`;
+        </tr>${panel}`;
 }

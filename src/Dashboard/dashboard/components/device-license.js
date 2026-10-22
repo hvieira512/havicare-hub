@@ -1,4 +1,4 @@
-import { html, raw } from "../html.js";
+import { html } from "../html.js";
 /** Um aparelho sem dono tem a empresa e a licença a `null`. */
 const hasLicense = (device) => Boolean(device.company && device.licenseId);
 
@@ -25,5 +25,5 @@ export function deviceLicenseBlock(device, { valueClass = "", noteClass = "" } =
         : html`${company}<span class="license-separator">·</span><span class="license-number">${licenseId}</span>`;
 
     // O nome corta com reticências numa coluna estreita: o `title` guarda-o inteiro.
-    return html`<span class="${valueClass}" title="${heading}">${heading}</span><span class="${noteClass}">${raw(owner)}</span>`;
+    return html`<span class="${valueClass}" title="${heading}">${heading}</span><span class="${noteClass}">${owner}</span>`;
 }

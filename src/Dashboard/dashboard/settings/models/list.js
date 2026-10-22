@@ -1,6 +1,5 @@
 import {
     getDeviceTypeSuppliersModels as apiGetCatalog,
-    getModelFilters as apiGetModelFilters,
 } from "../../api/index.js";
 import { state } from "../../state.js";
 import { esc } from "../../format.js";
@@ -15,7 +14,8 @@ import {
 } from "../../domain.js";
 import { setSettingsNavCount } from "../shell.js";
 import { resetModelWizard } from "./form.js";
-import { getSettingsModelsRuntime, isModelListShown, showModelsPane } from "./shell.js";
+import { isModelListShown, showModelsPane } from "./shell.js";
+import { els } from "../../dom.js";
 
 /** O catálogo: um nível por tipo de dispositivo, e o modelo como folha. */
 
@@ -50,14 +50,14 @@ function modelRow(model, { showType = false } = {}) {
     const name = modelCommercialName(model);
 
     return `
-        <div class="tree-row catalog-model position-relative d-flex align-items-center" data-action="modelCapabilities" data-id="${esc(model.id)}" role="button" tabindex="0">
+        <button type="button" class="tree-row catalog-model position-relative d-flex align-items-center" data-action="modelCapabilities" data-id="${esc(model.id)}">
         <span class="catalog-model-image flex-shrink-0 d-flex align-items-center justify-content-center">${modelImageHtml(model, 28)}</span>
         <span class="flex-grow-1 min-w-0 text-truncate" title="${esc([name, ...meta].join(" · "))}">
         <span class="fw-semibold d-block d-sm-inline text-truncate">${esc(name)}</span>
         <span class="small text-secondary d-block d-sm-inline text-truncate"><span class="d-none d-sm-inline"> · </span>${meta.map((part) => esc(part)).join(" · ")}</span>
         </span>
         <i class="fa-solid fa-chevron-right text-secondary flex-shrink-0" aria-hidden="true"></i>
-        </div>`;
+        </button>`;
 }
 
 function typeCard(group) {
@@ -99,7 +99,6 @@ function searchResults(query) {
 }
 
 function renderModelsSection() {
-    const { els } = getSettingsModelsRuntime();
     const query = state.settingsModal.modelsSearchQuery || "";
     const groups = catalogGroups();
     const models = groups.reduce(
@@ -141,18 +140,6 @@ function renderModelsSection() {
     setSettingsNavCount("Models", models);
 }
 
-async function loadSettingsModelFilters() {
-    if (state.settingsModal.sectionLoaded.modelFilters) {
-        return state.settingsModal.modelFilters;
-    }
-
-    const response = await apiGetModelFilters();
-    const filters = response.data || [];
-    state.settingsModal.modelFilters = filters;
-    state.settingsModal.sectionLoaded.modelFilters = true;
-    return filters;
-}
-
 /** ponytail: sem paginação. Com centenas de modelos, nascem fechados e buscam os filhos ao abrir. */
 async function loadSettingsModelsSection() {
     const response = await apiGetCatalog();
@@ -162,15 +149,12 @@ async function loadSettingsModelsSection() {
     resetModelWizard();
     showModelListSlide();
     renderModelsSection();
-
-    const { els } = getSettingsModelsRuntime();
     if (els.modelsListSearch) {
         els.modelsListSearch.value = state.settingsModal.modelsSearchQuery || "";
     }
 }
 
 function handleModelsListSearchInput() {
-    const { els } = getSettingsModelsRuntime();
     state.settingsModal.modelsSearchQuery = els.modelsListSearch.value.trim();
     renderModelsSection();
 }
@@ -192,8 +176,6 @@ function backToModelList() {
 
 /** O ecrã de entrada do separador, ao voltar da ficha e ao carregar o separador. */
 function showModelListSlide() {
-    const { els } = getSettingsModelsRuntime();
-
     els.modelsBreadcrumb.classList.add("d-none");
     els.modelsBreadcrumbModels.classList.add("active");
     els.modelsBreadcrumbNew.classList.add("d-none");
@@ -212,7 +194,6 @@ function showModelListSlide() {
 
 /** O painel do modelo novo; o «Fechar» do rodapé sai, porque o rodapé é o do assistente. */
 function showNewModelSlide() {
-    const { els } = getSettingsModelsRuntime();
     els.settingsCloseBtn?.classList.add("d-none");
     els.modelDetailActionBar?.classList.replace("d-flex", "d-none");
     els.modelsBreadcrumb.classList.remove("d-none");
@@ -226,10 +207,18 @@ function showNewModelSlide() {
     showModelsPane(1);
 }
 
+function initModelList() {
+    els.modelsBreadcrumbModels.addEventListener("click", backToModelList);
+    els.modelsCarousel.addEventListener("click", (event) => {
+        if (event.target.closest("[data-action=\"backToModelList\"]")) backToModelList();
+    });
+    els.modelsListSearch.addEventListener("input", handleModelsListSearchInput);
+}
+
 export {
     backToModelList,
     handleModelsListSearchInput,
-    loadSettingsModelFilters,
+    initModelList,
     loadSettingsModelsSection,
     renderModelsSection,
     showNewModelSlide,

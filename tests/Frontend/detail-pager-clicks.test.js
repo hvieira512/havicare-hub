@@ -1,20 +1,21 @@
 import test, { beforeEach, describe } from "node:test";
 import assert from "node:assert/strict";
 import { autoEls } from "./support/els.js";
+import { cacheElements } from "../../src/Dashboard/dashboard/dom.js";
 
 const { state } = await import("../../src/Dashboard/dashboard/state.js");
 const {
     handleDownlinkPagerClick,
     handleTelemetryPagerClick,
-    initDetailFilters,
 } = await import("../../src/Dashboard/dashboard/devices/detail-filters.js");
-const { initDeviceDetailView, renderTelemetryList } = await import(
+const { renderTelemetryList } = await import(
     "../../src/Dashboard/dashboard/devices/detail.js",
 );
 
-const pagerClick = (action) => {
+const pagerClick = (action, page = "") => {
     const button = document.createElement("button");
     button.dataset.action = action;
+    button.dataset.page = page;
     document.body.appendChild(button);
 
     return { target: button };
@@ -25,21 +26,14 @@ describe("both pagers", () => {
      * Os dois paginadores correm sobre o mesmo algoritmo, cada um com a sua lista, tamanho, página e
      * acção; trocar dois desses valores não se vê num render, e por isso afirma-se o clique.
      */
-    const els = autoEls();
-
-    let drawn;
+    let els;
 
     const commandRow = (id) => ({ payload: { type: "command", feature: "battery", requestedAt: `2026-09-2${id}T10:00:00Z` } });
     const telemetryRow = (id) => ({ payload: { type: "battery", occurredAt: `2026-09-2${id}T10:00:00Z`, data: { percent: id } } });
 
     beforeEach(() => {
-        drawn = { downlink: null, telemetry: null };
-        initDetailFilters({
-            els,
-            onChange: () => {},
-            renderDownlinkRequests: (rows) => { drawn.downlink = rows; },
-            renderTelemetryList: (rows) => { drawn.telemetry = rows; },
-        });
+        els = autoEls();
+        cacheElements(els);
         state.detailFilters = { from: "", to: "", type: "all", q: "" };
         state.selectedDetail = {
             model: { deviceType: "watch" },
@@ -57,47 +51,47 @@ describe("both pagers", () => {
     });
 
     test("the requests pager advances the requests page, and only that one", () => {
-        handleDownlinkPagerClick(pagerClick("downlinkNext"));
+        handleDownlinkPagerClick(pagerClick("downlinkNext", 2));
 
         assert.equal(state.downlinkPage, 2);
         assert.equal(state.telemetryPage, 1, "a telemetria não se mexe");
-        assert.equal(drawn.telemetry, null, "só o painel dos pedidos é redesenhado");
+        assert.equal(els.telemetryList.innerHTML, "", "só o painel dos pedidos é redesenhado");
     });
 
     test("the telemetry pager advances the telemetry page, and only that one", () => {
-        handleTelemetryPagerClick(pagerClick("telemetryNext"));
+        handleTelemetryPagerClick(pagerClick("telemetryNext", 2));
 
         assert.equal(state.telemetryPage, 2);
         assert.equal(state.downlinkPage, 1);
-        assert.equal(drawn.downlink, null);
+        assert.equal(els.downlinkRequests.innerHTML, "");
     });
 
     /** Cada painel conta as suas linhas: quatro pedidos a dois por página dão duas páginas. */
     test("each panel uses its own page size to know where to stop", () => {
-        handleDownlinkPagerClick(pagerClick("downlinkNext"));
-        handleDownlinkPagerClick(pagerClick("downlinkNext"));
+        handleDownlinkPagerClick(pagerClick("downlinkNext", 2));
+        handleDownlinkPagerClick(pagerClick("downlinkNext", 3));
 
         assert.equal(state.downlinkPage, 2, "quatro pedidos a dois por página são duas páginas");
 
-        handleTelemetryPagerClick(pagerClick("telemetryNext"));
-        handleTelemetryPagerClick(pagerClick("telemetryNext"));
+        handleTelemetryPagerClick(pagerClick("telemetryNext", 2));
+        handleTelemetryPagerClick(pagerClick("telemetryNext", 3));
 
         assert.equal(state.telemetryPage, 2, "quatro leituras a três por página são duas páginas");
     });
 
     test("each panel gets the rows of its own kind, not the other's", () => {
-        handleDownlinkPagerClick(pagerClick("downlinkNext"));
-        assert.equal(drawn.downlink.length, 4, "os quatro pedidos, que a paginação corta a seguir");
+        handleDownlinkPagerClick(pagerClick("downlinkNext", 2));
+        assert.equal(els.downlinkRequestCount.textContent, "4", "os quatro pedidos, que a paginação corta a seguir");
 
-        handleTelemetryPagerClick(pagerClick("telemetryNext"));
-        assert.equal(drawn.telemetry.length, 4);
+        handleTelemetryPagerClick(pagerClick("telemetryNext", 2));
+        assert.equal(els.telemetryCount.textContent, "4");
     });
 
     test("a click that is not from the pager is ignored", () => {
         handleDownlinkPagerClick(pagerClick("outraCoisa"));
 
         assert.equal(state.downlinkPage, 1);
-        assert.equal(drawn.downlink, null);
+        assert.equal(els.downlinkRequests.innerHTML, "");
     });
 });
 
@@ -146,7 +140,7 @@ describe("the phone's «Carregar mais»", () => {
 
     beforeEach(() => {
         view = detailEls();
-        initDeviceDetailView({ els: view });
+        cacheElements(view);
         state.telemetryPageSize = PAGE_SIZE;
         state.telemetryPage = 1;
         state.telemetryCumulative = false;
@@ -167,7 +161,7 @@ describe("the phone's «Carregar mais»", () => {
 
     test("numbered pagination replaces the page instead of appending it", () => {
         handleTelemetryPagerClick(pagerClick("telemetryMore"));
-        handleTelemetryPagerClick(pagerClick("telemetryNext"));
+        handleTelemetryPagerClick(pagerClick("telemetryNext", 3));
 
         assert.equal(state.telemetryPage, 3);
         assert.equal(listedRows(view), PAGE_SIZE, "a terceira página sozinha");
