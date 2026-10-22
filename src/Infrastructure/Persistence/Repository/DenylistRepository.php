@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Hub\Infrastructure\Persistence\Repository;
 
-use Hub\Infrastructure\Persistence\TimestampFormatter;
 use PDO;
 
 /**
@@ -13,6 +12,8 @@ use PDO;
  */
 final class DenylistRepository
 {
+    use FetchesRows;
+
     public function __construct(private PDO $pdo)
     {
     }
@@ -43,8 +44,6 @@ final class DenylistRepository
     /** @return array<int, array<string, mixed>> */
     public function all(): array
     {
-        return TimestampFormatter::normalizeRows($this->pdo
-            ->query('SELECT identity, protocol, note, created_by, created_at FROM denylist ORDER BY created_at DESC, identity')
-            ->fetchAll());
+        return $this->fetchRows('SELECT identity, protocol, note, created_by, created_at FROM denylist ORDER BY created_at DESC, identity');
     }
 }

@@ -4,11 +4,12 @@ declare(strict_types=1);
 
 namespace Hub\Infrastructure\Persistence\Repository;
 
-use Hub\Infrastructure\Persistence\TimestampFormatter;
 use PDO;
 
 final class RadarApiCredentialsRepository
 {
+    use FetchesRows;
+
     public function __construct(private PDO $pdo)
     {
     }
@@ -16,11 +17,7 @@ final class RadarApiCredentialsRepository
     /** @return array<string, mixed>|null */
     public function findByLicenseRefId(int $licenseRefId): ?array
     {
-        $stmt = $this->pdo->prepare('SELECT * FROM radar_api_credentials WHERE license_ref_id = ?');
-        $stmt->execute([$licenseRefId]);
-
-        $row = $stmt->fetch();
-        return $row === false ? null : TimestampFormatter::normalizeRow($row);
+        return $this->fetchOne('SELECT * FROM radar_api_credentials WHERE license_ref_id = ?', [$licenseRefId]);
     }
 
     /**
@@ -31,16 +28,12 @@ final class RadarApiCredentialsRepository
      */
     public function findByLicenseId(int $licenseId): ?array
     {
-        $stmt = $this->pdo->prepare('
+        return $this->fetchOne('
             SELECT c.* FROM radar_api_credentials c
             JOIN licenses l ON l.id = c.license_ref_id
             WHERE l.license_id = ?
             LIMIT 1
-        ');
-        $stmt->execute([$licenseId]);
-
-        $row = $stmt->fetch();
-        return $row === false ? null : TimestampFormatter::normalizeRow($row);
+        ', [$licenseId]);
     }
 
     public function upsert(

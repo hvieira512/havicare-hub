@@ -4,11 +4,12 @@ declare(strict_types=1);
 
 namespace Hub\Infrastructure\Persistence\Repository;
 
-use Hub\Infrastructure\Persistence\TimestampFormatter;
 use PDO;
 
 final class LicenseRepository
 {
+    use FetchesRows;
+
     public function __construct(private PDO $pdo)
     {
     }
@@ -26,43 +27,29 @@ final class LicenseRepository
     /** @return list<array<string, mixed>> */
     public function all(?int $companyId = null): array
     {
-        if ($companyId !== null) {
-            $stmt = $this->pdo->prepare('SELECT ' . self::COLUMNS . ' FROM licenses l LEFT JOIN companies c ON c.id = l.company_id WHERE l.company_id = ? ORDER BY l.license_id');
-            $stmt->execute([$companyId]);
-        } else {
-            $stmt = $this->pdo->query('SELECT ' . self::COLUMNS . ' FROM licenses l LEFT JOIN companies c ON c.id = l.company_id ORDER BY c.name, l.license_id');
-        }
+        $from = 'SELECT ' . self::COLUMNS . ' FROM licenses l LEFT JOIN companies c ON c.id = l.company_id';
 
-        return TimestampFormatter::normalizeRows($stmt->fetchAll());
+        return $companyId !== null
+            ? $this->fetchRows($from . ' WHERE l.company_id = ? ORDER BY l.license_id', [$companyId])
+            : $this->fetchRows($from . ' ORDER BY c.name, l.license_id');
     }
 
     /** @return array<string, mixed>|null */
     public function findById(int $id): ?array
     {
-        $stmt = $this->pdo->prepare('SELECT * FROM licenses WHERE id = ?');
-        $stmt->execute([$id]);
-
-        $row = $stmt->fetch();
-        return $row === false ? null : TimestampFormatter::normalizeRow($row);
+        return $this->fetchOne('SELECT * FROM licenses WHERE id = ?', [$id]);
     }
 
     /** @return list<array<string, mixed>> */
     public function findByLicenseId(int $licenseId): array
     {
-        $stmt = $this->pdo->prepare('SELECT * FROM licenses WHERE license_id = ? ORDER BY company_id');
-        $stmt->execute([$licenseId]);
-
-        return TimestampFormatter::normalizeRows($stmt->fetchAll());
+        return $this->fetchRows('SELECT * FROM licenses WHERE license_id = ? ORDER BY company_id', [$licenseId]);
     }
 
     /** @return array<string, mixed>|null */
     public function findByCompanyAndLicense(int $companyId, int $licenseId): ?array
     {
-        $stmt = $this->pdo->prepare('SELECT * FROM licenses WHERE company_id = ? AND license_id = ?');
-        $stmt->execute([$companyId, $licenseId]);
-
-        $row = $stmt->fetch();
-        return $row === false ? null : TimestampFormatter::normalizeRow($row);
+        return $this->fetchOne('SELECT * FROM licenses WHERE company_id = ? AND license_id = ?', [$companyId, $licenseId]);
     }
 
     public function create(int $companyId, int $licenseId, string $name): int

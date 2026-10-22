@@ -5,11 +5,12 @@ declare(strict_types=1);
 namespace Hub\Infrastructure\Persistence\Repository;
 
 use Hub\Domain\DeviceTypeCatalog;
-use Hub\Infrastructure\Persistence\TimestampFormatter;
 use PDO;
 
 final class ModelRepository
 {
+    use FetchesRows;
+
     /** @var list<array<string, mixed>>|null */
     private ?array $rows = null;
 
@@ -24,9 +25,7 @@ final class ModelRepository
     /** @return list<array<string, mixed>> */
     public function all(): array
     {
-        return $this->rows ??= TimestampFormatter::normalizeRows($this->pdo
-            ->query('SELECT m.*, s.name AS supplier, s.name AS supplier_name, m.image_path AS image FROM models m JOIN suppliers s ON s.id = m.supplier_id ORDER BY s.name, m.commercial_name, m.internal_model')
-            ->fetchAll());
+        return $this->rows ??= $this->fetchRows('SELECT m.*, s.name AS supplier, s.name AS supplier_name, m.image_path AS image FROM models m JOIN suppliers s ON s.id = m.supplier_id ORDER BY s.name, m.commercial_name, m.internal_model');
     }
 
     /** @return array<string, mixed>|null */
@@ -136,10 +135,7 @@ final class ModelRepository
     /** @return array<string, mixed>|null */
     private function findBySupplierId(int $supplierId, string $internalModel): ?array
     {
-        $stmt = $this->pdo->prepare('SELECT * FROM models WHERE supplier_id = ? AND lower(internal_model) = lower(?)');
-        $stmt->execute([$supplierId, $internalModel]);
-
-        return $stmt->fetch() ?: null;
+        return $this->fetchOne('SELECT * FROM models WHERE supplier_id = ? AND lower(internal_model) = lower(?)', [$supplierId, $internalModel]);
     }
 
     /**
