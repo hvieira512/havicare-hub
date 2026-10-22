@@ -74,10 +74,10 @@ final class JoyTechBpBridge extends GattBridge
         GatewayDeviceLinkLookup $links,
         ?RedisPendingDownlinkQueue $queue,
         string $topicFilter,
+        private readonly BloodPressureHistoryMarks $marks,
         null|(DeviceReportStore&DeviceCommandLog) $deviceStore = null,
         ?callable $clock = null,
         ?CommercialModelResolver $commercialModelResolver = null,
-        private readonly BloodPressureHistoryMarks $marks = new BloodPressureHistoryMarks(),
         ?Denylist $denylist = null,
     ) {
         parent::__construct(

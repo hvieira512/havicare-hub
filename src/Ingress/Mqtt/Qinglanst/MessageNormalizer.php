@@ -175,7 +175,8 @@ final class MessageNormalizer
         return [
             'type' => $capability,
             'occurredAt' => gmdate('Y-m-d\TH:i:s\Z'),
-            'device' => $this->deviceInfo($topic, $device),
+            // O IMEI canónico, o mesmo que vai no tópico publicado.
+            'device' => DeviceDescriptor::of((string)($device['imei'] ?? $topic->deviceUid), $device),
             'source' => $this->source($topic, $nativeType),
             'data' => $data,
         ];
@@ -235,16 +236,6 @@ final class MessageNormalizer
         }
 
         return ['telemetry' => ['vitals_minute_stats' => $telemetry], 'events' => $events];
-    }
-
-    /**
-     * @param array{supplier?: string, model?: string, commercialName?: string, ...} $device
-     * @return array{id: string, supplier?: string, model?: string, commercialName?: string}
-     */
-    private function deviceInfo(QinglanstTopic $topic, array $device): array
-    {
-        // O IMEI canónico, o mesmo que vai no tópico publicado.
-        return DeviceDescriptor::of((string)($device['imei'] ?? $topic->deviceUid), $device);
     }
 
     /**

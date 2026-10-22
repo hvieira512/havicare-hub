@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Hub\Ingress\Mqtt\Veepoo;
+namespace Hub\Ingress\Mqtt\Gateway;
 
 use Hub\Device\ConnectionAnnouncer;
 use Hub\Device\HubMqttBridge;

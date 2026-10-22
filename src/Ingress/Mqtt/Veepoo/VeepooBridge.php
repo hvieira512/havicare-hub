@@ -369,9 +369,10 @@ final class VeepooBridge extends GattBridge
 
         $measurement = MeasurementNormalizer::forSdkType($sdkType, $payload);
         if ($measurement === null) {
-            // Como um `kind`, um tipo do SDK sem normalização avisa uma vez por aparelho.
+            // Um tipo conhecido sem leitura ainda está a medir; um desconhecido avisa uma vez
+            // por aparelho, como um `kind`.
             $seenKey = $context->deviceKey . '|sdk:' . $sdkType;
-            if ($sdkType !== 0 && !isset($this->unhandledKinds[$seenKey])) {
+            if (!MeasurementNormalizer::knowsSdkType($sdkType) && $sdkType !== 0 && !isset($this->unhandledKinds[$seenKey])) {
                 $this->unhandledKinds[$seenKey] = true;
                 Logger::channel('hub')->warning(
                     "Veepoo tipo do SDK sem normalização: {$sdkType} de {$context->deviceKey}"

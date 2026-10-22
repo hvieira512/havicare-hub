@@ -43,10 +43,10 @@ final class JoyTechThermometerBridge extends GattBridge
         HubMqttBridge $mqttBridge,
         GatewayDeviceLinkLookup $links,
         string $topicFilter,
+        private readonly RecentMeasurementKeys $seen,
         null|(DeviceReportStore&DeviceCommandLog) $deviceStore = null,
         ?callable $clock = null,
         ?CommercialModelResolver $commercialModelResolver = null,
-        private readonly RecentMeasurementKeys $seen = new RecentMeasurementKeys(),
         ?Denylist $denylist = null,
     ) {
         parent::__construct(

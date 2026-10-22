@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Unit\Ingress\Mqtt\JoyTech;
 
 use Hub\Device\RedisPendingDownlinkQueue;
+use Hub\Ingress\Mqtt\JoyTech\BloodPressureHistoryMarks;
 use Hub\Ingress\Mqtt\JoyTech\JoyTechBpBridge;
 use Hub\Ingress\Mqtt\JoyTech\JoyTechFrame;
 use Hub\State\DeviceStoreContract;
@@ -212,6 +213,7 @@ final class JoyTechEcgTest extends TestCase
             IngressFixtures::links(),
             $queue,
             'havicare-hub/null/0/gw/+/raw',
+            new BloodPressureHistoryMarks(new InMemoryRedisClient()),
             $store,
             fn (): float => $this->now,
         );

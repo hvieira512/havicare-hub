@@ -68,7 +68,7 @@ final class RelayPublisher
         $raw = [
             'direction' => 'uplink',
             'occurredAt' => gmdate('Y-m-d\TH:i:s\Z'),
-            'device' => self::describe($device),
+            'device' => DeviceDescriptor::of((string)$device['imei'], $device),
             'data' => $observation,
             'debug' => [
                 'protocol' => $protocol,
@@ -188,17 +188,6 @@ final class RelayPublisher
     }
 
     /**
-     * O dispositivo como ele sai no envelope: só os campos que têm valor.
-     *
-     * @param array<string, mixed> $device
-     * @return array<string, string>
-     */
-    public static function describe(array $device): array
-    {
-        return DeviceDescriptor::of((string)$device['imei'], $device);
-    }
-
-    /**
      * O sinal entre um dispositivo retransmitido e o gateway, publicado por avistamento fora do
      * `shouldPublish()`; não entra no histórico, que ficaria só com isto.
      *
@@ -238,7 +227,7 @@ final class RelayPublisher
             [
                 'type' => 'proximity',
                 'occurredAt' => gmdate('Y-m-d\TH:i:s\Z'),
-                'device' => self::describe($device),
+                'device' => DeviceDescriptor::of((string)$device['imei'], $device),
                 'data' => ['gatewayId' => (string)$gateway['imei']] + $data,
                 'source' => Values::withoutNulls([
                     'protocol' => $protocol,

@@ -8,6 +8,7 @@ use Hub\Ingress\Mqtt\JoyTech\JoyTechFrame;
 use Hub\Ingress\Mqtt\JoyTech\JoyTechThermometerBridge;
 use Hub\Ingress\Mqtt\JoyTech\RecentMeasurementKeys;
 use PHPUnit\Framework\TestCase;
+use Tests\Support\Doubles\InMemoryRedisClient;
 use Tests\Support\Doubles\IngressFixtures;
 use Tests\Support\Doubles\RecordingHubMqttBridge;
 
@@ -31,7 +32,7 @@ final class JoyTechThermometerBridgeTest extends TestCase
     protected function setUp(): void
     {
         $this->now = (float)strtotime('2026-10-16T15:43:00Z');
-        $this->seen = new RecentMeasurementKeys();
+        $this->seen = new RecentMeasurementKeys(new InMemoryRedisClient());
     }
 
     /** O aparelho pede a hora 4 vezes por segundo e só mede depois de a ter: responde-se ao primeiro. */
@@ -125,9 +126,9 @@ final class JoyTechThermometerBridgeTest extends TestCase
             $mqtt,
             IngressFixtures::links(),
             'havicare-hub/null/0/gw/+/raw',
+            $this->seen,
             null,
             fn (): float => $this->now,
-            seen: $this->seen,
         );
     }
 }

@@ -10,7 +10,6 @@ use Hub\Device\TelemetryEnvelope;
 use Hub\Domain\GatewayDeviceLinkLookup;
 use Hub\Ingress\Mqtt\DeviceBridge;
 use Hub\Ingress\Mqtt\DispatchesQueued;
-use Hub\Ingress\Mqtt\Veepoo\BraceletPresence;
 use Hub\Registry\Denylist;
 use Hub\Registry\Whitelist;
 use Hub\State\DeviceReportStore;

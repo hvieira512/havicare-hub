@@ -67,13 +67,13 @@ final class LefuTorreBridge extends GattBridge
         GatewayDeviceLinkLookup $links,
         ?RedisPendingDownlinkQueue $queue,
         string $topicFilter,
+        private readonly ScaleOnlineUsers $onlineUsers,
+        private readonly RecentMeasurementKeys $historySeen,
         null|(DeviceReportStore&DeviceCommandLog) $deviceStore = null,
         ?callable $clock = null,
         ?CommercialModelResolver $commercialModelResolver = null,
         ?callable $scaleUsers = null,
         ?Denylist $denylist = null,
-        private readonly ScaleOnlineUsers $onlineUsers = new ScaleOnlineUsers(),
-        private readonly RecentMeasurementKeys $historySeen = new RecentMeasurementKeys(prefix: 'hub:lefu:history-seen', keep: 500),
     ) {
         parent::__construct(
             $whitelist,
