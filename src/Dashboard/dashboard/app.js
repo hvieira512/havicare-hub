@@ -99,7 +99,7 @@ function wireDashboard() {
         onCommandsUpdated: (imei, commands) => {
             const loaded = configPanelIfLoaded();
             if (loaded) {
-                loaded.panel.syncDeviceModalCommandStates(imei, commands);
+                void loaded.panel.syncDeviceModalCommandStates(imei, commands);
                 return;
             }
             if (String(state.deviceModal.imei || "") !== String(imei || "")) return;

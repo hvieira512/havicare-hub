@@ -69,18 +69,31 @@ function withSetting() {
 const currentStatus = () =>
     state.deviceModal.configurationSync.entries.health.step_goal.status;
 
-test("a command the device confirmed changes the stored state", () => {
+/** O estado de uma definição é o que o hub calcula, e por isso relê-se em vez de se adivinhar. */
+test("a command of a stored setting re-reads its delivery from the hub", async () => {
     withSetting();
+    const urls = [];
+    globalThis.fetch = async (url) => {
+        urls.push(new URL(url, "http://localhost").pathname);
+        return Response.json({ configurationSync: { entries: { health: { step_goal: deliveryFor("applied", "op-1") } } } });
+    };
 
-    syncDeviceModalCommandStates(IMEI, [{ id: "op-1", status: "acked" }]);
+    await syncDeviceModalCommandStates(IMEI, [{ id: "op-1", status: "acked" }]);
 
-    assert.notEqual(currentStatus(), "queued", "o estado tem de acompanhar o comando");
+    assert.deepEqual(urls, [`/api/devices/${IMEI}`]);
+    assert.equal(currentStatus(), "applied");
 });
 
-test("a command that matches no operation leaves everything as it was", () => {
+test("a command that matches no operation leaves everything as it was", async () => {
     withSetting();
+    const urls = [];
+    globalThis.fetch = async (url) => {
+        urls.push(String(url));
+        return Response.json({});
+    };
 
-    syncDeviceModalCommandStates(IMEI, [{ id: "op-desconhecida", status: "acked" }]);
+    await syncDeviceModalCommandStates(IMEI, [{ id: "op-desconhecida", status: "acked" }]);
 
+    assert.deepEqual(urls, []);
     assert.equal(currentStatus(), "queued");
 });

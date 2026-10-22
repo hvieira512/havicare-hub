@@ -1,4 +1,5 @@
 import {
+    getDevice as apiGetDevice,
     requestCapability as apiRequestCapability,
     saveConfiguration as apiSaveConfiguration,
 } from "../../api/index.js";
@@ -24,7 +25,7 @@ const configPhaseTimers = new Map();
 export function dismissConfigFeedback(key) {
     clearTimeout(configFeedbackTimers.get(key));
     configFeedbackTimers.delete(key);
-    clearConfigFeedback(key);
+    clearConfigUi(key, "feedback");
 }
 
 /** O valor de um verbo de acção vem do próprio botão; `null` para o resto, que lê os campos. */
@@ -33,6 +34,23 @@ export function configActionPayload(section, actionValue) {
 
     const field = section.dataset.configActionField || "enabled";
     return { [field]: actionValue === "on" };
+}
+
+/** Durante um `syncConfigCounts` cada bloco lê-se uma vez, e não uma por contagem. */
+let readsThisPass = null;
+
+function readBlock(block) {
+    if (readsThisPass === null) return readConfigPayload(block);
+    if (!readsThisPass.has(block)) {
+        try {
+            readsThisPass.set(block, { payload: readConfigPayload(block) });
+        } catch (error) {
+            readsThisPass.set(block, { error });
+        }
+    }
+    const read = readsThisPass.get(block);
+    if (read.error) throw read.error;
+    return read.payload;
 }
 
 const SAVEABLE_BLOCKS =
@@ -63,7 +81,7 @@ export function changedConfigEntries(container) {
 
         let payload;
         try {
-            payload = readConfigPayload(row);
+            payload = readBlock(row);
         } catch {
             continue;
         }
@@ -85,7 +103,7 @@ export function changedConfigEntries(container) {
 function isConfigBlockEdited(element) {
     if (!("configPristine" in element.dataset)) return false;
     try {
-        return JSON.stringify(readConfigPayload(element)) !== element.dataset.configPristine;
+        return JSON.stringify(readBlock(element)) !== element.dataset.configPristine;
     } catch {
         return true;
     }
@@ -242,7 +260,7 @@ export async function saveDeviceConfiguration(section, actionValue = "") {
         setConfigUi(key, { phase: "sent", feedback: null });
         renderDeviceConfigurationModal();
         transitionConfigPhase(key, "sent", 1200, () => {
-            clearConfigUiPhase(key, "sent");
+            clearConfigUi(key, "phase", "sent");
             renderDeviceConfigurationModal();
         });
     } catch (error) {
@@ -270,7 +288,20 @@ export function requestRadarStateOnOpen() {
     void saveDeviceConfiguration(section);
 }
 
-export function syncDeviceModalCommandStates(imei, commands) {
+/** O estado e o erro que um comando dá a uma entrega; o que não mudou fica. */
+function deliveryAfter(delivery, command) {
+    const commandStatus = String(command.status || "");
+
+    return {
+        status: deliveryStatusFromCommand(commandStatus) || String(delivery.status || ""),
+        error: ["failed", "dropped"].includes(commandStatus)
+            ? String(command.lastError || command.error || commandStatus)
+            : "",
+    };
+}
+
+/** As acções seguem o comando no cliente; uma definição relê o estado que o hub lhe calcula. */
+export async function syncDeviceModalCommandStates(imei, commands) {
     if (String(state.deviceModal.imei || "") !== String(imei || "")) {
         return;
     }
@@ -278,7 +309,6 @@ export function syncDeviceModalCommandStates(imei, commands) {
     const commandsById = new Map(
         (commands || []).map((command) => [String(command?.id || ""), command]),
     );
-    let changed = false;
 
     for (const [capabilityKey, delivery] of Object.entries(state.deviceModal.actionDeliveries || {})) {
         const command = delivery?.id ? commandsById.get(String(delivery.id)) : null;
@@ -286,51 +316,27 @@ export function syncDeviceModalCommandStates(imei, commands) {
             continue;
         }
 
-        const commandStatus = String(command.status || "");
-        const nextStatus = deliveryStatusFromCommand(commandStatus) || String(delivery.status || "");
-        const nextError = ["failed", "dropped"].includes(commandStatus)
-            ? String(command.lastError || command.error || commandStatus)
-            : "";
-        if (nextStatus !== String(delivery.status || "") || nextError !== String(delivery.error || "")) {
-            state.deviceModal.actionDeliveries[capabilityKey] = {
-                ...delivery,
-                status: nextStatus,
-                error: nextError,
-            };
-            changed = true;
+        const next = deliveryAfter(delivery, command);
+        if (next.status !== String(delivery.status || "") || next.error !== String(delivery.error || "")) {
+            state.deviceModal.actionDeliveries[capabilityKey] = { ...delivery, ...next };
         }
     }
-    for (const section of Object.values(state.deviceModal.configurationSync?.entries || {})) {
-        for (const delivery of Object.values(section || {})) {
-            const operation = (delivery?.operations || []).find((item) =>
-                commandsById.has(String(item?.operationId || "")),
-            );
-            const command = operation
-                ? commandsById.get(String(operation.operationId || ""))
-                : null;
-            if (!command) {
-                continue;
-            }
 
-            const commandStatus = String(command.status || "");
-            const nextStatus = deliveryStatusFromCommand(commandStatus, operation?.confirmationMode) ||
-                String(delivery.status || "");
-            const nextError = ["failed", "dropped"].includes(commandStatus)
-                ? String(command.lastError || command.error || commandStatus)
-                : "";
-            if (
-                nextStatus !== String(delivery.status || "") ||
-                nextError !== String(delivery.error || "")
-            ) {
-                delivery.status = nextStatus;
-                delivery.error = nextError;
-                changed = true;
-            }
-        }
+    const touchesSetting = Object.values(state.deviceModal.configurationSync?.entries || {})
+        .flatMap((section) => Object.values(section || {}))
+        .some((delivery) => (delivery?.operations || [])
+            .some((operation) => commandsById.has(String(operation?.operationId || ""))));
+    if (!touchesSetting) {
+        return;
     }
+
+    const detail = await apiGetDevice(imei);
+    if (detail?.error || String(state.deviceModal.imei || "") !== String(imei || "")) {
+        return;
+    }
+    state.deviceModal.configurationSync = detail.configurationSync || { entries: {} };
 
     if (
-        changed &&
         els?.deviceConfigRoot &&
         state.deviceModal.activeTab === "config" &&
         document.getElementById("deviceModal")?.classList.contains("show")
@@ -354,29 +360,15 @@ function setConfigUi(key, updates) {
     };
 }
 
-function clearConfigUiPhase(key, phase) {
+/** Tira um campo do estado de um cartão; com `only`, só se ainda tiver esse valor. */
+function clearConfigUi(key, field, only = undefined) {
     const current = state.deviceModal.configUi[key];
-    if (!current || current.phase !== phase) {
+    if (!current || (only !== undefined && current[field] !== only)) {
         return;
     }
 
     const next = { ...current };
-    delete next.phase;
-    if (Object.keys(next).length === 0) {
-        delete state.deviceModal.configUi[key];
-        return;
-    }
-    state.deviceModal.configUi[key] = next;
-}
-
-function clearConfigFeedback(key) {
-    const current = state.deviceModal.configUi[key];
-    if (!current) {
-        return;
-    }
-
-    const next = { ...current };
-    delete next.feedback;
+    delete next[field];
     if (Object.keys(next).length === 0) {
         delete state.deviceModal.configUi[key];
         return;
@@ -417,7 +409,7 @@ function armConfigFeedbackAutoClose() {
                 if (liveAlert) {
                     bootstrap.Alert.getOrCreateInstance(liveAlert).close();
                 } else {
-                    clearConfigFeedback(key);
+                    clearConfigUi(key, "feedback");
                 }
                 configFeedbackTimers.delete(key);
             }, 3500),
@@ -495,6 +487,15 @@ function paneStatusLabel(pending, edited) {
 
 /** O separador, a linha de cada secção e o rodapé saem das mesmas leituras, para não discordarem. */
 export function syncConfigCounts(root) {
+    readsThisPass = new Map();
+    try {
+        countConfigChanges(root);
+    } finally {
+        readsThisPass = null;
+    }
+}
+
+function countConfigChanges(root) {
     markEditedConfigBlocks(root);
 
     for (const pane of root.querySelectorAll("[data-config-pane]")) {

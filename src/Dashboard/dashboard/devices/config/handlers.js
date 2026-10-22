@@ -35,82 +35,68 @@ export function handleDeviceConfigClick(event) {
     if (root) syncConfigCounts(root);
 }
 
+const PANE = "[data-config-pane]";
+const SECTION = "[data-config-section]";
+
+/** Os verbos do painel pelo `data-action`: o `within` diz o contentor de que o verbo precisa. */
+const CLICK_ACTIONS = {
+    selectConfigCategory: {
+        run: (button, _button, event) => {
+            event.preventDefault();
+            const key = button.dataset.section || "";
+            state.deviceModal.activeCategory = key;
+            state.deviceModal.configSectionOpen = true;
+            // Trocado no sítio: redesenhar deitava fora o que está escrito nas outras secções.
+            selectConfigSection(button.closest("[data-config-root]"), key);
+        },
+    },
+    closeConfigSection: {
+        run: (button) => {
+            state.deviceModal.configSectionOpen = false;
+            button.closest("[data-config-root]")?.removeAttribute("data-config-section-open");
+        },
+    },
+    // A secção inteira num só pedido, com um comando por definição alterada.
+    saveConfigPane: { within: PANE, run: (pane) => void saveDeviceConfigurations(pane) },
+    resetConfigPane: { within: PANE, run: (pane) => resetConfigPane(pane) },
+    // Os verbos de uma acção trazem o valor no botão; o «Enviar» lê os campos.
+    saveConfig: {
+        within: SECTION,
+        run: (section, button) => void saveDeviceConfiguration(section, button.dataset.actionValue || ""),
+    },
+    openRadarAreas: {
+        within: SECTION,
+        run: () => void openRadarMap(String(state.deviceModal.imei || ""), { editAreas: true }),
+    },
+    // O tipo da lista vem do botão ao acrescentar, e da linha ao remover.
+    addRepeatRow: { within: SECTION, run: (section, button) => appendRepeatRow(section, button.dataset.repeatKind || "") },
+    removeRepeatRow: {
+        within: SECTION,
+        run: (section, button) => {
+            removeRepeatRow(button);
+            // O botão sai do DOM com a linha, e o ouvinte lá fora já não lhe encontra a secção.
+            syncConfigSectionDirty(section);
+        },
+    },
+    takePillsRecord: { within: SECTION, run: (section) => void startTakePillsRecording(section) },
+    takePillsStop: { within: SECTION, run: (section) => void stopTakePillsRecording(section) },
+    takePillsClear: { within: SECTION, run: (section) => clearTakePillsRecording(section) },
+};
+
 function dispatchConfigClick(event) {
     const button = event.target.closest("[data-action]");
     if (!button) return;
+    const action = String(button.dataset.action || "");
 
-    if (button.dataset.action === "selectConfigCategory") {
-        event.preventDefault();
-        const key = button.dataset.section || "";
-        state.deviceModal.activeCategory = key;
-        state.deviceModal.configSectionOpen = true;
-        // Trocado no sítio: redesenhar deitava fora o que está escrito nas outras secções.
-        selectConfigSection(button.closest("[data-config-root]"), key);
+    if (action.startsWith("scaleUser")) {
+        const section = button.closest(SECTION);
+        if (section && handleScaleUserAction(section, button)) syncConfigSectionDirty(section);
         return;
     }
 
-    if (button.dataset.action === "closeConfigSection") {
-        state.deviceModal.configSectionOpen = false;
-        button.closest("[data-config-root]")?.removeAttribute("data-config-section-open");
-        return;
-    }
-
-    // A secção inteira num só pedido, com um comando por definição alterada.
-    const pane = button.closest("[data-config-pane]");
-    if (pane && button.dataset.action === "saveConfigPane") {
-        void saveDeviceConfigurations(pane);
-        return;
-    }
-    if (pane && button.dataset.action === "resetConfigPane") {
-        resetConfigPane(pane);
-        return;
-    }
-
-    const section = button.closest("[data-config-section]");
-    if (!section) return;
-
-    if (button.dataset.action === "saveConfig") {
-        // Os verbos de uma acção trazem o valor no botão; o «Enviar» lê os campos.
-        void saveDeviceConfiguration(section, button.dataset.actionValue || "");
-        return;
-    }
-
-    if (String(button.dataset.action || "").startsWith("scaleUser")) {
-        if (handleScaleUserAction(section, button)) syncConfigSectionDirty(section);
-        return;
-    }
-
-    if (button.dataset.action === "openRadarAreas") {
-        void openRadarMap(String(state.deviceModal.imei || ""), { editAreas: true });
-        return;
-    }
-
-    // O tipo da lista vem do botão ao acrescentar, e da linha ao remover.
-    if (button.dataset.action === "addRepeatRow") {
-        appendRepeatRow(section, button.dataset.repeatKind || "");
-        return;
-    }
-
-    if (button.dataset.action === "removeRepeatRow") {
-        removeRepeatRow(button);
-        // O botão sai do DOM com a linha, e o ouvinte lá fora já não lhe encontra a secção.
-        syncConfigSectionDirty(section);
-        return;
-    }
-
-    if (button.dataset.action === "takePillsRecord") {
-        void startTakePillsRecording(section);
-        return;
-    }
-
-    if (button.dataset.action === "takePillsStop") {
-        void stopTakePillsRecording(section);
-        return;
-    }
-
-    if (button.dataset.action === "takePillsClear") {
-        clearTakePillsRecording(section);
-    }
+    const verb = CLICK_ACTIONS[action];
+    const scope = verb?.within ? button.closest(verb.within) : button;
+    if (verb && scope) verb.run(scope, button, event);
 }
 
 export function handleDeviceConfigChange(event) {

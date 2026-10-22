@@ -59,13 +59,11 @@ const CONFIGURATION_FAILURE_LABELS = {
     failed: "O dispositivo não confirmou a aplicação do valor.",
 };
 
-/** A mesma tradução serve configurações e acções, que viajam pela mesma fila de comandos. */
-export function deliveryStatusFromCommand(commandStatus, confirmationMode = "") {
+/** O estado de uma acção pelo do seu comando; o de uma definição calcula-o o hub. */
+export function deliveryStatusFromCommand(commandStatus) {
     const status = String(commandStatus || "");
     if (["failed", "dropped"].includes(status)) return "failed";
-    if (status === "acked") {
-        return String(confirmationMode) === "ack_only" ? "confirmation_unavailable" : "confirmed";
-    }
+    if (status === "acked") return "confirmed";
     if (status === "queued") return "pending_delivery";
     if (["waiting", "sent"].includes(status)) return "awaiting_ack";
     return "";
