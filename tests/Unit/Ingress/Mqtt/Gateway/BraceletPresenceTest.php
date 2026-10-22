@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Tests\Unit\Ingress\Mqtt\Veepoo;
+namespace Tests\Unit\Ingress\Mqtt\Gateway;
 
-use Hub\Ingress\Mqtt\Veepoo\BraceletPresence;
+use Hub\Ingress\Mqtt\Gateway\BraceletPresence;
 use Hub\State\DeviceStore;
 use PHPUnit\Framework\TestCase;
 use Tests\Support\Doubles\InMemoryRedisClient;
