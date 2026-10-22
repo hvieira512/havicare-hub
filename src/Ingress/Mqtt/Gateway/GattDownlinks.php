@@ -147,7 +147,7 @@ final class GattDownlinks
     /** @param list<array<string, mixed>> $writes */
     private function publish(string $gatewayKey, string $deviceKey, string $operation, string $dedupeKey, ?string $commandId, array $writes, int $expiresAt): void
     {
-        $this->mqttBridge->publishGatewayCommand($this->commandTopicFor($gatewayKey), [
+        $this->mqttBridge->publishGatewayCommand(self::commandTopic($this->topicFilter, $gatewayKey), [
             'deviceId' => $deviceKey,
             'commandId' => $commandId,
             'dedupeKey' => $dedupeKey,
@@ -176,7 +176,8 @@ final class GattDownlinks
         return ($command['expectedReplyTypes'] ?? []) === [];
     }
 
-    private static function operationOf(PendingDownlink $downlink): string
+    /** O nome da operação: os bytes em fila, ou o `command` quando a ordem leva valor. */
+    public static function operationOf(PendingDownlink $downlink): string
     {
         return (string)(($downlink->command['command'] ?? null) ?? $downlink->bytes);
     }
@@ -189,9 +190,9 @@ final class GattDownlinks
     }
 
     /** `.../gw/+/raw` para o que sobe, `.../gw/{id}/cmd` para o que desce. */
-    private function commandTopicFor(string $gatewayKey): string
+    public static function commandTopic(string $topicFilter, string $gatewayKey): string
     {
-        $base = preg_replace('#/\+/raw$#', '', trim($this->topicFilter, '/')) ?? '';
+        $base = preg_replace('#/\+/raw$#', '', trim($topicFilter, '/')) ?? '';
 
         return $base . '/' . $gatewayKey . '/cmd';
     }
