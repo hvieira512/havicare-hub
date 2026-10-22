@@ -6,15 +6,15 @@ namespace Tests\Unit\Hub;
 
 use Hub\Device\ConnectionRegistry;
 use Hub\Device\DeviceIdentity;
-use Hub\Device\ConnectionInterface;
 use PHPUnit\Framework\TestCase;
+use Tests\Support\Doubles\FakeConnection;
 
 final class ConnectionRegistryTest extends TestCase
 {
     public function testTracksSessionLifecycle(): void
     {
         $registry = new ConnectionRegistry();
-        $connection = new FakeHubConnection(10);
+        $connection = new FakeConnection(10);
 
         $session = $registry->open($connection);
 
@@ -41,11 +41,11 @@ final class ConnectionRegistryTest extends TestCase
         $registry = new ConnectionRegistry();
         $imei = '865028000000320';
 
-        $first = new FakeHubConnection(20);
+        $first = new FakeConnection(20);
         $registry->open($first);
         $registry->authenticate($first, new DeviceIdentity($imei, 'wonlex-json', 'D'), 'Wonlex', 'HW20PRO');
 
-        $second = new FakeHubConnection(21);
+        $second = new FakeConnection(21);
         $registry->open($second);
         $registry->authenticate($second, new DeviceIdentity($imei, 'wonlex-json', 'D'), 'Wonlex', 'HW20PRO');
 
@@ -58,14 +58,14 @@ final class ConnectionRegistryTest extends TestCase
     {
         $registry = new ConnectionRegistry();
 
-        $other = new FakeHubConnection(40);
+        $other = new FakeConnection(40);
         $registry->open($other);
         $registry->authenticate($other, new DeviceIdentity('111122223333444', 'wonlex-json', 'D'), 'Wonlex', 'HW20PRO');
 
-        $first = new FakeHubConnection(41);
+        $first = new FakeConnection(41);
         $registry->open($first);
         $registry->authenticate($first, new DeviceIdentity('865028000000322', 'wonlex-json', 'D'), 'Wonlex', 'HW20PRO');
-        $second = new FakeHubConnection(42);
+        $second = new FakeConnection(42);
         $registry->open($second);
         $registry->authenticate($second, new DeviceIdentity('865028000000322', 'wonlex-json', 'D'), 'Wonlex', 'HW20PRO');
 
@@ -79,7 +79,7 @@ final class ConnectionRegistryTest extends TestCase
         $registry = new ConnectionRegistry(static function () use (&$now): int {
             return $now;
         });
-        $connection = new FakeHubConnection(11);
+        $connection = new FakeConnection(11);
         $registry->open($connection);
         $identity = new DeviceIdentity('865028000000307', 'wonlex-json', 'DEVICE');
         $registry->authenticate($connection, $identity, 'Wonlex', 'HW20PRO');
@@ -91,35 +91,5 @@ final class ConnectionRegistryTest extends TestCase
         self::assertSame('865028000000307', $expired[0]->imei);
         self::assertTrue($connection->closed);
         self::assertNull($registry->connectionFor('865028000000307'));
-    }
-}
-
-final class FakeHubConnection implements ConnectionInterface
-{
-    public int $resourceId;
-    /** @var list<string> */
-    public array $sent = [];
-    public bool $closed = false;
-
-    public function __construct(int $resourceId)
-    {
-        $this->resourceId = $resourceId;
-    }
-
-    public function remoteAddress(): ?string
-    {
-        return null;
-    }
-
-    public function send(string $data): static
-    {
-        $this->sent[] = $data;
-        return $this;
-    }
-
-    public function close(): static
-    {
-        $this->closed = true;
-        return $this;
     }
 }

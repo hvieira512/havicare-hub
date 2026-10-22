@@ -12,7 +12,6 @@ use Hub\Device\RedisPendingDownlinkQueue;
 use Hub\Protocol\Adapter\WonlexAdapter;
 use Hub\Registry\Denylist;
 use Hub\Registry\Whitelist;
-use Hub\Device\ConnectionInterface;
 use Hub\State\DeviceStoreContract;
 use Hub\Location\BeaconDbRequestBuilder;
 use Hub\Location\BeaconDbTelemetryEnricher;
@@ -20,6 +19,7 @@ use PHPUnit\Framework\TestCase;
 use Tests\Support\Doubles\InMemoryRedisClient;
 use Tests\Support\Doubles\IngressFixtures;
 use Tests\Support\Doubles\WavFixture;
+use Tests\Support\Doubles\FakeConnection;
 
 use function React\Promise\resolve;
 
@@ -60,7 +60,7 @@ final class DeviceHubMqttContractTest extends TestCase
             $mqtt,
             deviceStore: $store
         );
-        $connection = new ContractFakeConnection(1);
+        $connection = new FakeConnection(1);
 
         $hub->onOpen($connection);
         $hub->onMessage($connection, 'IWAP00865028000000999#');
@@ -96,7 +96,7 @@ final class DeviceHubMqttContractTest extends TestCase
             deviceStore: $store,
             denylist: $denylist,
         );
-        $connection = new ContractFakeConnection(1);
+        $connection = new FakeConnection(1);
 
         $hub->onOpen($connection);
         $hub->onMessage($connection, 'IWAP00865028000000999#');
@@ -117,7 +117,7 @@ final class DeviceHubMqttContractTest extends TestCase
             $mqtt,
             deviceStore: $store
         );
-        $connection = new ContractFakeConnection(11);
+        $connection = new FakeConnection(11);
 
         $hub->onOpen($connection);
         $hub->onMessage($connection, 'IWAP00865028000000999#');
@@ -131,7 +131,7 @@ final class DeviceHubMqttContractTest extends TestCase
     {
         $mqtt = new ContractRecordingHubMqttBridge();
         $hub = new DeviceHubServer($this->whitelist, $mqtt);
-        $connection = new ContractFakeConnection(7);
+        $connection = new FakeConnection(7);
 
         $hub->onOpen($connection);
         $hub->onMessage($connection, 'IWAP00865028000000308#');
@@ -183,7 +183,7 @@ final class DeviceHubMqttContractTest extends TestCase
             $hub->queueDownlink('868705080300697', $bytes, ['id' => $id]);
         }
 
-        $connection = new ContractFakeConnection(9);
+        $connection = new FakeConnection(9);
         $hub->onOpen($connection);
         $hub->onMessage($connection, $adapter->encodeOutgoing(['type' => 'login', 'imei' => '868705080300697', 'data' => ['deviceModel' => 'IGNORED']]));
 
@@ -293,7 +293,7 @@ final class DeviceHubMqttContractTest extends TestCase
     {
         $mqtt = new ContractRecordingHubMqttBridge();
         $hub = new DeviceHubServer($this->whitelist, $mqtt);
-        $connection = new ContractFakeConnection(2);
+        $connection = new FakeConnection(2);
         $adapter = new WonlexAdapter();
 
         $hub->onOpen($connection);
@@ -320,7 +320,7 @@ final class DeviceHubMqttContractTest extends TestCase
         $mqtt = new ContractRecordingHubMqttBridge();
         $whitelist = $this->whitelist;
         $hub = new DeviceHubServer($whitelist, $mqtt);
-        $connection = new ContractFakeConnection(9);
+        $connection = new FakeConnection(9);
 
         $hub->onOpen($connection);
         $hub->onMessage($connection, '[3G*7597567372*000D*LK,50,100,100]');
@@ -357,7 +357,7 @@ final class DeviceHubMqttContractTest extends TestCase
             $mqtt,
             downlinkQueue: $queue
         );
-        $connection = new ContractFakeConnection(6);
+        $connection = new FakeConnection(6);
         $adapter = new WonlexAdapter();
 
         $queuedBytes = $adapter->encodeOutgoing([
@@ -394,7 +394,7 @@ final class DeviceHubMqttContractTest extends TestCase
         $queue = new RedisPendingDownlinkQueue(new InMemoryRedisClient());
         $store = new \Hub\State\DeviceStore(new InMemoryRedisClient(), 100);
         $hub = new DeviceHubServer($this->whitelist, new ContractRecordingHubMqttBridge(), downlinkQueue: $queue, deviceStore: $store);
-        $connection = new ContractFakeConnection(7);
+        $connection = new FakeConnection(7);
         $adapter = new WonlexAdapter();
 
         $store->recordCommand('868705080300697', 'req-1', [
@@ -425,7 +425,7 @@ final class DeviceHubMqttContractTest extends TestCase
     {
         $mqtt = new ContractRecordingHubMqttBridge();
         $hub = new DeviceHubServer($this->whitelist, $mqtt, $this->commercialResolver());
-        $connection = new ContractFakeConnection(3);
+        $connection = new FakeConnection(3);
         $adapter = new WonlexAdapter();
 
         $hub->onOpen($connection);
@@ -471,7 +471,7 @@ final class DeviceHubMqttContractTest extends TestCase
     {
         $mqtt = new ContractRecordingHubMqttBridge();
         $hub = new DeviceHubServer($this->whitelist, $mqtt);
-        $connection = new ContractFakeConnection(4);
+        $connection = new FakeConnection(4);
         $adapter = new WonlexAdapter();
         $hub->onOpen($connection);
         $hub->onMessage($connection, $adapter->encodeOutgoing(['type' => 'login', 'imei' => '868705080300697', 'data' => ['deviceModel' => 'IGNORED']]));
@@ -490,7 +490,7 @@ final class DeviceHubMqttContractTest extends TestCase
     {
         $mqtt = new ContractRecordingHubMqttBridge();
         $hub = new DeviceHubServer($this->whitelist, $mqtt);
-        $connection = new ContractFakeConnection(4);
+        $connection = new FakeConnection(4);
         $adapter = new WonlexAdapter();
 
         $hub->onOpen($connection);
@@ -525,13 +525,13 @@ final class DeviceHubMqttContractTest extends TestCase
             return $now;
         });
 
-        $first = new ContractFakeConnection(5);
+        $first = new FakeConnection(5);
         $hub->onOpen($first);
         $hub->onMessage($first, 'IWAP00865028000000308#');
 
         // A primeira sessão envelhece, e só então o relógio reconecta noutro socket.
         $now += 2;
-        $second = new ContractFakeConnection(6);
+        $second = new FakeConnection(6);
         $hub->onOpen($second);
         $hub->onMessage($second, 'IWAP00865028000000308#');
 
@@ -556,12 +556,12 @@ final class DeviceHubMqttContractTest extends TestCase
     {
         $mqtt = new ContractRecordingHubMqttBridge();
         $hub = new DeviceHubServer($this->whitelist, $mqtt);
-        $watch = new ContractFakeConnection(5);
+        $watch = new FakeConnection(5);
         $hub->onOpen($watch);
         $hub->onMessage($watch, 'IWAP00865028000000308#');
 
         // Outra ligação com o mesmo `resourceId` abre e fecha, e leva a sessão do relógio.
-        $other = new ContractFakeConnection(5);
+        $other = new FakeConnection(5);
         $hub->onOpen($other);
         $hub->onClose($other);
 
@@ -573,7 +573,7 @@ final class DeviceHubMqttContractTest extends TestCase
     {
         $mqtt = new ContractRecordingHubMqttBridge();
         $hub = new DeviceHubServer($this->whitelist, $mqtt);
-        $connection = new ContractFakeConnection(5);
+        $connection = new FakeConnection(5);
 
         $hub->onOpen($connection);
         $hub->onMessage($connection, 'IWAP00865028000000308#');
@@ -595,7 +595,7 @@ final class DeviceHubMqttContractTest extends TestCase
         }
         $mqtt = new ContractRecordingHubMqttBridge();
         $hub = new DeviceHubServer($this->whitelist, $mqtt);
-        $connection = new ContractFakeConnection(8);
+        $connection = new FakeConnection(8);
         $adapter = new \Hub\Protocol\Adapter\FourPTouchAdapter();
 
         $hub->onOpen($connection);
@@ -690,7 +690,7 @@ final class DeviceHubMqttContractTest extends TestCase
             $mqtt,
             deviceStore: $store,
         );
-        $connection = new ContractFakeConnection(18);
+        $connection = new FakeConnection(18);
 
         $hub->onOpen($connection);
         $hub->onMessage($connection, '[3G*7597567372*000D*LK,50,100,100]');
@@ -705,7 +705,7 @@ final class DeviceHubMqttContractTest extends TestCase
     {
         $mqtt = new ContractRecordingHubMqttBridge();
         $hub = new DeviceHubServer($this->whitelist, $mqtt);
-        $connection = new ContractFakeConnection(7);
+        $connection = new FakeConnection(7);
 
         $hub->onOpen($connection);
         $hub->onMessage($connection, 'IWAP00865028000000308#');
@@ -721,7 +721,7 @@ final class DeviceHubMqttContractTest extends TestCase
     {
         $mqtt = new ContractRecordingHubMqttBridge();
         $hub = new DeviceHubServer($this->whitelist, $mqtt);
-        $connection = new ContractFakeConnection(21);
+        $connection = new FakeConnection(21);
 
         $hub->onOpen($connection);
         $hub->onMessage($connection, 'IWAP00865028000000308#');
@@ -754,7 +754,7 @@ final class DeviceHubMqttContractTest extends TestCase
     {
         $mqtt = new ContractRecordingHubMqttBridge();
         $hub = new DeviceHubServer($this->whitelist, $mqtt);
-        $connection = new ContractFakeConnection(22);
+        $connection = new FakeConnection(22);
         $position = static function (string $status, int $battery): string {
             $content = 'UD_LTE,240617,101530,V,0.0,N,0.0,E,0.0,0,0,0,55,' . $battery . ',0,0,' . $status . ',0,0,268,01';
 
@@ -797,7 +797,7 @@ final class DeviceHubMqttContractTest extends TestCase
             $mqtt,
             locationTelemetryEnricher: $enricher,
         );
-        $connection = new ContractFakeConnection(12);
+        $connection = new FakeConnection(12);
         $adapter = new WonlexAdapter();
 
         $hub->onOpen($connection);
@@ -908,36 +908,5 @@ final class ContractRecordingHubMqttBridge extends HubMqttBridge
     {
         $this->telemetry[] = [$imei, $payload];
         $this->telemetryTopics[] = $this->deviceTopic($company, $licenseId, $deviceType, $imei, 'telemetry');
-    }
-}
-
-final class ContractFakeConnection implements ConnectionInterface
-{
-    public int $resourceId;
-    /** @var list<mixed> */
-    public array $sent = [];
-    public bool $closed = false;
-
-    public function __construct(int $resourceId)
-    {
-        $this->resourceId = $resourceId;
-    }
-
-    public function remoteAddress(): ?string
-    {
-        return null;
-    }
-
-    /** @param mixed $data */
-    public function send($data): static
-    {
-        $this->sent[] = $data;
-        return $this;
-    }
-
-    public function close(): static
-    {
-        $this->closed = true;
-        return $this;
     }
 }

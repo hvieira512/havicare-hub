@@ -9,6 +9,7 @@ use Hub\Protocol\Adapter\PillDispenserAdapter;
 use PHPUnit\Framework\TestCase;
 use Tests\Support\Doubles\IngressFixtures;
 use Tests\Support\Doubles\RecordingHubMqttBridge;
+use Tests\Support\Doubles\FakeConnection;
 
 /** Um `'watch'` por omissão publicaria um dispensador debaixo de `/watch/` sem erro; o tipo sai da whitelist. */
 final class TcpLayerHasNoDeviceTypeDefaultTest extends TestCase
@@ -20,7 +21,7 @@ final class TcpLayerHasNoDeviceTypeDefaultTest extends TestCase
             'AABBCCDDEEFF' => IngressFixtures::device('Zayata', 'M228', 'pill_dispenser'),
         ]), $mqtt);
         $adapter = new PillDispenserAdapter();
-        $connection = new PillFakeConnection();
+        $connection = new FakeConnection();
 
         $hub->onOpen($connection);
         $hub->onMessage($connection, $adapter->encodeOutgoing(['packetType' => 0x01, 'serial' => 1, 'mac' => 'AABBCCDDEEFF']));
@@ -41,7 +42,7 @@ final class TcpLayerHasNoDeviceTypeDefaultTest extends TestCase
     {
         $mqtt = new RecordingHubMqttBridge();
         $hub = new DeviceHubServer(IngressFixtures::whitelist(), $mqtt);
-        $connection = new PillFakeConnection();
+        $connection = new FakeConnection();
 
         $hub->onOpen($connection);
         $hub->onMessage($connection, (new PillDispenserAdapter())->encodeOutgoing(['packetType' => 0x01, 'serial' => 1, 'mac' => 'AABBCCDDEEFF']));

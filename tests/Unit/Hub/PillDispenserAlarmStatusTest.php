@@ -4,17 +4,16 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Hub;
 
-use Hub\Device\DeviceEventDecoder;
-use Hub\Device\DeviceSession;
 use Hub\Protocol\Adapter\PillDispenserAdapter;
 use PHPUnit\Framework\TestCase;
+use Tests\Support\Doubles\PillDispenserFixtures;
 
 /** As TAGs `0x8131`--`0x8139` pedidas num `0x07` vêm em claro, mas sem a hora nem a célula do evento cifrado `0x03`. */
 final class PillDispenserAlarmStatusTest extends TestCase
 {
     public function testEachAlarmStateBecomesTelemetry(): void
     {
-        $events = $this->statusEvents([
+        $events = PillDispenserFixtures::features(0x87, [
             0x8131 => "\x07",   // alarme 1: tomado
             0x8132 => "\x02",   // alarme 2: à espera de sair
             0x8133 => "\x06",   // alarme 3: falhado
@@ -46,7 +45,7 @@ final class PillDispenserAlarmStatusTest extends TestCase
     /** Sem nenhuma das nove TAGs não há capacidade nenhuma a publicar. */
     public function testNothingIsPublishedWhenNoAlarmReports(): void
     {
-        $events = $this->statusEvents([0x8101 => "\x00"]);
+        $events = PillDispenserFixtures::features(0x87, [0x8101 => "\x00"]);
 
         self::assertArrayNotHasKey('medication_alarm_status', $events);
     }
@@ -54,7 +53,7 @@ final class PillDispenserAlarmStatusTest extends TestCase
     /** Uma TAG recusada volta com os zeros que mandámos, e só o estado nos bits 5--7 do Flag a distingue de um alarme inactivo. */
     public function testARefusedTagIsNotReportedAsIdle(): void
     {
-        $events = $this->statusEvents([
+        $events = PillDispenserFixtures::features(0x87, [
             0x8131 => "\x07",
             0x8132 => ['value' => "\x00", 'state' => 1],
         ]);
@@ -71,49 +70,5 @@ final class PillDispenserAlarmStatusTest extends TestCase
         foreach (range(0x8131, 0x8139) as $tag) {
             self::assertContains($tag, PillDispenserAdapter::STATUS_TAGS, sprintf('0x%04X', $tag));
         }
-    }
-
-    /**
-     * @param array<int, string|array{value: string, state?: int}> $tlv
-     * @return array<string, array<string, mixed>>
-     */
-    private function statusEvents(array $tlv): array
-    {
-        $entries = [];
-        foreach ($tlv as $tag => $item) {
-            $entries[$tag] = is_array($item) ? $item : ['value' => $item];
-        }
-
-        // O estado da leitura viaja nos bits 5--7 do Flag de cada TLV, e por isso vai na
-        // própria trama: não há nada a remendar depois de descodificar.
-        $decoded = (new PillDispenserAdapter())->decodeIncoming(
-            (new PillDispenserAdapter())->encodeOutgoing([
-                'packetType' => 0x87,
-                'serial' => 1,
-                'deviceNumber' => PillDispenserAdapter::deviceNumberFor('869243062262262'),
-                'tlv' => $entries,
-            ])
-        );
-
-        $byFeature = [];
-        foreach ((new DeviceEventDecoder())->decode($this->session(), $decoded) as $event) {
-            $byFeature[$event['feature']] = $event['value'];
-        }
-
-        return $byFeature;
-    }
-
-    private function session(): DeviceSession
-    {
-        return new DeviceSession(
-            new PillFakeConnection(),
-            true,
-            '869243062262262',
-            'zayata-m228',
-            'Zayata',
-            'M228',
-            'Zayata M228',
-            'pill_dispenser',
-        );
     }
 }

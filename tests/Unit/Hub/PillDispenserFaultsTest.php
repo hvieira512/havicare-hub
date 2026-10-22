@@ -4,11 +4,9 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Hub;
 
-use Hub\Device\DeviceEventDecoder;
-use Hub\Device\DeviceSession;
-use Hub\Protocol\Adapter\PillDispenserAdapter;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
+use Tests\Support\Doubles\PillDispenserFixtures;
 
 /** As cinco avarias que o aparelho sabe reportar, uma a uma. */
 final class PillDispenserFaultsTest extends TestCase
@@ -28,52 +26,12 @@ final class PillDispenserFaultsTest extends TestCase
     #[DataProvider('faults')]
     public function testEachFaultBecomesItsOwnEvent(int $tag, string $fault): void
     {
-        self::assertSame(['fault' => $fault], $this->decode([$tag => "\x01"])['device_fault'] ?? null);
+        self::assertSame(['fault' => $fault], PillDispenserFixtures::features(0x87, [$tag => "\x01"])['device_fault'] ?? null);
     }
 
     /** Um estado a zero é o normal, e não uma avaria a zero. */
     public function testAHealthyStateIsNotAFault(): void
     {
-        self::assertArrayNotHasKey('device_fault', $this->decode([0x8121 => "\x00"]));
-    }
-
-    /**
-     * @param array<int, string> $tlv
-     * @return array<string, array<string, mixed>>
-     */
-    private function decode(array $tlv): array
-    {
-        $adapter = new PillDispenserAdapter();
-        $entries = [];
-        foreach ($tlv as $tag => $value) {
-            $entries[$tag] = ['value' => $value];
-        }
-
-        $decoded = $adapter->decodeIncoming($adapter->encodeOutgoing([
-            'packetType' => 0x87,
-            'mac' => 'AABBCCDDEEFF',
-            'tlv' => $entries,
-        ]));
-
-        $byFeature = [];
-        foreach ((new DeviceEventDecoder())->decode($this->session(), $decoded) as $event) {
-            $byFeature[$event['feature']] = $event['value'];
-        }
-
-        return $byFeature;
-    }
-
-    private function session(): DeviceSession
-    {
-        return new DeviceSession(
-            new PillFakeConnection(),
-            true,
-            'AABBCCDDEEFF',
-            'zayata-m228',
-            'Zayata',
-            'M228',
-            'Zayata M228',
-            'pill_dispenser',
-        );
+        self::assertArrayNotHasKey('device_fault', PillDispenserFixtures::features(0x87, [0x8121 => "\x00"]));
     }
 }

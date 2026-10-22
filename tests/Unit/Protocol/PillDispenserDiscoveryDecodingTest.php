@@ -8,6 +8,7 @@ use Hub\Device\DeviceEventDecoder;
 use Hub\Ingress\Tcp\Supplier\Zayata\PillDispenserTcpProtocol;
 use Hub\Protocol\Adapter\PillDispenserAdapter;
 use PHPUnit\Framework\TestCase;
+use Tests\Support\Doubles\PillDispenserFixtures;
 
 /** O corpo de um `0x8A`–`0x8C` é uma lista de TAGs coladas: lido como TFLV dá telemetria falsa com identidade e CRC válidos. */
 final class PillDispenserDiscoveryDecodingTest extends TestCase
@@ -18,7 +19,7 @@ final class PillDispenserDiscoveryDecodingTest extends TestCase
         $decoded = $this->decode(0x8C, pack('v*', 0xA001, 0xA002, 0xA101));
 
         self::assertSame([], $decoded['tlv']);
-        self::assertSame([], (new DeviceEventDecoder())->decode($this->session(), $decoded));
+        self::assertSame([], (new DeviceEventDecoder())->decode(PillDispenserFixtures::session('869243062262262'), $decoded));
     }
 
     /** E um corpo que não se entende também não. */
@@ -28,7 +29,7 @@ final class PillDispenserDiscoveryDecodingTest extends TestCase
         $decoded = $this->decode(0x8B, "\x01\x81\x02");
 
         self::assertSame([], $decoded['tlv'], 'nada é lido de um corpo que não se entende');
-        self::assertSame([], (new DeviceEventDecoder())->decode($this->session(), $decoded));
+        self::assertSame([], (new DeviceEventDecoder())->decode(PillDispenserFixtures::session('869243062262262'), $decoded));
     }
 
     /** O `0x8D` é a resposta à lista de parâmetros de evento, e não fecha operação nenhuma. */
@@ -58,19 +59,5 @@ final class PillDispenserDiscoveryDecodingTest extends TestCase
     private function protocol(): PillDispenserTcpProtocol
     {
         return new PillDispenserTcpProtocol(new PillDispenserAdapter(), new DeviceEventDecoder());
-    }
-
-    private function session(): \Hub\Device\DeviceSession
-    {
-        return new \Hub\Device\DeviceSession(
-            new \Tests\Unit\Hub\PillFakeConnection(),
-            true,
-            '869243062262262',
-            'zayata-m228',
-            'Zayata',
-            'M228',
-            'Zayata M228',
-            'pill_dispenser',
-        );
     }
 }

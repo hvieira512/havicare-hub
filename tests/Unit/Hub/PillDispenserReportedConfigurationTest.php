@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Tests\Unit\Hub;
 
 use Hub\Device\DeviceEventDecoder;
-use Hub\Device\DeviceSession;
 use Hub\Protocol\Adapter\PillDispenserAdapter;
 use PHPUnit\Framework\TestCase;
+use Tests\Support\Doubles\PillDispenserFixtures;
 
 /** A resposta ao `0x05` usa as chaves e formas do envio, para o reportado se desenhar com o mesmo componente que o desejado. */
 final class PillDispenserReportedConfigurationTest extends TestCase
@@ -126,17 +126,7 @@ final class PillDispenserReportedConfigurationTest extends TestCase
      */
     private function readConfiguration(array $tlv): array
     {
-        $adapter = new PillDispenserAdapter();
-        $entries = [];
-        foreach ($tlv as $tag => $value) {
-            $entries[$tag] = ['value' => $value];
-        }
-
-        return $this->settingsOf($adapter->decodeIncoming($adapter->encodeOutgoing([
-            'packetType' => 0x85,
-            'mac' => 'AABBCCDDEEFF',
-            'tlv' => $entries,
-        ])));
+        return $this->settingsOf(PillDispenserFixtures::frame(0x85, $tlv));
     }
 
     /**
@@ -145,24 +135,10 @@ final class PillDispenserReportedConfigurationTest extends TestCase
      */
     private function settingsOf(array $decoded): array
     {
-        $events = (new DeviceEventDecoder())->decode($this->session(), $decoded);
+        $events = (new DeviceEventDecoder())->decode(PillDispenserFixtures::session(), $decoded);
         self::assertCount(1, $events);
         self::assertSame('device_config', $events[0]['feature']);
 
         return $events[0]['value']['settings'] ?? [];
-    }
-
-    private function session(): DeviceSession
-    {
-        return new DeviceSession(
-            new PillFakeConnection(),
-            true,
-            'AABBCCDDEEFF',
-            'zayata-m228',
-            'Zayata',
-            'M228',
-            'Zayata M228',
-            'pill_dispenser',
-        );
     }
 }

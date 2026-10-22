@@ -6,10 +6,10 @@ namespace Tests\Unit\Hub;
 
 use Hub\Command\DeviceCommandCatalog;
 use Hub\Device\DeviceEventDecoder;
-use Hub\Device\DeviceSession;
 use Hub\Protocol\Adapter\PillDispenserAdapter;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
+use Tests\Support\Doubles\PillDispenserFixtures;
 
 /** O `0x06` montado pelo construtor real lê-se como se fosse a resposta `0x86`. */
 final class PillDispenserReadBackRoundTripTest extends TestCase
@@ -132,26 +132,12 @@ final class PillDispenserReadBackRoundTripTest extends TestCase
             'tlv' => $written['tlv'],
         ]));
 
-        foreach ((new DeviceEventDecoder())->decode($this->session(), $answer) as $event) {
+        foreach ((new DeviceEventDecoder())->decode(PillDispenserFixtures::session(), $answer) as $event) {
             if ($event['feature'] === 'device_config') {
                 return $event['value']['settings'] ?? [];
             }
         }
 
         self::fail('a resposta não saiu como configuração reportada');
-    }
-
-    private function session(): DeviceSession
-    {
-        return new DeviceSession(
-            new PillFakeConnection(),
-            true,
-            'AABBCCDDEEFF',
-            'zayata-m228',
-            'Zayata',
-            'M228',
-            'Zayata M228',
-            'pill_dispenser',
-        );
     }
 }

@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Hub;
 
-use Hub\Device\ConnectionInterface;
 use Hub\Device\DeviceEventDecoder;
 use Hub\Device\DeviceSession;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
+use Tests\Support\Doubles\FakeConnection;
 
 final class DeviceEventDecoderTest extends TestCase
 {
@@ -892,32 +892,12 @@ final class DeviceEventDecoderTest extends TestCase
     private function session(string $protocol): DeviceSession
     {
         return new DeviceSession(
-            new DecoderFakeConnection(),
+            new FakeConnection(),
             true,
             '8800000015',
             $protocol,
             'Supplier',
             'Model'
         );
-    }
-}
-
-final class DecoderFakeConnection implements ConnectionInterface
-{
-    public int $resourceId = 1;
-
-    public function remoteAddress(): ?string
-    {
-        return null;
-    }
-
-    public function send(string $data): static
-    {
-        return $this;
-    }
-
-    public function close(): static
-    {
-        return $this;
     }
 }

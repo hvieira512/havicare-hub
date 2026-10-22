@@ -5,10 +5,10 @@ declare(strict_types=1);
 namespace Tests\Unit\Hub;
 
 use Hub\Device\DeviceEventDecoder;
-use Hub\Device\DeviceSession;
 use Hub\Domain\Capability\CapabilityCatalog;
 use Hub\Protocol\Adapter\PillDispenserAdapter;
 use PHPUnit\Framework\TestCase;
+use Tests\Support\Doubles\PillDispenserFixtures;
 
 /** A versão do firmware chega no pacote de registo e sai pela capacidade que os relógios e as pulseiras já usam. */
 final class PillDispenserFirmwareVersionTest extends TestCase
@@ -71,20 +71,6 @@ final class PillDispenserFirmwareVersionTest extends TestCase
         $decoded = $adapter->decodeIncoming($adapter->encodeOutgoing($payload));
         self::assertIsArray($decoded);
 
-        return (new DeviceEventDecoder())->decode($this->session(), $decoded);
-    }
-
-    private function session(): DeviceSession
-    {
-        return new DeviceSession(
-            new PillFakeConnection(),
-            true,
-            'AABBCCDDEEFF',
-            'zayata-m228',
-            'Zayata',
-            'M228',
-            'Zayata M228',
-            'pill_dispenser',
-        );
+        return (new DeviceEventDecoder())->decode(PillDispenserFixtures::session(), $decoded);
     }
 }

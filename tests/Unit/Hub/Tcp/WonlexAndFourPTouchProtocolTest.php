@@ -11,13 +11,14 @@ use Hub\Protocol\Adapter\WonlexAdapter;
 use Hub\Ingress\Tcp\Supplier\FourPTouch\FourPTouchTcpProtocol;
 use Hub\Ingress\Tcp\Supplier\Wonlex\WonlexTcpProtocol;
 use PHPUnit\Framework\TestCase;
+use Tests\Support\Doubles\FakeConnection;
 
 final class WonlexAndFourPTouchProtocolTest extends TestCase
 {
     public function testWonlexLoginAndHeartbeatBuildResponses(): void
     {
         $protocol = new WonlexTcpProtocol(new WonlexAdapter(), new DeviceEventDecoder());
-        $session = new DeviceSession(new TcpFakeConnection(), true, '868705080300697', 'wonlex-json');
+        $session = new DeviceSession(new FakeConnection(), true, '868705080300697', 'wonlex-json');
 
         $login = $protocol->handleIncoming($session, $this->wonlexFrame(['type' => 'login', 'ident' => 614377, 'imei' => '868705080300697']));
         $heartbeat = $protocol->handleIncoming($session, $this->wonlexFrame(['type' => 'heartbeat', 'ident' => 614377, 'imei' => '868705080300697', 'data' => ['batteryLevel' => 90]]));
@@ -47,7 +48,7 @@ final class WonlexAndFourPTouchProtocolTest extends TestCase
                 ],
             ]
         );
-        $session = new DeviceSession(new TcpFakeConnection(), true, '868705080300697', 'wonlex-json');
+        $session = new DeviceSession(new FakeConnection(), true, '868705080300697', 'wonlex-json');
         $adapter = new WonlexAdapter();
 
         $config = $protocol->handleIncoming($session, $this->wonlexFrame([
@@ -68,7 +69,7 @@ final class WonlexAndFourPTouchProtocolTest extends TestCase
     public function testFourPTouchProducesProtocolAck(): void
     {
         $protocol = new FourPTouchTcpProtocol(new FourPTouchAdapter(), new DeviceEventDecoder());
-        $session = new DeviceSession(new TcpFakeConnection(), true, '637507597567372', 'four-p-touch');
+        $session = new DeviceSession(new FakeConnection(), true, '637507597567372', 'four-p-touch');
 
         $message = $protocol->handleIncoming($session, '[3G*7597567372*000D*LK,50,100,100]');
 
@@ -80,7 +81,7 @@ final class WonlexAndFourPTouchProtocolTest extends TestCase
     public function testFourPTouchAlarmProducesProtocolAck(): void
     {
         $protocol = new FourPTouchTcpProtocol(new FourPTouchAdapter(), new DeviceEventDecoder());
-        $session = new DeviceSession(new TcpFakeConnection(), true, '637507597567372', 'four-p-touch');
+        $session = new DeviceSession(new FakeConnection(), true, '637507597567372', 'four-p-touch');
         $alarm = (new FourPTouchAdapter())->encodeOutgoing([
             'type' => 'AL',
             'imei' => '7597567372',
@@ -97,7 +98,7 @@ final class WonlexAndFourPTouchProtocolTest extends TestCase
     public function testFourPTouchFirmwareVersionDoesNotProduceProtocolAck(): void
     {
         $protocol = new FourPTouchTcpProtocol(new FourPTouchAdapter(), new DeviceEventDecoder());
-        $session = new DeviceSession(new TcpFakeConnection(), true, '637507597567372', 'four-p-touch');
+        $session = new DeviceSession(new FakeConnection(), true, '637507597567372', 'four-p-touch');
 
         $message = $protocol->handleIncoming($session, '[3G*7597567372*000C*VERNO,ABC123]');
 
@@ -108,7 +109,7 @@ final class WonlexAndFourPTouchProtocolTest extends TestCase
     public function testFourPTouchDeviceStatusDoesNotProduceProtocolAck(): void
     {
         $protocol = new FourPTouchTcpProtocol(new FourPTouchAdapter(), new DeviceEventDecoder());
-        $session = new DeviceSession(new TcpFakeConnection(), true, '637507597567372', 'four-p-touch');
+        $session = new DeviceSession(new FakeConnection(), true, '637507597567372', 'four-p-touch');
 
         $message = $protocol->handleIncoming($session, '[3G*7597567372*0002*TS]');
 
@@ -143,25 +144,5 @@ final class WonlexAndFourPTouchProtocolTest extends TestCase
     private function wonlexFrame(array $payload): string
     {
         return (new WonlexAdapter())->encodeOutgoing($payload);
-    }
-}
-
-final class TcpFakeConnection implements \Hub\Device\ConnectionInterface
-{
-    public int $resourceId = 1;
-
-    public function remoteAddress(): ?string
-    {
-        return null;
-    }
-
-    public function send(string $data): static
-    {
-        return $this;
-    }
-
-    public function close(): static
-    {
-        return $this;
     }
 }
