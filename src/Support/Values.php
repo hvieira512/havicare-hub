@@ -19,4 +19,16 @@ final class Values
     {
         return array_filter($fields, static fn (mixed $value): bool => $value !== null);
     }
+
+    /**
+     * A mediana, e num número par a de cima: é sempre um dos valores, e não uma média deles.
+     *
+     * @param non-empty-list<int> $values
+     */
+    public static function median(array $values): int
+    {
+        sort($values);
+
+        return $values[intdiv(count($values), 2)];
+    }
 }

@@ -23,40 +23,62 @@ final class MeasurementNormalizer
      * trama com o valor a zero.
      *
      * @param array<string, mixed> $payload
-     * @return array{0: string, 1: array<string, float|int>}|null
+     * @return array{0: string, 1: array<string, mixed>}|null
      */
     public static function forSdkType(int $sdkType, array $payload): ?array
     {
-        return match ($sdkType) {
+        $read = self::sdkTypes()[$sdkType][0] ?? null;
+
+        return $read === null ? null : $read($payload);
+    }
+
+    /** O pedido que mandou fazer esta medição, pelo tipo do SDK, o único identificador da resposta. */
+    public static function operationForSdkType(int $sdkType): ?string
+    {
+        return self::sdkTypes()[$sdkType][1] ?? null;
+    }
+
+    /**
+     * Por tipo do SDK, como se lê a trama e o pedido que a mandou fazer. Os totais do dia e a procura
+     * da pulseira respondem sem pedido; o ECG tem pedido, e o traçado chega pela onda.
+     *
+     * @return array<int, array{0: (\Closure(array<string, mixed>): ?array{0: string, 1: array<string, mixed>})|null, 1: ?string}>
+     */
+    private static function sdkTypes(): array
+    {
+        $bloodPressure = [self::bloodPressureReading(...), 'measure.bloodPressure.start'];
+
+        return [
             // O fabricante documenta o intervalo válido e manda filtrar o resto: fora dele o
             // firmware devolve sentinelas -- `0` enquanto procura, `1` quando desiste.
-            51 => self::withinRange($payload['heartRate'] ?? null, self::HEART_RATE_MIN, self::HEART_RATE_MAX) === null
+            51 => [static fn (array $payload): ?array => self::withinRange($payload['heartRate'] ?? null, self::HEART_RATE_MIN, self::HEART_RATE_MAX) === null
                 ? null
-                : ['heart_rate', ['bpm' => (int)$payload['heartRate']]],
-            31 => self::withinRange($payload['bloodOxygen'] ?? null, 1, 100) === null
+                : ['heart_rate', ['bpm' => (int)$payload['heartRate']]], 'measure.heartRate.start'],
+            31 => [static fn (array $payload): ?array => self::withinRange($payload['bloodOxygen'] ?? null, 1, 100) === null
                 ? null
-                : ['blood_oxygen', ['spo2Percent' => (int)$payload['bloodOxygen']]],
+                : ['blood_oxygen', ['spo2Percent' => (int)$payload['bloodOxygen']]], 'measure.oxygen.start'],
             // A pulseira reporta em mmol/L e o hub publica em mg/dL, tal como no histórico.
-            22 => ($glucose = self::positive($payload['bloodGlucose'] ?? null)) === null
+            22 => [static fn (array $payload): ?array => ($glucose = self::positive($payload['bloodGlucose'] ?? null)) === null
                 ? null
-                : ['blood_sugar', ['glucoseMgDl' => round($glucose * DailyBlockNormalizer::MMOL_PER_L_TO_MG_PER_DL, 1)]],
-            6 => ($body = self::positive($payload['bodyTemperature'] ?? null)) === null
+                : ['blood_sugar', ['glucoseMgDl' => round($glucose * DailyBlockNormalizer::MMOL_PER_L_TO_MG_PER_DL, 1)]], 'measure.bloodGlucose.start'],
+            6 => [static fn (array $payload): ?array => ($body = self::positive($payload['bodyTemperature'] ?? null)) === null
                 ? null
                 : ['temperature', Values::withoutNulls([
                     'bodyCelsius' => round($body, 1),
                     'surfaceCelsius' => ($skin = self::positive($payload['bodySurfaceTemperature'] ?? null)) === null
                         ? null
                         : round($skin, 1),
-                ])],
-            58 => self::withinRange($payload['pressure'] ?? null, 1, 100) === null
+                ])], 'measure.temperature.start'],
+            58 => [static fn (array $payload): ?array => self::withinRange($payload['pressure'] ?? null, 1, 100) === null
                 ? null
-                : ['stress', ['stressScore' => (int)$payload['pressure']]],
-            18, 28 => self::bloodPressureReading($payload),
-            32 => self::bodyComposition($payload),
-            9 => self::dailyActivity($payload),
-            17 => self::findDeviceState($payload),
-            default => null,
-        };
+                : ['stress', ['stressScore' => (int)$payload['pressure']]], 'measure.stress.start'],
+            18 => $bloodPressure,
+            28 => $bloodPressure,
+            32 => [self::bodyComposition(...), 'measure.bodyComposition.start'],
+            42 => [null, self::ECG_OPERATION],
+            9 => [self::dailyActivity(...), null],
+            17 => [self::findDeviceState(...), null],
+        ];
     }
 
     /**
@@ -88,35 +110,11 @@ final class MeasurementNormalizer
             }
 
             if ($values !== []) {
-                $out[$name] = self::median($values) * $scale;
+                $out[$name] = Values::median($values) * $scale;
             }
         }
 
         return $out;
-    }
-
-    /** @param list<int> $values */
-    private static function median(array $values): int
-    {
-        sort($values);
-
-        return $values[intdiv(count($values), 2)];
-    }
-
-    /** O pedido que mandou fazer esta medição, pelo tipo do SDK, o único identificador da resposta. */
-    public static function operationForSdkType(int $sdkType): ?string
-    {
-        return match ($sdkType) {
-            51 => 'measure.heartRate.start',
-            31 => 'measure.oxygen.start',
-            22 => 'measure.bloodGlucose.start',
-            6 => 'measure.temperature.start',
-            58 => 'measure.stress.start',
-            18, 28 => 'measure.bloodPressure.start',
-            32 => 'measure.bodyComposition.start',
-            42 => self::ECG_OPERATION,
-            default => null,
-        };
     }
 
     /**
