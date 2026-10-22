@@ -200,6 +200,7 @@ final class ApiKernel
         $route = $match['route'];
 
         $bodyMode = $route->body();
+        $body = null;
         if ($bodyMode !== null) {
             $body = $bodyMode === ApiRoute::FORM_BODY
                 ? RequestContext::formOrJsonBody($request)
@@ -211,7 +212,13 @@ final class ApiKernel
             $request = $request->withAttribute(RequestContext::ATTR_BODY, $body);
         }
 
-        $result = $route->invoke($match['parameters'], $request);
+        // Sem modo de corpo declarado, um corpo ilegível liga-se como vazio e cai na validação.
+        $input = $route->bind($match['parameters'], $body ?? RequestContext::jsonBody($request) ?? []);
+        if (is_array($input)) {
+            return $this->json->result($input);
+        }
+
+        $result = $route->invoke($match['parameters'], $request, $input);
         if ($result instanceof PromiseInterface) {
             return $result->then(fn(mixed $value): Response => $this->routeResponse($value, $route->status()));
         }

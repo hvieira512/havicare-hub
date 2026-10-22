@@ -31,20 +31,6 @@ final class DeviceWriteAudit
         return $error->toArray();
     }
 
-    /**
-     * A recusa que o validador já montou como array, e que por isso não tem `ApiError`.
-     *
-     * @param array<string, mixed> $rejection
-     *
-     * @return array<string, mixed>
-     */
-    public function rejectValidated(array $rejection, string $reason): array
-    {
-        $this->log((string)($rejection['error']['code'] ?? 'invalid_request'), $reason);
-
-        return $rejection;
-    }
-
     /** @param array<string, mixed> $extra */
     private function log(string $code, string $reason, array $extra = []): void
     {

@@ -10,24 +10,14 @@ use Hub\Api\Http\CollectionColumns;
 use Hub\Api\Http\CollectionPresenter;
 use Hub\Infrastructure\Persistence\Repository\ApiDataAccess;
 use Hub\Api\Request\ApiUserWriteRequest;
-use Hub\Api\Request\RequestBinder;
 
 class ApiUserService
 {
-    /**
-     * Os campos cuja recusa tem código próprio, em vez do `invalid_request` das constraints.
-     *
-     * @var array<string, string>
-     */
-    private const ERROR_CODE_BY_FIELD = ['role' => 'invalid_role'];
-
     private CollectionPresenter $presenter;
-    private RequestBinder $binder;
 
     public function __construct(private ApiDataAccess $db)
     {
         $this->presenter = new CollectionPresenter();
-        $this->binder = new RequestBinder();
     }
 
     /** @return array<string, mixed> */
@@ -61,21 +51,10 @@ class ApiUserService
     }
 
     /**
-     * @param array<string, mixed> $payload
      * @return array<string, mixed>
      */
-    public function create(array $payload): array
+    public function create(ApiUserWriteRequest $request): array
     {
-        $request = $this->binder->bind(
-            $payload,
-            ApiUserWriteRequest::class,
-            [ApiUserWriteRequest::GROUP_CREATE],
-            codeByField: self::ERROR_CODE_BY_FIELD,
-        );
-        if (is_array($request)) {
-            return $request;
-        }
-
         $license = $this->resolveLicense($request);
         if (isset($license['error'])) {
             return $license;
@@ -97,22 +76,12 @@ class ApiUserService
     }
 
     /**
-     * @param array<string, mixed> $payload
      * @return array<string, mixed>
      */
-    public function update(int $id, array $payload): array
+    public function update(int $id, ApiUserWriteRequest $request): array
     {
         if ($this->db->apiUsers->findById($id) === null) {
             return ApiError::userNotFound()->toArray();
-        }
-
-        $request = $this->binder->bind(
-            $payload,
-            ApiUserWriteRequest::class,
-            codeByField: self::ERROR_CODE_BY_FIELD,
-        );
-        if (is_array($request)) {
-            return $request;
         }
 
         $license = $this->resolveLicense($request);

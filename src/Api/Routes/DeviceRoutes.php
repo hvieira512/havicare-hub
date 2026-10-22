@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 use Hub\Api\Controllers\DeviceController;
 use Hub\Api\Http\RequestContext;
+use Hub\Api\Request\DeviceAssociationRequest;
+use Hub\Api\Request\DeviceWriteRequest;
 use Hub\Api\Routing\ApiRoute;
 use Hub\Api\Services\DeviceService;
 use Psr\Http\Message\ServerRequestInterface as Request;
@@ -40,9 +42,12 @@ return static function (
         new ApiRoute(
             'PATCH',
             '/api/devices/{imei}/association',
-            static fn(array $params, Request $request): array
-                => $devices->associations->associate($params['imei'], RequestContext::body($request), $auth($request)),
+            static fn(array $params, Request $request, DeviceAssociationRequest $input): array
+                => $devices->associations->associate($params['imei'], $input, $auth($request)),
             body: ApiRoute::JSON_BODY,
+            request: DeviceAssociationRequest::class,
+            // Os clientes mandam o `licenseId` como texto.
+            coerceStrings: true,
         ),
         new ApiRoute('DELETE', '/api/devices/{imei}/association', static fn(array $params, Request $request): array
             => $devices->associations->remove($params['imei'], $auth($request))),
@@ -51,20 +56,26 @@ return static function (
         new ApiRoute(
             'POST',
             '/api/devices',
-            static fn(array $params, Request $request): array => $devices->create(RequestContext::body($request), $auth($request)),
+            static fn(array $params, Request $request, DeviceWriteRequest $input): array => $devices->create($input, $auth($request)),
             body: ApiRoute::JSON_BODY,
             status: 201,
+            request: DeviceWriteRequest::class,
+            groups: [DeviceWriteRequest::GROUP_CREATE],
+            coerceStrings: true,
         ),
         new ApiRoute(
             'PUT',
             '/api/devices/{imei}',
-            static fn(array $params, Request $request): array => $devices->update(
+            static fn(array $params, Request $request, DeviceWriteRequest $input): array => $devices->update(
                 $params['imei'],
-                RequestContext::body($request),
+                $input,
                 $auth($request),
                 RequestContext::requestId($request),
+                array_key_exists('configurations', RequestContext::body($request)),
             ),
             body: ApiRoute::JSON_BODY,
+            request: DeviceWriteRequest::class,
+            coerceStrings: true,
         ),
         new ApiRoute(
             'PATCH',

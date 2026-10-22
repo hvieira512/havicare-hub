@@ -7,7 +7,6 @@ namespace Hub\Api\Services;
 use Hub\Api\Http\ApiError;
 use Hub\Infrastructure\Persistence\Repository\ApiDataAccess;
 use Hub\Api\Request\RadarCredentialsWriteRequest;
-use Hub\Api\Request\RequestBinder;
 use Hub\Ingress\Http\Qinglanst\RadarLayoutSync;
 use React\Promise\PromiseInterface;
 
@@ -22,13 +21,10 @@ class RadarCredentialsService
     /** Quantos radares se experimentam: a primeira dezena já diz se a conta é desta licença. */
     private const SAMPLE = 10;
 
-    private RequestBinder $binder;
-
     public function __construct(
         private ApiDataAccess $db,
         private ?RadarLayoutSync $sync = null,
     ) {
-        $this->binder = new RequestBinder();
     }
 
     /**
@@ -57,25 +53,25 @@ class RadarCredentialsService
     }
 
     /**
-     * @param array<string, mixed> $payload
-     * @return array<string, mixed>
+     * Só a primeira gravação exige os segredos: metade das credenciais nunca autentica.
+     *
+     * @return list<string>
      */
-    public function save(int $licenseRefId, array $payload): array
+    public function requestGroups(int $licenseRefId): array
+    {
+        return $this->db->radarCredentials->findByLicenseRefId($licenseRefId) === null
+            ? [RadarCredentialsWriteRequest::GROUP_CREATE]
+            : [];
+    }
+
+    /** @return array<string, mixed> */
+    public function save(int $licenseRefId, RadarCredentialsWriteRequest $request): array
     {
         if ($this->db->licenses->findById($licenseRefId) === null) {
             return ApiError::licenseNotFound()->toArray();
         }
 
         $existing = $this->db->radarCredentials->findByLicenseRefId($licenseRefId);
-        $request = $this->binder->bind(
-            $payload,
-            RadarCredentialsWriteRequest::class,
-            // Só a primeira gravação exige os segredos: metade das credenciais nunca autentica.
-            $existing === null ? [RadarCredentialsWriteRequest::GROUP_CREATE] : [],
-        );
-        if (is_array($request)) {
-            return $request;
-        }
 
         $this->db->radarCredentials->upsert(
             $licenseRefId,

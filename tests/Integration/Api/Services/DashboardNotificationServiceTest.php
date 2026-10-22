@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Integration\Api\Services;
 
+use Hub\Api\Request\NotificationReadRequest;
 use Hub\Infrastructure\Persistence\Repository\ApiDataAccess;
 use Hub\Api\Services\DashboardNotificationService;
 use Tests\Support\MysqlDashboardTestCase;
@@ -38,13 +39,8 @@ final class DashboardNotificationServiceTest extends MysqlDashboardTestCase
         self::assertSame('861265062544868', $result['data'][0]['imei']);
     }
 
-    public function testMarkReadValidatesAndUpdatesIds(): void
+    public function testMarkReadUpdatesIds(): void
     {
-        self::assertSame(
-            'invalid_request',
-            $this->service->markRead([])['error']['code'] ?? null
-        );
-
         $this->db->dashboardNotifications->record(
             'device_not_authorized',
             '861265062544868',
@@ -55,7 +51,7 @@ final class DashboardNotificationServiceTest extends MysqlDashboardTestCase
         );
         $id = (int)$this->db->dashboardNotifications->latest(20)[0]['id'];
 
-        $result = $this->service->markRead(['ids' => [$id]]);
+        $result = $this->service->markRead(new NotificationReadRequest([$id]));
 
         self::assertSame('ok', $result['status']);
         self::assertSame(0, $result['unreadCount']);

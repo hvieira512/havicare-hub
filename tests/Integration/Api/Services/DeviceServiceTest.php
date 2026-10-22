@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Tests\Integration\Api\Services;
 
+use Hub\Api\Request\DeviceAssociationRequest;
+use Hub\Api\Request\DeviceWriteRequest;
 use Hub\Api\Auth\ApiAuthContext;
 use Hub\Api\Services\DeviceService;
 use Hub\Infrastructure\Persistence\Repository\ApiDataAccess;
@@ -102,10 +104,7 @@ final class DeviceServiceTest extends MysqlDashboardTestCase
 
         $this->mockDeviceAccess($imei, 'vivistar-iw', 'Vivistar', 'L08 Pro');
 
-        $result = $this->service->associations->associate($imei, [
-            'company' => $company,
-            'licenseId' => (string)$licenseId,
-        ]);
+        $result = $this->service->associations->associate($imei, new DeviceAssociationRequest($company, $licenseId));
 
         self::assertSame('ok', $result['status'] ?? null);
         self::assertSame($company, $result['association']['company'] ?? null);
@@ -137,12 +136,12 @@ final class DeviceServiceTest extends MysqlDashboardTestCase
             }
         );
 
-        $result = $this->service->create([
-            'imei' => '861265061009877',
-            'supplier' => 'Vivistar',
-            'model' => 'L08 Pro',
-            'licenseId' => null,
-        ]);
+        $result = $this->service->create(new DeviceWriteRequest(
+            imei: '861265061009877',
+            supplier: 'Vivistar',
+            model: 'L08 Pro',
+            licenseId: null,
+        ));
 
         self::assertSame('ok', $result['status'] ?? null);
         self::assertSame(['redis', 'sql'], $writes);

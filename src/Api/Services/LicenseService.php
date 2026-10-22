@@ -9,17 +9,14 @@ use Hub\Api\Http\CollectionPresenter;
 use Hub\Api\Http\CollectionColumns;
 use Hub\Infrastructure\Persistence\Repository\ApiDataAccess;
 use Hub\Api\Request\LicenseWriteRequest;
-use Hub\Api\Request\RequestBinder;
 
 class LicenseService
 {
     private CollectionPresenter $presenter;
-    private RequestBinder $binder;
 
     public function __construct(private ApiDataAccess $db)
     {
         $this->presenter = new CollectionPresenter();
-        $this->binder = new RequestBinder();
     }
 
     /** @return array<string, mixed> */
@@ -66,21 +63,10 @@ class LicenseService
     /**
      * O `licenseId` chega como texto tantas vezes como inteiro, e por isso converte-se.
      *
-     * @param array<string, mixed> $payload
      * @return array<string, mixed>
      */
-    public function create(array $payload): array
+    public function create(LicenseWriteRequest $request): array
     {
-        $request = $this->binder->bind(
-            $payload,
-            LicenseWriteRequest::class,
-            [LicenseWriteRequest::GROUP_CREATE],
-            coerceStrings: true,
-        );
-        if (is_array($request)) {
-            return $request;
-        }
-
         $refused = $this->refuseUnknownCompany($request->companyId);
         if ($refused !== null) {
             return $refused;
@@ -98,19 +84,13 @@ class LicenseService
     /**
      * O que não vier no corpo fica como está.
      *
-     * @param array<string, mixed> $payload
      * @return array<string, mixed>
      */
-    public function update(int $id, array $payload): array
+    public function update(int $id, LicenseWriteRequest $request): array
     {
         $existing = $this->db->licenses->findById($id);
         if ($existing === null) {
             return ApiError::licenseNotFound()->toArray();
-        }
-
-        $request = $this->binder->bind($payload, LicenseWriteRequest::class, coerceStrings: true);
-        if (is_array($request)) {
-            return $request;
         }
 
         $refused = $this->refuseUnknownCompany($request->companyId);

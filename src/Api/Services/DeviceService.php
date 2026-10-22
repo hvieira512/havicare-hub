@@ -12,7 +12,6 @@ use Hub\Command\DeviceConfigurationCatalog;
 use Hub\Api\Auth\ApiAuthContext;
 use Hub\Infrastructure\Persistence\Repository\ApiDataAccess;
 use Hub\Api\Request\DeviceWriteRequest;
-use Hub\Api\Request\RequestBinder;
 use Hub\Domain\Capability\CapabilityCatalog;
 use Hub\Domain\Capability\CapabilityRegistry;
 use Hub\State\DeviceStoreContract;
@@ -40,7 +39,6 @@ class DeviceService
     private DeviceDirectory $directory;
     private ConfigurationLifecyclePresenter $lifecyclePresenter;
     public readonly DeviceFeatureRequestService $featureRequests;
-    private RequestBinder $binder;
 
     public function __construct(
         private DeviceStoreContract $store,
@@ -48,7 +46,6 @@ class DeviceService
         private DeviceHubServer $hub,
         private ApiDataAccess $db,
     ) {
-        $this->binder = new RequestBinder();
         $this->query = new CollectionQuery();
         $this->images = new ModelImageUrl();
         $this->capabilityRegistry = new CapabilityRegistry();
@@ -383,22 +380,9 @@ class DeviceService
         ];
     }
 
-    /**
-     * @param array<string, mixed> $payload
-     * @return array<string, mixed>
-     */
-    public function create(array $payload, ?ApiAuthContext $auth = null): array
+    /** @return array<string, mixed> */
+    public function create(DeviceWriteRequest $request, ?ApiAuthContext $auth = null): array
     {
-        $request = $this->binder->bind(
-            $payload,
-            DeviceWriteRequest::class,
-            [DeviceWriteRequest::GROUP_CREATE],
-            coerceStrings: true,
-        );
-        if (is_array($request)) {
-            return $request;
-        }
-
         $imei = trim((string)$request->imei);
         $supplier = trim($request->supplier);
         $model = trim($request->model);
@@ -438,14 +422,19 @@ class DeviceService
     }
 
     /**
-     * @param array<string, mixed> $payload
+     * @param bool $carriesConfigurations o corpo trouxe `configurations`, que têm rota própria
      * @return array<string, mixed>
      */
-    public function update(string $imei, array $payload, ?ApiAuthContext $auth = null, string $requestId = ''): array
-    {
+    public function update(
+        string $imei,
+        DeviceWriteRequest $request,
+        ?ApiAuthContext $auth = null,
+        string $requestId = '',
+        bool $carriesConfigurations = false,
+    ): array {
         $audit = new DeviceWriteAudit($imei, $requestId);
 
-        if (array_key_exists('configurations', $payload)) {
+        if ($carriesConfigurations) {
             return $audit->reject(
                 ApiError::invalidField('configurations', 'Use /api/devices/{imei}/configurations for device configurations'),
                 'configuration_payload_not_allowed_on_metadata_endpoint',
@@ -454,11 +443,6 @@ class DeviceService
 
         if ($auth !== null && !$auth->isAdmin()) {
             return $audit->reject(ApiError::forbidden(), 'metadata_update_requires_admin');
-        }
-
-        $request = $this->binder->bind($payload, DeviceWriteRequest::class, coerceStrings: true);
-        if (is_array($request)) {
-            return $audit->rejectValidated($request, 'missing_required_metadata_fields');
         }
 
         // Ausente é o do endereço; vazio é uma recusa. Daí o campo ser anulável e o

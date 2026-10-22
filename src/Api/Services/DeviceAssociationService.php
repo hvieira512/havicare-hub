@@ -9,7 +9,6 @@ use Hub\Api\Http\ApiError;
 use Hub\Api\Http\DevicePresentation;
 use Hub\Infrastructure\Persistence\Repository\ApiDataAccess;
 use Hub\Api\Request\DeviceAssociationRequest;
-use Hub\Api\Request\RequestBinder;
 use Hub\State\DeviceRegistry;
 use Hub\Domain\DeviceMetadata;
 use Hub\Device\DeviceHubServer;
@@ -17,32 +16,20 @@ use Hub\Registry\Whitelist;
 
 final class DeviceAssociationService
 {
-    private RequestBinder $binder;
-
     public function __construct(
         private DeviceRegistry $store,
         private Whitelist $whitelist,
         private ApiDataAccess $db,
         private DeviceHubServer $hub,
     ) {
-        $this->binder = new RequestBinder();
     }
 
-    /**
-     * @param array<string, mixed> $payload
-     * @return array<string, mixed>
-     */
-    public function associate(string $imei, array $payload, ?ApiAuthContext $auth = null): array
+    /** @return array<string, mixed> */
+    public function associate(string $imei, DeviceAssociationRequest $request, ?ApiAuthContext $auth = null): array
     {
         $existing = $this->whitelist->getMetadata($imei);
         if ($existing === null) {
             return ApiError::deviceNotFound()->toArray();
-        }
-
-        // O `coerceStrings` porque os clientes mandam o `licenseId` como texto.
-        $request = $this->binder->bind($payload, DeviceAssociationRequest::class, coerceStrings: true);
-        if (is_array($request)) {
-            return $request;
         }
 
         // A normalização fica fora da constraint: o `normalizeCompany()` transforma o vazio em

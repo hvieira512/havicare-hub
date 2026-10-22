@@ -8,6 +8,7 @@
 declare(strict_types=1);
 
 use Hub\Api\Http\RequestContext;
+use Hub\Api\Request\RadarCredentialsWriteRequest;
 use Hub\Api\Routing\ApiRoute;
 use Hub\Api\Services\RadarCredentialsService;
 use Psr\Http\Message\ServerRequestInterface;
@@ -22,9 +23,11 @@ return static function (
         new ApiRoute(
             'PUT',
             '/api/licenses/{id:\d+}/radar-credentials',
-            static fn(array $params, ServerRequestInterface $request): array
-                => $radarCredentials->save((int)$params['id'], RequestContext::body($request)),
+            static fn(array $params, ServerRequestInterface $request, RadarCredentialsWriteRequest $input): array
+                => $radarCredentials->save((int)$params['id'], $input),
             body: ApiRoute::JSON_BODY,
+            request: RadarCredentialsWriteRequest::class,
+            groups: static fn(array $params): array => $radarCredentials->requestGroups((int)$params['id']),
         ),
         new ApiRoute('DELETE', '/api/licenses/{id:\d+}/radar-credentials', static fn(array $params): array
             => $radarCredentials->delete((int)$params['id'])),

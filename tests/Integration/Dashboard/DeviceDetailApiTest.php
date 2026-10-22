@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Integration\Dashboard;
 
+use Hub\Api\Request\DeviceWriteRequest;
 use Tests\Support\ConfigurationFixtures;
 use Tests\Support\DevicesApiFixture;
 use Tests\Support\MysqlDashboardTestCase;
@@ -221,13 +222,13 @@ final class DeviceDetailApiTest extends MysqlDashboardTestCase
     {
         [$api, $db] = $this->makeApi();
         $imei = '868705080300697';
-        $created = $api->create([
-            'imei' => $imei,
-            'supplier' => 'Wonlex',
-            'model' => 'HW20PRO',
-            'deviceType' => 'watch',
-            'licenseId' => null,
-        ]);
+        $created = $api->create(new DeviceWriteRequest(
+            imei: $imei,
+            supplier: 'Wonlex',
+            model: 'HW20PRO',
+            deviceType: 'watch',
+            licenseId: null,
+        ));
         self::assertSame('ok', $created['status'] ?? null);
 
         $model = $db->models->find('Wonlex', 'HW20PRO');
@@ -326,13 +327,13 @@ final class DeviceDetailApiTest extends MysqlDashboardTestCase
     {
         [$api, $db] = $this->makeApi();
         $imei = '868705080300697';
-        $created = $api->create([
-            'imei' => $imei,
-            'supplier' => 'Wonlex',
-            'model' => 'HW20PRO',
-            'deviceType' => 'watch',
-            'licenseId' => null,
-        ]);
+        $created = $api->create(new DeviceWriteRequest(
+            imei: $imei,
+            supplier: 'Wonlex',
+            model: 'HW20PRO',
+            deviceType: 'watch',
+            licenseId: null,
+        ));
         self::assertSame('ok', $created['status'] ?? null);
 
         $model = $db->models->find('Wonlex', 'HW20PRO');
@@ -374,13 +375,13 @@ final class DeviceDetailApiTest extends MysqlDashboardTestCase
         $submitted = [];
         [$api, $db, $store] = $this->makeApi(hub: $this->recordingHub($submitted));
         $imei = '868705080300697';
-        self::assertSame('ok', $api->create([
-            'imei' => $imei,
-            'supplier' => 'Wonlex',
-            'model' => 'HW20PRO',
-            'deviceType' => 'watch',
-            'licenseId' => null,
-        ])['status'] ?? null);
+        self::assertSame('ok', $api->create(new DeviceWriteRequest(
+            imei: $imei,
+            supplier: 'Wonlex',
+            model: 'HW20PRO',
+            deviceType: 'watch',
+            licenseId: null,
+        ))['status'] ?? null);
 
         $model = $db->models->find('Wonlex', 'HW20PRO');
         self::assertIsArray($model);

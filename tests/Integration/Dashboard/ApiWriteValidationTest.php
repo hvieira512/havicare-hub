@@ -309,4 +309,117 @@ final class ApiWriteValidationTest extends DashboardHttpTestCase
         self::assertSame('invalid_request', $result['body']['error']['code'] ?? null);
         self::assertSame('company and licenseId are required', $result['body']['error']['message'] ?? null);
     }
+
+    /** Marcar como lidas sem `ids` responde a mensagem de sempre, e um corpo ilegível também. */
+    public function testMarkingNotificationsReadRequiresTheIds(): void
+    {
+        [$server, $token] = $this->serverAndAdminToken();
+
+        $empty = $this->write($server, 'PATCH', '/api/notifications/read', $token, []);
+        self::assertSame(400, $empty['status']);
+        self::assertSame('invalid_request', $empty['body']['error']['code'] ?? null);
+        self::assertSame('ids array is required', $empty['body']['error']['message'] ?? null);
+        self::assertSame(['ids array is required'], $empty['body']['error']['fields']['ids'] ?? null);
+
+        $unreadable = $server(new ServerRequest(
+            'PATCH',
+            '/api/notifications/read',
+            ['Authorization' => 'Bearer ' . $token, 'Content-Type' => 'application/json'],
+            'isto não é json'
+        ));
+        $body = json_decode((string)$unreadable->getBody(), true, 512, JSON_THROW_ON_ERROR);
+        self::assertSame(400, $unreadable->getStatusCode());
+        self::assertSame('ids array is required', $body['error']['message'] ?? null);
+    }
+
+    public function testBlockingAnIdentityRequiresIt(): void
+    {
+        [$server, $token] = $this->serverAndAdminToken();
+
+        $result = $this->write($server, 'POST', '/api/denylist', $token, ['note' => 'sem identidade']);
+
+        self::assertSame(400, $result['status']);
+        self::assertSame('invalid_request', $result['body']['error']['code'] ?? null);
+        self::assertSame('identity is required', $result['body']['error']['message'] ?? null);
+        self::assertSame(['identity is required'], $result['body']['error']['fields']['identity'] ?? null);
+    }
+
+    /** Os segredos só se exigem na primeira gravação; depois, em branco é "fica como está". */
+    public function testRadarCredentialsRequireTheSecretsOnlyTheFirstTime(): void
+    {
+        [$server, $db] = $this->makeServerWithDatabase();
+        $token = $this->loginToken($server, 'admin', 'secret');
+        $id = (int)($db->licenses->all()[0]['id'] ?? 0);
+        $path = "/api/licenses/{$id}/radar-credentials";
+        $public = ['baseUrl' => 'https://radarconsole.com/prod-api', 'username' => 'casabranca', 'appId' => 'app'];
+
+        $first = $this->write($server, 'PUT', $path, $token, $public);
+        self::assertSame(400, $first['status'], json_encode($first['body']));
+        self::assertSame('invalid_request', $first['body']['error']['code'] ?? null);
+        self::assertSame(['appSecret', 'password'], array_keys($first['body']['error']['fields'] ?? []));
+
+        $saved = $this->write($server, 'PUT', $path, $token, $public + ['password' => 'p', 'appSecret' => 's']);
+        self::assertSame(200, $saved['status'], json_encode($saved['body']));
+
+        $later = $this->write($server, 'PUT', $path, $token, $public);
+        self::assertSame(200, $later['status'], json_encode($later['body']));
+
+        $invalid = $this->write($server, 'PUT', $path, $token, ['baseUrl' => 'nao-e-url'] + $public);
+        self::assertSame(400, $invalid['status']);
+        self::assertSame('baseUrl must be a URL', $invalid['body']['error']['message'] ?? null);
+    }
+
+    /** O criar e o actualizar de um modelo partilham a mesma mensagem para os três campos. */
+    public function testWritingAModelRequiresItsIdentity(): void
+    {
+        [$server, $db] = $this->makeServerWithDatabase();
+        $token = $this->loginToken($server, 'admin', 'secret');
+        $model = $db->models->find('Wonlex', 'HW20PRO');
+        self::assertIsArray($model);
+
+        foreach (['POST /api/models', 'PUT /api/models/' . (int)$model['id']] as $route) {
+            [$method, $path] = explode(' ', $route);
+            $result = $this->write($server, $method, $path, $token, ['deviceType' => 'watch']);
+
+            self::assertSame(400, $result['status'], $route);
+            self::assertSame('invalid_request', $result['body']['error']['code'] ?? null, $route);
+            self::assertSame(
+                'supplierId, internalModel, and commercialName are required',
+                $result['body']['error']['message'] ?? null,
+                $route,
+            );
+            self::assertSame(
+                ['commercialName', 'internalModel', 'supplierId'],
+                array_keys($result['body']['error']['fields'] ?? []),
+                $route,
+            );
+        }
+    }
+
+    /** Actualizar um utilizador não exige a palavra-passe, e o papel mantém o código próprio. */
+    public function testUpdatingAUserKeepsTheRoleCodeAndDoesNotRequireThePassword(): void
+    {
+        [$server, $db] = $this->makeServerWithDatabase();
+        $token = $this->loginToken($server, 'admin', 'secret');
+        $id = (int)($db->apiUsers->findByUsername('admin')['id'] ?? 0);
+
+        $role = $this->write($server, 'PUT', "/api/users/{$id}", $token, ['username' => 'admin', 'role' => 'feiticeiro']);
+        self::assertSame(400, $role['status']);
+        self::assertSame('invalid_role', $role['body']['error']['code'] ?? null);
+
+        $kept = $this->write($server, 'PUT', "/api/users/{$id}", $token, ['username' => 'admin', 'role' => 'hub_admin']);
+        self::assertSame(200, $kept['status'], json_encode($kept['body']));
+    }
+
+    public function testRenamingACompanyToNothingIsRejected(): void
+    {
+        [$server, $db] = $this->makeServerWithDatabase();
+        $token = $this->loginToken($server, 'admin', 'secret');
+        $id = (int)($db->companies->findByName('hitcare')['id'] ?? 0);
+
+        $result = $this->write($server, 'PUT', "/api/companies/{$id}", $token, ['name' => ' ']);
+
+        self::assertSame(400, $result['status']);
+        self::assertSame('name is required', $result['body']['error']['message'] ?? null);
+    }
 }

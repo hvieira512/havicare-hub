@@ -9,17 +9,14 @@ use Hub\Api\Http\CollectionPresenter;
 use Hub\Api\Http\CollectionColumns;
 use Hub\Infrastructure\Persistence\Repository\ApiDataAccess;
 use Hub\Api\Request\CompanyWriteRequest;
-use Hub\Api\Request\RequestBinder;
 
 class CompanyService
 {
     private CollectionPresenter $presenter;
-    private RequestBinder $binder;
 
     public function __construct(private ApiDataAccess $db)
     {
         $this->presenter = new CollectionPresenter();
-        $this->binder = new RequestBinder();
     }
 
     /** @return array<string, mixed> */
@@ -47,16 +44,10 @@ class CompanyService
      * O nome repetido responde 409, perguntado antes: o `create()` do repositório é idempotente e
      * devolve o id da linha que já existe.
      *
-     * @param array<string, mixed> $payload
      * @return array<string, mixed>
      */
-    public function create(array $payload): array
+    public function create(CompanyWriteRequest $request): array
     {
-        $request = $this->binder->bind($payload, CompanyWriteRequest::class);
-        if (is_array($request)) {
-            return $request;
-        }
-
         $name = $request->normalizedName();
         if ($this->db->companies->findByName($name) !== null) {
             return ApiError::duplicateCompany()->toArray();
@@ -69,19 +60,13 @@ class CompanyService
      * Renomear para o nome de outra empresa é 409, verificado antes de o `UNIQUE` da base o
      * recusar com uma excepção.
      *
-     * @param array<string, mixed> $payload
      * @return array<string, mixed>
      */
-    public function update(int $id, array $payload): array
+    public function update(int $id, CompanyWriteRequest $request): array
     {
         $existing = $this->db->companies->findById($id);
         if ($existing === null) {
             return ApiError::companyNotFound()->toArray();
-        }
-
-        $request = $this->binder->bind($payload, CompanyWriteRequest::class);
-        if (is_array($request)) {
-            return $request;
         }
 
         $name = $request->normalizedName();

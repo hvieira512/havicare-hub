@@ -6,7 +6,6 @@ namespace Hub\Api\Services;
 
 use Hub\Api\Http\ApiError;
 use Hub\Api\Request\NotificationReadRequest;
-use Hub\Api\Request\RequestBinder;
 use Hub\Infrastructure\Persistence\Repository\ApiDataAccess;
 
 final class DashboardNotificationService
@@ -30,27 +29,10 @@ final class DashboardNotificationService
         ];
     }
 
-    /**
-     * Um corpo que não é JSON chega como array vazio e responde "ids array is required", que é o
-     * que os clientes esperam.
-     *
-     * @param array<string, mixed> $payload
-     * @return array<string, mixed>
-     */
-    public function markRead(array $payload): array
+    /** @return array<string, mixed> */
+    public function markRead(NotificationReadRequest $request): array
     {
-        $request = (new RequestBinder())->bind($payload, NotificationReadRequest::class, coerceStrings: true);
-        if (is_array($request)) {
-            return $request;
-        }
-
-        $ids = [];
-        foreach ($request->ids ?? [] as $id) {
-            $normalized = (int)$id;
-            $ids[] = $normalized;
-        }
-
-        $this->db->dashboardNotifications->markRead($ids);
+        $this->db->dashboardNotifications->markRead(array_map('intval', $request->ids ?? []));
 
         return [
             'status' => 'ok',
