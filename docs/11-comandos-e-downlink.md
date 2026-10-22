@@ -54,11 +54,10 @@ pergunta.
 
 ## 3. A fila
 
-Vive no [Redis](14-persistencia.md), com duas chaves por dispositivo:
+Vive no [Redis](14-persistencia.md), num hash por dispositivo:
 
 ```text
-hub:downlink:{imei}:{chave}      o comando, com TTL
-hub:downlink:{imei}:index        o conjunto de chaves pendentes
+hub:downlink:{imei}              hash: chave de deduplicação → o comando, com expiresAt
 ```
 
 O TTL corresponde a `DOWNLINK_QUEUE_TTL_SECONDS`, **300 segundos** por omissão.

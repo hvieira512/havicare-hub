@@ -29,10 +29,7 @@ final class RedisPendingDownlinkQueue implements PendingDownlinkQueue
         );
 
         $payload = json_encode([
-            'imei' => $downlink->imei,
-            'dedupeKey' => $downlink->dedupeKey,
             'payload' => base64_encode($downlink->bytes),
-            'encoding' => 'base64',
             'command' => $downlink->command,
             'queuedAt' => $downlink->queuedAt,
             // O segundo não chega para ordenar o que um só pedido pôs em fila.
@@ -43,9 +40,13 @@ final class RedisPendingDownlinkQueue implements PendingDownlinkQueue
             throw new \RuntimeException('Failed to encode pending downlink');
         }
 
-        $this->redis->setex($this->entryKey($imei, $downlink->dedupeKey), $ttlSeconds, $payload);
-        $this->redis->sadd($this->indexKey($imei), [$downlink->dedupeKey]);
-        $this->redis->expire($this->indexKey($imei), $ttlSeconds);
+        $this->redis->hset($this->key($imei), $downlink->dedupeKey, $payload);
+        // O hash vive enquanto viver a entrada que mais tarde expira; cada uma expira pelo `expiresAt`.
+        $lastExpiry = max(array_map(
+            static fn (string $raw): int => (int)(json_decode($raw, true)['expiresAt'] ?? 0),
+            $this->redis->hgetall($this->key($imei)),
+        ));
+        $this->redis->expire($this->key($imei), max(1, $lastExpiry - $now));
 
         return $downlink;
     }
@@ -55,32 +56,13 @@ final class RedisPendingDownlinkQueue implements PendingDownlinkQueue
         $items = [];
         $order = [];
         $now = time();
-        $dedupeKeys = $this->redis->smembers($this->indexKey($imei));
-
-        foreach ($dedupeKeys as $dedupeKey) {
+        foreach ($this->redis->hgetall($this->key($imei)) as $dedupeKey => $raw) {
             $dedupeKey = (string)$dedupeKey;
-            $raw = $this->redis->get($this->entryKey($imei, $dedupeKey));
-            if (!is_string($raw) || $raw === '') {
-                $this->redis->srem($this->indexKey($imei), $dedupeKey);
-                continue;
-            }
-
-            $decoded = json_decode($raw, true);
-            if (!is_array($decoded) || (string)($decoded['imei'] ?? '') !== $imei) {
-                $this->redis->srem($this->indexKey($imei), $dedupeKey);
-                continue;
-            }
-
+            $decoded = json_decode((string)$raw, true);
             $expiresAt = (int)($decoded['expiresAt'] ?? 0);
-            if ($expiresAt > 0 && $expiresAt <= $now) {
-                $this->redis->del([$this->entryKey($imei, $dedupeKey)]);
-                $this->redis->srem($this->indexKey($imei), $dedupeKey);
-                continue;
-            }
-
             $bytes = base64_decode((string)($decoded['payload'] ?? ''), true);
-            if ($bytes === false) {
-                $this->redis->srem($this->indexKey($imei), $dedupeKey);
+            if (!is_array($decoded) || ($expiresAt > 0 && $expiresAt <= $now) || $bytes === false) {
+                $this->redis->hdel($this->key($imei), [$dedupeKey]);
                 continue;
             }
 
@@ -106,8 +88,7 @@ final class RedisPendingDownlinkQueue implements PendingDownlinkQueue
 
     public function remove(PendingDownlink $downlink): void
     {
-        $this->redis->del([$this->entryKey($downlink->imei, $downlink->dedupeKey)]);
-        $this->redis->srem($this->indexKey($downlink->imei), $downlink->dedupeKey);
+        $this->redis->hdel($this->key($downlink->imei), [$downlink->dedupeKey]);
     }
 
     /** @param array<string, mixed>|null $command */
@@ -133,13 +114,9 @@ final class RedisPendingDownlinkQueue implements PendingDownlinkQueue
         return 'raw:' . hash('sha256', $bytes . $value);
     }
 
-    private function indexKey(string $imei): string
+    /** Um hash por aparelho, com uma entrada por chave de deduplicação. */
+    private function key(string $imei): string
     {
-        return "{$this->prefix}:{$imei}:index";
-    }
-
-    private function entryKey(string $imei, string $dedupeKey): string
-    {
-        return "{$this->prefix}:{$imei}:{$dedupeKey}";
+        return "{$this->prefix}:{$imei}";
     }
 }
