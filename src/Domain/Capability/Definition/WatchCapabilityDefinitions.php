@@ -28,9 +28,9 @@ final class WatchCapabilityDefinitions extends CapabilityDefinitions
             'hrv' => ['wonlex-json'],
             'ppg' => ['wonlex-json'],
             'rr_interval' => ['wonlex-json'],
-            // Nenhum as anuncia: chegam só como resposta a um pedido, pelo catálogo de
-            // comandos.
-            'firmware_version' => [],
+            // A resposta ao `VERNO` e ao `TS`; o `device_status` é só o pedido, e o `TS` sai
+            // repartido pelas capacidades que traz.
+            'firmware_version' => ['four-p-touch'],
             'device_status' => [],
             // O que o aparelho dispara: `AP10` na Vivistar e os `AL*` na 4P Touch.
             'help_call' => ['vivistar-iw', 'four-p-touch'],

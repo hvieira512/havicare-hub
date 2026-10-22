@@ -70,8 +70,6 @@ final class FourPTouchGenericHandler
             'makeCall' => 'make_call',
             'restartCommand' => 'restart_device',
             'findDeviceCommand' => 'find_device',
-            'firmwareVersion' => 'firmwareVersion',
-            'deviceStatus' => 'deviceStatus',
             'languageTimezone' => 'language_timezone',
             'callInRestriction' => 'whitelist_enabled',
             'profile' => 'sound_profile',

@@ -144,4 +144,19 @@ final class CapabilityCatalogTest extends TestCase
             ]),
         );
     }
+
+    /** O `TS` e o `VERNO` da 4P Touch publicam a versão; o `device_status` é só o pedido. */
+    public function testOnlyTheFourPTouchPublishesTheWatchFirmwareVersion(): void
+    {
+        self::assertContains('firmware_version', CapabilityCatalog::telemetryKeysForProtocol('four-p-touch'));
+        self::assertNotContains('device_status', CapabilityCatalog::telemetryKeysForProtocol('four-p-touch'));
+        self::assertNotContains('firmware_version', CapabilityCatalog::telemetryKeysForProtocol('vivistar-iw'));
+        self::assertNotContains('firmware_version', CapabilityCatalog::telemetryKeysForProtocol('wonlex-json'));
+    }
+
+    public function testTheFourPTouchHasNoConfigurationNamedAfterARequest(): void
+    {
+        self::assertNull(CapabilityCatalog::mapConfigurationKey('firmwareVersion'));
+        self::assertNull(CapabilityCatalog::mapConfigurationKey('deviceStatus'));
+    }
 }

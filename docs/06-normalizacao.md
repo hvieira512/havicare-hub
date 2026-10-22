@@ -405,7 +405,7 @@ que são a diferença entre fornecedores do mesmo aparelho:
 // Em WatchCapabilityDefinitions
 'connectivity' => ['four-p-touch'],          // sai na resposta ao `TS`
 'ppg' => ['wonlex-json'],                    // as outras não medem ondas
-'firmware_version' => [],                    // só como resposta a um pedido
+'device_status' => [],                       // só o pedido: o `TS` sai repartido
 ```
 
 O `telemetryKeysForProtocol` e o `protocolSpecificKeys` do `CapabilityCatalog`
