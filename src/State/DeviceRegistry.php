@@ -41,6 +41,13 @@ interface DeviceRegistry
      */
     public function onlineDeviceImeis(): array;
 
+    /**
+     * Os que se alcançam agora: ligados e acordados, a medir incluídos.
+     *
+     * @return list<string>
+     */
+    public function reachableDeviceImeis(): array;
+
     /** @return array<string, array<string, mixed>> chave do gateway => avistamento */
     public function gatewaySightings(string $deviceKey): array;
 }

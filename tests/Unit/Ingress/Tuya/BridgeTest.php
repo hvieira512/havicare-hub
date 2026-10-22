@@ -6,6 +6,7 @@ namespace Tests\Unit\Ingress\Tuya;
 
 use Hub\Ingress\Tuya\TuyaBridge;
 use Hub\State\DeviceStore;
+use Hub\State\RedisKeys;
 use Hub\State\DeviceStoreContract;
 use PHPUnit\Framework\TestCase;
 use Tests\Support\Doubles\InMemoryRedisClient;
@@ -106,24 +107,35 @@ final class BridgeTest extends TestCase
     }
 
     /** Adormecido, o botão não se alcança: o `deviceOffline` da cloud é a verdade, até ao próximo despertar. */
-    public function testTheCloudsOfflineTakesTheButtonOffline(): void
+    public function testTheCloudsOfflinePutsTheButtonToSleepWithoutADisconnect(): void
     {
         $this->bridge->handleReceivedMessage('', $this->frame($this->online()));
         $this->bridge->handleReceivedMessage('', $this->frame($this->offline()));
         $this->bridge->handleReceivedMessage('', $this->frame($this->offline()));
 
-        self::assertSame(['online', 'offline'], array_column(array_column($this->mqtt->statuses, 'payload'), 'state'));
-        self::assertSame(['device.connected', 'device.disconnected'], array_column(array_column($this->events(), 'payload'), 'type'));
-        self::assertFalse($this->store->device(self::BUTTON)['online']);
+        self::assertSame(['online', 'idle'], array_column(array_column($this->mqtt->statuses, 'payload'), 'state'));
+        self::assertSame(['device.connected'], array_column(array_column($this->events(), 'payload'), 'type'));
+        self::assertTrue($this->store->device(self::BUTTON)['online']);
     }
 
-    public function testTheNextWakeUpBringsTheButtonBack(): void
+    public function testTheNextWakeUpIsOnlineAgainWithoutAConnect(): void
     {
         $this->bridge->handleReceivedMessage('', $this->frame($this->online()));
         $this->bridge->handleReceivedMessage('', $this->frame($this->offline()));
         $this->bridge->handleReceivedMessage('', $this->frame($this->online()));
 
-        self::assertSame(['online', 'offline', 'online'], array_column(array_column($this->mqtt->statuses, 'payload'), 'state'));
+        self::assertSame(['online', 'idle', 'online'], array_column(array_column($this->mqtt->statuses, 'payload'), 'state'));
+        self::assertSame(['device.connected'], array_column(array_column($this->events(), 'payload'), 'type'));
+    }
+
+    /** O `deviceOffline` diz que adormeceu, e não que acordou: não adia o prazo de dois despertares. */
+    public function testFallingAsleepDoesNotCountAsAWakeUp(): void
+    {
+        $this->bridge->handleReceivedMessage('', $this->frame($this->online()));
+        $this->redis->zadd(RedisKeys::onlineDevices(), [self::BUTTON => time() - 2 * 28800 - 30]);
+        $this->bridge->handleReceivedMessage('', $this->frame($this->offline()));
+
+        self::assertSame([self::BUTTON], $this->store->expireStaleDevices());
     }
 
     public function testAHandledMessageIsAcknowledged(): void

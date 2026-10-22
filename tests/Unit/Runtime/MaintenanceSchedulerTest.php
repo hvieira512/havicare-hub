@@ -191,16 +191,26 @@ final class MaintenanceSchedulerTest extends TestCase
         self::assertSame(['offline'], array_column(array_column($this->mqtt->statuses, 'payload'), 'state'));
     }
 
-    /** A cloud da Tuya diz quando o botão adormece: o silêncio entre despertares não o desliga. */
-    public function testASilentTuyaButtonIsNotAnnouncedDisconnected(): void
+    /** O botão acorda de oito em oito horas: um despertar falhado não o desliga. */
+    public function testATuyaButtonThatMissedOneWakeUpIsNotAnnouncedDisconnected(): void
     {
-        $this->store->deviceSeen('bf1234567890abcdef', ['online' => '1', 'deviceType' => 'sos_button', 'protocol' => 'tuya-cloud']);
-        $this->rewindLastSeen('bf1234567890abcdef', 86400);
+        $this->store->deviceSeen('bf1234567890abcdef', ['online' => '1', 'deviceType' => 'bracelet', 'protocol' => 'tuya-cloud']);
+        $this->rewindLastSeen('bf1234567890abcdef', 28800 + 60);
 
         $this->tick();
 
         self::assertSame([], $this->mqtt->statuses);
-        self::assertTrue($this->store->device('bf1234567890abcdef')['online']);
+    }
+
+    public function testATuyaButtonThatMissedTwoWakeUpsIsAnnouncedDisconnected(): void
+    {
+        $this->store->deviceSeen('bf1234567890abcdef', ['online' => '1', 'deviceType' => 'bracelet', 'protocol' => 'tuya-cloud']);
+        $this->rewindLastSeen('bf1234567890abcdef', 2 * 28800 + 30);
+
+        $this->tick();
+
+        self::assertSame(['offline'], array_column(array_column($this->mqtt->statuses, 'payload'), 'state'));
+        self::assertSame(['device.disconnected'], array_column($this->mqtt->events, 'type'));
     }
 
     /** Uma publicação que falha não leva consigo o anúncio dos outros. */

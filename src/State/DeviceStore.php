@@ -146,6 +146,16 @@ final class DeviceStore implements DeviceStoreContract
         $this->runtime->deviceHeard($imei);
     }
 
+    public function deviceAsleep(string $imei, bool $asleep): bool
+    {
+        return $this->runtime->deviceAsleep($imei, $asleep);
+    }
+
+    public function reachableDeviceImeis(): array
+    {
+        return $this->runtime->reachableDeviceImeis();
+    }
+
     public function append(string $imei, string $list, array $payload): void
     {
         if ($list === 'events' && in_array($payload['type'] ?? null, self::CONNECTION_TYPES, true)) {

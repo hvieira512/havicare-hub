@@ -42,8 +42,9 @@ final class Liveness
         // O `status/online` repete-se de 13 a 20 minutos (observado em produção, 22/10/2026); o
         // testamento no broker diz o `offline` sem esperar (Voerka §4.2).
         'voerka-ncs' => 1200,
-        // O `deviceOnline` e o `deviceOffline` da cloud dizem quando o botão acorda e adormece.
-        'tuya-cloud' => null,
+        // O botão acorda de oito em oito horas (observado em produção, 22/10/2026); a dormir está
+        // `idle`, pelo `deviceOffline` da cloud, e só desligado sem dois despertares.
+        'tuya-cloud' => 28800,
     ];
 
     private const DEFAULT_INTERVAL_SECONDS = 300;
@@ -81,11 +82,17 @@ final class Liveness
         return in_array($protocol, self::ON_DEMAND, true);
     }
 
-    /** O estado de presença: `online`/`offline`, ou `measuring`/`idle` em quem só se liga para medir. */
-    public static function presence(string $protocol, bool $connected): string
+    /**
+     * O estado de presença: `online`/`offline`; `measuring`/`idle` em quem só se liga para medir; e
+     * `idle` em quem dorme e acorda quando se carrega.
+     */
+    public static function presence(string $protocol, bool $connected, bool $asleep = false): string
     {
         if (self::isOnDemand($protocol)) {
             return $connected ? 'measuring' : 'idle';
+        }
+        if ($connected && $asleep) {
+            return 'idle';
         }
 
         return $connected ? 'online' : 'offline';

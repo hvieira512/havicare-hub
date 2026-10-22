@@ -139,12 +139,15 @@ final class TuyaBridge implements MqttIngress
         $company = (string)($device['company'] ?? 'null');
 
         $this->mqttBridge->publishAndStore($this->deviceStore, 'raw', $deviceId, $normalized['raw'], $deviceType, $licenseId, $company);
+        // Adormecido, o botão alcança-se ao carregar: fica `idle`, e o prazo continua a contar do
+        // último despertar.
         if (($business['bizCode'] ?? null) === 'deviceOffline') {
-            if ($this->deviceStore?->deviceOffline($deviceId) ?? true) {
-                $this->connections->announce($deviceId, $device, false);
+            if ($this->deviceStore?->deviceAsleep($deviceId, true) ?? false) {
+                $this->connections->status($deviceId, $device, true, asleep: true);
             }
             return;
         }
+        $woke = $this->deviceStore?->deviceAsleep($deviceId, false) ?? false;
         $cameOnline = $this->deviceStore?->deviceSeen($deviceId, [
             'supplier' => (string)$device['supplier'],
             'model' => (string)$device['model'],
@@ -157,6 +160,8 @@ final class TuyaBridge implements MqttIngress
         ]) ?? false;
         if ($cameOnline) {
             $this->connections->announce($deviceId, $device, true);
+        } elseif ($woke) {
+            $this->connections->status($deviceId, $device, true);
         }
 
         foreach ($normalized['telemetry'] as $telemetry) {

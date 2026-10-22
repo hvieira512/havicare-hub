@@ -18,6 +18,7 @@ use Hub\State\DeviceStoreContract;
 use Hub\State\DeviceUpdateNotifier;
 use Hub\Domain\DeviceMetadata;
 use Hub\Domain\DeviceTypeCatalog;
+use Hub\Domain\Liveness;
 use Hub\Domain\ProtocolRegistry;
 use Hub\Domain\VoiceDataMarker;
 use Hub\Device\DeviceHubServer;
@@ -109,13 +110,13 @@ class DeviceService
         $companyScope = $auth !== null && !$auth->isAdmin() ? $auth->company : null;
 
         // A presença não é uma coluna: entra como lista de IMEI, na mesma cláusula dos outros
-        // filtros, para a paginação e as contagens saírem certas.
-        $onlineImeis = $online === null ? [] : $this->store->onlineDeviceImeis();
+        // filtros, para a paginação e as contagens saírem certas. Ligados são os que se alcançam
+        // agora; desligados, os que falharam; quem dorme ou espera a próxima leitura fica fora dos dois.
         $queryFilters = $filters;
         if ($online === true) {
-            $queryFilters['imeiIn'] = $onlineImeis;
+            $queryFilters['imeiIn'] = $this->store->reachableDeviceImeis();
         } elseif ($online === false) {
-            $queryFilters['imeiNotIn'] = $onlineImeis;
+            $queryFilters['imeiNotIn'] = [...$this->store->onlineDeviceImeis(), ...$this->onDemandImeis()];
         }
 
         $result = $this->db->whitelist->listPage($queryFilters, $page, $limit, $licenseScope, $companyScope);
@@ -163,11 +164,26 @@ class DeviceService
         return [
             'total' => $this->db->whitelist->countDevices([], $licenseScope, $companyScope),
             'online' => $this->db->whitelist->countDevices(
-                ['imeiIn' => $this->store->onlineDeviceImeis()],
+                ['imeiIn' => $this->store->reachableDeviceImeis()],
                 $licenseScope,
                 $companyScope
             ),
         ];
+    }
+
+    /**
+     * Os que só se ligam para medir: nunca estão desligados.
+     *
+     * @return list<string>
+     */
+    private function onDemandImeis(): array
+    {
+        $onDemand = array_filter(
+            $this->db->whitelist->all(),
+            static fn (array $row): bool => Liveness::isOnDemand(ProtocolRegistry::forModel((string)$row['supplier'], (string)$row['model'])),
+        );
+
+        return array_map(static fn (array $row): string => (string)$row['imei'], array_values($onDemand));
     }
 
     /** @return array<string, mixed> */

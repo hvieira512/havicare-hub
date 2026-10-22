@@ -23,6 +23,13 @@ interface DeviceReportStore
     public function deviceHeard(string $imei): void;
 
     /**
+     * Adormece ou acorda quem está ligado, sem mexer no prazo dele.
+     *
+     * @return bool se mudou
+     */
+    public function deviceAsleep(string $imei, bool $asleep): bool;
+
+    /**
      * Dá por desligado quem se calou para lá do que o protocolo dele aguenta, só do tipo pedido
      * quando há um.
      *
