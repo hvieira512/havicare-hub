@@ -156,7 +156,7 @@ test("with no gateways in the licence, the notice shows as text, not markup", ()
 
 test("a gateway of the same licence appears as a card to choose", () => {
     state.wizardGateways = [
-        { imei: "d48c49f7909c", model: "MKGW3", company: "hitcare", licenseId: "1001" },
+        { imei: "d48c49f7909c", deviceType: "gateway", model: "MKGW3", company: "hitcare", licenseId: "1001" },
     ];
     walkToDiaperIdentity();
 
