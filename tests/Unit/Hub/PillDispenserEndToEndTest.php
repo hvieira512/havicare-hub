@@ -59,7 +59,7 @@ final class PillDispenserEndToEndTest extends TestCase
         $intake = $this->ofType($mqtt->events, 'medication_intake');
         self::assertCount(1, $intake, 'a toma cifrada não chegou ao canal de eventos');
         self::assertSame('on_time', $intake[0]['data']['result']);
-        self::assertSame(3, $intake[0]['data']['alarmSlot']);
+        self::assertSame(3, $intake[0]['data']['slot']);
         self::assertSame(9, $intake[0]['data']['cellNumber']);
     }
 
@@ -86,7 +86,7 @@ final class PillDispenserEndToEndTest extends TestCase
 
         $change = $this->ofType($mqtt->events, 'medication_alarm_change');
         self::assertCount(1, $change);
-        self::assertSame(5, $change[0]['data']['alarm']);
+        self::assertSame(5, $change[0]['data']['slot']);
         self::assertSame('missed', $change[0]['data']['state']);
         self::assertSame([], $this->ofType($mqtt->telemetry, 'medication_alarm_change'));
     }
@@ -105,6 +105,38 @@ final class PillDispenserEndToEndTest extends TestCase
         self::assertCount(1, $cells);
         self::assertSame(2, $cells[0]['data']['remaining']);
         self::assertMatchesRegularExpression('/^\d{4}-\d{2}-\d{2}T08:00:00\+01:00$/', $cells[0]['data']['runoutAt']);
+    }
+
+    /** A toma e a mudança do alarme saem com as horas em UTC, pelo fuso e pelo plano que o hub confirmou. */
+    public function testDoseEventsCarryUtcTimesFromTheConfirmedZone(): void
+    {
+        $configurations = [
+            'medication_reminders' => ['plans' => [['slot' => 3, 'hour' => 8, 'minute' => 0]]],
+            'time_zone' => ['timeZone' => 100],
+        ];
+        $mqtt = $this->exchange(
+            [
+                $this->frame(0x01, 1),
+                $this->frame(0x03, 2, [
+                    0xC201 => ['value' => "\x02"],
+                    0xC202 => ['value' => '2026-10-19T08:00:00'],
+                    0xC203 => ['value' => '2026-10-19T08:04:10'],
+                    0xC206 => ['value' => "\x00"],
+                ]),
+                $this->frame(0x04, 3, [0x8133 => ['value' => "\x07"]]),
+            ],
+            3,
+            effectiveConfiguration: static fn (string $imei): array => $imei === self::IMEI ? $configurations : [],
+        );
+
+        $intake = $this->ofType($mqtt->events, 'medication_intake');
+        self::assertSame('2026-10-19T07:00:00Z', $intake[0]['data']['scheduledAt']);
+        self::assertSame('2026-10-19T07:04:10Z', $intake[0]['data']['takenAt']);
+
+        $change = $this->ofType($mqtt->events, 'medication_alarm_change');
+        self::assertSame(3, $change[0]['data']['slot']);
+        self::assertMatchesRegularExpression('/^\d{4}-\d{2}-\d{2}T07:00:00Z$/', $change[0]['data']['scheduledAt']);
+        self::assertMatchesRegularExpression('/^\d{4}-\d{2}-\d{2}$/', $change[0]['data']['doseDate']);
     }
 
     /** Sem a guarda do TFLV, ruído passaria por TAGs inventadas e viraria telemetria fabricada. */

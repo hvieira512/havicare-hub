@@ -6,6 +6,7 @@ namespace Hub\Device;
 
 use Hub\Command\DeviceCommandCatalog;
 use Hub\Domain\Capability\CapabilityCatalog;
+use Hub\Domain\Capability\Medication\MedicationOccurrence;
 use Hub\Domain\Capability\Medication\MedicationRunout;
 use Hub\Domain\ProtocolRegistry;
 use Hub\Log\Logger;
@@ -401,7 +402,7 @@ class DeviceHubServer
                     }
                 );
             } else {
-                $published = $this->publishTelemetryEvent($session, $this->withRunout($session, $event)) && $published;
+                $published = $this->publishTelemetryEvent($session, $this->withMedicationPlan($session, $event)) && $published;
             }
         }
 
@@ -425,25 +426,36 @@ class DeviceHubServer
     }
 
     /**
-     * O `cells_remaining` leva a data em que o prato acaba, calculada com a configuração que o hub guardou.
+     * O que o dispensador conta no relógio dele sai situado pelo plano e pelo fuso que o hub confirmou:
+     * a data em que o prato acaba, e as horas das tomas em UTC.
      *
      * @param array<string, mixed> $event
      * @return array<string, mixed>
      */
-    private function withRunout(DeviceSession $session, array $event): array
+    private function withMedicationPlan(DeviceSession $session, array $event): array
     {
+        $type = $event['type'] ?? null;
         $remaining = $event['data']['remaining'] ?? null;
-        if (($event['type'] ?? null) !== 'cells_remaining' || !is_int($remaining) || $this->effectiveConfiguration === null) {
+        $applies = ($type === 'cells_remaining' && is_int($remaining) && $this->effectiveConfiguration !== null)
+            || $type === 'medication_intake'
+            || $type === 'medication_alarm_change';
+        if (!$applies) {
             return $event;
         }
 
         try {
-            $configurations = ($this->effectiveConfiguration)($session->imei);
+            $configurations = $this->effectiveConfiguration === null ? [] : ($this->effectiveConfiguration)($session->imei);
         } catch (\Throwable $error) {
-            Logger::channel('hub')->warning("Runout configuration unavailable IMEI={$session->imei}: {$error->getMessage()}");
-            return $event;
+            Logger::channel('hub')->warning("Medication plan unavailable IMEI={$session->imei}: {$error->getMessage()}");
+            $configurations = [];
         }
-        $event['data']['runoutAt'] = MedicationRunout::at($remaining, $configurations, new \DateTimeImmutable());
+
+        $now = new \DateTimeImmutable();
+        $event['data'] = match ($type) {
+            'cells_remaining' => $event['data'] + ['runoutAt' => MedicationRunout::at($remaining, $configurations, $now)],
+            'medication_intake' => MedicationOccurrence::intake($event['data'], $configurations),
+            default => MedicationOccurrence::alarmChange($event['data'], $configurations, $now),
+        };
 
         return $event;
     }

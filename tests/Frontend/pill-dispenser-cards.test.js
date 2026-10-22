@@ -98,7 +98,7 @@ test("without a plan, only the device's own count remains", (t) => {
 test("the intake shows its outcome as the value, and the fault shows which one", () => {
     // O valor principal é o facto que interessa, e não o nome da capacidade outra vez.
     const intake = card("medication_intake", {
-        alarmSlot: 3,
+        slot: 3,
         cellNumber: 12,
         result: "missed",
         method: "late",

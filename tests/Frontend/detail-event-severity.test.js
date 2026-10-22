@@ -26,7 +26,7 @@ test("every event with a severity enters the history", () => {
                 event("change_required", "alarm", { previousState: "clean" }),
                 event("check_required", "alert", { previousState: "clean" }),
                 event("storage_environment", "alert", { outOfRange: true }),
-                event("medication_alarm_change", "info", { alarm: 1, state: "taken" }),
+                event("medication_alarm_change", "info", { slot: 1, state: "taken" }),
                 event("low_battery", "alert"),
             ],
         },
