@@ -316,7 +316,23 @@ M228 — falavam formas públicas diferentes com a mesma chave. Hoje
 O núcleo de um plano é `name`, `doseCount`, `startDate`, `endDate` e `times`; o
 de uma hora é `time`, `enabled` e `recurrence`. **O que um fornecedor não sabe
 omite-se**, como em todo o contrato: o M228 e o 4P Touch não agrupam por
-medicamento e dão um plano sem nome por lembrete.
+medicamento e dão um plano por lembrete.
+
+No M228 cada compartimento é um plano com uma hora, e o `name` é o medicamento
+dele. **O nome fica no hub**: guarda-se no desejado, volta no `GET
+/api/devices/{imei}`, e nunca vai ao aparelho, que só sabe horas. Um `PATCH` que
+só muda nomes, sobre horas que o aparelho já confirmou, fica aplicado logo e sem
+comando — o `configurationSync` dá-o como `confirmed`. Sobre horas ainda por
+confirmar, vai ao aparelho como qualquer outra alteração, para não dar por
+aplicada a hora que ele ainda não confirmou. O `name` é texto até 64 caracteres;
+vazio, omite-se.
+
+```json
+{ "plans": [
+  { "name": "Metformina",
+    "times": [{ "time": "08:00", "enabled": true, "slot": 1, "recurrence": { "kind": "daily" } }] }
+] }
+```
 
 O resto é extensão de fornecedor, e sai declarada no `_meta`:
 

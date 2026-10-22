@@ -17,6 +17,7 @@ use Hub\Domain\Capability\CapabilityCatalog;
 use Hub\Domain\Capability\CapabilityHelpers;
 use Hub\Domain\Capability\CapabilityRegistry;
 use Hub\Domain\Capability\Contacts\WonlexContactCodec;
+use Hub\Domain\Capability\Medication\PillDispenserMedicationRemindersHandler;
 use Hub\Log\Logger;
 
 final class DeviceConfigurationUpdateService
@@ -209,6 +210,23 @@ final class DeviceConfigurationUpdateService
                     $device,
                     $commandContext
                 );
+                // O nome do medicamento do M228 só existe no hub: um plano que só muda nomes, sobre
+                // horas já confirmadas, fica aplicado sem ir ao aparelho.
+                if (
+                    $protocol === 'zayata-m228'
+                    && $genericKey === 'medication_reminders'
+                    && !$commandContext['resync']
+                    && $existingPayload !== null
+                    && in_array($existingStatus, ['acked', 'confirmed'], true)
+                    && $this->valuesEqual(
+                        PillDispenserMedicationRemindersHandler::withoutNames($existingPayload),
+                        PillDispenserMedicationRemindersHandler::withoutNames($nativePayload),
+                    )
+                    && !isset($prepared['error'])
+                ) {
+                    $prepared['operations'] = [];
+                    $prepared['nativeRow']['operationId'] = '';
+                }
                 if (isset($prepared['error'])) {
                     Logger::channel('api')->warning('API device configuration rejected', [
                         'request_id' => $requestId,

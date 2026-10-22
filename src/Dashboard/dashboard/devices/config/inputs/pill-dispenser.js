@@ -1,7 +1,7 @@
 import { field } from "../../../components/form-field.js";
 import { medicationPlanTimes } from "../../medication-plan.js";
 import { html, raw } from "../../../html.js";
-import { choiceField, enabledSwitch, entryText, fieldChoices, readChoice } from "./shared.js";
+import { choiceField, enabledSwitch, entryFieldLabel, entryText, fieldChoices, readChoice } from "./shared.js";
 import { readCheckbox, readText } from "../readers.js";
 
 // Os alarmes são fixos, tantos quantos o `limit` da definição; o número liga cada um ao reportado.
@@ -28,37 +28,46 @@ const timeField = (configField, hour, minute) =>
     html`<input class="form-control" type="time" data-config-field="${configField}"
         value="${(toTimeValue(hour, minute))}">`;
 
+/** O nome fica no hub e não vai ao aparelho; o limite é o que a API aceita. */
+const nameField = (index, name, label) =>
+    html`<input class="form-control" type="text" maxlength="64" data-config-field="name-${String(index)}"
+        placeholder="${label}" aria-label="${label}" value="${name ?? ""}">`;
+
 /** Sem interruptor: o `0x1041`--`0x1049` é inerte, e há alarme quando há hora. */
-const slotCell = (index, plan) =>
+const slotCell = (index, plan, nameLabel) =>
     html`
         <div class="col">
             <div class="d-flex align-items-center gap-2 border rounded-3 px-2 py-1" data-alarm-slot="${String(index)}">
                 <div class="text-secondary small flex-shrink-0">${String(index + 1)}</div>
                 ${raw(timeField(`time-${index}`, plan?.hour, plan?.minute))}
+                ${raw(nameField(index, plan?.name, nameLabel))}
             </div>
         </div>`;
 
-function alarmsInput(entry, desired) {
+function alarmsInput(entry, desired, meta) {
     const slots = Number(entry.limit) || 0;
     // Pelo número do alarme e não pela posição: um plano só do alarme 5 cairia na primeira caixa.
     const bySlot = new Map(
         medicationPlanTimes(desired?.plans).map((entry) => [entry.slot, entry]),
     );
+    const nameLabel = entryFieldLabel(entry, meta, "name");
     const cells = Array.from({ length: slots }, (_, index) =>
-        slotCell(index, bySlot.get(index + 1)),
+        slotCell(index, bySlot.get(index + 1), nameLabel),
     );
 
     return html`<div class="row row-cols-1 row-cols-sm-2 row-cols-xl-3 g-2">${raw(cells.join(""))}</div>`;
 }
 
-/** Deixa cair os slots em branco; cada plano leva o número do seu alarme. */
+/** Deixa cair os slots em branco; cada plano leva o número do seu alarme e o nome, quando há. */
 function readAlarms(section) {
     const plans = [];
     for (let index = 0; section.querySelector(`[data-config-field="time-${index}"]`); index++) {
         const value = readText(section, `time-${index}`);
         if (isBlank(value)) continue;
         const { hour, minute } = fromTimeValue(value);
+        const name = readText(section, `name-${index}`);
         plans.push({
+            ...(name === "" ? {} : { name }),
             times: [{
                 time: `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`,
                 enabled: true,
