@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { autoEls } from "./support/els.js";
+import { cacheElements } from "../../src/Dashboard/dashboard/dom.js";
 
 /**
  * O `Swal.fire()` devolve uma promessa, e cancelar não pode chegar à API. A caixa diz também o
@@ -190,8 +191,8 @@ test("a device delete the API refuses keeps the modal open and says why", async 
     const els = autoEls();
     els.deleteDeviceBtn.dataset.imei = "351266770073676";
     let hidden = false;
+    cacheElements(els);
     initDeviceModal({
-        els,
         deviceModal: {
             hide: () => {
                 hidden = true;
@@ -208,13 +209,10 @@ test("a device delete the API refuses keeps the modal open and says why", async 
 test("a model delete the API refuses leaves the model in the catalog", async () => {
     reset();
     answer = { isConfirmed: true };
-    const { initSettingsModels } = await import(
-        "../../src/Dashboard/dashboard/settings/models/shell.js",
-    );
     const { deleteCurrentModel } = await import(
         "../../src/Dashboard/dashboard/settings/models/detail.js",
     );
-    initSettingsModels({ els: autoEls(), ui: {} });
+    cacheElements(autoEls());
     const model = { id: 92, commercialName: "R03" };
     state.settingsModal.currentCapabilitiesModel = model;
     state.settingsModal.modelCatalog = [{ suppliers: [{ models: [model] }] }];

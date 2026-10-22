@@ -1,8 +1,9 @@
 import { capabilityLabel } from "../capability-catalog.js";
 import { rowPayload, when } from "../format.js";
 import { html } from "../html.js";
-import { renderInto } from "../dom.js";
+import { els, renderInto } from "../dom.js";
 import {
+    blankDetailFilters,
     resetActivityPaging,
     resetDetailFiltersDraft,
     setDownlinkPage,
@@ -14,18 +15,11 @@ import { resolvePaginationPage } from "../pagination.js";
 import { uplinkCardContent } from "../components/cards/telemetry.js";
 import { filterChips } from "../components/chips.js";
 
-/** Filtros e paginadores do histórico de um dispositivo; o que redesenha chega pelo contexto. */
+import { renderDownlinkRequests, renderSelection, renderTelemetryList } from "./detail.js";
 
-let els;
-let onChange = () => {};
-let renderDownlinkRequests = () => {};
-let renderTelemetryList = () => {};
+/** Filtros e paginadores do histórico de um dispositivo. */
 
-export function initDetailFilters(context) {
-    els = context.els;
-    onChange = context.onChange;
-    renderDownlinkRequests = context.renderDownlinkRequests;
-    renderTelemetryList = context.renderTelemetryList;
+export function initDetailFilters() {
     activeRange = "";
     els.detailRangePresets?.addEventListener("click", (event) => {
         const button = event.target.closest("[data-detail-range]");
@@ -79,14 +73,15 @@ export function applyDetailRange(range) {
     if (!preset) return;
 
     activeRange = range;
-    state.detailFilters = {
-        ...state.detailFilters,
-        from: dateTimeLocal(preset.start()),
-        to: "",
-    };
+    setDetailFilters({ from: dateTimeLocal(preset.start()), to: "" });
+}
+
+/** Aplica uma mudança aos filtros: o rascunho volta ao aplicado e as listas à primeira página. */
+function setDetailFilters(patch) {
+    state.detailFilters = { ...state.detailFilters, ...patch };
     resetDetailFiltersDraft();
     resetActivityPaging();
-    onChange();
+    renderSelection();
 }
 
 const DETAIL_ITEM_TYPES = {
@@ -243,37 +238,26 @@ function syncDetailRangeButtons() {
 
 export function applyDetailFilters() {
     activeRange = "";
-    state.detailFilters = {
+    setDetailFilters({
         from: els.detailFilterFrom.value,
         to: els.detailFilterTo.value,
         type: els.detailFilterType.value,
         severity: els.detailFilterSeverity.value,
-        q: state.detailFilters.q,
-    };
-    resetDetailFiltersDraft();
-    resetActivityPaging();
-    onChange();
+    });
 }
 
 /** O tipo e a gravidade aplicam-se ao escolher, como os alcances. */
 export function applyDetailType() {
-    state.detailFilters = {
-        ...state.detailFilters,
+    setDetailFilters({
         type: els.detailFilterType.value,
         severity: els.detailFilterSeverity.value,
-    };
-    resetDetailFiltersDraft();
-    resetActivityPaging();
-    onChange();
+    });
 }
 
 export function clearDetailFilters() {
     activeRange = "";
-    state.detailFilters = { from: "", to: "", type: "all", severity: "all", q: "" };
-    resetDetailFiltersDraft();
-    resetActivityPaging();
     if (els.detailSearch) els.detailSearch.value = "";
-    onChange();
+    setDetailFilters(blankDetailFilters());
 }
 
 /** A pesquisa não espera pelo «Aplicar»: um texto a meio já é um prefixo útil. */
@@ -291,17 +275,13 @@ function applyDetailSearchNow() {
     };
     updateDetailFiltersDraft({ q: els.detailSearch.value });
     resetActivityPaging();
-    onChange();
+    renderSelection();
 }
 
 export function removeDetailFilter(key) {
     if (key === "from" || key === "to") activeRange = "";
-    const cleared = key === "type" || key === "severity" ? "all" : "";
-    state.detailFilters = { ...state.detailFilters, [key]: cleared };
-    resetDetailFiltersDraft();
-    resetActivityPaging();
     if (key === "q" && els.detailSearch) els.detailSearch.value = "";
-    onChange();
+    setDetailFilters({ [key]: blankDetailFilters()[key] });
 }
 
 /** A pastilha do tipo leva a mesma etiqueta do select que a escolheu. */

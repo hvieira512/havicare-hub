@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import { parseFragment } from "./support/dom.js";
+import { cacheElements } from "../../src/Dashboard/dashboard/dom.js";
 
 const stateModule = await import("../../src/Dashboard/dashboard/state.js");
 const {
@@ -49,7 +50,8 @@ function harness({ company = "hitcare", licenseId = "1001" } = {}) {
     }
 
     const changes = [];
-    initEditWizard({ els, onLicenseChange: () => changes.push(true) });
+    cacheElements(els);
+    initEditWizard({ onLicenseChange: () => changes.push(true) });
     resetEditWizard(LICENSES);
     renderEditWizard();
 

@@ -23,10 +23,7 @@ const filesUnder = (dir, extension) =>
 
 const read = (files) => files.map((file) => fs.readFileSync(file, "utf8")).join("\n");
 
-const handlerSources = read([
-    ...filesUnder(root("dashboard/settings"), ".js"),
-    root("dashboard/wiring/settings.js"),
-]);
+const handlerSources = read(filesUnder(root("dashboard/settings"), ".js"));
 
 const markupSources = read([
     ...filesUnder(root("components"), ".php"),

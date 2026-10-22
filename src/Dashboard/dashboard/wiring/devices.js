@@ -62,12 +62,11 @@ import {
     updateGatewayLinkSelection,
 } from "../devices/gateway-links-ui.js";
 import { countLabel } from "../i18n.js";
+import { els } from "../dom.js";
 
-let els;
 let ui;
 
 export function bindDeviceEvents(context) {
-    els = context.els;
     ui = context.ui;
 
     bindEntryPoints();

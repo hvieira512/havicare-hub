@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 
 import { installDeferredFetch } from "./support/deferred-fetch.js";
 import { autoEls } from "./support/els.js";
+import { cacheElements } from "../../src/Dashboard/dashboard/dom.js";
 
 const { selectImei, setDeviceListPage, state } = await import("../../src/Dashboard/dashboard/state.js");
 const { initDeviceList, loadDevice, loadSummary, selectDevice } =
@@ -28,10 +29,9 @@ let hidden;
 
 beforeEach(() => {
     hidden = 0;
+    cacheElements(els);
     initDeviceList({
-        els,
         ui: { deviceSelectorModal: { hide: () => { hidden += 1; }, show: () => {} } },
-        onChange: () => {},
     });
     // Licenças e catálogo em cache: o único pedido em jogo é o de cada corrida.
     state.licenses = [{ licenseId: 1, company: "havicare" }];

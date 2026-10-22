@@ -1,8 +1,9 @@
 import test, { beforeEach } from "node:test";
 import assert from "node:assert/strict";
+import { cacheElements } from "../../src/Dashboard/dashboard/dom.js";
 
 const { state } = await import("../../src/Dashboard/dashboard/state.js");
-const { initDeviceDetailView, renderTelemetryList } =
+const { renderTelemetryList } =
     await import("../../src/Dashboard/dashboard/devices/detail.js");
 const { toggleActivityRow } =
     await import("../../src/Dashboard/dashboard/devices/activity-table.js");
@@ -80,7 +81,7 @@ beforeEach(() => {
 
 test("only a row with more than it shows opens", () => {
     const view = els();
-    initDeviceDetailView({ els: view });
+    cacheElements(view);
 
     renderTelemetryList([minuteStats(0), heartRate(1)]);
 
@@ -94,7 +95,7 @@ test("only a row with more than it shows opens", () => {
 
 test("the drawer holds the full text the row cut short", () => {
     const view = els();
-    initDeviceDetailView({ els: view });
+    cacheElements(view);
 
     renderTelemetryList([minuteStats(0)]);
 
@@ -107,7 +108,7 @@ test("the drawer holds the full text the row cut short", () => {
 
 test("clicking opens, and clicking again closes", () => {
     const view = els();
-    initDeviceDetailView({ els: view });
+    cacheElements(view);
     renderTelemetryList([minuteStats(0)]);
 
     const row = view.telemetryList.querySelector("[data-row-toggle]");
@@ -124,7 +125,7 @@ test("clicking opens, and clicking again closes", () => {
 
 test("a click outside an openable row is ignored", () => {
     const view = els();
-    initDeviceDetailView({ els: view });
+    cacheElements(view);
     renderTelemetryList([heartRate(0)]);
 
     assert.equal(
@@ -135,7 +136,7 @@ test("a click outside an openable row is ignored", () => {
 
 test("an open row stays open when a new event arrives", () => {
     const view = els();
-    initDeviceDetailView({ els: view });
+    cacheElements(view);
     renderTelemetryList([minuteStats(0), heartRate(1)]);
 
     const row = view.telemetryList.querySelector("[data-row-toggle]");
@@ -154,7 +155,7 @@ test("an open row stays open when a new event arrives", () => {
 
 test("the key carries the IMEI: switching device does not open the row with the same sequence number", () => {
     const view = els();
-    initDeviceDetailView({ els: view });
+    cacheElements(view);
     renderTelemetryList([minuteStats(0)]);
 
     const row = view.telemetryList.querySelector("[data-row-toggle]");

@@ -1,8 +1,9 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { cacheElements } from "../../src/Dashboard/dashboard/dom.js";
 
 const { state } = await import("../../src/Dashboard/dashboard/state.js");
-const { initDeviceDetailView, renderDownlinkRequests } = await import(
+const { renderDownlinkRequests } = await import(
     "../../src/Dashboard/dashboard/devices/detail.js",
 );
 
@@ -36,7 +37,7 @@ const hidden = (element) => element.classList.contains("d-none");
 
 test("without requests the request column, ruler and tab go away", () => {
     const els = detailEls();
-    initDeviceDetailView({ els });
+    cacheElements(els);
     state.downlinkPage = 1;
 
     renderDownlinkRequests([]);
@@ -48,7 +49,7 @@ test("without requests the request column, ruler and tab go away", () => {
 
 test("with requests all three come back", () => {
     const els = detailEls();
-    initDeviceDetailView({ els });
+    cacheElements(els);
     state.downlinkPage = 1;
 
     renderDownlinkRequests([]);

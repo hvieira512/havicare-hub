@@ -1,5 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { cacheElements } from "../../src/Dashboard/dashboard/dom.js";
 
 /** O carrossel do Bootstrap, reduzido a pôr o `active` no painel pedido. */
 globalThis.bootstrap = {
@@ -14,7 +15,7 @@ globalThis.bootstrap = {
 globalThis.fetch = async () => Response.json({ data: [] });
 
 const { state } = await import("../../src/Dashboard/dashboard/state.js");
-const { initSettingsModels, showModelsPane } = await import(
+const { showModelsPane } = await import(
     "../../src/Dashboard/dashboard/settings/models/shell.js",
 );
 const { backToModelList, loadSettingsModelsSection, renderModelsSection } = await import(
@@ -80,7 +81,7 @@ const CATALOG = [
 function render(catalog = CATALOG, query = "") {
     const root = document.createElement("div");
     const summary = document.createElement("div");
-    initSettingsModels({ els: { modelCatalog: root, modelsTabSummary: summary } });
+    cacheElements({ modelCatalog: root, modelsTabSummary: summary });
     state.settingsModal.modelCatalog = catalog;
     state.settingsModal.modelsSearchQuery = query;
     renderModelsSection();
@@ -211,7 +212,7 @@ const onTheModelSheet = () => {
 };
 
 test("going back to the list closes the sheet, the breadcrumb and the save bar", () => {
-    initSettingsModels({ els, ui: {} });
+    cacheElements(els);
     onTheModelSheet();
     state.settingsModal.sectionLoaded.models = true;
 
@@ -225,7 +226,7 @@ test("going back to the list closes the sheet, the breadcrumb and the save bar",
 
 /** Carregar o separador é o que reabrir o modal faz, e a entrada dele é a lista. */
 test("loading the catalog brings the panes back to the list", async () => {
-    initSettingsModels({ els, ui: {} });
+    cacheElements(els);
     onTheModelSheet();
 
     await loadSettingsModelsSection();

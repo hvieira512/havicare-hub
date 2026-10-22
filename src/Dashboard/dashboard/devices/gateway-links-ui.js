@@ -12,14 +12,9 @@ import { linksToGateway, normalizeDeviceType } from "../domain.js";
 import { eligibleGateways, gatewayLinkChanges, normalizeKey } from "./gateway-links.js";
 import { disposeTooltips, refreshTooltips } from "../tooltips.js";
 import { linkSignal, signalMeter } from "./gateway-signal.js";
+import { els } from "../dom.js";
 
 /** O escolhedor de gateways do modal do dispositivo: com que gateways um sensor pode falar. */
-
-let els;
-
-export function initGatewayLinksUi(context) {
-    els = context.els;
-}
 
 export function selectedGatewayKeys() {
     return [

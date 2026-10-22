@@ -1,9 +1,10 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { autoEls } from "./support/els.js";
+import { cacheElements } from "../../src/Dashboard/dashboard/dom.js";
 
 const { setSelectedDetail, state } = await import("../../src/Dashboard/dashboard/state.js");
-const { initDeviceDetailView, renderSelection } = await import(
+const { renderSelection } = await import(
     "../../src/Dashboard/dashboard/devices/detail.js",
 );
 
@@ -29,7 +30,7 @@ function connectionSection(els) {
 test("while the history has not arrived, the connections section does not say «sem registo»", () => {
     const els = detailEls();
     const section = connectionSection(els);
-    initDeviceDetailView({ els });
+    cacheElements(els);
     setSelectedDetail(detail());
 
     renderSelection();
@@ -48,7 +49,7 @@ test("while the history has not arrived, the connections section does not say «
 test("the band reads the connections from their own list", () => {
     const els = detailEls();
     const section = connectionSection(els);
-    initDeviceDetailView({ els });
+    cacheElements(els);
     setSelectedDetail(detail());
     const at = (hoursAgo) => new Date(Date.now() - hoursAgo * 3600000).toISOString();
 
@@ -70,7 +71,7 @@ test("the band reads the connections from their own list", () => {
 test("a device silent since before the history shows the gap since it last spoke", () => {
     const els = detailEls();
     const section = connectionSection(els);
-    initDeviceDetailView({ els });
+    cacheElements(els);
     const lastSeenAt = new Date(Date.now() - 6 * 86400000).toISOString();
     setSelectedDetail({ ...detail(), device: { imei: "5948069B8E87", online: false, lastSeenAt } });
     state.selectedDetail.recent = { telemetry: [], events: [], connections: [], commands: [] };
@@ -85,7 +86,7 @@ test("a device silent since before the history shows the gap since it last spoke
 test("an offline device whose last record is «connected» ends the band in a gap since it went silent", () => {
     const els = detailEls();
     connectionSection(els);
-    initDeviceDetailView({ els });
+    cacheElements(els);
     const at = (hoursAgo) => new Date(Date.now() - hoursAgo * 3600000).toISOString();
     setSelectedDetail({ ...detail(), device: { imei: "c5e390f30bce", online: false, lastSeenAt: at(24) } });
     state.selectedDetail.recent = {

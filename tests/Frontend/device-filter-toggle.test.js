@@ -1,10 +1,11 @@
 import test, { beforeEach } from "node:test";
 import assert from "node:assert/strict";
 import { autoEls } from "./support/els.js";
+import { cacheElements } from "../../src/Dashboard/dashboard/dom.js";
 
 const { state } = await import("../../src/Dashboard/dashboard/state.js");
 const { FILTERS_STORAGE_KEY } = await import("../../src/Dashboard/dashboard/storage.js");
-const { handleDeviceFilterClick, initListFilters } =
+const { handleDeviceFilterClick } =
     await import("../../src/Dashboard/dashboard/devices/list-filters.js");
 
 /**
@@ -29,12 +30,12 @@ const storedFilters = () => JSON.parse(localStorage.getItem(FILTERS_STORAGE_KEY)
 
 beforeEach(() => {
     changes = 0;
-    initListFilters({
-        els,
-        onChange: () => {
-            changes += 1;
-        },
-    });
+    cacheElements(els);
+    // Pedir a lista outra vez é o que um filtro faz: conta-se o pedido.
+    globalThis.fetch = async (url) => {
+        if (new URL(url, "http://localhost").pathname === "/api/devices") changes += 1;
+        return Response.json({ data: [] });
+    };
     localStorage.removeItem(FILTERS_STORAGE_KEY);
     state.deviceFilters = {
         deviceType: [],

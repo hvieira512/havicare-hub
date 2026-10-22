@@ -1,11 +1,9 @@
 import test, { beforeEach } from "node:test";
 import assert from "node:assert/strict";
 import { autoEls } from "./support/els.js";
+import { cacheElements } from "../../src/Dashboard/dashboard/dom.js";
 
 const { state } = await import("../../src/Dashboard/dashboard/state.js");
-const { initSettingsModels } = await import(
-    "../../src/Dashboard/dashboard/settings/models/shell.js",
-);
 const {
     handleModelWizardClick,
     handleModelWizardInput,
@@ -45,7 +43,7 @@ const tagFor = (name) => (name.endsWith("Btn") ? "button" : "div");
 function openWizard() {
     els = autoEls(tagFor);
     els.modelsCarousel.innerHTML = "<div class=\"carousel-item\"></div><div class=\"carousel-item active\"></div>";
-    initSettingsModels({ els, ui: {} });
+    cacheElements(els);
     return openNewModelForm();
 }
 

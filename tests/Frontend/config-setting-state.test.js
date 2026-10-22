@@ -3,9 +3,9 @@ import test from "node:test";
 
 import { parseFragment } from "./support/dom.js";
 import { renderConfigSection } from "../../src/Dashboard/dashboard/devices/config/index.js";
+import { cacheElements } from "../../src/Dashboard/dashboard/dom.js";
 import {
     captureConfigPristine,
-    initDeviceConfigPanel,
     syncConfigCounts,
 } from "../../src/Dashboard/dashboard/devices/config/panel.js";
 
@@ -52,7 +52,7 @@ test("«Alterado» takes over while the edit is unsent, without erasing the deli
     pane.appendChild(sectionOf(INTERVAL, { intervalSeconds: 3600 }, true));
     document.body.replaceChildren(host);
     captureConfigPristine(host);
-    initDeviceConfigPanel({ els: {} });
+    cacheElements({});
 
     const section = host.querySelector("[data-config-section]");
     assert.equal("configEdited" in section.dataset, false);

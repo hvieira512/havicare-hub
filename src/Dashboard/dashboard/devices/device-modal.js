@@ -75,8 +75,8 @@ import {
     clearStorageKey,
     saveTextStorage,
 } from "../storage.js";
+import { els } from "../dom.js";
 
-let els;
 let deviceModal;
 
 /** O painel de configurações entra por `import()` quando se abre o separador: uma porta só. */
@@ -90,7 +90,6 @@ export function loadConfigPanel() {
         import("./config/handlers.js"),
     ])
         .then(([catalog, panel, handlers]) => {
-            panel.initDeviceConfigPanel({ els });
             loadedPanel = { catalog, panel, handlers };
             return loadedPanel;
         })
@@ -107,7 +106,6 @@ export function configPanelIfLoaded() {
 }
 
 export function initDeviceModal(context) {
-    els = context.els;
     deviceModal = context.deviceModal;
 }
 

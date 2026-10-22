@@ -9,13 +9,13 @@ import { state } from "../state.js";
 import { html, raw } from "../html.js";
 import { apiError, confirmDestructive, promptPassword, reportApiError, toast } from "../dialogs.js";
 import { clearInvalid } from "../validation.js";
-import { setSettingsNavCount } from "./shell.js";
+import { handleSettingsPaginationClick, setSettingsNavCount } from "./shell.js";
 import { renderPagination } from "../pagination.js";
 import { editorOf, focusEditor, whileBusy } from "./row-editor.js";
 import { countLabel } from "../i18n.js";
+import { els } from "../dom.js";
 
 /** Os utilizadores da API; a busca, os filtros e a paginação são do servidor. */
-let els;
 let licenses = [];
 let users = [];
 let adminCount = 0;
@@ -126,8 +126,15 @@ function filterControl(column, chosen) {
         </div>`;
 }
 
-export function initSettingsApiUsers(context) {
-    els = context.els;
+export function initSettingsApiUsers() {
+    els.newApiUserBtn?.addEventListener("click", newApiUser);
+    // No invólucro e não na lista: apanha o formulário de criar, os menus das linhas e os filtros.
+    els.apiUserList.addEventListener("click", handleApiUserListClick);
+    els.apiUserList.addEventListener("change", handleApiUserListChange);
+    els.apiUserList.addEventListener("input", handleApiUserListInput);
+    els.settingsApiUsersPagination?.addEventListener("click", (event) =>
+        handleSettingsPaginationClick(event, state.settingsModal.apiUsersPagination, "settingsApiUsersPage", loadSettingsApiUsersSection),
+    );
 }
 
 const showError = (error) => toast("error", error.message);

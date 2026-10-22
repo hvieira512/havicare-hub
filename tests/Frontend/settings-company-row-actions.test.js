@@ -1,7 +1,8 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { cacheElements } from "../../src/Dashboard/dashboard/dom.js";
 
-const { initSettingsCompanies, loadSettingsCompanySection } = await import(
+const { loadSettingsCompanySection } = await import(
     "../../src/Dashboard/dashboard/settings/companies.js",
 );
 const { invalidateLicenses } = await import("../../src/Dashboard/dashboard/licenses.js");
@@ -25,7 +26,7 @@ function setupDom() {
         settingsCompanyPaginationSummary: document.getElementById("pagerSummary"),
         settingsCompanyPaginationControls: document.getElementById("pagerControls"),
     };
-    initSettingsCompanies({ els });
+    cacheElements(els);
     invalidateLicenses();
     globalThis.fetch = async (url) => jsonResponse(
         String(url).includes("/api/licenses")

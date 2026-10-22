@@ -6,14 +6,14 @@ import { apiError, toast } from "../dialogs.js";
 import { emptyPanel } from "../components/empty-panel.js";
 import { setSettingsNavCount } from "./shell.js";
 import { countLabel } from "../i18n.js";
+import { els } from "../dom.js";
 
 /** A denylist: só se vê e se desbloqueia; bloquear faz-se na notificação. */
-let els;
 let current = [];
 let blockedCount = 0;
 
-export function initSettingsDenylist(context) {
-    els = context.els;
+export function initSettingsDenylist() {
+    els.denylistListBody.addEventListener("click", handleDenylistListClick);
 }
 
 export async function loadSettingsDenylistSection() {

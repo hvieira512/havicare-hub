@@ -39,9 +39,9 @@ export function paginationControls({ pagination, actionPrefix }) {
         return "";
     }
 
-    const arrow = (action, icon, label, disabled) =>
+    const arrow = (action, page, icon, label, disabled) =>
         `<li class="page-item${disabled ? " disabled" : ""}">` +
-        `<button type="button" class="page-link page-link-touch rounded ms-0" data-action="${esc(action)}" ${disabled ? "disabled" : ""}` +
+        `<button type="button" class="page-link page-link-touch rounded ms-0" data-action="${esc(action)}" data-page="${page}" ${disabled ? "disabled" : ""}` +
         ` aria-label="${esc(label)}"><i class="fa-solid ${icon}"></i></button></li>`;
 
     // Um `span` e não um botão: as reticências não são um destino.
@@ -50,7 +50,7 @@ export function paginationControls({ pagination, actionPrefix }) {
         "<span class=\"page-link rounded ms-0 px-1 text-center\" aria-hidden=\"true\">…</span></li>";
 
     return [
-        arrow(`${actionPrefix}Prev`, "fa-chevron-left", "Página anterior", currentPage <= 1),
+        arrow(`${actionPrefix}Prev`, currentPage - 1, "fa-chevron-left", "Página anterior", currentPage <= 1),
         ...pageWindow(currentPage, totalPages).map((page) => {
             if (page === null) {
                 return gap;
@@ -60,7 +60,7 @@ export function paginationControls({ pagination, actionPrefix }) {
                 `<button type="button" class="page-link page-link-touch rounded ms-0 px-1 text-center" data-action="${esc(goAction)}" data-page="${page}"` +
                 `${active ? " aria-current=\"page\"" : ""}>${page}</button></li>`;
         }),
-        arrow(`${actionPrefix}Next`, "fa-chevron-right", "Página seguinte", currentPage >= totalPages),
+        arrow(`${actionPrefix}Next`, currentPage + 1, "fa-chevron-right", "Página seguinte", currentPage >= totalPages),
     ].join("");
 }
 

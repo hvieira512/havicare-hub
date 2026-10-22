@@ -15,16 +15,10 @@ import {
     modelDisplayName,
     normalizeDeviceType,
 } from "../domain.js";
+import { els } from "../dom.js";
+import { loadSummary } from "./list.js";
 
-/** O painel de filtros da listagem; quem volta a pedir a lista entra pelo `onChange`. */
-
-let els;
-let onChange = () => {};
-
-export function initListFilters(context) {
-    els = context.els;
-    onChange = context.onChange;
-}
+/** O painel de filtros da listagem. */
 
 const repeatMarkup = (count, markup) => Array.from({ length: count }, () => markup).join("");
 
@@ -325,7 +319,7 @@ export async function handleDeviceFilterChipRemove(event) {
     if (key === "online") {
         changeDeviceFilter("online", null);
         saveJsonStorage(FILTERS_STORAGE_KEY, state.deviceFilters);
-        await onChange();
+        await loadSummary();
         return;
     }
     if (!(key in state.deviceFilters)) return;
@@ -387,7 +381,7 @@ async function toggleDeviceFilter(key, value) {
         );
     }
     saveJsonStorage(FILTERS_STORAGE_KEY, state.deviceFilters);
-    await onChange();
+    await loadSummary();
 }
 
 function modelsForSupplier(supplier) {
@@ -427,7 +421,7 @@ export async function handleDeviceOnlineFilterChange(event) {
     const value = event.target.value;
     changeDeviceFilter("online", value === "all" ? null : value === "online");
     saveJsonStorage(FILTERS_STORAGE_KEY, state.deviceFilters);
-    await onChange();
+    await loadSummary();
 }
 
 export async function clearDeviceFilters() {
@@ -439,7 +433,7 @@ export async function clearDeviceFilters() {
         online: null,
     });
     clearStorageKey(FILTERS_STORAGE_KEY);
-    await onChange();
+    await loadSummary();
 }
 
 export function storedFilterList(value) {

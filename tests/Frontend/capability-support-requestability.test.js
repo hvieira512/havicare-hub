@@ -1,10 +1,9 @@
 import test, { beforeEach } from "node:test";
 import assert from "node:assert/strict";
 import { autoEls } from "./support/els.js";
+import { cacheElements } from "../../src/Dashboard/dashboard/dom.js";
 
 const { state } = await import("../../src/Dashboard/dashboard/state.js");
-const { initSettingsModels } =
-    await import("../../src/Dashboard/dashboard/settings/models/shell.js");
 const { handleCapabilityGroupsChange } =
     await import("../../src/Dashboard/dashboard/settings/models/capabilities-editor.js");
 
@@ -33,7 +32,7 @@ const requested = () => state.settingsModal.capabilityRequestableCapabilities;
 
 beforeEach(() => {
     document.body.innerHTML = "";
-    initSettingsModels({ els, ui: {} });
+    cacheElements(els);
     state.settingsModal.capabilityEnabledCapabilities = ["heart_rate"];
     state.settingsModal.capabilityRequestableCapabilities = [];
     // Com template do fornecedor, desligar não tira a linha e o ouvinte acerta no sítio em

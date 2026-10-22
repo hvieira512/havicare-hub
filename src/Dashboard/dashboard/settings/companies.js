@@ -11,7 +11,7 @@ import { state } from "../state.js";
 import { html, raw } from "../html.js";
 import { apiError, confirmDestructive, reportApiError, toast } from "../dialogs.js";
 import { clearInvalid } from "../validation.js";
-import { setSettingsNavCount } from "./shell.js";
+import { handleSettingsPaginationClick, setSettingsNavCount } from "./shell.js";
 import { renderPagination } from "../pagination.js";
 import { editorOf, focusEditor, inlineEditor, whileBusy } from "./row-editor.js";
 import {
@@ -26,9 +26,9 @@ import {
     tryRadarCredentials,
 } from "./radar-credentials.js";
 import { countLabel } from "../i18n.js";
+import { els } from "../dom.js";
 
 /** As licenças, dentro de cada empresa; a linha que se toca é a que se transforma. */
-let els;
 // A página de empresas à vista, para redesenhar depois de mexer numa licença.
 let currentCompanies = [];
 let currentLicenses = [];
@@ -36,8 +36,12 @@ let currentLicenses = [];
 // Uma vaga só para os dois tipos de linha: abrir uma empresa fecha a licença aberta, e ao contrário.
 const editor = inlineEditor(() => renderCompanySection());
 
-export function initSettingsCompanies(context) {
-    els = context.els;
+export function initSettingsCompanies() {
+    els.newCompanyBtn?.addEventListener("click", newCompany);
+    els.companyListBody.addEventListener("click", handleCompanyListClick);
+    els.settingsCompanyPagination?.addEventListener("click", (event) =>
+        handleSettingsPaginationClick(event, state.settingsModal.companyPagination, "settingsCompanyPage", loadSettingsCompanySection),
+    );
 }
 
 export async function loadSettingsCompanySection(companiesPage = 1) {

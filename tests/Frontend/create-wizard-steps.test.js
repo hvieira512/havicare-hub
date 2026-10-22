@@ -2,6 +2,7 @@ import test, { beforeEach } from "node:test";
 import assert from "node:assert/strict";
 
 import { parseFragment } from "./support/dom.js";
+import { cacheElements } from "../../src/Dashboard/dashboard/dom.js";
 
 const { state } = await import("../../src/Dashboard/dashboard/state.js");
 const { initCreateWizard, openWizard } =
@@ -43,7 +44,8 @@ function harness() {
 
     els = {};
     for (const id of IDS) els[id] = root.querySelector(`#${id}`);
-    initCreateWizard({ els, wizardModal: { show: () => {}, hide: () => {} } });
+    cacheElements(els);
+    initCreateWizard({ wizardModal: { show: () => {}, hide: () => {} } });
 }
 
 const text = (node) => (node?.textContent || "").replace(/\s+/g, " ").trim();

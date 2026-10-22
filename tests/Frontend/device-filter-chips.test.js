@@ -1,12 +1,12 @@
 import test, { beforeEach } from "node:test";
 import assert from "node:assert/strict";
 import { autoEls } from "./support/els.js";
+import { cacheElements } from "../../src/Dashboard/dashboard/dom.js";
 
 const { state } = await import("../../src/Dashboard/dashboard/state.js");
 const {
     deviceFilterChipLabels,
     handleDeviceFilterChipRemove,
-    initListFilters,
 } = await import("../../src/Dashboard/dashboard/devices/list-filters.js");
 
 /** Os filtros sobrevivem à sessão, e as pastilhas por cima da lista dizem quais estão aplicados. */
@@ -25,12 +25,12 @@ const removeChip = (key) => {
 
 beforeEach(() => {
     changes = 0;
-    initListFilters({
-        els,
-        onChange: () => {
-            changes += 1;
-        },
-    });
+    cacheElements(els);
+    // Pedir a lista outra vez é o que um filtro faz: conta-se o pedido.
+    globalThis.fetch = async (url) => {
+        if (new URL(url, "http://localhost").pathname === "/api/devices") changes += 1;
+        return Response.json({ data: [] });
+    };
     state.licenses = [];
     state.deviceFilters = {
         deviceType: [],

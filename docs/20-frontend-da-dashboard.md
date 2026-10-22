@@ -41,13 +41,11 @@ São só estas, e explicam onde cada ficheiro está:
 2. **Um módulo que só uma funcionalidade usa vive dentro dela.** Sobe à raiz de
    `dashboard/` quando aparecer o segundo consumidor — e não antes.
 3. **Só a raiz de composição conhece toda a gente.** É o `app.js` mais o
-   `wiring/`: cacheia os elementos, cria os modais, entrega o `els` a cada
-   funcionalidade e liga os ouvintes. O `wiring/` existe porque o `app.js`
-   tinha 567 linhas e quase noventa ouvintes; dividi-lo por área moveu linhas,
-   não acoplamento. Os módulos do `wiring/` são raiz de composição como o
-   `app.js` e podem importar de onde precisarem — é precisamente por isso que
-   os ouvintes vivem lá e não dentro das funcionalidades, já que quase todos
-   atravessam duas ou três e a regra 1 proíbe-os de se conhecerem.
+   `wiring/devices.js`: cacheia os elementos, cria os modais e liga os
+   ouvintes que atravessam funcionalidades. Os ouvintes do dispositivo vivem lá
+   porque quase todos atravessam duas ou três partes do `devices/`. Os das
+   definições não atravessam nada, e cada secção liga os seus no `initX()`,
+   que o `settings/index.js` chama.
 
 4. **Uma peça de interface nasce em `components/` se for pura e mais do que uma
    área a desenhar; nasce ao lado da funcionalidade se só ela a desenhar.**
@@ -127,10 +125,9 @@ menos 170 linhas.
 ```
 dashboard/
 ├── app.js                  a raiz de composição
-├── wiring/                 os ouvintes, por área -- raiz de composição, como o app.js
-│   ├── devices.js          lista, filtros, modal, painel de configuração, detalhe
-│   └── settings.js         modelos, capacidades, utilizadores da API, empresas
-├── dom.js                  cacheElements(): todos os elementos com id, num objeto
+├── wiring/
+│   └── devices.js          os ouvintes da lista, filtros, modal, configuração e detalhe
+├── dom.js                  o `els`: todos os elementos com id, num objeto
 │
 │   ── o núcleo partilhado: o que duas ou mais funcionalidades usam ──
 ├── state.js                o objeto de estado, um só, com um sub-objeto por ecrã
@@ -214,7 +211,7 @@ dashboard/
     ├── companies.js        o separador Licenças: empresas com as suas licenças dentro
     ├── api-users.js        o separador Utilizadores API
     └── models/             o separador Catálogo, que são três painéis
-        ├── shell.js        o contexto e a troca de painel
+        ├── shell.js        a troca de painel
         ├── list.js         painel 1: a árvore tipo → fornecedor → modelo
         ├── form.js         painel 2: criar um modelo novo
         └── detail.js       painel 3: a ficha de um modelo e as suas capacidades
@@ -225,16 +222,13 @@ dashboard/
 Todos seguem a mesma forma, e vale a pena reconhecê-la antes de abrir qualquer
 ficheiro.
 
-**O `els`.** `dom.js` corre uma vez e devolve um objeto com todos os elementos
-da página. O `app.js` entrega-o a cada módulo através de uma função
-`initX(context)`, que o guarda num `let els` do próprio módulo. Nenhum módulo
-faz `getElementById` por sua conta.
+**O `els`.** O `dom.js` exporta um objeto só com todos os elementos da página,
+que o `cacheElements()` do `app.js` enche uma vez ao arranque. Cada módulo
+importa-o, e nenhum faz `getElementById` por sua conta. Num teste, o
+`cacheElements(view)` põe lá os elementos que o teste montou.
 
 ```js
-let els;
-export function initGatewayLinksUi(context) {
-    els = context.els;
-}
+import { els } from "../dom.js";
 ```
 
 Um `id` que não exista dá `undefined`, e não um erro: renomeá-lo num template
@@ -247,9 +241,9 @@ JavaScript lê exista mesmo.
 
 **O estado.** Tudo o que sobrevive a um render está em `state.js`, com um
 sub-objeto por ecrã (`state.settingsModal`, `state.deviceModal`,
-`state.summary`). Uma variável de módulo guarda o `els` e, nalgumas secções das
-definições, a página que está à vista — essa morre quando o modal fecha, e é
-por isso que não sobe ao `state`.
+`state.summary`). O que só um módulo lê fica numa variável dele — nalgumas
+secções das definições, a página que está à vista, que morre quando o modal
+fecha.
 
 A forma de cada sub-objeto declara-se uma vez, no `blankDeviceModal` e no
 `blankSettingsModal`. O `Object.seal` só apanha gralhas no primeiro nível, e

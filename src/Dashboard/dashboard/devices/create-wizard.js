@@ -38,10 +38,10 @@ import {
     ensureDeviceTypeSuppliersModelsLoaded,
     loadSummary,
 } from "./list.js";
+import { els } from "../dom.js";
 
 /** O assistente de adicionar, uma pergunta por passo; o que varia por tipo vem do `DEVICE_TYPES`. */
 
-let els;
 let wizard;
 let wizardModal = null;
 let licenseGroups = [];
@@ -99,7 +99,6 @@ const TRAIL_QUESTIONS = QUESTIONS.map((question) => ({
 const questionOfStep = (step) => QUESTIONS.find((question) => question.step === step);
 
 export function initCreateWizard(context) {
-    els = context.els;
     wizardModal = context.wizardModal;
     wizard = createWizard({ questions: QUESTIONS, steps: STEPS });
 

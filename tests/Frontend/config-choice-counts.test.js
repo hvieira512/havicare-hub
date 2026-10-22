@@ -5,10 +5,10 @@ import { parseFragment } from "./support/dom.js";
 import { renderDeviceConfigurationRoot } from "../../src/Dashboard/dashboard/devices/config/index.js";
 import {
     captureConfigPristine,
-    initDeviceConfigPanel,
     syncConfigCounts,
 } from "../../src/Dashboard/dashboard/devices/config/panel.js";
 import { handleDeviceConfigChange } from "../../src/Dashboard/dashboard/devices/config/handlers.js";
+import { cacheElements } from "../../src/Dashboard/dashboard/dom.js";
 
 /**
  * Os cartões de escolha não têm botão próprio: quem envia é o rodapé da secção. Se o clique
@@ -40,7 +40,7 @@ const render = () => {
     })));
     document.body.replaceChildren(host);
     captureConfigPristine(host);
-    initDeviceConfigPanel({ els: {} });
+    cacheElements({});
     syncConfigCounts(host);
     return host;
 };

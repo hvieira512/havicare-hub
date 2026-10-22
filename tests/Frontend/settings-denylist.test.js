@@ -1,8 +1,8 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { cacheElements } from "../../src/Dashboard/dashboard/dom.js";
 
 const {
-    initSettingsDenylist,
     loadSettingsDenylistSection,
     handleDenylistListClick,
 } = await import("../../src/Dashboard/dashboard/settings/denylist.js");
@@ -19,7 +19,7 @@ function setupDom() {
         denylistTabSummary: document.getElementById("summary"),
         denylistListBody: document.getElementById("body"),
     };
-    initSettingsDenylist({ els });
+    cacheElements(els);
     return els;
 }
 

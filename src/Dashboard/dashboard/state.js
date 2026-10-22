@@ -69,6 +69,10 @@ export function blankSettingsModal(overrides = {}) {
     };
 }
 
+export function blankDetailFilters() {
+    return { from: "", to: "", type: "all", severity: "all", q: "" };
+}
+
 export const state = {
     // Gateways registados, para o assistente de adicionar oferecer os elegíveis.
     wizardGateways: [],
@@ -94,20 +98,8 @@ export const state = {
     deviceListPageSize: 20,
     deviceTypeSuppliersModels: [],
     protocols: [],
-    detailFilters: {
-        from: "",
-        to: "",
-        type: "all",
-        severity: "all",
-        q: "",
-    },
-    detailFiltersDraft: {
-        from: "",
-        to: "",
-        type: "all",
-        severity: "all",
-        q: "",
-    },
+    detailFilters: blankDetailFilters(),
+    detailFiltersDraft: blankDetailFilters(),
     // Listas, porque os filtros aceitam vários valores; a licença guarda "empresa", "empresa:número" ou "none".
     deviceFilters: {
         deviceType: [],
@@ -158,8 +150,6 @@ export function resetActivityPaging() {
     state.downlinkPage = 1;
     state.downlinkCumulative = false;
 }
-
-const blankDetailFilters = () => ({ from: "", to: "", type: "all", severity: "all", q: "" });
 
 export function selectImei(imei) {
     if (state.selectedImei !== imei) {

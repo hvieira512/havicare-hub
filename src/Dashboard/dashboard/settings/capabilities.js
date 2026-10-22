@@ -14,9 +14,9 @@ import {
     normalizeDeviceType,
 } from "../domain.js";
 import { capabilityLabel, countLabel } from "../i18n.js";
+import { els } from "../dom.js";
 
 /** O catálogo de um tipo de dispositivo, só de leitura; as que o fornecedor não declara ficam esbatidas. */
-let els;
 
 /** O que entra no catálogo: as acções -- desligar, reiniciar, encontrar -- são o quarto termo. */
 export function showsInCatalog(entry) {
@@ -40,8 +40,11 @@ export function capabilityFacts(entry) {
     ].filter(Boolean);
 }
 
-async function initSettingsCapabilities(context) {
-    els = context.els;
+function initSettingsCapabilities() {
+    els.capabilityCatalogSectionNav?.addEventListener("click", scrollCapabilityCatalogSection);
+    els.capabilityDeviceTypeButtons.addEventListener("click", handleCapabilityDeviceTypeClick);
+    els.capabilitySupplierButtons.addEventListener("click", handleCapabilitySupplierClick);
+    els.capabilityCatalogSearch?.addEventListener("input", handleCapabilityCatalogSearch);
 }
 
 /** O catálogo do tipo escolhido; a cache vive no `capability-catalog.js`. */

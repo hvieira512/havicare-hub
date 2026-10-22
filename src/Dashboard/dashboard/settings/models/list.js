@@ -15,7 +15,8 @@ import {
 } from "../../domain.js";
 import { setSettingsNavCount } from "../shell.js";
 import { resetModelWizard } from "./form.js";
-import { getSettingsModelsRuntime, isModelListShown, showModelsPane } from "./shell.js";
+import { isModelListShown, showModelsPane } from "./shell.js";
+import { els } from "../../dom.js";
 
 /** O catálogo: um nível por tipo de dispositivo, e o modelo como folha. */
 
@@ -99,7 +100,6 @@ function searchResults(query) {
 }
 
 function renderModelsSection() {
-    const { els } = getSettingsModelsRuntime();
     const query = state.settingsModal.modelsSearchQuery || "";
     const groups = catalogGroups();
     const models = groups.reduce(
@@ -162,15 +162,12 @@ async function loadSettingsModelsSection() {
     resetModelWizard();
     showModelListSlide();
     renderModelsSection();
-
-    const { els } = getSettingsModelsRuntime();
     if (els.modelsListSearch) {
         els.modelsListSearch.value = state.settingsModal.modelsSearchQuery || "";
     }
 }
 
 function handleModelsListSearchInput() {
-    const { els } = getSettingsModelsRuntime();
     state.settingsModal.modelsSearchQuery = els.modelsListSearch.value.trim();
     renderModelsSection();
 }
@@ -192,8 +189,6 @@ function backToModelList() {
 
 /** O ecrã de entrada do separador, ao voltar da ficha e ao carregar o separador. */
 function showModelListSlide() {
-    const { els } = getSettingsModelsRuntime();
-
     els.modelsBreadcrumb.classList.add("d-none");
     els.modelsBreadcrumbModels.classList.add("active");
     els.modelsBreadcrumbNew.classList.add("d-none");
@@ -212,7 +207,6 @@ function showModelListSlide() {
 
 /** O painel do modelo novo; o «Fechar» do rodapé sai, porque o rodapé é o do assistente. */
 function showNewModelSlide() {
-    const { els } = getSettingsModelsRuntime();
     els.settingsCloseBtn?.classList.add("d-none");
     els.modelDetailActionBar?.classList.replace("d-flex", "d-none");
     els.modelsBreadcrumb.classList.remove("d-none");
@@ -226,9 +220,18 @@ function showNewModelSlide() {
     showModelsPane(1);
 }
 
+function initModelList() {
+    els.modelsBreadcrumbModels.addEventListener("click", backToModelList);
+    els.modelsCarousel.addEventListener("click", (event) => {
+        if (event.target.closest("[data-action=\"backToModelList\"]")) backToModelList();
+    });
+    els.modelsListSearch.addEventListener("input", handleModelsListSearchInput);
+}
+
 export {
     backToModelList,
     handleModelsListSearchInput,
+    initModelList,
     loadSettingsModelFilters,
     loadSettingsModelsSection,
     renderModelsSection,

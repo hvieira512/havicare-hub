@@ -16,15 +16,10 @@ import { resetPhoneControls } from "../../phone.js";
 import { state } from "../../state.js";
 import { CONFIG_INPUTS } from "./inputs/index.js";
 import { countLabel } from "../../i18n.js";
-
-let els;
+import { els } from "../../dom.js";
 
 const configFeedbackTimers = new Map();
 const configPhaseTimers = new Map();
-
-export function initDeviceConfigPanel(context) {
-    els = context.els;
-}
 
 export function dismissConfigFeedback(key) {
     clearTimeout(configFeedbackTimers.get(key));

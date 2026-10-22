@@ -19,7 +19,7 @@ import {
 } from "../format.js";
 import { html } from "../html.js";
 import { joinMarkup } from "../components/cards/shared.js";
-import { renderInto } from "../dom.js";
+import { els, renderInto } from "../dom.js";
 import { capabilityLabel } from "../capability-catalog.js";
 import { apiError, toast } from "../dialogs.js";
 import { deviceLicenseBlock, deviceLicenseLabel } from "../components/device-license.js";
@@ -44,25 +44,11 @@ import { renderConnectionHistory } from "./connection-history.js";
 import {
     allDetailItems,
     filterDetailItems,
-    initDetailFilters,
     populateDetailFilterTypes,
     syncDetailFilterControls,
 } from "./detail-filters.js";
 
 const NCS_EVENT_CARD_TYPES = ["help_call", "reset"];
-
-let els;
-
-function initDeviceDetailView(context) {
-    els = context.els;
-    // O que redesenha entra por aqui, e não por um import de volta.
-    initDetailFilters({
-        els,
-        onChange: renderSelection,
-        renderDownlinkRequests,
-        renderTelemetryList,
-    });
-}
 
 function renderSelection() {
     els.deviceSelectionEmptyState.classList.toggle(
@@ -674,7 +660,6 @@ function clearSelectedDeviceFromStorage() {
 export {
     clearSelectedDeviceFromStorage,
     downlinkActivityRow,
-    initDeviceDetailView,
     renderDownlinkRequests,
     renderRequestCardGroup,
     renderSelection,

@@ -91,6 +91,8 @@ test("the current page is marked, and the arrows stop at the ends", () => {
 
     assert.equal(controls.querySelector("[data-action='telemetryPrev']").disabled, false);
     assert.equal(controls.querySelector("[data-action='telemetryNext']").disabled, false);
+    assert.equal(controls.querySelector("[data-action='telemetryPrev']").dataset.page, "8");
+    assert.equal(controls.querySelector("[data-action='telemetryNext']").dataset.page, "10");
 
     const first = render({ total: 167, totalPages: 14, page: 1, limit: 12 }).controls;
     assert.equal(first.querySelector("[data-action='telemetryPrev']").disabled, true);

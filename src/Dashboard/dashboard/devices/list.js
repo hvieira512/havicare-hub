@@ -22,29 +22,24 @@ import { deviceCard, deviceCardSkeletonList } from "./device-card.js";
 import { renderPagination, resolvePaginationPage } from "../pagination.js";
 import { normalizeDeviceType } from "../domain.js";
 import {
-    initListFilters,
     renderDeviceActiveFilters,
     renderDeviceFilterControls,
     renderDeviceFilterSkeleton,
 } from "./list-filters.js";
 import {
-    initDeviceDetailView,
     clearSelectedDeviceFromStorage,
     renderSelection as renderSelectionDetail,
     saveSelectedDeviceToStorage,
 } from "./detail.js";
 import { connectDeviceStream, disconnectDeviceStream, isDeviceStreamFor } from "./stream.js";
+import { els } from "../dom.js";
 
 /** A coluna da esquerda: a lista, a paginação, a busca e o modal de escolher dispositivo. */
-let els;
 let ui;
 let deviceSearchTimer = null;
 
 export function initDeviceList(context) {
-    els = context.els;
     ui = context.ui;
-    initListFilters({ els, onChange: loadSummary });
-    initDeviceDetailView(context);
 }
 
 /** Enquanto o pedido corre a lista fica marcada como ocupada: o conteúdo antigo continua lá. */

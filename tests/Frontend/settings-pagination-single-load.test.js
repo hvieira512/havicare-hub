@@ -3,11 +3,11 @@ import assert from "node:assert/strict";
 
 import {
     handleSettingsPaginationClick,
-    initSettingsShell,
     setSettingsNavCount,
 } from "../../src/Dashboard/dashboard/settings/shell.js";
 import { renderPagination } from "../../src/Dashboard/dashboard/pagination.js";
 import { state } from "../../src/Dashboard/dashboard/state.js";
+import { cacheElements } from "../../src/Dashboard/dashboard/dom.js";
 
 /** O contentor e os controlos aninhados, como o `pagination_component()` os desenha. */
 function mountPager(prefix) {
@@ -33,7 +33,7 @@ test("a click on the settings pager requests a single page", () => {
 
     const loaded = [];
     root.addEventListener("click", (event) =>
-        handleSettingsPaginationClick(event, "apiUsersPagination", (page) => loaded.push(page)),
+        handleSettingsPaginationClick(event, pagination, "settingsApiUsersPage", (page) => loaded.push(page)),
     );
 
     controls
@@ -50,7 +50,7 @@ test("a click on the settings pager requests a single page", () => {
 function setUpNav() {
     document.body.innerHTML = "<span id=\"settingsDenylistCount\" class=\"d-none\"></span>";
     const element = document.getElementById("settingsDenylistCount");
-    initSettingsShell({ els: { settingsDenylistCount: element } });
+    cacheElements({ settingsDenylistCount: element });
     return element;
 }
 

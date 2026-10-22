@@ -1,6 +1,7 @@
 import test, { beforeEach } from "node:test";
 import assert from "node:assert/strict";
 import { autoEls } from "./support/els.js";
+import { cacheElements } from "../../src/Dashboard/dashboard/dom.js";
 
 const { state } = await import("../../src/Dashboard/dashboard/state.js");
 const { initDeviceList } = await import("../../src/Dashboard/dashboard/devices/list.js");
@@ -47,14 +48,16 @@ beforeEach(() => {
     };
     state.selectedImei = "";
     state.selectedDetail = null;
-    initDeviceList({ els, ui: {}, onChange: () => {} });
+    cacheElements(els);
+    initDeviceList({ ui: {} });
     const wizardModal = {
         hide: () => {
             hidden += 1;
         },
         show: () => {},
     };
-    initCreateWizard({ els, wizardModal });
+    cacheElements(els);
+    initCreateWizard({ wizardModal });
 });
 
 test("creating without gateways closes the wizard and returns no error", async () => {

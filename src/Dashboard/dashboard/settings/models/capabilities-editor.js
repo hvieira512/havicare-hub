@@ -14,8 +14,8 @@ import {
 } from "../../domain.js";
 import { capabilityLabel, countLabel } from "../../i18n.js";
 import { CAPABILITY_SECTION_ICONS } from "../../capability-catalog.js";
-import { getSettingsModelsRuntime } from "./shell.js";
 import { backToModelList } from "./list.js";
+import { els } from "../../dom.js";
 
 /** O editor das capacidades de um modelo: que suporta, e quais se podem pedir ao aparelho. */
 
@@ -80,7 +80,6 @@ function telemetryProtocolNote(supplier, entries, protocolRequestable) {
 
 /** Acerta no sítio para não tirar o foco ao interruptor; sem template, quem chama redesenha. */
 function syncCapabilitySwitches(feature) {
-    const { els } = getSettingsModelsRuntime();
     const model = state.settingsModal.currentCapabilitiesModel;
     const enabled = new Set(
         state.settingsModal.capabilityEnabledCapabilities || [],
@@ -179,7 +178,6 @@ function jumpCapabilitySection(event) {
 }
 
 function renderCapabilitiesSection() {
-    const { els } = getSettingsModelsRuntime();
     const model = state.settingsModal.currentCapabilitiesModel;
     const enabled = new Set(
         state.settingsModal.capabilityEnabledCapabilities || [],
@@ -319,8 +317,15 @@ async function saveCapabilities() {
     backToModelList();
 }
 
+function initCapabilitiesEditor() {
+    els.saveCapabilitiesBtn.addEventListener("click", () => void saveCapabilities());
+    els.capabilityGroups.addEventListener("change", handleCapabilityGroupsChange);
+    els.capabilitySectionNav.addEventListener("click", jumpCapabilitySection);
+}
+
 export {
     handleCapabilityGroupsChange,
+    initCapabilitiesEditor,
     jumpCapabilitySection,
     renderCapabilitiesSection,
     saveCapabilities,

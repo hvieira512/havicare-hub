@@ -1,7 +1,9 @@
 /** Todos os elementos com `id`, por `id`; o `DashboardElementIdsTest` confere-os com a marcação. */
-export function cacheElements() {
-    const els = {};
-    for (const el of document.querySelectorAll("[id]")) els[el.id] = el;
+export let els = {};
+
+/** Enche o `els` com os elementos da página, ou com os que um teste lhe der. */
+export function cacheElements(found = null) {
+    els = found ?? Object.fromEntries([...document.querySelectorAll("[id]")].map((el) => [el.id, el]));
     return els;
 }
 

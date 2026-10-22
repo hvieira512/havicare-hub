@@ -1,10 +1,6 @@
 import { resetSettingsModal, state } from "../state.js";
-import {
-    activateSettingsSection,
-    initSettingsShell,
-    loadSettingsNavCounts,
-    showSettingsModal,
-} from "./shell.js";
+import { els } from "../dom.js";
+import { initSettingsShell, loadSettingsNavCounts, showSettingsModal } from "./shell.js";
 import { initSettingsApiUsers, loadSettingsApiUsersSection } from "./api-users.js";
 import { initSettingsCompanies, loadSettingsCompanySection } from "./companies.js";
 import { initSettingsDenylist, loadSettingsDenylistSection } from "./denylist.js";
@@ -12,17 +8,40 @@ import {
     initSettingsCapabilities,
     loadSettingsCapabilitiesSection,
 } from "./capabilities.js";
-import { initSettingsModels } from "./models/shell.js";
-import { loadSettingsModelsSection } from "./models/list.js";
+import { initModelList, loadSettingsModelsSection } from "./models/list.js";
+import { initModelForm } from "./models/form.js";
+import { initModelDetail } from "./models/detail.js";
+import { initCapabilitiesEditor } from "./models/capabilities-editor.js";
+
+/** As secções do modal: o separador de cada uma e o que a carrega. */
+const SECTIONS = {
+    models: { tab: "settingsModelsTabBtn", load: loadSettingsModelsSection },
+    capabilities: { tab: "settingsCapabilitiesTabBtn", load: loadSettingsCapabilitiesSection },
+    company: { tab: "settingsCompanyTabBtn", load: loadSettingsCompanySection },
+    denylist: { tab: "settingsDenylistTabBtn", load: loadSettingsDenylistSection },
+    apiUsers: { tab: "settingsApiUsersTabBtn", load: loadSettingsApiUsersSection },
+};
 
 /** A raiz de composição do modal de definições; nenhuma secção importa daqui. */
 export function initSettings(context) {
     initSettingsShell(context);
-    initSettingsApiUsers(context);
-    initSettingsCompanies(context);
-    initSettingsDenylist(context);
-    initSettingsCapabilities(context);
-    initSettingsModels(context);
+    initSettingsApiUsers();
+    initSettingsCompanies();
+    initSettingsDenylist();
+    initSettingsCapabilities();
+    initModelList();
+    initModelForm();
+    initModelDetail();
+    initCapabilitiesEditor();
+
+    els.manageSettingsBtn.addEventListener("click", () => void loadSettingsModal("models"));
+    // Cada aba carrega a sua secção da primeira vez que é aberta, e não antes.
+    for (const [section, { tab, load }] of Object.entries(SECTIONS)) {
+        els[tab].addEventListener("shown.bs.tab", () => {
+            state.settingsModal.section = section;
+            if (!state.settingsModal.sectionLoaded[section]) void load();
+        });
+    }
 }
 
 /** Abre o modal numa secção; o `shown.bs.tab` não dispara quando o separador já é o activo. */
@@ -32,16 +51,10 @@ export async function loadSettingsModal(
     resetSettingsModal();
     state.modelModal.templateSummary = "";
 
-    activateSettingsSection(section);
+    state.settingsModal.section = section;
+    bootstrap.Tab.getOrCreateInstance(els[(SECTIONS[section] ?? SECTIONS.models).tab]).show();
     showSettingsModal();
     void loadSettingsNavCounts();
 
-    const load = {
-        models: loadSettingsModelsSection,
-        capabilities: loadSettingsCapabilitiesSection,
-        company: loadSettingsCompanySection,
-        denylist: loadSettingsDenylistSection,
-        apiUsers: loadSettingsApiUsersSection,
-    }[section];
-    if (load) void load();
+    void SECTIONS[section]?.load();
 }

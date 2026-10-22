@@ -3,9 +3,10 @@ import assert from "node:assert/strict";
 
 import { installDeferredFetch } from "./support/deferred-fetch.js";
 import { autoEls } from "./support/els.js";
+import { cacheElements } from "../../src/Dashboard/dashboard/dom.js";
 
 const { state } = await import("../../src/Dashboard/dashboard/state.js");
-const { initGatewayLinksUi, refreshGatewayOptions } =
+const { refreshGatewayOptions } =
     await import("../../src/Dashboard/dashboard/devices/gateway-links-ui.js");
 
 const els = autoEls((name) => (name.endsWith("Btn")
@@ -21,7 +22,7 @@ const gatewaysOfBothLicenses = {
 };
 
 beforeEach(() => {
-    initGatewayLinksUi({ els });
+    cacheElements(els);
     els.deviceForm.dataset.deviceType = "diaper_sensor";
     els.deviceCompany.value = "havicare";
 

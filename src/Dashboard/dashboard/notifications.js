@@ -9,7 +9,7 @@ import { ago, when } from "./format.js";
 import { countLabel } from "./i18n.js";
 import { html, raw } from "./html.js";
 import { apiError, confirmDestructive, toast } from "./dialogs.js";
-import { loadSettingsModal } from "./settings/index.js";
+import { els } from "./dom.js";
 
 const POLL_INTERVAL_MS = 15_000;
 
@@ -41,6 +41,7 @@ const notificationType = (type) =>
 
 let elements = null;
 let addDevice = null;
+let openDenylist = null;
 let notifications = [];
 
 const renderBadge = (count) => {
@@ -270,7 +271,7 @@ const handleNotificationClick = (event) => {
 
     if (button.dataset.notificationDenylist !== undefined) {
         closeDropdown();
-        void loadSettingsModal("denylist");
+        openDenylist();
         return;
     }
 
@@ -292,14 +293,15 @@ const handleNotificationClick = (event) => {
     else registerDeviceAction(notification);
 };
 
-export function initNotifications({ els, openAddDevice }) {
+export function initNotifications(context) {
     elements = {
         dropdown: els.dashboardNotificationsDropdown,
         badge: els.dashboardNotificationsBadge,
         summary: els.dashboardNotificationsSummary,
         list: els.dashboardNotificationsList,
     };
-    addDevice = openAddDevice;
+    addDevice = context.openAddDevice;
+    openDenylist = context.openDenylist;
 
     elements.dropdown.addEventListener("shown.bs.dropdown", () => {
         void handleDropdownShown();
