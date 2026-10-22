@@ -346,7 +346,7 @@ lá.
 | `monit-mecs-pro-ble`, `moko-w6`, `moko-w6b` | contínuo | anúncio BLE retransmitido | 600 s | sem intervalo documentado: chegam ao ritmo do MKGW4, que sobe o que viu de 600 em 600 s (Config APP V2.1 §4.3.1); 31–44 s atrás de um MKGW3 | 1230 s | `online` / `offline` |
 | `qinglanst-radar` | contínuo | `position` | 60 s | 30 s sem gente pela especificação (Cloud2cloud V2.2.3 §3.3.1); p99 de 62 s observado em produção, 22/10/2026 | 150 s | `online` / `offline` |
 | `voerka-ncs` | contínuo | `status/online` com `code` 1001 | 1200 s | a especificação só documenta o de ligação; 13 a 20 min observado em produção, 22/10/2026. O testamento no broker diz o `offline` sem esperar (Voerka §4.2) | 2430 s | `online` / `offline` |
-| `tuya-cloud` | reportado pela cloud | `deviceOnline` e `deviceOffline` | — | a cloud da Tuya; o botão acorda de 8 em 8 h ([21](21-pulseira-sos-wifi.md)) | nenhum | `online` / `offline` |
+| `tuya-cloud` | reportado pela cloud | o `deviceOnline` e as leituras; o `deviceOffline` só o adormece | 28800 s | o botão acorda de 8 em 8 h, observado em produção, 22/10/2026 ([21](21-pulseira-sos-wifi.md)) | 57630 s | `online` / `idle` a dormir / `offline` |
 | `lefu-torre`, `joytech-bp`, `joytech-bp-ecg`, `joytech-et`, `joytech-spo2` | a pedido | a sessão GATT e as tramas dela | — | ligam-se para medir e desligam-se | 120 s sem tramas acabam a sessão | `measuring` / `idle` |
 
 **A pedido.** A balança, o tensiómetro, o termómetro e o oxímetro passam a maior
@@ -356,6 +356,17 @@ parte do tempo desligados, e isso é o normal deles. Não têm `online` nem
 120 s sem tramas — um gateway que caiu a meio também a acaba. Na dashboard não
 levam «Desligado»: levam «A medir» durante a sessão e «Última leitura há …» fora
 dela.
+
+**A dormir.** O botão SOS da Tuya acorda de oito em oito horas e volta a dormir
+minutos depois, e a cloud diz as duas coisas. A dormir está `idle`: carregar no
+botão acorda-o e o SOS chega. Adormecer não publica `device.disconnected` nem
+adia o prazo, que conta do último despertar; desligado é não ter acordado duas
+vezes.
+
+**A lista.** O filtro «Ligados» da API e da dashboard (`?online=online`) traz os
+`online` e os `measuring`, e o «Desligados» (`?online=offline`) só os `offline`;
+os `idle` ficam nos dois de fora, e aparecem só sem filtro. O «N ligados» do
+cabeçalho conta os mesmos que o «Ligados».
 
 **O que não tem sinal.** Os botões e os pagers do NCS não são aparelhos do hub:
 aparecem só no `data.pagerId` das chamadas, e o que se sabe deles é a última vez

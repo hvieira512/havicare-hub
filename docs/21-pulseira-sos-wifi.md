@@ -61,8 +61,8 @@ O código está em `src/Ingress/Tuya/`: `PulsarFrame` abre a trama, o
 | `bizCode` | O que o hub faz |
 |---|---|
 | `devicePropertyMessage` | Traduz cada propriedade como na tabela do âmbito. O `occurredAt` é a hora a que o aparelho a reportou. O `sos_state` a `false` é o botão a voltar sozinho ao repouso, e não sai |
-| `deviceOnline` | O botão acordou: fica ligado |
-| `deviceOffline` | O botão adormeceu: fica desligado até ao próximo despertar |
+| `deviceOnline` | O botão acordou: fica `online` |
+| `deviceOffline` | O botão adormeceu: fica `idle`, sem `device.disconnected` |
 | os outros | Ignoram-se: são da cloud, e não do aparelho |
 
 O `source.protocol` é `tuya-cloud` e o `source.nativeType` é o código Tuya do
@@ -70,11 +70,17 @@ ponto de dados.
 
 ## 3. Ligado e desligado
 
-Quem sabe se a pulseira se alcança é a cloud da Tuya, e o hub segue-a: ligada
-com o `deviceOnline` e com qualquer leitura, desligada com o `deviceOffline`. A
-pulseira acorda de oito em oito horas e volta a dormir minutos depois, e passa
-por isso a maior parte do tempo desligada — é a verdade: um comando não lhe chega
-enquanto dorme. O silêncio não a desliga.
+A pulseira acorda de oito em oito horas para dar a bateria e volta a dormir
+minutos depois, e a cloud da Tuya diz as duas coisas. O hub segue-a:
+
+- **`online`** com o `deviceOnline` ou com qualquer leitura. Acordar de um sono
+  publica só o `status`; o `device.connected` fica para quem vinha de desligado.
+- **`idle`** com o `deviceOffline`: está a dormir, e carregar no botão acorda-o e
+  o SOS chega. Sai o `status` retido e nenhum `device.disconnected` — um
+  cuidador que visse a pulseira desligada três vezes por dia julgá-la-ia avariada.
+- **`offline`**, com `device.disconnected`, só ao fim de dois despertares
+  falhados: 2 × 28800 + 30 s sem `deviceOnline` nem leitura. O `deviceOffline`
+  não conta como despertar.
 
 ## 4. Identidade e registo
 
