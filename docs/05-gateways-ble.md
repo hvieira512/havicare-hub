@@ -408,7 +408,7 @@ Havicare (secção 7), como a balança e a JoyTech.
 |---|---|
 | `src/Ingress/Mqtt/Veepoo/VeepooBridge.php` | Identifica e publica o que o gateway reencaminha |
 | `src/Ingress/Mqtt/Veepoo/BraceletPresence.php` | Visto, offline e o histórico de presença |
-| `src/Ingress/Mqtt/Veepoo/BraceletContext.php` | O dispositivo resolvido, por mensagem |
+| `src/Ingress/Mqtt/Gateway/GattBridge.php` | O que as pontes GATT partilham: o aparelho resolvido, a sessão e a telemetria |
 | `src/Ingress/Mqtt/Veepoo/DailyBlockNormalizer.php` | Os blocos diários do histórico |
 | `src/Ingress/Mqtt/Veepoo/MeasurementNormalizer.php` | As medições pontuais |
 | `src/Ingress/Mqtt/Veepoo/SleepNormalizer.php` | As fases de sono |

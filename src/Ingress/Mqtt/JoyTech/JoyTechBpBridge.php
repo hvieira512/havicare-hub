@@ -4,18 +4,14 @@ declare(strict_types=1);
 
 namespace Hub\Ingress\Mqtt\JoyTech;
 
-use Hub\Ingress\Mqtt\DeviceBridge;
-use Hub\Ingress\Mqtt\Gateway\GatewayRelay;
 use Hub\Device\CommercialModelResolver;
 use Hub\Device\HubMqttBridge;
 use Hub\Device\PendingDownlinkQueue;
-use Hub\Device\TelemetryEnvelope;
 use Hub\Domain\ProtocolRegistry;
 use Hub\Domain\GatewayDeviceLinkLookup;
-use Hub\Ingress\Mqtt\DispatchesQueued;
+use Hub\Ingress\Mqtt\Gateway\GattBridge;
 use Hub\Ingress\Mqtt\Gateway\GattDeviceContext;
 use Hub\Ingress\Mqtt\Gateway\GattDownlinks;
-use Hub\Ingress\Mqtt\Veepoo\BraceletPresence;
 use Hub\Log\Logger;
 use Hub\Registry\Denylist;
 use Hub\Registry\Whitelist;
@@ -26,7 +22,7 @@ use Hub\State\DeviceReportStore;
  * Ingestão dos tensiómetros JoyTech entregues por um gateway GATT, que reencaminha cada trama do
  * `FFF1` inteira: o protocolo é todo do hub, à ida e à volta.
  */
-final class JoyTechBpBridge extends DeviceBridge implements GatewayRelay, DispatchesQueued
+final class JoyTechBpBridge extends GattBridge
 {
     private const PROTOCOL = 'joytech-bp';
 
@@ -52,17 +48,12 @@ final class JoyTechBpBridge extends DeviceBridge implements GatewayRelay, Dispat
     private const FUTURE_TOLERANCE_SECONDS = 300;
 
     /**
-     * Por sessão: o gateway, o fuso, se a memória já foi lida até ao fim e quando se volta a pedir.
+     * Por sessão: se a memória já foi lida até ao fim e quando se volta a pedir. Recomeça com cada
+     * sessão que se abre.
      *
-     * @var array<string, array{gateway: string, offset: int, memoryRead: bool, readAt: ?float}>
+     * @var array<string, array{read: bool, readAt: ?float}>
      */
-    private array $sessions = [];
-
-    /** @var array<string, float> quando se ouviu cada tensiómetro pela última vez */
-    private array $heardAt = [];
-
-    /** Sem mensagens deste tempo, a sessão acabou mesmo sem o `connected: false`. */
-    private const SESSION_SILENCE_SECONDS = 120;
+    private array $memory = [];
 
     /**
      * Até quando uma trama `0x83` é da memória, as marcas como estavam quando a leitura começou e
@@ -75,19 +66,12 @@ final class JoyTechBpBridge extends DeviceBridge implements GatewayRelay, Dispat
     /** @var array<string, array<string, float>> quando chegou cada resultado, para as repetições */
     private array $seen = [];
 
-    private readonly GattDownlinks $downlinks;
-
-    /** @var array<string, BraceletPresence> por protocolo */
-    private array $presences = [];
-
     private readonly EcgRecordings $ecg;
-
-    private readonly ?DeviceReportStore $reports;
 
     public function __construct(
         Whitelist $whitelist,
         HubMqttBridge $mqttBridge,
-        private readonly GatewayDeviceLinkLookup $links,
+        GatewayDeviceLinkLookup $links,
         ?PendingDownlinkQueue $queue,
         string $topicFilter,
         null|(DeviceReportStore&DeviceCommandLog) $deviceStore = null,
@@ -96,70 +80,58 @@ final class JoyTechBpBridge extends DeviceBridge implements GatewayRelay, Dispat
         private readonly BloodPressureHistoryMarks $marks = new BloodPressureHistoryMarks(),
         ?Denylist $denylist = null,
     ) {
-        parent::__construct($whitelist, $mqttBridge, $deviceStore, $denylist, $clock, $commercialModelResolver);
-        $this->downlinks = new GattDownlinks($queue, $mqttBridge, $deviceStore, $topicFilter, (new JoyTechCommandEncoder())->writes(...));
-        $this->reports = $deviceStore;
+        parent::__construct(
+            $whitelist,
+            $mqttBridge,
+            $links,
+            self::PROTOCOL,
+            self::DEVICE_TYPE,
+            $deviceStore,
+            $clock,
+            $commercialModelResolver,
+            $denylist,
+            new GattDownlinks($queue, $mqttBridge, $deviceStore, $topicFilter, (new JoyTechCommandEncoder())->writes(...)),
+        );
         $this->ecg = new EcgRecordings();
     }
 
-    public function dispatchQueued(): void
+    protected function dispatchSession(string $deviceKey): void
     {
-        foreach ($this->sessions as $deviceKey => $session) {
-            $deviceKey = (string)$deviceKey;
-            if ($this->clockNow() - ($this->heardAt[$deviceKey] ?? 0) > self::SESSION_SILENCE_SECONDS) {
-                unset($this->sessions[$deviceKey]);
-                continue;
-            }
-            if ($session['readAt'] !== null && $this->clockNow() >= $session['readAt']) {
-                $this->sessions[$deviceKey]['readAt'] = null;
-                $this->readMemory($deviceKey);
-            }
-            $this->dispatch($deviceKey);
+        $readAt = $this->memory[$deviceKey]['readAt'] ?? null;
+        if ($readAt !== null && $this->clockNow() >= $readAt) {
+            $this->memory[$deviceKey]['readAt'] = null;
+            $this->readMemory($deviceKey);
         }
+        $this->dispatchAndRead($deviceKey);
     }
 
     private function readMemory(string $deviceKey): void
     {
         $session = $this->sessions[$deviceKey];
-        $this->downlinks->sendDirect($deviceKey, $session['gateway'], self::READ_MEMORY, [], 0, $session['offset']);
+        $this->downlinks?->sendDirect($deviceKey, $session['gateway'], self::READ_MEMORY, [], 0, $session['offset']);
         $this->startReading($deviceKey);
     }
 
-    /** A fonte é a de todos os JoyTech: o nome do aparelho distingue-os. */
+    /** O mesmo tópico serve outras marcas, e a mesma fonte os termómetros: o nome distingue-os. */
     public static function claims(array $message): bool
     {
         return ($message['source'] ?? null) === 'joytech-node'
             && str_starts_with(trim((string)($message['device']['model'] ?? '')), 'DBP');
     }
 
-    public function handle(string $topic, array $message): void
+    protected function handleKind(GattDeviceContext $context, string $kind, array $data, int $offsetMinutes, array $message): void
     {
-        $context = $this->resolveGattDevice($topic, $message, $this->links, self::PROTOCOL, self::DEVICE_TYPE);
-        if ($context === null) {
-            return;
-        }
-
-        $this->mqttBridge->publishRaw($context->deviceKey, $message, self::DEVICE_TYPE, $context->licenseId, $context->company);
-
-        $data = is_array($message['payload'] ?? null) ? $message['payload'] : [];
-        $offset = is_int($message['tzOffsetMinutes'] ?? null) ? $message['tzOffsetMinutes'] : 0;
-        $this->heardAt[$context->deviceKey] = $this->clockNow();
-        match ($message['kind'] ?? null) {
-            'session' => $this->session($context, ($data['connected'] ?? false) === true, $offset),
-            'frame' => $this->frame($context, (string)($data['hex'] ?? ''), $offset),
-            'command_result' => $this->commandResult($context, $data),
+        match ($kind) {
+            'session' => $this->session($context, ($data['connected'] ?? false) === true, $offsetMinutes),
+            'frame' => $this->frame($context, (string)($data['hex'] ?? ''), $offsetMinutes),
             default => null,
         };
     }
 
-    /** @param array<string, mixed> $data */
-    private function commandResult(GattDeviceContext $context, array $data): void
+    private function openMemorySession(GattDeviceContext $context, int $offsetMinutes): void
     {
-        $error = (string)($data['error'] ?? '');
-        $this->downlinks->delivered($context->deviceKey, (string)($data['dedupeKey'] ?? ''), ($data['ok'] ?? false) === true, $error);
-        if ($error === GattDownlinks::NOT_CONNECTED) {
-            unset($this->sessions[$context->deviceKey]);
-        }
+        $this->openSession($context, 0, $offsetMinutes);
+        $this->memory[$context->deviceKey] = ['read' => false, 'readAt' => null];
     }
 
     private function session(GattDeviceContext $context, bool $connected, int $offsetMinutes): void
@@ -173,27 +145,21 @@ final class JoyTechBpBridge extends DeviceBridge implements GatewayRelay, Dispat
             return;
         }
 
-        $this->sessions[$deviceKey] = ['gateway' => $context->gatewayKey, 'offset' => $offsetMinutes, 'memoryRead' => false, 'readAt' => null];
+        $this->openMemorySession($context, $offsetMinutes);
         $this->presence($context)->markOnline($deviceKey, $context->device);
 
         // O aparelho não pede a hora, e a memória é datada por ela: acerta-se a cada ligação.
-        $this->downlinks->sendDirect($deviceKey, $context->gatewayKey, 'calibrateClock', [], 0, $offsetMinutes);
-        if (!$this->dispatch($deviceKey) && self::readsMemoryUnasked($context)) {
+        $this->downlinks?->sendDirect($deviceKey, $context->gatewayKey, 'calibrateClock', [], 0, $offsetMinutes);
+        if (!$this->dispatchAndRead($deviceKey) && $this->readsMemoryUnasked($context)) {
             // A meio de uma medição o aparelho ignora-o, e volta a pedir-se depois do resultado.
             $this->readMemory($deviceKey);
         }
     }
 
     /** @return bool se saiu uma leitura da memória pedida */
-    private function dispatch(string $deviceKey): bool
+    private function dispatchAndRead(string $deviceKey): bool
     {
-        $session = $this->sessions[$deviceKey] ?? null;
-        if ($session === null) {
-            return false;
-        }
-
-        $sent = $this->downlinks->dispatchPending($deviceKey, $session['gateway'], 0, $session['offset']);
-        if (!in_array(self::READ_MEMORY, $sent, true)) {
+        if (!in_array(self::READ_MEMORY, $this->dispatch($deviceKey), true)) {
             return false;
         }
         $this->startReading($deviceKey);
@@ -226,11 +192,13 @@ final class JoyTechBpBridge extends DeviceBridge implements GatewayRelay, Dispat
             return;
         }
         // Um hub reiniciado com o aparelho ligado não viu a `session`.
-        $this->sessions[$context->deviceKey] ??= ['gateway' => $context->gatewayKey, 'offset' => $offsetMinutes, 'memoryRead' => false, 'readAt' => null];
+        if (!isset($this->sessions[$context->deviceKey])) {
+            $this->openMemorySession($context, $offsetMinutes);
+        }
 
         if ($frame['function'] === 0x8b) {
             $this->finishReading($context->deviceKey);
-            $this->sessions[$context->deviceKey]['memoryRead'] = true;
+            $this->memory[$context->deviceKey]['read'] = true;
             return;
         }
         if ($frame['function'] === 0x83 && strlen($frame['data']) >= 12) {
@@ -246,13 +214,13 @@ final class JoyTechBpBridge extends DeviceBridge implements GatewayRelay, Dispat
         $deviceKey = $context->deviceKey;
         $now = $this->clockNow();
         if ($function === 0x85 && $this->ecg->countdown($deviceKey, $now)) {
-            $this->downlinks->sendDirect($deviceKey, $context->gatewayKey, 'startEcg', [], 0, $offsetMinutes);
+            $this->downlinks?->sendDirect($deviceKey, $context->gatewayKey, 'startEcg', [], 0, $offsetMinutes);
         } elseif ($function === 0x87) {
             $this->ecg->samples($deviceKey, $data);
         } elseif ($function === 0x86 && strlen($data) >= 9) {
             $end = $this->ecg->end($deviceKey, $now);
             if ($end['answer']) {
-                $this->downlinks->sendDirect($deviceKey, $context->gatewayKey, 'acknowledgeEcg', [], 0, $offsetMinutes);
+                $this->downlinks?->sendDirect($deviceKey, $context->gatewayKey, 'acknowledgeEcg', [], 0, $offsetMinutes);
             }
             if ($end['samples'] === null) {
                 if ($end['answer']) {
@@ -264,7 +232,7 @@ final class JoyTechBpBridge extends DeviceBridge implements GatewayRelay, Dispat
             $fields = array_values(unpack('C9', $data) ?: []);
             $at = JoyTechFrame::unixTime($fields[3], $fields[4], $fields[5], $fields[6], $fields[7], $offsetMinutes);
             $plausible = $at !== null && $at >= self::HISTORY_EPOCH && $at <= $now + self::FUTURE_TOLERANCE_SECONDS;
-            $this->emit($context, 'ecg', 'fff1:86', [
+            $this->telemetry($context, 'ecg', 'fff1:86', [
                 'samples' => $end['samples'],
                 'frequencyHz' => self::ECG_HZ,
                 'heartRateBpm' => $fields[1],
@@ -272,15 +240,8 @@ final class JoyTechBpBridge extends DeviceBridge implements GatewayRelay, Dispat
         }
     }
 
-    private function presence(GattDeviceContext $context): BraceletPresence
-    {
-        $protocol = self::protocolOf($context);
-
-        return $this->presences[$protocol] ??= new BraceletPresence($this->mqttBridge, $this->reports, $protocol);
-    }
-
     /** O 6292B e o 6679B partilham a ponte; o protocolo diz qual mede o ECG. */
-    private static function protocolOf(GattDeviceContext $context): string
+    protected function protocolOf(GattDeviceContext $context): string
     {
         $protocol = ProtocolRegistry::forModel((string)($context->device['supplier'] ?? ''), (string)($context->device['model'] ?? ''));
 
@@ -288,9 +249,9 @@ final class JoyTechBpBridge extends DeviceBridge implements GatewayRelay, Dispat
     }
 
     /** O HC-6679B só manda a memória com o ecrã MEM aberto, e lê-se só a pedido. */
-    private static function readsMemoryUnasked(GattDeviceContext $context): bool
+    private function readsMemoryUnasked(GattDeviceContext $context): bool
     {
-        return self::protocolOf($context) !== 'joytech-bp-ecg';
+        return $this->protocolOf($context) !== 'joytech-bp-ecg';
     }
 
     /** @param string $data sistólica e diastólica em 2 B, pulso, arritmia, ano, mês, dia, hora, minuto, grupo */
@@ -335,21 +296,21 @@ final class JoyTechBpBridge extends DeviceBridge implements GatewayRelay, Dispat
             // A marca só avança no fim de uma leitura; até lá, o que saiu fica nesta lista e não se repete.
             $this->marks->rememberLive($deviceKey, $group, $data, (int)$local);
         }
-        if (!$fromHistory && isset($this->sessions[$deviceKey]) && !$this->sessions[$deviceKey]['memoryRead'] && self::readsMemoryUnasked($context)) {
-            $this->sessions[$deviceKey]['readAt'] = $now + self::READ_AFTER_RESULT_SECONDS;
+        if (!$fromHistory && isset($this->sessions[$deviceKey]) && !($this->memory[$deviceKey]['read'] ?? false) && $this->readsMemoryUnasked($context)) {
+            $this->memory[$deviceKey]['readAt'] = $now + self::READ_AFTER_RESULT_SECONDS;
         }
 
         // Ao vivo, a hora de chegada: o relógio do aparelho pode estar por acertar.
         $occurredAt = gmdate('Y-m-d\TH:i:s\Z', $fromHistory ? (int)$at : (int)$now);
         $history = $fromHistory ? ['fromHistory' => true] : [];
         $nativeType = 'fff1:83';
-        $this->emit($context, 'blood_pressure', $nativeType, [
+        $this->telemetry($context, 'blood_pressure', $nativeType, [
             'systolicMmHg' => (int)$fields['systolic'],
             'diastolicMmHg' => (int)$fields['diastolic'],
             'irregularHeartbeat' => $fields['irregular'] === 0xff,
             'memoryGroup' => $group,
         ] + $history, $occurredAt);
-        $this->emit($context, 'heart_rate', $nativeType, ['bpm' => (int)$fields['pulse']] + $history, $occurredAt);
+        $this->telemetry($context, 'heart_rate', $nativeType, ['bpm' => (int)$fields['pulse']] + $history, $occurredAt);
     }
 
     private function repeated(string $deviceKey, string $data, float $now): bool
@@ -362,25 +323,5 @@ final class JoyTechBpBridge extends DeviceBridge implements GatewayRelay, Dispat
         $this->seen[$deviceKey][$data] = $now;
 
         return $repeated;
-    }
-
-    /** @param array<string, mixed> $data */
-    private function emit(GattDeviceContext $context, string $type, string $nativeType, array $data, string $occurredAt): void
-    {
-        $telemetry = TelemetryEnvelope::for(
-            $type,
-            $context->deviceKey,
-            $context->device,
-            self::protocolOf($context),
-            $nativeType,
-            $data,
-            $context->gatewayKey,
-        );
-        $telemetry['occurredAt'] = $occurredAt;
-        $this->mqttBridge->publishTelemetry($context->deviceKey, $telemetry, self::DEVICE_TYPE, $context->licenseId, $context->company);
-        $this->deviceStore?->append($context->deviceKey, 'telemetry', TelemetryEnvelope::forDashboard($telemetry) + [
-            'deviceType' => self::DEVICE_TYPE,
-            'licenseId' => $context->licenseId,
-        ]);
     }
 }

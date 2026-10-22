@@ -27,7 +27,7 @@ final class BraceletPresence
     public function __construct(
         HubMqttBridge $mqttBridge,
         private readonly ?DeviceReportStore $deviceStore,
-        private readonly string $protocol = 'veepoo-ble',
+        private readonly string $protocol,
     ) {
         $this->announcer = new ConnectionAnnouncer($mqttBridge, $deviceStore);
     }

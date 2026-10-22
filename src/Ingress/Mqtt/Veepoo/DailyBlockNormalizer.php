@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Hub\Ingress\Mqtt\Veepoo;
 
+use Hub\Device\TelemetryEnvelope;
 use Hub\Support\Values;
 
 /**
@@ -50,17 +51,11 @@ final class DailyBlockNormalizer
         }
 
         $at = static fn(int $offsetMinutes): string => gmdate('Y-m-d\TH:i:s\Z', $start + ($offsetMinutes * 60));
-        $envelope = static fn(string $type, int $offsetMinutes, array $data): array => [
-            'type' => $type,
-            'occurredAt' => $at($offsetMinutes),
-            'device' => $device,
-            'source' => [
-                'protocol' => 'veepoo-ble',
-                'nativeType' => 'daily_block',
-                'gatewayId' => $gatewayId,
-            ],
-            'data' => $data,
-        ];
+        $envelope = static fn(string $type, int $offsetMinutes, array $data): array
+            => array_replace(
+                TelemetryEnvelope::for($type, (string)($device['id'] ?? ''), $device, 'veepoo-ble', 'daily_block', $data, $gatewayId),
+                ['occurredAt' => $at($offsetMinutes)],
+            );
 
         $out = [];
         foreach (self::PER_MINUTE as $key => [$type, $field]) {

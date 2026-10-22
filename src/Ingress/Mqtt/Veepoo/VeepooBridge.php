@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Hub\Ingress\Mqtt\Veepoo;
 
-use Hub\Ingress\Mqtt\DeviceBridge;
-use Hub\Ingress\Mqtt\Gateway\GatewayRelay;
 use Hub\Device\CommercialModelResolver;
 use Hub\Device\DeviceDescriptor;
 use Hub\Device\HubMqttBridge;
@@ -13,8 +11,8 @@ use Hub\Device\LowBatteryTransitions;
 use Hub\Device\PendingDownlinkQueue;
 use Hub\Device\TelemetryEnvelope;
 use Hub\Domain\GatewayDeviceLinkLookup;
-use Hub\Ingress\Mqtt\DispatchesQueued;
-use Hub\Ingress\Mqtt\Gateway\GatewayTopic;
+use Hub\Ingress\Mqtt\Gateway\GattBridge;
+use Hub\Ingress\Mqtt\Gateway\GattDeviceContext;
 use Hub\Ingress\Mqtt\Gateway\ObservationStateStore;
 use Hub\Log\Logger;
 use Hub\Registry\Denylist;
@@ -27,7 +25,7 @@ use Hub\Support\Values;
  * Ingestão das pulseiras Veepoo entregues por um gateway BLE, que traz da sessão GATT o que a
  * pulseira lhe deu já estruturado pelo SDK do fabricante.
  */
-final class VeepooBridge extends DeviceBridge implements GatewayRelay, DispatchesQueued
+final class VeepooBridge extends GattBridge
 {
     /** Estados que o aparelho reporta durante uma medição, e o que significam para o pedido. */
     private const DETECTION_FAILURES = [
@@ -36,6 +34,8 @@ final class VeepooBridge extends DeviceBridge implements GatewayRelay, Dispatche
     ];
 
     private const PROTOCOL = 'veepoo-ble';
+
+    private const DEVICE_TYPE = 'bracelet';
 
     /** O tipo com que o firmware fala do ECG, tanto no estado ao vivo como na onda. */
     private const ECG_SDK_TYPE = 42;
@@ -76,8 +76,6 @@ final class VeepooBridge extends DeviceBridge implements GatewayRelay, Dispatche
 
     private readonly DownlinkDispatcher $downlinkDispatcher;
 
-    private readonly BraceletPresence $presence;
-
     private readonly MeasurementFailureReporter $failures;
 
     private readonly SettlingReadings $readings;
@@ -87,7 +85,7 @@ final class VeepooBridge extends DeviceBridge implements GatewayRelay, Dispatche
     public function __construct(
         Whitelist $whitelist,
         HubMqttBridge $mqttBridge,
-        private readonly GatewayDeviceLinkLookup $links,
+        GatewayDeviceLinkLookup $links,
         ?PendingDownlinkQueue $downlinks,
         private readonly ObservationStateStore $state,
         string $topicFilter,
@@ -96,7 +94,17 @@ final class VeepooBridge extends DeviceBridge implements GatewayRelay, Dispatche
         ?CommercialModelResolver $commercialModelResolver = null,
         ?Denylist $denylist = null,
     ) {
-        parent::__construct($whitelist, $mqttBridge, $deviceStore, $denylist, $clock, $commercialModelResolver);
+        parent::__construct(
+            $whitelist,
+            $mqttBridge,
+            $links,
+            self::PROTOCOL,
+            self::DEVICE_TYPE,
+            $deviceStore,
+            $clock,
+            $commercialModelResolver,
+            $denylist,
+        );
         $this->normalizer = new DailyBlockNormalizer();
         $this->lowBattery = new LowBatteryTransitions();
         $this->downlinkDispatcher = new DownlinkDispatcher(
@@ -105,7 +113,6 @@ final class VeepooBridge extends DeviceBridge implements GatewayRelay, Dispatche
             $deviceStore,
             $topicFilter,
         );
-        $this->presence = new BraceletPresence($mqttBridge, $deviceStore);
         $this->failures = new MeasurementFailureReporter($mqttBridge, $deviceStore);
         $this->readings = new SettlingReadings(fn(): float => $this->clockNow());
     }
@@ -121,7 +128,7 @@ final class VeepooBridge extends DeviceBridge implements GatewayRelay, Dispatche
         }
 
         foreach ($this->readings->release() as $due) {
-            $this->emitTelemetry($due['context'], $due['telemetry']);
+            $this->emit($due['context'], $due['telemetry']);
         }
     }
 
@@ -130,191 +137,128 @@ final class VeepooBridge extends DeviceBridge implements GatewayRelay, Dispatche
         return ($message['source'] ?? null) === 'veepoo-node';
     }
 
-    public function handle(string $topic, array $message): void
+    protected function handleKind(GattDeviceContext $context, string $kind, array $data, int $offsetMinutes, array $message): void
     {
-        $parsed = GatewayTopic::parse($topic);
-        $gateway = $parsed === null ? null : $this->whitelist->resolve($parsed->gatewayMac);
-        if ($gateway === null || ($gateway['deviceType'] ?? '') !== 'gateway') {
+        match ($kind) {
+            'session' => $this->session($context, $data, (string)($message['device']['firmware'] ?? '')),
+            // A bateria vem em toda a sessão, mesmo com a pulseira pousada.
+            'battery' => $this->publishBattery($data, $context),
+            // Medição ao vivo, pedida por comando.
+            'measurement' => $this->publishMeasurement($data, $context),
+            // O gateway junta os pacotes da onda do ECG e entrega o traçado completo de uma vez.
+            'ecg_wave' => $this->publishEcg($data, $context),
+            // O relatório de uma noite, já calculado pelo firmware; os instantes vêm no relógio da pulseira.
+            'sleep' => $this->emitAll($context, SleepNormalizer::normalize($data, DeviceDescriptor::of($context->deviceKey, $context->device), $context->gatewayKey, $offsetMinutes)),
+            'command_result' => $this->commandResult($context, $data),
+            'daily_block' => $this->publishBlocks($context, $data, $offsetMinutes),
+            default => $this->warnUnhandled($context->deviceKey, $kind),
+        };
+    }
+
+    /**
+     * A sessão aberta é quando a pulseira é alcançável, e é aqui que a fila é drenada. Repete-se
+     * enquanto a ligação BLE durar; um gateway antigo só manda o `authenticated`.
+     *
+     * @param array<string, mixed> $data
+     */
+    private function session(GattDeviceContext $context, array $data, string $firmware): void
+    {
+        if (($data['connected'] ?? true) === false || ($data['authenticated'] ?? true) === false) {
+            unset($this->sessionGateway[$context->deviceKey]);
+            $this->presence($context)->markOffline($context->deviceKey, $context->device);
             return;
         }
 
-        $mac = GatewayTopic::normalizeMac((string)($message['device']['mac'] ?? ''));
-        $device = $mac === null ? null : $this->whitelist->resolve($mac);
-        if ($device === null || ($device['deviceType'] ?? '') !== 'bracelet') {
-            $this->recordUnauthorizedDevice((string)$mac, 'veepoo-ble', (string)($message['device']['model'] ?? ''), ident: (string)$mac);
-            return;
-        }
+        $this->presence($context)->markOnline($context->deviceKey, $context->device);
+        $this->publishFirmware($firmware, $context);
+        $this->sessionGateway[$context->deviceKey] = $context->gatewayKey;
+        $this->downlinkDispatcher->dispatchPending($context->deviceKey, $context->gatewayKey);
+    }
 
-        // Como no MOKO: só pulseiras ligadas ao gateway, e do mesmo cliente.
-        if (
-            !$this->links->isEnabled((string)$gateway['imei'], (string)$device['imei'])
-            || !$this->sameTenant($gateway, $device)
-        ) {
-            $this->warnRepeatedly(
-                "unlinked:{$mac}:{$gateway['imei']}",
-                "Ignoring unlinked veepoo device={$mac} gateway={$gateway['imei']}"
-            );
-            return;
-        }
-
-        $device = $this->enrichWithCommercialName($device);
-        $deviceKey = (string)$device['imei'];
-        $this->recordLinkSignal($deviceKey, (string)$gateway['imei'], $message);
-        $licenseId = (int)($device['licenseId'] ?? 0);
-        $company = (string)($device['company'] ?? 'null');
-        $context = new BraceletContext($deviceKey, (string)$gateway['imei'], $device, $licenseId, $company);
-
-        $this->mqttBridge->publishRaw($deviceKey, $message, 'bracelet', $licenseId, $company);
-
-        // A sessão aberta é quando a pulseira é alcançável, e é aqui que a fila é drenada.
-        if (($message['kind'] ?? null) === 'session') {
-            // A sessão repete-se enquanto a ligação BLE durar; um gateway antigo só manda o `authenticated`.
-            if (($message['payload']['connected'] ?? true) === false || ($message['payload']['authenticated'] ?? true) === false) {
-                unset($this->sessionGateway[$deviceKey]);
-                $this->presence->markOffline($deviceKey, $device);
-                return;
-            }
-
-            $this->presence->markOnline($deviceKey, $device);
-            $this->publishFirmware((string)($message['device']['firmware'] ?? ''), $context);
-            $this->sessionGateway[$deviceKey] = (string)$gateway['imei'];
-            $this->downlinkDispatcher->dispatchPending($deviceKey, (string)$gateway['imei']);
-            return;
-        }
-
-        // A bateria vem em toda a sessão, mesmo com a pulseira pousada.
-        if (($message['kind'] ?? null) === 'battery') {
-            $this->publishBattery($message['payload'] ?? null, $context);
-            return;
-        }
-
-        // Medição ao vivo, pedida por comando.
-        if (($message['kind'] ?? null) === 'measurement') {
-            $this->publishMeasurement($message['payload'] ?? null, $context);
-            return;
-        }
-
-        // O gateway junta os pacotes da onda do ECG e entrega o traçado completo de uma vez.
-        if (($message['kind'] ?? null) === 'ecg_wave') {
-            $this->publishEcg($message['payload'] ?? null, $context);
-            return;
-        }
-
-        // O relatório de uma noite, já calculado pelo firmware.
-        if (($message['kind'] ?? null) === 'sleep') {
-            $identity = DeviceDescriptor::of($deviceKey, $device);
-            $payload = $message['payload'] ?? null;
-            // Os instantes da noite vêm no relógio da pulseira; é este desvio que os põe em UTC.
-            $offset = is_int($message['tzOffsetMinutes'] ?? null) ? $message['tzOffsetMinutes'] : 0;
-            foreach (SleepNormalizer::normalize(is_array($payload) ? $payload : [], $identity, (string)$gateway['imei'], $offset) as $telemetry) {
-                $this->emitTelemetry($context, $telemetry);
-            }
-
-            return;
-        }
-
-        if (($message['kind'] ?? null) === 'command_result') {
-            $operation = (string)($message['payload']['operation'] ?? '');
-            // Executar não é medir: sem valor nem razão da pulseira, o pedido falha. Um gateway
-            // antigo só manda o `outcome`.
-            $outcome = (string)($message['payload']['outcome'] ?? '');
-            if (($message['payload']['ok'] ?? null) === false || $outcome === self::SILENT_OUTCOME) {
-                $reason = (string)($message['payload']['error'] ?? '') ?: $outcome ?: 'write_failed';
-                $dedupeKey = (string)($message['payload']['dedupeKey'] ?? '');
-                if (str_starts_with($operation, 'measure.')) {
-                    $this->fail($context, $reason, $operation, $dedupeKey);
-                } else {
-                    $this->downlinkDispatcher->failPending($deviceKey, $operation, $reason, $dedupeKey);
-                }
-
-                return;
-            }
-
-            // Responder não é medir: fora do pulso responde com zeros, e o que conta como
-            // leitura decide-se deste lado.
+    /** @param array<string, mixed> $data */
+    private function commandResult(GattDeviceContext $context, array $data): void
+    {
+        $operation = (string)($data['operation'] ?? '');
+        // Executar não é medir: sem valor nem razão da pulseira, o pedido falha. Um gateway
+        // antigo só manda o `outcome`.
+        $outcome = (string)($data['outcome'] ?? '');
+        if (($data['ok'] ?? null) === false || $outcome === self::SILENT_OUTCOME) {
+            $reason = (string)($data['error'] ?? '') ?: $outcome ?: 'write_failed';
+            $dedupeKey = (string)($data['dedupeKey'] ?? '');
             if (str_starts_with($operation, 'measure.')) {
-                // Já falhou com a razão certa: a confirmação não o falha segunda vez.
-                if ($this->readings->discardConfirmation($deviceKey, $operation)) {
-                    return;
-                }
-
-                $settled = $this->readings->takeSettled($deviceKey, $operation);
-                if ($settled === null && $operation !== MeasurementNormalizer::ECG_OPERATION) {
-                    $this->fail($context, 'no_reading', $operation);
-
-                    return;
-                }
-                if ($settled !== null) {
-                    $this->emitTelemetry($context, $settled);
-                }
-            }
-
-            $this->downlinkDispatcher->resolvePending($deviceKey, (string)($message['payload']['dedupeKey'] ?? ''));
-            return;
-        }
-
-        // Um `kind` sem normalização avisa uma vez por espécie e por aparelho.
-        if (($message['kind'] ?? null) !== 'daily_block') {
-            $kind = (string)($message['kind'] ?? '');
-            $seenKey = $deviceKey . '|' . $kind;
-            if ($kind !== '' && !isset($this->unhandledKinds[$seenKey])) {
-                $this->unhandledKinds[$seenKey] = true;
-                Logger::channel('hub')->warning(
-                    "Veepoo kind sem normalização: {$kind} de {$deviceKey}"
-                );
+                $this->fail($context, $reason, $operation, $dedupeKey);
+            } else {
+                $this->downlinkDispatcher->failPending($context->deviceKey, $operation, $reason, $dedupeKey);
             }
 
             return;
         }
 
-        $identity = DeviceDescriptor::of($deviceKey, $device);
+        // Responder não é medir: fora do pulso responde com zeros, e o que conta como
+        // leitura decide-se deste lado.
+        if (str_starts_with($operation, 'measure.')) {
+            // Já falhou com a razão certa: a confirmação não o falha segunda vez.
+            if ($this->readings->discardConfirmation($context->deviceKey, $operation)) {
+                return;
+            }
 
-        foreach ($this->blocks($message['payload'] ?? null) as $block) {
+            $settled = $this->readings->takeSettled($context->deviceKey, $operation);
+            if ($settled === null && $operation !== MeasurementNormalizer::ECG_OPERATION) {
+                $this->fail($context, 'no_reading', $operation);
+
+                return;
+            }
+            if ($settled !== null) {
+                $this->emit($context, $settled);
+            }
+        }
+
+        $this->downlinkDispatcher->resolvePending($context->deviceKey, (string)($data['dedupeKey'] ?? ''));
+    }
+
+    /** Um `kind` sem normalização avisa uma vez por espécie e por aparelho. */
+    private function warnUnhandled(string $deviceKey, string $kind): void
+    {
+        $seenKey = $deviceKey . '|' . $kind;
+        if ($kind !== '' && !isset($this->unhandledKinds[$seenKey])) {
+            $this->unhandledKinds[$seenKey] = true;
+            Logger::channel('hub')->warning("Veepoo kind sem normalização: {$kind} de {$deviceKey}");
+        }
+    }
+
+    /**
+     * O SDK entrega ora um bloco ora uma lista deles, conforme o pacote.
+     *
+     * @param array<mixed> $payload
+     */
+    private function publishBlocks(GattDeviceContext $context, array $payload, int $offsetMinutes): void
+    {
+        $identity = DeviceDescriptor::of($context->deviceKey, $context->device);
+        foreach (array_is_list($payload) ? $payload : [$payload] as $block) {
             // O gateway relê o dia corrente de cinco em cinco minutos: um bloco igual já saiu.
-            if (!$this->state->acceptObservation($deviceKey, self::blockFingerprint($block), self::REPLAY_TTL_SECONDS)) {
+            if (!is_array($block) || !$this->state->acceptObservation($context->deviceKey, self::blockFingerprint($block), self::REPLAY_TTL_SECONDS)) {
                 continue;
             }
 
-            $offset = is_int($message['tzOffsetMinutes'] ?? null) ? $message['tzOffsetMinutes'] : 0;
-            foreach ($this->normalizer->normalize($block, $identity, (string)$gateway['imei'], $offset) as $telemetry) {
-                $this->emitTelemetry($context, $telemetry);
-            }
+            $this->emitAll($context, $this->normalizer->normalize($block, $identity, $context->gatewayKey, $offsetMinutes));
         }
     }
 
-    /**
-     * Publica telemetria no MQTT, para quem integra, e no histórico da dashboard, para quem opera.
-     *
-     * @param array<string, mixed> $telemetry
-     */
-    private function emitTelemetry(BraceletContext $context, array $telemetry): void
+    /** @param list<array<string, mixed>> $telemetry */
+    private function emitAll(GattDeviceContext $context, array $telemetry): void
     {
-        $this->mqttBridge->publishTelemetry(
-            $context->deviceKey,
-            $telemetry,
-            'bracelet',
-            $context->licenseId,
-            $context->company,
-        );
-
-        // A dashboard guarda cem entradas para consulta; os 288 blocos diários esgotavam-na.
-        if (!$this->worthShowing($context->deviceKey, $telemetry)) {
-            return;
+        foreach ($telemetry as $entry) {
+            $this->emit($context, $entry);
         }
-
-        $this->deviceStore?->append($context->deviceKey, 'telemetry', TelemetryEnvelope::forDashboard($telemetry) + [
-            'deviceType' => 'bracelet',
-            'licenseId' => $context->licenseId,
-        ]);
     }
 
     /**
-     * Se uma leitura tem valor de consulta: tudo menos um bloco de atividade a zeros e a versão
-     * de firmware repetida.
+     * A dashboard guarda cem entradas para consulta, e os 288 blocos diários esgotavam-na: fica de
+     * fora um bloco de atividade a zeros e a versão de firmware repetida.
      *
      * @param array<string, mixed> $telemetry
      */
-    private function worthShowing(string $deviceKey, array $telemetry): bool
+    protected function keepsInHistory(string $deviceKey, array $telemetry): bool
     {
         $type = (string)($telemetry['type'] ?? '');
 
@@ -341,19 +285,14 @@ final class VeepooBridge extends DeviceBridge implements GatewayRelay, Dispatche
         return false;
     }
 
-
     /**
      * Percentagem de bateria, só quando `VPDeviceIsPercent` o diz: sem a curva da célula, a
      * tensão não se converte. A bateria fraca vem à parte, e sai nos dois modos.
      *
-     * @param array<string, mixed>|null $payload
+     * @param array<string, mixed> $payload
      */
-    private function publishBattery(mixed $payload, BraceletContext $context): void
+    private function publishBattery(array $payload, GattDeviceContext $context): void
     {
-        if (!is_array($payload)) {
-            return;
-        }
-
         $percent = $payload['VPDeviceElectricPercent'] ?? null;
         $percent = ($payload['VPDeviceIsPercent'] ?? false) === true && is_int($percent) && $percent >= 0 && $percent <= 100
             ? $percent
@@ -379,52 +318,36 @@ final class VeepooBridge extends DeviceBridge implements GatewayRelay, Dispatche
             $data,
             $context->gatewayKey,
         );
-        $this->emitTelemetry($context, $battery);
+        $this->emit($context, $battery);
 
         $lowBattery = $this->lowBattery->observe($context->deviceKey, $battery);
         if ($lowBattery !== null) {
-            $this->mqttBridge->publishAndStore($this->deviceStore, 'events', $context->deviceKey, $lowBattery, 'bracelet', $context->licenseId, $context->company);
+            $this->mqttBridge->publishAndStore($this->deviceStore, 'events', $context->deviceKey, $lowBattery, self::DEVICE_TYPE, $context->licenseId, $context->company);
         }
     }
 
     /** A versão de firmware, tal como a sessão a traz; sai em cada sessão, mesmo repetida. */
-    private function publishFirmware(string $firmware, BraceletContext $context): void
+    private function publishFirmware(string $firmware, GattDeviceContext $context): void
     {
-        if ($firmware === '') {
-            return;
+        if ($firmware !== '') {
+            $this->telemetry($context, 'firmware_version', 'session', ['version' => $firmware]);
         }
-
-        $this->emitTelemetry($context, TelemetryEnvelope::for(
-            'firmware_version',
-            $context->deviceKey,
-            $context->device,
-            self::PROTOCOL,
-            'session',
-            ['version' => $firmware],
-            $context->gatewayKey,
-        ));
     }
 
     /**
      * Uma medição a pedido traz um valor só e o estado do sensor. Um zero é sinal ainda por
      * fixar, e `notWear` a pulseira sem contacto com a pele: nenhum é leitura.
      *
-     * @param array<string, mixed>|null $payload
+     * @param array<string, mixed> $payload
      */
-    private function publishMeasurement(mixed $payload, BraceletContext $context): void
+    private function publishMeasurement(array $payload, GattDeviceContext $context): void
     {
-        if (!is_array($payload)) {
-            return;
-        }
+        $sdkType = (int)($payload['sdkType'] ?? 0);
 
         // Um `beMeasuring*` é ocupação passageira; bateria fraca e sensor anómalo são razões a mostrar.
         $detection = (string)($payload['deviceDetectionInfo'] ?? '');
         if (isset(self::DETECTION_FAILURES[$detection])) {
-            $this->fail(
-                $context,
-                self::DETECTION_FAILURES[$detection],
-                MeasurementNormalizer::operationForSdkType((int)($payload['sdkType'] ?? 0)),
-            );
+            $this->fail($context, self::DETECTION_FAILURES[$detection], MeasurementNormalizer::operationForSdkType($sdkType));
             return;
         }
 
@@ -435,15 +358,9 @@ final class VeepooBridge extends DeviceBridge implements GatewayRelay, Dispatche
 
         // O ECG tem campo próprio de deteção de uso: exige o dedo no elétrodo.
         if (($payload['notWear'] ?? false) === true || ($payload['wearStatus'] ?? '') === 'wearNotPass') {
-            $this->fail(
-                $context,
-                'not_worn',
-                MeasurementNormalizer::operationForSdkType((int)($payload['sdkType'] ?? 0)),
-            );
+            $this->fail($context, 'not_worn', MeasurementNormalizer::operationForSdkType($sdkType));
             return;
         }
-
-        $sdkType = (int)($payload['sdkType'] ?? 0);
 
         // As tramas de estado do ECG, uma por segundo, não são telemetria: o resumo sai com a onda.
         if ($sdkType === self::ECG_SDK_TYPE) {
@@ -466,21 +383,13 @@ final class VeepooBridge extends DeviceBridge implements GatewayRelay, Dispatche
 
         [$type, $data] = $measurement;
 
-        $telemetry = TelemetryEnvelope::for(
-            $type,
-            $context->deviceKey,
-            $context->device,
-            self::PROTOCOL,
-            // O tipo do fabricante, por que se vai à documentação da Veepoo.
-            "type-{$sdkType}",
-            $data,
-            $context->gatewayKey,
-        );
+        // O tipo do fabricante, por que se vai à documentação da Veepoo.
+        $telemetry = TelemetryEnvelope::for($type, $context->deviceKey, $context->device, self::PROTOCOL, "type-{$sdkType}", $data, $context->gatewayKey);
 
         // Os totais do dia e a procura da pulseira respondem numa trama só, sem assentar.
         $operation = MeasurementNormalizer::operationForSdkType($sdkType);
         if ($operation === null) {
-            $this->emitTelemetry($context, $telemetry);
+            $this->emit($context, $telemetry);
 
             return;
         }
@@ -492,11 +401,11 @@ final class VeepooBridge extends DeviceBridge implements GatewayRelay, Dispatche
      * O traçado de um ECG. A pulseira grava os trinta segundos haja sinal ou não, e um traçado
      * todo a zero não é exame.
      *
-     * @param array<string, mixed>|null $payload
+     * @param array<string, mixed> $payload
      */
-    private function publishEcg(mixed $payload, BraceletContext $context): void
+    private function publishEcg(array $payload, GattDeviceContext $context): void
     {
-        $samples = is_array($payload) ? ($payload['samples'] ?? null) : null;
+        $samples = $payload['samples'] ?? null;
         if (!is_array($samples) || $samples === []) {
             return;
         }
@@ -520,21 +429,11 @@ final class VeepooBridge extends DeviceBridge implements GatewayRelay, Dispatche
             static fn(mixed $frame): bool => is_array($frame),
         )));
 
-        $this->emitTelemetry($context, TelemetryEnvelope::for(
-            'ecg',
-            $context->deviceKey,
-            $context->device,
-            self::PROTOCOL,
-            'ecg_wave',
-            Values::withoutNulls(['samples' => $samples, 'frequencyHz' => $frequencyHz]) + $measured,
-            $context->gatewayKey,
-        ));
+        $this->telemetry($context, 'ecg', 'ecg_wave', Values::withoutNulls(['samples' => $samples, 'frequencyHz' => $frequencyHz]) + $measured);
     }
 
-
-
     /** Diz porque é que a medição não saiu, e encerra o pedido que a mandou fazer. */
-    private function fail(BraceletContext $context, string $reason, ?string $operation, string $dedupeKey = ''): void
+    private function fail(GattDeviceContext $context, string $reason, ?string $operation, string $dedupeKey = ''): void
     {
         $this->failures->report(
             $context->deviceKey,
@@ -553,27 +452,10 @@ final class VeepooBridge extends DeviceBridge implements GatewayRelay, Dispatche
      * Um bloco identifica-se por tudo o que traz, e não só pelo `date`: o do intervalo a
      * decorrer chega incompleto e completa-se na leitura seguinte.
      *
-     * @param array<string, mixed> $block
+     * @param array<mixed> $block
      */
     private static function blockFingerprint(array $block): string
     {
         return hash('sha256', json_encode($block, JSON_THROW_ON_ERROR));
-    }
-
-    /**
-     * O SDK entrega ora um bloco ora uma lista deles, conforme o pacote.
-     *
-     * @return list<array<string, mixed>>
-     */
-    private function blocks(mixed $payload): array
-    {
-        if (!is_array($payload)) {
-            return [];
-        }
-
-        return array_values(array_filter(
-            array_is_list($payload) ? $payload : [$payload],
-            static fn(mixed $block): bool => is_array($block),
-        ));
     }
 }

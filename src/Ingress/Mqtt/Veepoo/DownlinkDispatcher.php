@@ -8,6 +8,7 @@ use Hub\State\DeviceCommandLog;
 use Hub\Device\HubMqttBridge;
 use Hub\Device\PendingDownlink;
 use Hub\Device\PendingDownlinkQueue;
+use Hub\Ingress\Mqtt\Gateway\GattDownlinks;
 use Hub\Log\Logger;
 
 /**
@@ -47,12 +48,12 @@ final class DownlinkDispatcher
 
         foreach ($this->downlinks->pendingFor($deviceKey) as $downlink) {
             $command = $downlink->command ?? [];
-            $operation = self::operationOf($downlink);
+            $operation = GattDownlinks::operationOf($downlink);
             if ($operation === '' || !$this->dueForSending($deviceKey, $downlink->dedupeKey)) {
                 continue;
             }
 
-            $this->mqttBridge->publishGatewayCommand($this->commandTopicFor($gatewayKey), [
+            $this->mqttBridge->publishGatewayCommand(GattDownlinks::commandTopic($this->topicFilter, $gatewayKey), [
                 'deviceId' => $deviceKey,
                 'operation' => $operation,
                 // O nome da operação diz o que fazer, e o valor é que distingue ligar de desligar.
@@ -115,7 +116,7 @@ final class DownlinkDispatcher
         }
 
         foreach ($this->downlinks->pendingFor($deviceKey) as $downlink) {
-            if (self::operationOf($downlink) !== $operation || ($dedupeKey !== '' && $downlink->dedupeKey !== $dedupeKey)) {
+            if (GattDownlinks::operationOf($downlink) !== $operation || ($dedupeKey !== '' && $downlink->dedupeKey !== $dedupeKey)) {
                 continue;
             }
 
@@ -143,15 +144,9 @@ final class DownlinkDispatcher
         $id = (string)($downlink->command['operationId'] ?? $downlink->command['id'] ?? '');
         if ($id !== '') {
             $this->deviceStore?->markCommand($deviceKey, $id, $fields);
-        } elseif (self::operationOf($downlink) !== '') {
-            $this->deviceStore?->markLatestCommand($deviceKey, self::operationOf($downlink), $fields);
+        } elseif (GattDownlinks::operationOf($downlink) !== '') {
+            $this->deviceStore?->markLatestCommand($deviceKey, GattDownlinks::operationOf($downlink), $fields);
         }
-    }
-
-    /** O nome da operação: os bytes em fila, ou o `command` quando a ordem leva valor. */
-    private static function operationOf(PendingDownlink $downlink): string
-    {
-        return (string)(($downlink->command['command'] ?? null) ?? $downlink->bytes);
     }
 
     /** Só pergunta; quem marca é o `markSent`. */
@@ -174,13 +169,5 @@ final class DownlinkDispatcher
                 unset($this->sentAt[$key]);
             }
         }
-    }
-
-    /** `.../gw/{mac}/raw` para o que sobe, `.../gw/{mac}/cmd` para o que desce. */
-    private function commandTopicFor(string $gatewayKey): string
-    {
-        $base = preg_replace('#/\+/raw$#', '', trim($this->topicFilter, '/')) ?? '';
-
-        return $base . '/' . $gatewayKey . '/cmd';
     }
 }

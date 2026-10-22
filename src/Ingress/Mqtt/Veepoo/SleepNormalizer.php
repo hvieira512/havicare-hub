@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Hub\Ingress\Mqtt\Veepoo;
 
+use Hub\Device\TelemetryEnvelope;
 use Hub\Support\Values;
 
 /**
@@ -51,18 +52,9 @@ final class SleepNormalizer
         int $tzOffsetMinutes = 0,
         ?int $now = null,
     ): array {
-        $envelope = static fn(string $type, array $data): array => [
-            'type' => $type,
-            'occurredAt' => gmdate('Y-m-d\TH:i:s\Z'),
-            'device' => $device,
-            'source' => [
-                'protocol' => 'veepoo-ble',
-                // O nome na documentação do fabricante, que distingue isto do sono dos blocos.
-                'nativeType' => 'precise_sleep',
-                'gatewayId' => $gatewayId,
-            ],
-            'data' => $data,
-        ];
+        // O `precise_sleep` é o nome na documentação do fabricante, que distingue isto do sono dos blocos.
+        $envelope = static fn(string $type, array $data): array
+            => TelemetryEnvelope::for($type, (string)($device['id'] ?? ''), $device, 'veepoo-ble', 'precise_sleep', $data, $gatewayId);
 
         $out = [];
         foreach (self::nights($content) as $record) {

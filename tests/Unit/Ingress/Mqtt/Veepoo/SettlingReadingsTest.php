@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Ingress\Mqtt\Veepoo;
 
-use Hub\Ingress\Mqtt\Veepoo\BraceletContext;
+use Hub\Ingress\Mqtt\Gateway\GattDeviceContext;
 use Hub\Ingress\Mqtt\Veepoo\SettlingReadings;
 use PHPUnit\Framework\TestCase;
 
@@ -90,8 +90,8 @@ final class SettlingReadingsTest extends TestCase
         return new SettlingReadings(fn(): float => $this->now);
     }
 
-    private function context(): BraceletContext
+    private function context(): GattDeviceContext
     {
-        return new BraceletContext(self::DEVICE, 'd48c49f7909c', ['imei' => self::DEVICE], 7, 'acme');
+        return new GattDeviceContext(self::DEVICE, 'd48c49f7909c', ['imei' => self::DEVICE], 7, 'acme');
     }
 }

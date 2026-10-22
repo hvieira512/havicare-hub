@@ -4,15 +4,12 @@ declare(strict_types=1);
 
 namespace Hub\Ingress\Mqtt\JoyTech;
 
-use Hub\Ingress\Mqtt\DeviceBridge;
-use Hub\Ingress\Mqtt\Gateway\GatewayRelay;
 use Hub\Device\CommercialModelResolver;
 use Hub\Device\HubMqttBridge;
-use Hub\Device\TelemetryEnvelope;
 use Hub\Domain\GatewayDeviceLinkLookup;
+use Hub\Ingress\Mqtt\Gateway\GattBridge;
 use Hub\Ingress\Mqtt\Gateway\GattDeviceContext;
 use Hub\Ingress\Mqtt\Gateway\GattDownlinks;
-use Hub\Ingress\Mqtt\Veepoo\BraceletPresence;
 use Hub\Registry\Denylist;
 use Hub\Registry\Whitelist;
 use Hub\State\DeviceCommandLog;
@@ -22,7 +19,7 @@ use Hub\State\DeviceReportStore;
  * Ingestão dos termómetros de testa JoyTech entregues por um gateway GATT. O aparelho pede a hora
  * ao ligar e, depois de medir, manda as últimas 30 medições numa trama.
  */
-final class JoyTechThermometerBridge extends DeviceBridge implements GatewayRelay
+final class JoyTechThermometerBridge extends GattBridge
 {
     private const PROTOCOL = 'joytech-et';
 
@@ -41,14 +38,10 @@ final class JoyTechThermometerBridge extends DeviceBridge implements GatewayRela
 
     private const SITES = [1 => 'ear', 2 => 'forehead'];
 
-    private readonly GattDownlinks $downlinks;
-
-    private readonly BraceletPresence $presence;
-
     public function __construct(
         Whitelist $whitelist,
         HubMqttBridge $mqttBridge,
-        private readonly GatewayDeviceLinkLookup $links,
+        GatewayDeviceLinkLookup $links,
         string $topicFilter,
         null|(DeviceReportStore&DeviceCommandLog) $deviceStore = null,
         ?callable $clock = null,
@@ -56,35 +49,35 @@ final class JoyTechThermometerBridge extends DeviceBridge implements GatewayRela
         private readonly RecentMeasurementKeys $seen = new RecentMeasurementKeys(),
         ?Denylist $denylist = null,
     ) {
-        parent::__construct($whitelist, $mqttBridge, $deviceStore, $denylist, $clock, $commercialModelResolver);
-        // Não há fila: as duas escritas são respostas ao que o aparelho manda.
-        $this->downlinks = new GattDownlinks(null, $mqttBridge, $deviceStore, $topicFilter, (new JoyTechCommandEncoder())->writes(...));
-        $this->presence = new BraceletPresence($mqttBridge, $deviceStore, self::PROTOCOL);
+        parent::__construct(
+            $whitelist,
+            $mqttBridge,
+            $links,
+            self::PROTOCOL,
+            self::DEVICE_TYPE,
+            $deviceStore,
+            $clock,
+            $commercialModelResolver,
+            $denylist,
+            // Não há fila: as duas escritas são respostas ao que o aparelho manda.
+            new GattDownlinks(null, $mqttBridge, $deviceStore, $topicFilter, (new JoyTechCommandEncoder())->writes(...)),
+        );
     }
 
-    /** A fonte é a de todos os JoyTech: o nome do aparelho distingue-os. */
+    /** O gateway entrega os tensiómetros pela mesma fonte: o nome do aparelho distingue-os. */
     public static function claims(array $message): bool
     {
         return ($message['source'] ?? null) === 'joytech-node'
             && str_starts_with(trim((string)($message['device']['model'] ?? '')), 'DET');
     }
 
-    public function handle(string $topic, array $message): void
+    protected function handleKind(GattDeviceContext $context, string $kind, array $data, int $offsetMinutes, array $message): void
     {
-        $context = $this->resolveGattDevice($topic, $message, $this->links, self::PROTOCOL, self::DEVICE_TYPE);
-        if ($context === null) {
-            return;
-        }
-
-        $this->mqttBridge->publishRaw($context->deviceKey, $message, self::DEVICE_TYPE, $context->licenseId, $context->company);
-
-        $data = is_array($message['payload'] ?? null) ? $message['payload'] : [];
-        $offset = is_int($message['tzOffsetMinutes'] ?? null) ? $message['tzOffsetMinutes'] : 0;
-        match ($message['kind'] ?? null) {
+        match ($kind) {
             'session' => ($data['connected'] ?? false) === true
-                ? $this->presence->markOnline($context->deviceKey, $context->device)
-                : $this->presence->markOffline($context->deviceKey, $context->device),
-            'frame' => $this->frame($context, (string)($data['hex'] ?? ''), $offset),
+                ? $this->presence($context)->markOnline($context->deviceKey, $context->device)
+                : $this->presence($context)->markOffline($context->deviceKey, $context->device),
+            'frame' => $this->frame($context, (string)($data['hex'] ?? ''), $offsetMinutes),
             default => null,
         };
     }
@@ -100,7 +93,7 @@ final class JoyTechThermometerBridge extends DeviceBridge implements GatewayRela
         if ($frame['function'] === 0x06) {
             // Sem resposta o aparelho não mede, e desliga-se.
             if ($this->allow('clock:' . $context->deviceKey, self::CLOCK_REQUEST_BURST_SECONDS)) {
-                $this->downlinks->sendDirect($context->deviceKey, $context->gatewayKey, 'answerClock', [], 0, $offsetMinutes);
+                $this->downlinks?->sendDirect($context->deviceKey, $context->gatewayKey, 'answerClock', [], 0, $offsetMinutes);
             }
             return;
         }
@@ -108,7 +101,7 @@ final class JoyTechThermometerBridge extends DeviceBridge implements GatewayRela
             return;
         }
 
-        $this->downlinks->sendDirect($context->deviceKey, $context->gatewayKey, 'acknowledgeMeasurements', [], 0, $offsetMinutes);
+        $this->downlinks?->sendDirect($context->deviceKey, $context->gatewayKey, 'acknowledgeMeasurements', [], 0, $offsetMinutes);
         $this->measurements($context, $frame['data'], $offsetMinutes, $now);
     }
 
@@ -138,7 +131,7 @@ final class JoyTechThermometerBridge extends DeviceBridge implements GatewayRela
             $this->seen->add($context->deviceKey, $key);
 
             $live = $index === 0 && $now - $at < self::LIVE_SECONDS;
-            $this->emit($context, [
+            $this->telemetry($context, 'temperature', 'fff1:03', [
                 'bodyCelsius' => self::celsius((int)$fields['value']),
                 'site' => $site,
             ] + ($live ? [] : ['fromHistory' => true]), gmdate('Y-m-d\TH:i:s\Z', $at));
@@ -151,21 +144,5 @@ final class JoyTechThermometerBridge extends DeviceBridge implements GatewayRela
         $degrees = ($value & 0x7fff) / 100;
 
         return round(($value & 0x8000) !== 0 ? ($degrees - 32) * 5 / 9 : $degrees, 1);
-    }
-
-    /** @param array<string, mixed> $data */
-    private function emit(GattDeviceContext $context, array $data, string $occurredAt): void
-    {
-        $telemetry = TelemetryEnvelope::for(
-            'temperature',
-            $context->deviceKey,
-            $context->device,
-            self::PROTOCOL,
-            'fff1:03',
-            $data,
-            $context->gatewayKey,
-        );
-        $telemetry['occurredAt'] = $occurredAt;
-        $this->mqttBridge->publishAndStore($this->deviceStore, 'telemetry', $context->deviceKey, $telemetry, self::DEVICE_TYPE, $context->licenseId, $context->company);
     }
 }
