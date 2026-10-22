@@ -6,6 +6,9 @@ namespace Hub\Command\Configuration\Payload;
 
 final class VivistarPayloadBuilder extends ConfigurationPayloadBuilder
 {
+    /** O número do `BP33` de cada modo; o `custom` leva intervalo e GPS. */
+    public const WORKING_MODES = ['normal' => 1, 'power_saving' => 2, 'emergency' => 3, 'custom' => 8];
+
     /**
      * @param array<string, mixed> $payload
      * @return array{fields: list<string>}
@@ -42,21 +45,18 @@ final class VivistarPayloadBuilder extends ConfigurationPayloadBuilder
      */
     private static function workingMode(array $payload): array
     {
-        $mode = self::intInRange($payload['mode'] ?? null, 'mode', 1, 8);
-        if ($mode !== 8) {
-            if (!in_array($mode, [1, 2, 3], true)) {
-                throw new \InvalidArgumentException('mode must be 1, 2, 3, or 8');
-            }
-
+        $mode = self::WORKING_MODES[(string)($payload['mode'] ?? '')]
+            ?? throw new \InvalidArgumentException('mode must be one of ' . implode(', ', array_keys(self::WORKING_MODES)));
+        if ($mode !== self::WORKING_MODES['custom']) {
             return [$mode];
         }
 
         $interval = self::intInRange($payload['intervalSeconds'] ?? null, 'intervalSeconds', 1);
         if ($interval < 30) {
-            throw new \InvalidArgumentException('intervalSeconds must be at least 30 for mode 8');
+            throw new \InvalidArgumentException('intervalSeconds must be at least 30 for the custom mode');
         }
 
-        return [8, $interval, self::boolInt($payload['gpsEnabled'] ?? null, 'gpsEnabled')];
+        return [$mode, $interval, self::boolInt($payload['gpsEnabled'] ?? null, 'gpsEnabled')];
     }
 
     /**

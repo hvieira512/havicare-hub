@@ -603,15 +603,15 @@
                 "label": "Envio da localização",
                 "options": {
                     "mode": {
-                        "1": "A cada 15 min",
-                        "2": "A cada 60 min",
-                        "3": "A cada minuto, com GPS",
-                        "8": "Personalizado"
+                        "normal": "A cada 15 min",
+                        "power_saving": "A cada 60 min",
+                        "emergency": "A cada minuto, com GPS",
+                        "custom": "Personalizado"
                     }
                 },
                 "descriptions": {
                     "mode": {
-                        "8": "Intervalo à escolha, a partir de 30 s, com ou sem GPS"
+                        "custom": "Intervalo à escolha, a partir de 30 s, com ou sem GPS"
                     }
                 }
             }

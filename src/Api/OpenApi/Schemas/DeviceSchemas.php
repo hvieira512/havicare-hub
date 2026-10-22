@@ -299,7 +299,7 @@ final class DeviceSchemas
                             'sos_contacts' => ['+351278710140'],
                             'call_whitelist' => ['contacts' => [['name' => 'HAVICARE SUPORTE', 'phone' => '+351278710140']]],
                             'whitelist_enabled' => ['enabled' => true],
-                            'working_mode' => ['mode' => 3],
+                            'working_mode' => ['mode' => 'emergency'],
                         ],
                     ],
                 ],

@@ -120,6 +120,41 @@ final class DeviceConfigurationCatalogTest extends TestCase
         self::assertSame(['0', '0'], $payload['payload']['fields'] ?? []);
     }
 
+    /** @return iterable<string, array{array<string, mixed>, list<string>}> */
+    public static function vivistarWorkingModeProvider(): iterable
+    {
+        yield 'normal' => [['mode' => 'normal'], ['1']];
+        yield 'power saving' => [['mode' => 'power_saving'], ['2']];
+        yield 'emergency' => [['mode' => 'emergency'], ['3']];
+        yield 'custom' => [['mode' => 'custom', 'intervalSeconds' => 60, 'gpsEnabled' => false], ['8', '60', '0']];
+    }
+
+    /**
+     * @param array<string, mixed> $desired
+     * @param list<string> $fields
+     */
+    #[DataProvider('vivistarWorkingModeProvider')]
+    public function testVivistarWorkingModeNameBuildsItsNativeNumber(array $desired, array $fields): void
+    {
+        $payload = DeviceConfigurationCatalog::commandPayload('vivistar-iw', 'workingMode', $desired);
+
+        self::assertSame('BP33', $payload['command']);
+        self::assertSame($fields, $payload['payload']['fields'] ?? []);
+    }
+
+    public function testVivistarWorkingModeOptionsAreTheNames(): void
+    {
+        $config = DeviceConfigurationCatalog::configForProtocol('vivistar-iw', 'workingMode');
+
+        self::assertSame(
+            [['value' => 'normal'], ['value' => 'power_saving'], ['value' => 'emergency'], ['value' => 'custom', 'fields' => [
+                'intervalSeconds' => ['type' => 'integer', 'min' => 30],
+                'gpsEnabled' => ['type' => 'boolean'],
+            ]]],
+            $config['options']['mode'] ?? null,
+        );
+    }
+
     public function testVivistarPushMessageBuildsBp40WithUtf16Hex(): void
     {
         $payload = DeviceConfigurationCatalog::commandPayload('vivistar-iw', 'pushMessage', ['message' => 'are you ok?']);
@@ -1242,8 +1277,12 @@ final class DeviceConfigurationCatalogTest extends TestCase
             'type is required',
         ];
         yield 'vivistar working mode below the interval floor' => [
-            'vivistar-iw', 'workingMode', ['mode' => 8, 'intervalSeconds' => 10, 'gpsEnabled' => true],
-            'intervalSeconds must be at least 30 for mode 8',
+            'vivistar-iw', 'workingMode', ['mode' => 'custom', 'intervalSeconds' => 10, 'gpsEnabled' => true],
+            'intervalSeconds must be at least 30 for the custom mode',
+        ];
+        yield 'vivistar working mode by its native number' => [
+            'vivistar-iw', 'workingMode', ['mode' => 1],
+            'mode must be one of normal, power_saving, emergency, custom',
         ];
         // O contrário do caso da Vivistar acima: aqui o tipo é que não é suportado.
         yield '4P Touch alarm with a type' => [

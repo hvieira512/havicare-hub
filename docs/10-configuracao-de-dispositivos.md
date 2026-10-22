@@ -171,7 +171,7 @@ dicionário da dashboard, o `src/Dashboard/dashboard/pt-PT.json`, chaveados pela
 capacidade e, onde o mesmo nome faz coisas diferentes, pelo protocolo. O
 `PortugueseDictionaryTest` falha quando o catálogo ganha uma chave sem tradução.
 
-### A forma pública da Wonlex e do 4P Touch
+### A forma pública da Wonlex, do 4P Touch e da Vivistar
 
 | Configuração | Campos |
 |---|---|
@@ -186,9 +186,10 @@ capacidade e, onde o mesmo nome faz coisas diferentes, pelo protocolo. O
 | `sleep_monitoring` (Wonlex) | `enabled`, `startTime` e `endTime` em `HH:MM`, `targetMinutes` |
 | `sound_profile` (4P Touch) | `mode`: `ring_and_vibrate`, `ring`, `vibrate`, `silent` |
 | `language_timezone` (4P Touch) | `language` em etiqueta BCP 47 (`pt`, `en`, `zh-Hans`…) e `utcOffsetHours` |
+| `working_mode` (Vivistar) | `mode`: `normal` (15 min), `power_saving` (60 min), `emergency` (1 min, com GPS) e `custom`, que leva `intervalSeconds` (≥ 30) e `gpsEnabled` |
 
 O construtor de cada protocolo traduz para o fio: `switchState`, `RemindValue`,
-`hpWarn`, `HHmmss`, os códigos do `LZ` e do `profile`.
+`hpWarn`, `HHmmss`, os códigos do `LZ`, do `profile` e do `BP33`.
 
 Um campo numérico traz no `_meta` os limites que o hub aplica — os mesmos que
 recusam um `PATCH` fora deles com `invalid_config`:
@@ -235,7 +236,7 @@ PATCH /api/devices/{imei}/configurations
           "recurrence": { "kind": "custom", "days": [1, 3, 5] } }
       ]
     },
-    "working_mode": { "mode": 8, "intervalSeconds": 60, "gpsEnabled": true }
+    "working_mode": { "mode": "custom", "intervalSeconds": 60, "gpsEnabled": true }
   }
 }
 ```

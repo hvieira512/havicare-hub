@@ -8,6 +8,7 @@ use Hub\Infrastructure\Persistence\Migration\DropCapabilitiesTable;
 use Hub\Infrastructure\Persistence\Migration\DropUnreadColumns;
 use Hub\Infrastructure\Persistence\Migration\Migration;
 use Hub\Infrastructure\Persistence\Migration\PublicConfigurationShape;
+use Hub\Infrastructure\Persistence\Migration\VivistarWorkingModeNames;
 
 /**
  * As migrações posteriores à baseline (`schema.sql` e catálogo semeado). Uma migração sai daqui
@@ -22,6 +23,7 @@ final class DatabaseMigrationPlan
             new DropUnreadColumns(),
             new DropCapabilitiesTable(),
             new PublicConfigurationShape(),
+            new VivistarWorkingModeNames(),
         ];
     }
 

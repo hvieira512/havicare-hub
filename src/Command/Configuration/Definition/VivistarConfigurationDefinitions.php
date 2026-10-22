@@ -19,10 +19,10 @@ final class VivistarConfigurationDefinitions
             $entry('pushMessage', 'BP40', 'pushMessage', ['message'], ['AP40'], category: 'system', order: 5, transient: true, verb: 'send_message'),
             $entry('workingMode', 'BP33', 'workingMode', ['mode'], ['AP33'], category: 'system', order: 10, options: [
                 'mode' => [
-                    ['value' => 1],
-                    ['value' => 2],
-                    ['value' => 3],
-                    ['value' => 8, 'fields' => [
+                    ['value' => 'normal'],
+                    ['value' => 'power_saving'],
+                    ['value' => 'emergency'],
+                    ['value' => 'custom', 'fields' => [
                         'intervalSeconds' => ['type' => 'integer', 'min' => 30],
                         'gpsEnabled' => ['type' => 'boolean'],
                     ]],
