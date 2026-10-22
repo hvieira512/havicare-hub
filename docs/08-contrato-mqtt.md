@@ -297,8 +297,8 @@ eventos guardados no histórico da dashboard levam-na igual.
 
 | `type` | `data` | Quem o publica | `severity` |
 |---|---|---|---|
-| `help_call` | `pressType` (pulseira), `pagerId` (NCS); vazio no relógio e no dispensador | relógio (SOS), pulseira, NCS, dispensador | `alarm` |
-| `fall` | `confirmed`, `posture` (`lying_down` · `sitting_on_ground`, a enumeração da `presence` do radar), `personIndex` | relógio, radar | `alarm`; `alert` com `confirmed: false` |
+| `help_call` | `pressType` (pulseira), `pagerId` (NCS); vazio no relógio e no dispensador | relógio Vivistar e 4P Touch (SOS), pulseira, NCS, dispensador | `alarm` |
+| `fall` | `confirmed`, `posture` (`lying_down` · `sitting_on_ground`, a enumeração da `presence` do radar), `personIndex` | relógio Vivistar e 4P Touch, radar | `alarm`; `alert` com `confirmed: false` |
 | `heart_rate_high` | `bpm`, quando há | radar | `alarm` acima de 160 bpm, `alert` abaixo ou sem valor |
 | `heart_rate_low` | `bpm`, quando há | radar | `alarm` abaixo de 20 bpm, `alert` acima ou sem valor |
 | `heart_rate_abnormal` | — | relógio 4P Touch | `alert` |
@@ -346,6 +346,9 @@ vale para um `slot` que não está no plano confirmado.
 { "type": "medication_alarm_change", "severity": "info",
   "data": { "slot": 2, "state": "taken", "scheduledAt": "2026-10-19T07:00:00Z", "doseDate": "2026-10-19" } }
 ```
+
+Dos relógios, só o Vivistar e o 4P Touch publicam `help_call` e `fall`: o Wonlex
+não manda nenhum dos dois.
 
 O `heart_rate_abnormal` vem do bit 22 do alarme da 4P Touch, que diz só que a
 frequência cardíaca está anormal, sem o valor e sem o sentido. **Nenhum relógio o

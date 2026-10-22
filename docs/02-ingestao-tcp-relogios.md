@@ -303,8 +303,9 @@ Uma máscara do 4P Touch com vários bits produz vários eventos; a zero, nenhum
 **O bit 22 está por confirmar.** Em outubro de 2026, nas 14 tramas `AL` guardadas
 de 10 relógios 4P (quedas, SOS e bateria fraca), nenhuma o trazia; o Y6L não tem
 no menu nenhum alerta de frequência cardíaca, e o protocolo não tem comando que o
-configure — põe o juízo da frequência no servidor. O hub descodifica-o, mas o
-`heart_rate_abnormal` não se anuncia em modelo nenhum até haver um disparo real.
+configure — põe o juízo da frequência no servidor. O hub descodifica-o e publica-o
+se chegar, e o catálogo declara o `heart_rate_abnormal` na 4P Touch, que é quem o
+publica.
 
 **A bateria fraca tem mais duas origens**, além do alarme:
 
