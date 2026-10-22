@@ -23,8 +23,7 @@ módulo, e uma tabela ao lado dela seria a mesma matéria escrita duas vezes.
 src/Dashboard/
 ├── index.php          a página
 ├── main.js            o <script type="module"> que a página carrega
-├── main.css           os modais: dispositivo, definições, assistente
-├── assets/css/        o resto do CSS, por área: base, shell, device, login
+├── assets/css/        o CSS, por área: base, shell, device, config, login e modals
 ├── components/        os partials PHP que produzem a marcação
 ├── assets/            o logo, as fontes e as bibliotecas de terceiros
 ├── dashboard/         todo o JavaScript  ← o resto deste documento
@@ -77,7 +76,7 @@ Cada pasta com mais do que um ficheiro repete a regra 3 à sua escala:
 ### Porque é que a regra 4 existe
 
 Um cartão de dispositivo estava espalhado por quatro sítios: a marcação numa
-função do `list.js`, o estilo no `main.css` global, o ouvinte no `wiring/`, e
+função do `list.js`, o estilo num CSS global, o ouvinte no `wiring/`, e
 os dados no `state`. Mudar um widget obrigava a abrir quatro ficheiros, e nada
 dizia que os quatro pedaços eram a mesma coisa.
 
@@ -379,16 +378,13 @@ afirmam que certas linhas lá estão. Mover uma função entre ficheiros parte-o
 - **O que fica no `components/cards/telemetry.js` é o registo e as
   primitivas**, que são genuinamente uma coisa só: o mapa dos cartões por tipo,
   o ícone, o tom e a badge de estado. Partir isso por tamanho só espalharia.
-- **O CSS está dividido por área**, em sete ficheiros: `assets/css/base.css`
-  (tokens e fontes), `shell.css` (moldura, navbar, cartões), `device.css` (o
-  ecrã do dispositivo), `config.css` (o modal do dispositivo e o painel de
-  configuração), `alarms.css` (os campos de um alarme), `login.css`, e o
-  `main.css` fica com os modais. A ordem no `<head>` é essa, e é a cascata: o
-  `config.css` carrega depois do `device.css` e é daí que lhe ganha. O
-  `main.css` ficou em último e na raiz porque `/main.css` é uma rota fixa no
-  `DashboardHttpServer::publicAssetPath()` — os ficheiros da raiz não são
-  apanhados por padrão, só o `/main.css` e o `/main.js`. Sem build, cada
-  ficheiro é mais um pedido, e por isso são sete e não vinte.
+- **O CSS está dividido por área**, em seis ficheiros de `assets/css/`:
+  `base.css` (tokens e fontes), `shell.css` (moldura, navbar, cartões),
+  `device.css` (o ecrã do dispositivo), `config.css` (o modal do dispositivo, o
+  painel de configuração e os campos de um alarme), `login.css`, e o
+  `modals.css` com os modais. A ordem no `<head>` é essa, e é a cascata: o
+  `config.css` carrega depois do `device.css` e é daí que lhe ganha. Sem build,
+  cada ficheiro é mais um pedido, e por isso são seis e não vinte.
 
   A excepção é **a linguagem de selecção**, que vive toda no `shell.css`: as
   cinco caixas que se escolhem — o mosaico de tipos, o cartão de dispositivo, a

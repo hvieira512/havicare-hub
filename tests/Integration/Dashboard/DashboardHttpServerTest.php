@@ -56,7 +56,7 @@ final class DashboardHttpServerTest extends DashboardHttpTestCase
     {
         $server = (new \ReflectionClass(DashboardHttpServer::class))->newInstanceWithoutConstructor();
 
-        $stylesheet = $server(new ServerRequest('GET', '/main.css'));
+        $stylesheet = $server(new ServerRequest('GET', '/assets/css/modals.css'));
         self::assertSame(200, $stylesheet->getStatusCode());
         self::assertSame('text/css', $stylesheet->getHeaderLine('Content-Type'));
 
@@ -77,12 +77,12 @@ final class DashboardHttpServerTest extends DashboardHttpTestCase
     {
         $server = (new \ReflectionClass(DashboardHttpServer::class))->newInstanceWithoutConstructor();
 
-        $stylesheet = $server(new ServerRequest('GET', '/main.css'));
+        $stylesheet = $server(new ServerRequest('GET', '/assets/css/modals.css'));
         $etag = $stylesheet->getHeaderLine('ETag');
         self::assertNotSame('', $etag);
         self::assertSame('no-cache', $stylesheet->getHeaderLine('Cache-Control'));
 
-        $revalidated = $server(new ServerRequest('GET', '/main.css', ['If-None-Match' => $etag]));
+        $revalidated = $server(new ServerRequest('GET', '/assets/css/modals.css', ['If-None-Match' => $etag]));
         self::assertSame(304, $revalidated->getStatusCode());
         self::assertSame('', (string)$revalidated->getBody());
 

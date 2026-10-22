@@ -56,7 +56,7 @@ final class SelectionLanguageTest extends TestCase
     /** As áreas ficam com a geometria: quem lá declarar um estado volta a partir a língua. */
     public function testTheAreaSheetsDoNotRedeclareTheStates(): void
     {
-        foreach (['assets/css/device.css', 'main.css'] as $sheet) {
+        foreach (['assets/css/device.css', 'assets/css/modals.css'] as $sheet) {
             $source = $this->read($sheet);
 
             foreach (self::BOXES as $box) {

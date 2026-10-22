@@ -295,7 +295,7 @@
     height: 28px;
 }
 
-/* A chapa acompanha a fotografia no escuro, como as chapas pequenas do `main.css`; o raio
+/* A chapa acompanha a fotografia no escuro, como as chapas pequenas do `modals.css`; o raio
    torna-a uma chapa e não um rectângulo do tamanho da imagem. */
 [data-bs-theme="dark"] .catalog-model-image:has(img) {
     background: #fff;
