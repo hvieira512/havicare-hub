@@ -52,10 +52,6 @@ final class WonlexPayloadBuilder extends ConfigurationPayloadBuilder
             'familyNumber' => ['familyNumbers' => self::familyNumbers($payload['contacts'] ?? null)],
             'SOSNumber' => ['sosNumbers' => self::sosNumbers($payload['contacts'] ?? $payload['numbers'] ?? [])],
             'factoryResetCommand', 'restartCommand', 'powerOffCommand', 'findDeviceCommand' => [],
-            'pushMessage' => [
-                'msgType' => 'msg',
-                'msg' => self::requiredString($payload['message'] ?? null, 'message'),
-            ],
             default => throw new \InvalidArgumentException("Unsupported Wonlex configuration {$key}"),
         };
     }

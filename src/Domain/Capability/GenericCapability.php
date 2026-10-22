@@ -131,7 +131,6 @@ final class GenericCapability implements CapabilityContract
             'restart_device' => ['restartCommand' => []],
             'power_off' => ['powerOffCommand' => []],
             'find_device' => ['findDeviceCommand' => []],
-            'push_message' => ['pushMessage' => ['message' => self::requireStringField($value, 'message')]],
             default => [$this->resolveWonlexNativeKey() => self::requireObjectValue($value, $this->genericKey)],
         };
     }

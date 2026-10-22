@@ -8,6 +8,7 @@ use Hub\Command\Configuration\Payload\FourPTouchPayloadBuilder;
 use Hub\Command\DeviceCommandCatalog;
 use Hub\Command\DeviceConfigurationCatalog;
 use Hub\Domain\Capability\CapabilityCatalog;
+use Hub\Domain\SupplierCapabilityTemplate;
 use Hub\Protocol\Adapter\FourPTouchAdapter;
 use Hub\Protocol\Adapter\VivistarAdapter;
 use Hub\Protocol\Adapter\WonlexAdapter;
@@ -344,10 +345,6 @@ final class DeviceConfigurationCatalogTest extends TestCase
     {
         foreach (DeviceConfigurationCatalog::configsForProtocol('wonlex-json') as $entry) {
             $command = (string)($entry['command'] ?? '');
-            if ($command === 'msgNotice') {
-                self::assertSame([], $entry['expectedReplyTypes'] ?? null);
-                continue;
-            }
             self::assertSame(
                 [$command],
                 $entry['expectedReplyTypes'] ?? [],
@@ -356,17 +353,12 @@ final class DeviceConfigurationCatalogTest extends TestCase
         }
     }
 
-    public function testWonlexPushMessageBuildsDocumentedMessageNotice(): void
+    /** O HW20Pro não mostra o `msgNotice` nem lhe responde, e confirma os outros comandos. */
+    public function testWonlexDoesNotOfferPushMessage(): void
     {
-        $payload = DeviceConfigurationCatalog::commandPayload('wonlex-json', 'pushMessage', [
-            'message' => 'Hello World',
-        ]);
-
-        self::assertSame('msgNotice', $payload['command']);
-        self::assertSame([
-            'msgType' => 'msg',
-            'msg' => 'Hello World',
-        ], $payload['payload']);
+        self::assertNull(DeviceConfigurationCatalog::configForProtocol('wonlex-json', 'pushMessage'));
+        self::assertNotContains('push_message', CapabilityCatalog::keysForProtocol('wonlex-json'));
+        self::assertNotContains('push_message', SupplierCapabilityTemplate::keysForModel('Wonlex', 'HW20PRO', 'watch'));
     }
 
     /** O HW20Pro ignora o `dnMedicationPlan` documentado: não responde nem toca, e confirma os outros comandos. */

@@ -210,6 +210,11 @@ A reposição de fábrica (`reset_device`) só a pede um `hub_admin`. A um
 `license_client` responde `403 forbidden`: o aparelho volta a apontar para o
 servidor do fornecedor e o hub perde-o.
 
+O `push_message` é só da Vivistar e da 4P Touch. A Wonlex documenta um
+`msgNotice`, mas deixa a apresentação ao desenho de cada aparelho, e o HW20Pro
+nem a mostra nem lhe responde, embora confirme os outros comandos na mesma
+sessão.
+
 ### Pedir uma medição
 
 ```http

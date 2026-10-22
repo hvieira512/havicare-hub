@@ -588,9 +588,6 @@
             "alarm_clock": {
                 "help": "Repetem-se por dias da semana; não há alarme de uma só vez."
             },
-            "push_message": {
-                "help": "O relógio não confirma que a recebeu."
-            },
             "sos_contacts": {
                 "help": "Escolhem-se da lista telefónica."
             },

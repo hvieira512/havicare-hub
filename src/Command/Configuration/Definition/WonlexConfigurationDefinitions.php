@@ -62,8 +62,6 @@ final class WonlexConfigurationDefinitions
             $entry('restartCommand', 'restart', 'action', [], ['restart'], category: 'system', order: 120, transient: true, destructive: true),
             $entry('powerOffCommand', 'powerOff', 'action', [], ['powerOff'], category: 'system', order: 130, transient: true, destructive: true),
             $entry('findDeviceCommand', 'find', 'action', [], ['find'], category: 'system', order: 140, transient: true),
-            // O `msgNotice` é notificação de sentido único: a Wonlex não lhe define resposta.
-            $entry('pushMessage', 'msgNotice', 'pushMessage', ['message'], category: 'system', order: 145, transient: true, verb: 'send_message'),
         ];
     }
 }
