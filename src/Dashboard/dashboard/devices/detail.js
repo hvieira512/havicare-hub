@@ -37,7 +37,6 @@ import { activityTable } from "./activity-table.js";
 import { protocolHelpCallPressModes } from "./config/protocol-catalog.js";
 import { renderPagination } from "../pagination.js";
 import { loadMoreButton, pagedRows } from "../components/pagination.js";
-import { SELECTED_DEVICE_STORAGE_KEY, clearStorageKey, saveTextStorage } from "../storage.js";
 import { disposeTooltips, refreshTooltips } from "../tooltips.js";
 import { gatewaySignalRows } from "./gateway-signal.js";
 import { renderConnectionHistory } from "./connection-history.js";
@@ -647,24 +646,12 @@ async function requestTelemetryFeature(feature) {
     }
 }
 
-function saveSelectedDeviceToStorage() {
-    if (state.selectedImei) {
-        saveTextStorage(SELECTED_DEVICE_STORAGE_KEY, state.selectedImei);
-    }
-}
-
-function clearSelectedDeviceFromStorage() {
-    clearStorageKey(SELECTED_DEVICE_STORAGE_KEY);
-}
-
 export {
-    clearSelectedDeviceFromStorage,
     downlinkActivityRow,
     renderDownlinkRequests,
     renderRequestCardGroup,
     renderSelection,
     renderTelemetryList,
     telemetryRequestCards,
-    saveSelectedDeviceToStorage,
     requestTelemetryFeature,
 };

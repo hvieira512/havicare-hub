@@ -1,3 +1,11 @@
+import {
+    FILTERS_STORAGE_KEY,
+    SELECTED_DEVICE_STORAGE_KEY,
+    clearStorageKey,
+    saveJsonStorage,
+    saveTextStorage,
+} from "./storage.js";
+
 /** O modal de dispositivo em branco: o `editDevice` substitui o estado inteiro. */
 export function blankDeviceModal(overrides = {}) {
     return {
@@ -159,6 +167,7 @@ export function selectImei(imei) {
         state.detailFiltersDraft = blankDetailFilters();
     }
     state.selectedImei = imei;
+    if (imei) saveTextStorage(SELECTED_DEVICE_STORAGE_KEY, imei);
 }
 
 export function clearSelection() {
@@ -167,6 +176,7 @@ export function clearSelection() {
     resetActivityPaging();
     state.detailFilters = blankDetailFilters();
     state.detailFiltersDraft = blankDetailFilters();
+    clearStorageKey(SELECTED_DEVICE_STORAGE_KEY);
 }
 
 const clampPage = (page, totalPages) =>
@@ -215,16 +225,18 @@ export function resetDeviceListPage() {
     state.deviceListPage = 1;
 }
 
-/** Uma chave dos filtros a mudar. A volta à primeira página é do par, não do chamador. */
+/** Uma chave dos filtros a mudar; a volta à primeira página e o guardar são do par, não do chamador. */
 export function changeDeviceFilter(key, value) {
     state.deviceFilters = { ...state.deviceFilters, [key]: value };
     state.deviceListPage = 1;
+    saveJsonStorage(FILTERS_STORAGE_KEY, state.deviceFilters);
 }
 
 /** Os filtros inteiros: o que ficou guardado da sessão anterior, ou o limpar de todos. */
 export function setDeviceFilters(filters) {
     state.deviceFilters = filters;
     state.deviceListPage = 1;
+    saveJsonStorage(FILTERS_STORAGE_KEY, filters);
 }
 
 /** O rascunho volta ao aplicado, por cópia: a mesma referência aplicava o filtro sem o botão. */

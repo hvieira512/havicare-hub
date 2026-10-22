@@ -1,9 +1,4 @@
 import { changeDeviceFilter, setDeviceFilters, state } from "../state.js";
-import {
-    FILTERS_STORAGE_KEY,
-    clearStorageKey,
-    saveJsonStorage,
-} from "../storage.js";
 import { html, raw } from "../html.js";
 import { filterChips } from "../components/chips.js";
 import { deviceTypeTiles } from "../components/device-type-tiles.js";
@@ -318,7 +313,6 @@ export async function handleDeviceFilterChipRemove(event) {
 
     if (key === "online") {
         changeDeviceFilter("online", null);
-        saveJsonStorage(FILTERS_STORAGE_KEY, state.deviceFilters);
         await loadSummary();
         return;
     }
@@ -380,7 +374,6 @@ async function toggleDeviceFilter(key, value) {
             (state.deviceFilters.model || []).filter((model) => !owned.includes(model)),
         );
     }
-    saveJsonStorage(FILTERS_STORAGE_KEY, state.deviceFilters);
     await loadSummary();
 }
 
@@ -420,7 +413,6 @@ export async function handleDeviceFilterClick(event) {
 export async function handleDeviceOnlineFilterChange(event) {
     const value = event.target.value;
     changeDeviceFilter("online", value === "all" ? null : value === "online");
-    saveJsonStorage(FILTERS_STORAGE_KEY, state.deviceFilters);
     await loadSummary();
 }
 
@@ -432,7 +424,6 @@ export async function clearDeviceFilters() {
         license: [],
         online: null,
     });
-    clearStorageKey(FILTERS_STORAGE_KEY);
     await loadSummary();
 }
 

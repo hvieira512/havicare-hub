@@ -26,11 +26,7 @@ import {
     renderDeviceFilterControls,
     renderDeviceFilterSkeleton,
 } from "./list-filters.js";
-import {
-    clearSelectedDeviceFromStorage,
-    renderSelection as renderSelectionDetail,
-    saveSelectedDeviceToStorage,
-} from "./detail.js";
+import { renderSelection as renderSelectionDetail } from "./detail.js";
 import { connectDeviceStream, disconnectDeviceStream, isDeviceStreamFor } from "./stream.js";
 import { els } from "../dom.js";
 
@@ -353,7 +349,6 @@ function handleDevicePaginationClick(event) {
 
 async function selectDevice(imei) {
     selectImei(imei);
-    saveSelectedDeviceToStorage();
     await loadDevice(imei);
     // Fecha-se quando a escolha vingou: o `loadDevice` também devolve falso quando ultrapassado.
     if (state.selectedImei === imei) {
@@ -375,7 +370,6 @@ async function loadDevice(imei) {
         if (state.selectedImei === imei) {
             disconnectDeviceStream();
             clearSelection();
-            clearSelectedDeviceFromStorage();
         }
         renderSelectionDetail();
         return false;

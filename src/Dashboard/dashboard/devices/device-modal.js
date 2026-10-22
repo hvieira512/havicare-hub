@@ -70,11 +70,6 @@ import {
     selectImei,
     state,
 } from "../state.js";
-import {
-    SELECTED_DEVICE_STORAGE_KEY,
-    clearStorageKey,
-    saveTextStorage,
-} from "../storage.js";
 import { els } from "../dom.js";
 
 let deviceModal;
@@ -486,9 +481,6 @@ export async function saveDevice() {
 
     if (state.selectedImei === originalImei) {
         selectImei(imei);
-        if (state.selectedImei) {
-            saveTextStorage(SELECTED_DEVICE_STORAGE_KEY, state.selectedImei);
-        }
         await loadDevice(imei);
     }
     deviceModal.hide();
@@ -511,7 +503,6 @@ export async function handleDeleteDeviceBtnClick() {
     if (state.selectedImei === imei) {
         disconnectDeviceStream();
         clearSelection();
-        clearStorageKey(SELECTED_DEVICE_STORAGE_KEY);
     }
     if (isDeviceSelectorOpen()) {
         await loadSummary();
