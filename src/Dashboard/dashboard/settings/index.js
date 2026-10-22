@@ -7,6 +7,7 @@ import { initSettingsDenylist, loadSettingsDenylistSection } from "./denylist.js
 import {
     initSettingsCapabilities,
     loadSettingsCapabilitiesSection,
+    resetCapabilityCatalogView,
 } from "./capabilities.js";
 import { initModelList, loadSettingsModelsSection } from "./models/list.js";
 import { initModelForm } from "./models/form.js";
@@ -49,7 +50,7 @@ export async function loadSettingsModal(
     section = state.settingsModal.section,
 ) {
     resetSettingsModal();
-    state.modelModal.templateSummary = "";
+    resetCapabilityCatalogView();
 
     state.settingsModal.section = section;
     bootstrap.Tab.getOrCreateInstance(els[(SECTIONS[section] ?? SECTIONS.models).tab]).show();

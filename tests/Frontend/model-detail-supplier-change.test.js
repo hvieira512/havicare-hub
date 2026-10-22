@@ -58,7 +58,6 @@ function setupDom() {
     // recarregamento, e não quais os elementos que ela pinta pelo caminho.
     const els = autoEls(undefined, found);
     cacheElements(els);
-    state.modelModalSuppliers = [{ id: 5, name: "Wonlex" }, { id: 9, name: "4P Touch" }];
     state.settingsModal.currentCapabilitiesModel = MODEL;
     return els;
 }

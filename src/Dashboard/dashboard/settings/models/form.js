@@ -246,7 +246,6 @@ function handleModelWizardSave() {
 /** As capacidades predefinidas do fornecedor para o tipo: o que o modelo herda ao nascer. */
 async function refreshTemplate() {
     const { deviceType, supplier } = wizard.answers();
-    state.modelModal.templateSummary = "";
 
     if (!supplier?.id || !deviceType) {
         els.modelWizardTemplateSummary.textContent = "";
@@ -258,22 +257,19 @@ async function refreshTemplate() {
 
     const response = await ensureModelTemplate(supplier.id, deviceType);
     if (response.error) {
-        state.modelModal.templateSummary = apiError(response);
-        els.modelWizardTemplateSummary.textContent = state.modelModal.templateSummary;
+        els.modelWizardTemplateSummary.textContent = apiError(response);
         return;
     }
 
     // O modelo nasce com o template: o servidor aplica-o quando o pedido não escolhe capacidades.
-    state.modelModal.templateSummary =
+    els.modelWizardTemplateSummary.textContent =
         `${(response.enabledCapabilities || []).length} capacidades predefinidas para ${response.supplier || supplier.name} (${deviceTypeLabel(deviceType)}).`;
-    els.modelWizardTemplateSummary.textContent = state.modelModal.templateSummary;
 }
 
 function resetModelWizard() {
     setModelPreviewObjectUrl();
     chosenImage = null;
     wizard.reset();
-    state.modelModal.templateSummary = "";
 }
 
 async function openNewModelForm() {

@@ -46,15 +46,8 @@ export function blankDeviceModal(overrides = {}) {
 /** O modal de definições em branco; a secção aberta sobrevive, e quem repõe passa-a de volta. */
 export function blankSettingsModal(overrides = {}) {
     return {
-        radarCredentials: null,
-        capabilityDeviceType: "",
         capabilityCatalog: [],
-        activeCapabilityCatalogSection: "",
         activeCapabilitySection: "",
-        capabilitySupplier: "",
-        capabilityQuery: "",
-        capabilityTemplateEnabledKeys: [],
-        capabilitySuppliersForDeviceType: [],
         capabilityModelTemplateKeys: [],
         capabilityEnabledCapabilities: [],
         capabilityRequestableCapabilities: [],
@@ -62,7 +55,6 @@ export function blankSettingsModal(overrides = {}) {
         modelFilters: [],
         modelCatalog: [],
         modelsSearchQuery: "",
-        modelDetailPristine: null,
         sectionLoaded: {
             models: false,
             modelFilters: false,
@@ -124,11 +116,6 @@ export const state = {
     deviceModal: blankDeviceModal(),
     // O `imei` diz de quem é a planta aberta: o modal sobrevive a uma troca de dispositivo.
     radarMap: { imei: "", layout: null },
-    modelModalSuppliers: [],
-    modelModal: {
-        capabilities: [],
-        templateSummary: "",
-    },
     protocolCatalogs: {},
     // As licenças, uma vez por sessão; o filtro da listagem também as lê.
     licenses: [],

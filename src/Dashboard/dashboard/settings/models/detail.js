@@ -32,6 +32,9 @@ import { els } from "../../dom.js";
 
 /** A ficha de um modelo: a identidade em cima e o editor de capacidades em baixo, cada um com o seu Guardar. */
 
+let pristineFields = null;
+let suppliers = [];
+
 async function openModelDetail(modelId) {
     const model = await apiGetModel(modelId);
     if (model.error) {
@@ -113,21 +116,21 @@ function renderModelDetailInfo(model) {
     );
 
     // A fotografia do estado limpo, para se saber se algo mudou sem comparar campo a campo.
-    state.settingsModal.modelDetailPristine = readModelDetailFields();
+    pristineFields = readModelDetailFields();
     syncModelDetailDirty();
     void renderModelDetailDeleteHint(model);
 }
 
 /** Os fornecedores com o seu id, para o `supplierId`; a ficha alcança-se sem passar pelo separador deles. */
 function modelDetailSuppliers() {
-    return state.modelModalSuppliers || [];
+    return suppliers;
 }
 
 async function ensureModelDetailSuppliers() {
-    if ((state.modelModalSuppliers || []).length > 0) return;
+    if (suppliers.length > 0) return;
     const response = await allPages(apiGetSuppliers);
     if (response.error) toast("error", apiError(response));
-    state.modelModalSuppliers = response.data || [];
+    suppliers = response.data || [];
 }
 
 function renderModelDetailSelect(select, options, selected) {
@@ -163,7 +166,7 @@ function handleModelDetailImageChange() {
 }
 
 function syncModelDetailDirty() {
-    const pristine = state.settingsModal.modelDetailPristine;
+    const pristine = pristineFields;
     if (!pristine || !els.modelDetailSaveBtn) return;
     const current = readModelDetailFields();
     const dirty = Object.keys(pristine).some((key) => pristine[key] !== current[key]);
@@ -174,7 +177,7 @@ function syncModelDetailDirty() {
 }
 
 function resetModelDetailFields() {
-    const pristine = state.settingsModal.modelDetailPristine;
+    const pristine = pristineFields;
     if (!pristine) return;
     clearInvalid(els.modelDetailFields);
     els.modelDetailCommercialName.value = pristine.commercialName;

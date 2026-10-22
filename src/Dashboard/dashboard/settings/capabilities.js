@@ -17,6 +17,21 @@ import { capabilityLabel, countLabel } from "../i18n.js";
 import { els } from "../dom.js";
 
 /** O catálogo de um tipo de dispositivo, só de leitura; as que o fornecedor não declara ficam esbatidas. */
+const blankView = () => ({
+    deviceType: "",
+    supplier: "",
+    query: "",
+    templateEnabledKeys: [],
+    suppliers: [],
+    activeSection: "",
+});
+
+let view = blankView();
+
+/** Abrir as definições recomeça o catálogo no tipo de omissão, sem fornecedor nem busca. */
+function resetCapabilityCatalogView() {
+    view = blankView();
+}
 
 /** O que entra no catálogo: as acções -- desligar, reiniciar, encontrar -- são o quarto termo. */
 export function showsInCatalog(entry) {
@@ -50,7 +65,7 @@ function initSettingsCapabilities() {
 /** O catálogo do tipo escolhido; a cache vive no `capability-catalog.js`. */
 async function loadCapabilityCatalog(deviceType) {
     const catalog = await ensureCapabilityCatalog(
-        deviceType || state.settingsModal.capabilityDeviceType || "watch",
+        deviceType || view.deviceType || "watch",
     );
     state.settingsModal.capabilityCatalog = catalog;
     return catalog;
@@ -72,20 +87,20 @@ function loadCapabilitySuppliersForDeviceType(deviceType) {
     const group = state.settingsModal.modelFilters.find(
         (g) => normalizeDeviceType(g.deviceType || "") === deviceType,
     );
-    state.settingsModal.capabilitySuppliersForDeviceType = group?.suppliers || [];
+    view.suppliers = group?.suppliers || [];
 }
 
 async function loadCapabilityTemplate(supplierId, deviceType) {
     if (!supplierId || !deviceType) {
-        state.settingsModal.capabilityTemplateEnabledKeys = [];
+        view.templateEnabledKeys = [];
         return;
     }
     const response = await ensureModelTemplate(supplierId, deviceType);
     if (response.error) {
-        state.settingsModal.capabilityTemplateEnabledKeys = [];
+        view.templateEnabledKeys = [];
         return;
     }
-    state.settingsModal.capabilityTemplateEnabledKeys = Array.isArray(
+    view.templateEnabledKeys = Array.isArray(
         response.enabledCapabilities,
     )
         ? response.enabledCapabilities.map(String)
@@ -93,22 +108,22 @@ async function loadCapabilityTemplate(supplierId, deviceType) {
 }
 
 async function loadSettingsCapabilitiesSection(
-    deviceType = state.settingsModal.capabilityDeviceType || "watch",
+    deviceType = view.deviceType || "watch",
 ) {
     const normalized = normalizeDeviceType(deviceType);
     const deviceTypeChanged =
-        state.settingsModal.capabilityDeviceType !== normalized;
-    state.settingsModal.capabilityDeviceType = normalized;
+        view.deviceType !== normalized;
+    view.deviceType = normalized;
     if (deviceTypeChanged) {
-        state.settingsModal.capabilitySupplier = "";
-        state.settingsModal.capabilityTemplateEnabledKeys = [];
+        view.supplier = "";
+        view.templateEnabledKeys = [];
     }
     await loadCapabilityCatalog(normalized);
     await ensureCapabilityModelFilters();
     loadCapabilitySuppliersForDeviceType(normalized);
-    if (state.settingsModal.capabilitySupplier) {
+    if (view.supplier) {
         await loadCapabilityTemplate(
-            state.settingsModal.capabilitySupplier,
+            view.supplier,
             normalized,
         );
     }
@@ -116,7 +131,7 @@ async function loadSettingsCapabilitiesSection(
     renderCapabilitiesCatalogSection();
     // A caixa segue o estado: o texto sobrevive ao fecho do modal, e o filtro não.
     if (els.capabilityCatalogSearch) {
-        els.capabilityCatalogSearch.value = state.settingsModal.capabilityQuery || "";
+        els.capabilityCatalogSearch.value = view.query || "";
     }
 }
 
@@ -137,28 +152,28 @@ function handleCapabilitySupplierClick(event) {
 }
 
 async function selectCapabilitySupplier(supplierId) {
-    state.settingsModal.capabilitySupplier = supplierId || "";
-    const deviceType = state.settingsModal.capabilityDeviceType || "watch";
+    view.supplier = supplierId || "";
+    const deviceType = view.deviceType || "watch";
     if (supplierId) {
         await loadCapabilityTemplate(supplierId, deviceType);
     } else {
-        state.settingsModal.capabilityTemplateEnabledKeys = [];
+        view.templateEnabledKeys = [];
     }
     renderCapabilitiesCatalogSection();
 }
 
 function renderCapabilitiesCatalogSection() {
     els.capabilityDeviceTypeButtons.innerHTML = deviceTypeTiles(deviceTypeOptions, {
-        selected: state.settingsModal.capabilityDeviceType || "watch",
+        selected: view.deviceType || "watch",
         action: "selectCapabilityDeviceType",
     });
 
-    const supplierId = state.settingsModal.capabilitySupplier;
-    const enabledKeys = state.settingsModal.capabilityTemplateEnabledKeys;
+    const supplierId = view.supplier;
+    const enabledKeys = view.templateEnabledKeys;
     const enabledSet = new Set(enabledKeys);
     const hasSupplierFilter = !!supplierId && enabledKeys.length > 0;
     const supplier = supplierId
-        ? state.settingsModal.capabilitySuppliersForDeviceType.find(
+        ? view.suppliers.find(
                 (candidate) => String(candidate.id) === String(supplierId),
             )
         : null;
@@ -279,7 +294,7 @@ function renderCapabilityCatalogSectionNav(sections) {
                     icon: CAPABILITY_SECTION_ICONS[section] || "fa-circle-info",
                 })),
                 "scrollCapabilityCatalogSection",
-                state.settingsModal.activeCapabilityCatalogSection,
+                view.activeSection,
             )
         : "";
 }
@@ -294,7 +309,7 @@ function scrollCapabilityCatalogSection(event) {
     const target = document.getElementById(chip.dataset.section || "");
     if (!target) return;
 
-    state.settingsModal.activeCapabilityCatalogSection = chip.dataset.section || "";
+    view.activeSection = chip.dataset.section || "";
     els.capabilityCatalogSectionNav
         .querySelectorAll(".capability-section-chip")
         .forEach((other) => other.classList.toggle("selected", other === chip));
@@ -308,20 +323,20 @@ function scrollCapabilityCatalogSection(event) {
 }
 
 function handleCapabilityCatalogSearch() {
-    state.settingsModal.capabilityQuery = els.capabilityCatalogSearch.value;
+    view.query = els.capabilityCatalogSearch.value;
     renderCapabilitiesCatalogSection();
 }
 
 function matchesCapabilityQuery(entry) {
-    const needle = String(state.settingsModal.capabilityQuery || "").trim().toLowerCase();
+    const needle = String(view.query || "").trim().toLowerCase();
     if (needle === "") return true;
     const label = capabilityLabel(entry.key).toLowerCase();
     return label.includes(needle) || String(entry.key).toLowerCase().includes(needle);
 }
 
 function renderCapabilitySupplierButtons() {
-    const suppliers = state.settingsModal.capabilitySuppliersForDeviceType;
-    const selected = state.settingsModal.capabilitySupplier;
+    const suppliers = view.suppliers;
+    const selected = view.supplier;
 
     if (!suppliers.length) {
         els.capabilitySupplierButtons.innerHTML =
@@ -344,15 +359,15 @@ function renderCapabilitySupplierButtons() {
 function updateCapabilitySupplierSummary() {
     if (!els.capabilitySupplierSummary) return;
 
-    const supplierId = state.settingsModal.capabilitySupplier;
-    const suppliers = state.settingsModal.capabilitySuppliersForDeviceType;
+    const supplierId = view.supplier;
+    const suppliers = view.suppliers;
     const supplier = supplierId
         ? suppliers.find((s) => String(s.id) === String(supplierId))
         : null;
 
     const total = state.settingsModal.capabilityCatalog.length;
     if (supplier) {
-        const supported = state.settingsModal.capabilityTemplateEnabledKeys.length;
+        const supported = view.templateEnabledKeys.length;
         els.capabilitySupplierSummary.textContent =
             `${supported} de ${total} capacidades suportadas por ${supplier.name}.`;
     } else {
@@ -363,6 +378,7 @@ function updateCapabilitySupplierSummary() {
 
 export {
     loadCapabilityCatalog,
+    resetCapabilityCatalogView,
     initSettingsCapabilities,
     loadSettingsCapabilitiesSection,
     handleCapabilityDeviceTypeClick,

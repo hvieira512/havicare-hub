@@ -4,7 +4,6 @@ import {
     getRadarCredentials as apiGetRadarCredentials,
     saveRadarCredentials as apiSaveRadarCredentials,
 } from "../api/index.js";
-import { state } from "../state.js";
 import { html, raw } from "../html.js";
 import { clearInvalid } from "../validation.js";
 import { errorCodeText } from "../api/errors.js";
@@ -13,16 +12,19 @@ import { errorCodeText } from "../api/errors.js";
 
 export const EDITOR_KIND = "radarCredentials";
 
+/** O que está guardado da licença aberta; os segredos não vêm. */
+let loaded = null;
+
 /** Traz o que está guardado antes de abrir a linha. Os segredos não vêm: a API não os dá. */
 export async function loadRadarCredentials(licenseRefId) {
     const result = await apiGetRadarCredentials(licenseRefId);
-    state.settingsModal.radarCredentials = result.error ? null : (result.data ?? null);
+    loaded = result.error ? null : (result.data ?? null);
 
     return result;
 }
 
 export function clearRadarCredentials() {
-    state.settingsModal.radarCredentials = null;
+    loaded = null;
 }
 
 /** Um segredo guardado diz que está lá; o campo em branco quer dizer «fica como está». */
@@ -69,7 +71,7 @@ export function radarCheckMessage({ radars, responding, error }) {
 
 /** A linha aberta; num telefone toma o cartão todo. */
 export function radarCredentialsEditorRow(license) {
-    const stored = state.settingsModal.radarCredentials;
+    const stored = loaded;
 
     return html`
         <div class="tree-row radar-credentials-row position-relative" data-editor="${EDITOR_KIND}" data-id="${license.id}">
