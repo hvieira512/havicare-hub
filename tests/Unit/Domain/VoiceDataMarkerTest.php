@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Tests\Unit\Api\Configuration;
+namespace Tests\Unit\Domain;
 
-use Hub\Api\Configuration\VoiceDataMarker;
+use Hub\Domain\VoiceDataMarker;
 use PHPUnit\Framework\TestCase;
 
 final class VoiceDataMarkerTest extends TestCase
