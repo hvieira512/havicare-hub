@@ -18,7 +18,7 @@ use Hub\Ingress\Tcp\Supplier\Zayata\PillDispenserTcpProtocol;
 final class TcpProtocolRegistry
 {
     /**
-     * @var array<string, TcpProtocolInterface>
+     * @var array<string, TcpProtocol>
      */
     private array $protocols = [];
 
@@ -44,18 +44,18 @@ final class TcpProtocolRegistry
         ));
     }
 
-    public function register(TcpProtocolInterface $protocol): void
+    public function register(TcpProtocol $protocol): void
     {
         $this->protocols[$protocol->protocol()] = $protocol;
     }
 
-    public function get(string $protocol): ?TcpProtocolInterface
+    public function get(string $protocol): ?TcpProtocol
     {
         return $this->protocols[$protocol] ?? null;
     }
 
     /**
-     * @return array<string, TcpProtocolInterface>
+     * @return array<string, TcpProtocol>
      */
     public function all(): array
     {

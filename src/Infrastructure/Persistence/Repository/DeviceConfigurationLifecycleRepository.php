@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Hub\Infrastructure\Persistence\Repository;
 
-use Hub\Api\Configuration\VoiceDataMarker;
+use Hub\Domain\VoiceDataMarker;
 use Hub\Infrastructure\Persistence\TimestampFormatter;
 use PDO;
 

@@ -22,15 +22,10 @@ final class DeviceDirectory
     ) {
     }
 
-    public function protocolForModel(string $supplier, string $model): string
-    {
-        return ProtocolRegistry::forModel($supplier, $model);
-    }
-
     public function normalizeDeviceId(string $imei, string $supplier, string $model, string $deviceType, string $deviceId): string
     {
         $deviceType = DeviceMetadata::normalizeDeviceType($deviceType);
-        if ($this->protocolForModel($supplier, $model) !== 'four-p-touch') {
+        if (ProtocolRegistry::forModel($supplier, $model) !== 'four-p-touch') {
             return $deviceType === 'watch' ? '' : $deviceId;
         }
 
@@ -58,18 +53,9 @@ final class DeviceDirectory
             $metadata,
             $supplier,
             $model,
-            (string)($device['protocol'] ?? $this->protocolForModel($supplier, $model)),
+            (string)($device['protocol'] ?? ProtocolRegistry::forModel($supplier, $model)),
             $this->modelForSupplierAndName($supplier, $model),
         );
-    }
-
-    /**
-     * @param array<string, mixed> $device
-     * @return array<string, mixed>|null
-     */
-    public function modelForDevice(array $device): ?array
-    {
-        return $this->modelForSupplierAndName((string)($device['supplier'] ?? ''), (string)($device['model'] ?? ''));
     }
 
     /** @return array<string, mixed>|null */

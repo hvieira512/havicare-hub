@@ -425,7 +425,7 @@ final class DeviceConfigurationLifecycleRepositoryTest extends MysqlDashboardTes
             'status' => 'failed', 'error' => 'response_timeout', 'protocol' => 'four-p-touch', 'nativeKey' => 'phonebook',
             'nativeType' => 'PHBX2', 'configKey' => 'phonebook', 'genericConfigKey' => 'phonebook', 'operationId' => 'op-phbx2',
             'changeId' => $staged['changeId'], 'desiredRevision' => $staged['revision'], 'retryable' => true, 'expectedReplyTypes' => ['PHBX2'],
-            'payload' => ['fields' => ['1', '004800750067006F', '+351938854803']], 'bytes' => '[3G*1234567890*0010*PHBX2,1]',
+            'payload' => ['fields' => ['1', '004800750067006F', '+351938854803']], 'bytes' => '[3G*1234567890*0007*PHBX2,1]',
         ]);
 
         $store->retryWaitingCommands(60, 3600, 3, static fn (): string => 'sent');

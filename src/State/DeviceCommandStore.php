@@ -6,12 +6,11 @@ namespace Hub\State;
 
 use Hub\Command\Configuration\Payload\FourPTouchPhonebookFallback;
 use Hub\Command\DeviceCommandCatalog;
+use Hub\Protocol\Adapter\FourPTouchAdapter;
 use Predis\ClientInterface;
 
 final class DeviceCommandStore
 {
-    private const PREFIX = 'hub:dashboard';
-
     /** Os estados de que um comando não sai. */
     private const FINISHED = ['acked', 'failed', 'dropped', 'superseded'];
 
@@ -63,7 +62,7 @@ final class DeviceCommandStore
         $lifecycleAlreadyPersisted = ($record['lifecycleStatusPersisted'] ?? false) === true;
         $announceSent = ($record['announceSent'] ?? false) === true;
         unset($record['lifecycleStatusPersisted'], $record['announceSent']);
-        $before = json_decode((string)$this->redis->hget($this->commandHashKey($imei), $id), true);
+        $before = json_decode((string)$this->redis->hget(RedisKeys::commandRecords($imei), $id), true);
         $record['id'] = $id;
         $record['updatedAt'] = gmdate('Y-m-d\\TH:i:s\\Z');
         $record = DeviceCommandRecord::makeJsonSafe($record);
@@ -71,20 +70,20 @@ final class DeviceCommandStore
         if ($encoded === false) {
             return;
         }
-        $this->redis->hset($this->commandHashKey($imei), $id, $encoded);
-        $this->redis->hset($this->commandIndexKey(), $id, $imei);
-        $this->redis->lrem($this->deviceListKey($imei, 'commands'), 0, $id);
-        $this->redis->lpush($this->deviceListKey($imei, 'commands'), [$id]);
+        $this->redis->hset(RedisKeys::commandRecords($imei), $id, $encoded);
+        $this->redis->hset(RedisKeys::commandIndex(), $id, $imei);
+        $this->redis->lrem(RedisKeys::list($imei, 'commands'), 0, $id);
+        $this->redis->lpush(RedisKeys::list($imei, 'commands'), [$id]);
         $evictedIds = array_map(
             'strval',
-            $this->redis->lrange($this->deviceListKey($imei, 'commands'), $this->limit, $this->limit)
+            $this->redis->lrange(RedisKeys::list($imei, 'commands'), $this->limit, $this->limit)
         );
         $this->redis->pipeline(function ($pipe) use ($imei, $evictedIds): void {
             foreach ($evictedIds as $evictedId) {
-                $pipe->hdel($this->commandHashKey($imei), $evictedId);
-                $pipe->hdel($this->commandIndexKey(), $evictedId);
+                $pipe->hdel(RedisKeys::commandRecords($imei), $evictedId);
+                $pipe->hdel(RedisKeys::commandIndex(), $evictedId);
             }
-            $pipe->ltrim($this->deviceListKey($imei, 'commands'), 0, $this->limit - 1);
+            $pipe->ltrim(RedisKeys::list($imei, 'commands'), 0, $this->limit - 1);
         });
         if (!$lifecycleAlreadyPersisted) {
             $this->projectConfigurationStatus($imei, $id, $record);
@@ -124,11 +123,7 @@ final class DeviceCommandStore
                     && $this->projection !== null
                     && !$this->projection->isCurrentOperation($operationId)
                 ) {
-                    $this->recordCommand($imei, (string)$command['id'], array_merge($command, [
-                        'status' => 'superseded',
-                        'error' => '',
-                        'lastError' => '',
-                    ]));
+                    $this->finish($imei, $command, 'superseded');
                     continue;
                 }
 
@@ -143,11 +138,7 @@ final class DeviceCommandStore
                 $nextRetryAt = strtotime((string)($command['nextRetryAt'] ?? '')) ?: 0;
 
                 if ($commandStatus === 'waiting' && $sentAt > 0 && ($now - $sentAt) >= $timeoutSeconds) {
-                    $this->recordCommand($imei, (string)$command['id'], array_merge($command, [
-                        'status' => 'failed',
-                        'error' => 'response_timeout',
-                        'lastError' => 'response_timeout',
-                    ]));
+                    $this->finish($imei, $command, 'failed', 'response_timeout');
                     continue;
                 }
 
@@ -156,11 +147,7 @@ final class DeviceCommandStore
                 }
 
                 if ($commandStatus === 'waiting' && $attempts >= $maxAttempts) {
-                    $this->recordCommand($imei, (string)$command['id'], array_merge($command, [
-                        'status' => 'failed',
-                        'error' => 'retry_exhausted',
-                        'lastError' => 'retry_exhausted',
-                    ]));
+                    $this->finish($imei, $command, 'failed', 'retry_exhausted');
                     continue;
                 }
 
@@ -186,18 +173,12 @@ final class DeviceCommandStore
                 }
 
                 if ($status === 'queued') {
-                    $updated['status'] = 'queued';
-                    $updated['error'] = '';
-                    $updated['lastError'] = '';
-                    $this->recordCommand($imei, (string)$command['id'], $updated);
+                    $this->finish($imei, $updated, 'queued');
                     continue;
                 }
 
                 // O `device.downlink.dropped` já saiu de quem não conseguiu pôr na fila.
-                $updated['status'] = 'dropped';
-                $updated['error'] = 'delivery_failed';
-                $updated['lastError'] = 'delivery_failed';
-                $this->recordCommand($imei, (string)$command['id'], $updated);
+                $this->finish($imei, $updated, 'dropped', 'delivery_failed');
             }
 
             $this->fallBackToLegacyPhonebook($imei, $dispatch);
@@ -219,10 +200,11 @@ final class DeviceCommandStore
             return;
         }
 
+        $adapter = new FourPTouchAdapter();
         $deviceId = '';
         foreach ($phonebook as $command) {
-            if (preg_match('/^\[3G\*(\d{10})\*/', DeviceCommandRecord::wireBytes($command), $matches) === 1) {
-                $deviceId = $matches[1];
+            $deviceId = (string)($adapter->decodeIncoming(DeviceCommandRecord::wireBytes($command))['ident'] ?? '');
+            if ($deviceId !== '') {
                 break;
             }
         }
@@ -232,11 +214,7 @@ final class DeviceCommandStore
 
         // As escritas indexadas saem primeiro: a lista antiga toma o lugar delas na mesma alteração.
         foreach ($phonebook as $command) {
-            $this->recordCommand($imei, (string)$command['id'], array_merge($command, [
-                'status' => 'superseded',
-                'error' => '',
-                'lastError' => '',
-            ]));
+            $this->finish($imei, $command, 'superseded');
         }
 
         $template = $phonebook[0];
@@ -378,11 +356,7 @@ final class DeviceCommandStore
                     // Nunca enviado quer dizer que o dispositivo não nos deve nada: só um
                     // comando que saiu de facto é que esgotou a espera.
                     $error = $status === 'waiting' ? 'response_timeout' : 'delivery_failed';
-                    $this->recordCommand($imei, (string)$command['id'], array_merge($command, [
-                        'status' => 'failed',
-                        'error' => $error,
-                        'lastError' => $error,
-                    ]));
+                    $this->finish($imei, $command, 'failed', $error);
                 }
             }
         }
@@ -409,13 +383,13 @@ final class DeviceCommandStore
     /** @return list<array<string, mixed>> */
     public function commands(string $imei): array
     {
-        $ids = $this->redis->lrange($this->deviceListKey($imei, 'commands'), 0, $this->limit - 1);
+        $ids = $this->redis->lrange(RedisKeys::list($imei, 'commands'), 0, $this->limit - 1);
         if ($ids === []) {
             return [];
         }
 
         // Uma ida e volta para a página toda em vez de uma por id: o stream relê isto a cada push.
-        $raws = $this->redis->hmget($this->commandHashKey($imei), array_map(strval(...), $ids));
+        $raws = $this->redis->hmget(RedisKeys::commandRecords($imei), array_map(strval(...), $ids));
 
         $commands = [];
         foreach ($raws as $raw) {
@@ -468,12 +442,9 @@ final class DeviceCommandStore
             'replyRef' => $ref,
         ];
         if ($accepted === false) {
-            $this->recordCommand($imei, $id, array_merge($command, $replyFields, [
-                'status' => 'failed',
+            $this->finish($imei, array_merge($command, $replyFields, [
                 'failedAt' => gmdate('Y-m-d\\TH:i:s\\Z'),
-                'error' => $error !== '' ? $error : 'device_rejected',
-                'lastError' => $error !== '' ? $error : 'device_rejected',
-            ]));
+            ]), 'failed', $error !== '' ? $error : 'device_rejected');
             return;
         }
 
@@ -483,17 +454,31 @@ final class DeviceCommandStore
         ]));
     }
 
+    /**
+     * O comando passa ao estado dado, com o erro no `error` e no `lastError`.
+     *
+     * @param array<string, mixed> $command
+     */
+    private function finish(string $imei, array $command, string $status, string $error = ''): void
+    {
+        $this->recordCommand($imei, (string)$command['id'], array_merge($command, [
+            'status' => $status,
+            'error' => $error,
+            'lastError' => $error,
+        ]));
+    }
+
     /** @return array<string, mixed>|null */
     public function findCommand(string $id): ?array
     {
-        $imei = (string)($this->redis->hget($this->commandIndexKey(), $id) ?? '');
+        $imei = (string)($this->redis->hget(RedisKeys::commandIndex(), $id) ?? '');
         if ($imei === '') {
             return null;
         }
 
-        $raw = $this->redis->hget($this->commandHashKey($imei), $id);
+        $raw = $this->redis->hget(RedisKeys::commandRecords($imei), $id);
         if (!is_string($raw)) {
-            $this->redis->hdel($this->commandIndexKey(), [$id]);
+            $this->redis->hdel(RedisKeys::commandIndex(), [$id]);
             return null;
         }
 
@@ -506,25 +491,5 @@ final class DeviceCommandStore
         }
 
         return null;
-    }
-
-    private function key(string $suffix): string
-    {
-        return self::PREFIX . ':' . $suffix;
-    }
-
-    private function deviceListKey(string $imei, string $list): string
-    {
-        return $this->key("device:{$imei}:{$list}");
-    }
-
-    private function commandHashKey(string $imei): string
-    {
-        return $this->key("device:{$imei}:command-records");
-    }
-
-    private function commandIndexKey(): string
-    {
-        return $this->key('command-index');
     }
 }

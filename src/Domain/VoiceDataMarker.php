@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Hub\Api\Configuration;
+namespace Hub\Domain;
 
 /**
  * Troca o áudio em base64 do `voiceData` pela marca `voiceDataAvailable`/`voiceDataBytes`. O tecto

@@ -7,7 +7,7 @@ namespace Tests\Unit\Domain\Capability;
 use Hub\Command\DeviceConfigurationCatalog;
 use Hub\Domain\Capability\CapabilityCatalog;
 use Hub\Domain\Capability\CapabilityRegistry;
-use Hub\Domain\Capability\HubAppliedCapability;
+use Hub\Domain\Capability\DiaperSensitivityCapability;
 use Hub\Domain\ProtocolRegistry;
 use PHPUnit\Framework\TestCase;
 
@@ -112,7 +112,7 @@ final class DeclaredProtocolsAreDispatchedTest extends TestCase
             $key = (string)$definition['key'];
             $contract = $registry->get($key);
             // As aplicadas pelo hub não têm comando nativo nenhum, por desenho.
-            if ($contract !== null && !$contract instanceof HubAppliedCapability) {
+            if ($contract !== null && !$contract instanceof DiaperSensitivityCapability) {
                 $contracts[$key] = $contract;
             }
         }

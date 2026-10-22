@@ -270,11 +270,14 @@ final class LocationNormalizer
 
     private static function normalizeMac(mixed $value): ?string
     {
-        $hex = strtolower((string)preg_replace('/[^0-9a-f]/i', '', trim((string)$value)));
-        if (strlen($hex) !== 12) {
-            return FeatureNormalizer::stringOrNull($value);
-        }
+        return self::mac($value) ?? FeatureNormalizer::stringOrNull($value);
+    }
 
-        return implode(':', str_split($hex, 2));
+    /** Doze dígitos hexadecimais, em qualquer separação, na forma `aa:bb:cc:dd:ee:ff`; o resto é null. */
+    public static function mac(mixed $value): ?string
+    {
+        $hex = strtolower((string)preg_replace('/[^0-9a-f]/i', '', trim((string)$value)));
+
+        return strlen($hex) === 12 ? implode(':', str_split($hex, 2)) : null;
     }
 }

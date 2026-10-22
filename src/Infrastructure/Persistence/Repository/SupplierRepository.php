@@ -4,11 +4,12 @@ declare(strict_types=1);
 
 namespace Hub\Infrastructure\Persistence\Repository;
 
-use Hub\Infrastructure\Persistence\TimestampFormatter;
 use PDO;
 
 final class SupplierRepository
 {
+    use FetchesRows;
+
     public function __construct(private PDO $pdo)
     {
     }
@@ -16,29 +17,19 @@ final class SupplierRepository
     /** @return list<array<string, mixed>> */
     public function all(): array
     {
-        return TimestampFormatter::normalizeRows($this->pdo
-            ->query("SELECT id, name, created_at, updated_at, (SELECT COUNT(*) FROM models WHERE supplier_id = suppliers.id) AS model_count FROM suppliers ORDER BY name")
-            ->fetchAll());
+        return $this->fetchRows("SELECT id, name, created_at, updated_at, (SELECT COUNT(*) FROM models WHERE supplier_id = suppliers.id) AS model_count FROM suppliers ORDER BY name");
     }
 
     /** @return array<string, mixed>|null */
     public function findByName(string $name): ?array
     {
-        $stmt = $this->pdo->prepare('SELECT * FROM suppliers WHERE name = ?');
-        $stmt->execute([$name]);
-
-        $row = $stmt->fetch();
-        return $row === false ? null : TimestampFormatter::normalizeRow($row);
+        return $this->fetchOne('SELECT * FROM suppliers WHERE name = ?', [$name]);
     }
 
     /** @return array<string, mixed>|null */
     public function findById(int $id): ?array
     {
-        $stmt = $this->pdo->prepare('SELECT * FROM suppliers WHERE id = ?');
-        $stmt->execute([$id]);
-
-        $row = $stmt->fetch();
-        return $row === false ? null : TimestampFormatter::normalizeRow($row);
+        return $this->fetchOne('SELECT * FROM suppliers WHERE id = ?', [$id]);
     }
 
     // Quem der rota a isto tem de limpar o memo do `ModelRepository`: o `all()` junta `s.name`.

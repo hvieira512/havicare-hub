@@ -5,11 +5,12 @@ declare(strict_types=1);
 namespace Hub\Infrastructure\Persistence\Repository;
 
 use Hub\Domain\DeviceMetadata;
-use Hub\Infrastructure\Persistence\TimestampFormatter;
 use PDO;
 
 final class WhitelistRepository
 {
+    use FetchesRows;
+
     public function __construct(private PDO $pdo)
     {
     }
@@ -25,11 +26,7 @@ final class WhitelistRepository
     /** @return array<string, mixed>|null */
     public function get(string $imei): ?array
     {
-        $stmt = $this->pdo->prepare('SELECT * FROM whitelist WHERE imei = ?');
-        $stmt->execute([$imei]);
-
-        $row = $stmt->fetch();
-        return $row === false ? null : TimestampFormatter::normalizeRow($row);
+        return $this->fetchOne('SELECT * FROM whitelist WHERE imei = ?', [$imei]);
     }
 
     /** @return array<string, mixed>|null */
@@ -41,13 +38,7 @@ final class WhitelistRepository
             $sql .= ' AND device_type = ?';
             $params[] = DeviceMetadata::normalizeDeviceType($deviceType);
         }
-        $sql .= ' ORDER BY imei LIMIT 1';
-
-        $stmt = $this->pdo->prepare($sql);
-        $stmt->execute($params);
-        $row = $stmt->fetch();
-
-        return $row === false ? null : TimestampFormatter::normalizeRow($row);
+        return $this->fetchOne($sql . ' ORDER BY imei LIMIT 1', $params);
     }
 
     /** @return array<string, mixed>|null */
@@ -162,22 +153,14 @@ final class WhitelistRepository
         $deviceType = DeviceMetadata::normalizeDeviceType($deviceType);
         $licenseId = self::storedLicenseId(DeviceMetadata::normalizeLicenseId($licenseId));
         $company = self::storedCompany(DeviceMetadata::normalizeCompany($company));
-        $existing = $this->get($imei);
-        if ($existing === null) {
-            $stmt = $this->pdo->prepare('
-                INSERT INTO whitelist (imei, supplier, model, device_type, license_id, sim_number, device_id, company)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-            ');
-            $stmt->execute([$imei, $supplier, $model, $deviceType, $licenseId, $simNumber, $deviceId, $company]);
-            return;
-        }
-
         $stmt = $this->pdo->prepare('
-            UPDATE whitelist
-            SET supplier = ?, model = ?, device_type = ?, license_id = ?, sim_number = ?, device_id = ?, company = ?
-            WHERE imei = ?
+            INSERT INTO whitelist (imei, supplier, model, device_type, license_id, sim_number, device_id, company)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            ON DUPLICATE KEY UPDATE supplier = VALUES(supplier), model = VALUES(model), device_type = VALUES(device_type),
+                license_id = VALUES(license_id), sim_number = VALUES(sim_number), device_id = VALUES(device_id),
+                company = VALUES(company)
         ');
-        $stmt->execute([$supplier, $model, $deviceType, $licenseId, $simNumber, $deviceId, $company, $imei]);
+        $stmt->execute([$imei, $supplier, $model, $deviceType, $licenseId, $simNumber, $deviceId, $company]);
     }
 
     /** A mesma linha com outra chave, para o `ON UPDATE CASCADE` levar o que lhe aponta. */
@@ -312,17 +295,13 @@ final class WhitelistRepository
         $deviceTypes = $this->filterValues($filters, 'deviceType');
         if ($deviceTypes !== []) {
             $clauses[] = 'w.device_type IN (' . $this->placeholders(count($deviceTypes)) . ')';
-            foreach ($deviceTypes as $deviceType) {
-                $params[] = DeviceMetadata::normalizeDeviceType($deviceType);
-            }
+            array_push($params, ...array_map(DeviceMetadata::normalizeDeviceType(...), $deviceTypes));
         }
 
         $suppliers = $this->filterValues($filters, 'supplier');
         if ($suppliers !== []) {
             $clauses[] = 'w.supplier IN (' . $this->placeholders(count($suppliers)) . ')';
-            foreach ($suppliers as $supplier) {
-                $params[] = $supplier;
-            }
+            array_push($params, ...$suppliers);
         }
 
         // O modelo compara por igualdade: as opções vêm da lista de modelos, e um `LIKE` com "L08"
@@ -330,9 +309,7 @@ final class WhitelistRepository
         $models = $this->filterValues($filters, 'model');
         if ($models !== []) {
             $clauses[] = 'w.model IN (' . $this->placeholders(count($models)) . ')';
-            foreach ($models as $model) {
-                $params[] = $model;
-            }
+            array_push($params, ...$models);
         }
 
         // A licença sozinha, da forma antiga do endpoint: sem empresa não há par para formar,
@@ -376,9 +353,7 @@ final class WhitelistRepository
                 $clauses[] = '1 = 0';
             } else {
                 $clauses[] = 'w.imei IN (' . $this->placeholders(count($imeis)) . ')';
-                foreach ($imeis as $imei) {
-                    $params[] = $imei;
-                }
+                array_push($params, ...$imeis);
             }
         }
 
@@ -386,9 +361,7 @@ final class WhitelistRepository
             $imeis = array_values(array_filter(array_map('strval', $filters['imeiNotIn'])));
             if ($imeis !== []) {
                 $clauses[] = 'w.imei NOT IN (' . $this->placeholders(count($imeis)) . ')';
-                foreach ($imeis as $imei) {
-                    $params[] = $imei;
-                }
+                array_push($params, ...$imeis);
             }
         }
 

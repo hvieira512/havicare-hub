@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Hub\Domain\Capability\AlarmClock;
 
-final class Wonlex implements AlarmClockHandler
+use Hub\Domain\Capability\CapabilityProtocolHandler;
+
+final class Wonlex implements CapabilityProtocolHandler
 {
     public function nativeKey(): string
     {
@@ -23,6 +25,10 @@ final class Wonlex implements AlarmClockHandler
         return ['alarmClock' => ['items' => $items]];
     }
 
+    /**
+     * @param array<array-key, mixed> $desired
+     * @return list<array<string, mixed>>
+     */
     public function fromNative(array $desired): array
     {
         // O `?? $desired` no fim: o apresentador chama isto duas vezes na mesma leitura, e à

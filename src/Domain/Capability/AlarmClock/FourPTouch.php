@@ -5,12 +5,13 @@ declare(strict_types=1);
 namespace Hub\Domain\Capability\AlarmClock;
 
 use Hub\Command\Configuration\Payload\ConfigurationPayloadBuilder;
+use Hub\Domain\Capability\CapabilityProtocolHandler;
 
 /**
  * Handler do `alarm_clock` do 4P Touch, na chave nativa `alarmClock`:
  * `{ alarmClock: { alarms: [{time, enabled, mode, custom}] } }`.
  */
-final class FourPTouch implements AlarmClockHandler
+final class FourPTouch implements CapabilityProtocolHandler
 {
     use AlarmClockHelpers;
 
@@ -29,6 +30,10 @@ final class FourPTouch implements AlarmClockHandler
         return ['alarmClock' => ['alarms' => $alarms]];
     }
 
+    /**
+     * @param array<array-key, mixed> $desired
+     * @return list<array<string, mixed>>
+     */
     public function fromNative(array $desired): array
     {
         return self::publicItemList($desired, ['alarms', 'items'], self::publicItem(...));

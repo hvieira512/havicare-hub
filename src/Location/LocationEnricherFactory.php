@@ -11,7 +11,8 @@ use React\Http\Browser;
 
 /**
  * Monta a resolução de localização: a BeaconDB atrás de disjuntor e limitador de concorrência,
- * com uma cache em camadas à frente e, opcionalmente, o mapa de rádio privado.
+ * com a cache no Redis à frente e, opcionalmente, o mapa de rádio privado. Os limites são os de
+ * omissão de cada peça; só o endereço e o User-Agent vêm da configuração.
  */
 final class LocationEnricherFactory
 {
@@ -36,29 +37,13 @@ final class LocationEnricherFactory
                     $browser ?? new Browser(),
                     (string)$config['endpoint'],
                     (string)$config['user_agent'],
-                    (float)$config['timeout_seconds'],
                 ),
                 new RedisProviderCircuitStateStore($redis),
-                (int)$config['circuit_failure_threshold'],
-                (int)$config['circuit_open_seconds'],
-                (int)$config['rate_limit_open_seconds'],
             ),
-            (int)$config['max_concurrency'],
-            (int)$config['max_queue'],
         );
 
         $requestBuilder = new BeaconDbRequestBuilder();
-        $enricher = new BeaconDbTelemetryEnricher(
-            $requestBuilder,
-            $provider,
-            (float)$config['max_accuracy_meters'],
-            (int)$config['cache_ttl_seconds'],
-            (int)$config['failure_cache_ttl_seconds'],
-            new TieredLocationResolutionCache(
-                new ArrayLocationResolutionCache(),
-                new RedisLocationResolutionCache($redis),
-            ),
-        );
+        $enricher = new BeaconDbTelemetryEnricher($requestBuilder, $provider, new RedisLocationResolutionCache($redis));
 
         if (!(bool)($config['radio_map_enabled'] ?? false)) {
             return $enricher;

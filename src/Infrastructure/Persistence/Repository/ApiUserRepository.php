@@ -4,11 +4,12 @@ declare(strict_types=1);
 
 namespace Hub\Infrastructure\Persistence\Repository;
 
-use Hub\Infrastructure\Persistence\TimestampFormatter;
 use PDO;
 
 final class ApiUserRepository
 {
+    use FetchesRows;
+
     public function __construct(private PDO $pdo)
     {
     }
@@ -16,29 +17,19 @@ final class ApiUserRepository
     /** @return list<array<string, mixed>> */
     public function all(): array
     {
-        return TimestampFormatter::normalizeRows($this->pdo
-            ->query($this->selectSql() . ' ORDER BY u.username')
-            ->fetchAll());
+        return $this->fetchRows($this->selectSql() . ' ORDER BY u.username');
     }
 
     /** @return array<string, mixed>|null */
     public function findById(int $id): ?array
     {
-        $stmt = $this->pdo->prepare($this->selectSql(true) . ' WHERE u.id = ?');
-        $stmt->execute([$id]);
-
-        $row = $stmt->fetch();
-        return $row === false ? null : TimestampFormatter::normalizeRow($row);
+        return $this->fetchOne($this->selectSql(true) . ' WHERE u.id = ?', [$id]);
     }
 
     /** @return array<string, mixed>|null */
     public function findByUsername(string $username): ?array
     {
-        $stmt = $this->pdo->prepare($this->selectSql(true) . ' WHERE lower(u.username) = lower(?)');
-        $stmt->execute([$username]);
-
-        $row = $stmt->fetch();
-        return $row === false ? null : TimestampFormatter::normalizeRow($row);
+        return $this->fetchOne($this->selectSql(true) . ' WHERE lower(u.username) = lower(?)', [$username]);
     }
 
     /** A licença entra só pelo `licenseRefId`, que desambigua duas empresas com o mesmo número. */

@@ -321,7 +321,7 @@ integram a primeira contagem sem pertencerem ao hub.
 | `database/schema.sql` | A linha de base — as 20 tabelas |
 | `database/seed.sql` · `bin/seed-inventory.php` | O inventário de exemplo |
 | `src/Infrastructure/Persistence/DatabaseMigrator.php` | Esquema, migrações, catálogo |
-| `src/Api/Configuration/VoiceDataMarker.php` | A marca do áudio, no histórico e na resposta |
+| `src/Domain/VoiceDataMarker.php` | A marca do áudio, no histórico e na resposta |
 | `src/Infrastructure/Persistence/DatabaseSchemaGuard.php` | Recusa arrancar atrasado |
 | `src/Infrastructure/Persistence/ReferenceCatalogSeeder.php` | Fornecedores, modelos e capacidades |
 | `src/Api/Repository/` | Um repositório por assunto |

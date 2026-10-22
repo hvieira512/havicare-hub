@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace Tests\Unit\Location;
+namespace Tests\Integration\Location;
 
-use Tests\Support\Doubles\ArrayPrivateRadioMapStore;
 use Hub\Location\BeaconDbRequestBuilder;
 use Hub\Location\PrivateRadioMap;
-use PHPUnit\Framework\TestCase;
+use Hub\Location\PdoPrivateRadioMapStore;
+use Tests\Support\MysqlDashboardTestCase;
 
-final class PrivateRadioMapTest extends TestCase
+final class PrivateRadioMapTest extends MysqlDashboardTestCase
 {
     public function testLearnsWifiFromTrustedGpsAndResolvesLaterNonGpsEvidence(): void
     {
@@ -90,7 +90,7 @@ final class PrivateRadioMapTest extends TestCase
     private function map(): PrivateRadioMap
     {
         return new PrivateRadioMap(
-            new ArrayPrivateRadioMapStore(),
+            new PdoPrivateRadioMapStore($this->createDashboardDatabase()->pdo()),
             new BeaconDbRequestBuilder(),
             'test-private-hmac-key',
         );

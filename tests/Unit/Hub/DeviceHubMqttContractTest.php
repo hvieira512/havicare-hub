@@ -15,6 +15,8 @@ use Hub\Registry\Whitelist;
 use Hub\State\DeviceStoreContract;
 use Hub\Location\BeaconDbRequestBuilder;
 use Hub\Location\BeaconDbTelemetryEnricher;
+use Hub\Location\RedisLocationResolutionCache;
+use Tests\Support\Doubles\CallbackLocationProvider;
 use PHPUnit\Framework\TestCase;
 use Tests\Support\Doubles\InMemoryRedisClient;
 use Tests\Support\Doubles\IngressFixtures;
@@ -784,13 +786,14 @@ final class DeviceHubMqttContractTest extends TestCase
         $mqtt = new ContractRecordingHubMqttBridge();
         $enricher = new BeaconDbTelemetryEnricher(
             new BeaconDbRequestBuilder(),
-            static fn () => resolve([
+            new CallbackLocationProvider(static fn () => resolve([
                 'httpStatus' => 200,
                 'body' => [
                     'location' => ['lat' => 41.69176, 'lng' => -8.831533],
                     'accuracy' => 300,
                 ],
-            ]),
+            ])),
+            new RedisLocationResolutionCache(new InMemoryRedisClient()),
         );
         $hub = new DeviceHubServer(
             $this->whitelist,

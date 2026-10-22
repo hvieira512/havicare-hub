@@ -8,7 +8,7 @@ use Hub\Domain\DiaperSensitivity;
 
 /**
  * O que se configura num medidor de fraldas da MONIT: só a sensibilidade, que o hub aplica
- * (`HubAppliedCapability`) porque o sensor só transmite — daí o `command` vazio.
+ * porque o sensor só transmite — daí o `command` vazio.
  */
 final class MonitConfigurationDefinitions
 {

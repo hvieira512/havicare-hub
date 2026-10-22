@@ -14,7 +14,7 @@ final class PrivateRadioMap
     private const CLUSTER_RADIUS_METERS = 150.0;
 
     public function __construct(
-        private readonly PrivateRadioMapStoreContract $store,
+        private readonly PdoPrivateRadioMapStore $store,
         private readonly BeaconDbRequestBuilder $requestBuilder,
         private readonly string $hashKey,
         private readonly float $maximumResolutionAccuracyMeters = 500.0,
@@ -111,7 +111,7 @@ final class PrivateRadioMap
     /** @param list<string> $bssids */
     public function seed(array $bssids, float $lat, float $lon, float $accuracyMeters): int
     {
-        if (!$this->validCoordinates($lat, $lon)) {
+        if (!LocationResponseValidator::validCoordinates($lat, $lon)) {
             throw new \InvalidArgumentException('Invalid seed coordinates');
         }
         if ($accuracyMeters <= 0.0 || $accuracyMeters > $this->maximumResolutionAccuracyMeters) {
@@ -180,7 +180,7 @@ final class PrivateRadioMap
             $entries,
             fn (mixed $entry): bool => is_array($entry)
                 && !($entry['conflicted'] ?? false)
-                && $this->validCoordinates((float)($entry['lat'] ?? 0.0), (float)($entry['lon'] ?? 0.0))
+                && LocationResponseValidator::validCoordinates((float)($entry['lat'] ?? 0.0), (float)($entry['lon'] ?? 0.0))
                 && (float)($entry['accuracyMeters'] ?? 0.0) > 0.0,
         ));
         if (count($candidates) < self::MINIMUM_MATCHES) {
@@ -290,7 +290,7 @@ final class PrivateRadioMap
         }
         $lat = (float)$data['lat'];
         $lon = (float)$data['lon'];
-        if (!$this->validCoordinates($lat, $lon)) {
+        if (!LocationResponseValidator::validCoordinates($lat, $lon)) {
             return null;
         }
 
@@ -309,13 +309,6 @@ final class PrivateRadioMap
         }
 
         return ['lat' => $lat, 'lon' => $lon, 'accuracyMeters' => $accuracy];
-    }
-
-    private function validCoordinates(float $lat, float $lon): bool
-    {
-        return $lat >= -90.0 && $lat <= 90.0
-            && $lon >= -180.0 && $lon <= 180.0
-            && !($lat === 0.0 && $lon === 0.0);
     }
 
     private function distanceMeters(float $lat1, float $lon1, float $lat2, float $lon2): float

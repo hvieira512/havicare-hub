@@ -7,7 +7,6 @@ namespace Hub\Api\Services;
 use Hub\Api\Http\ApiError;
 use Hub\Api\Http\CollectionQuery;
 use Hub\Api\Http\DevicePresentation;
-use Hub\Api\Configuration\VoiceDataMarker;
 use Hub\Api\Http\ModelImageUrl;
 use Hub\Command\DeviceConfigurationCatalog;
 use Hub\Api\Auth\ApiAuthContext;
@@ -20,6 +19,8 @@ use Hub\State\DeviceStoreContract;
 use Hub\State\DeviceUpdateNotifier;
 use Hub\Domain\DeviceMetadata;
 use Hub\Domain\DeviceTypeCatalog;
+use Hub\Domain\ProtocolRegistry;
+use Hub\Domain\VoiceDataMarker;
 use Hub\Device\DeviceHubServer;
 use Hub\Log\Logger;
 use Hub\Registry\Whitelist;
@@ -179,8 +180,8 @@ class DeviceService
         if (!$this->directory->canAccessDevice($imei, $auth, $device)) {
             return ApiError::deviceNotFound()->toArray();
         }
-        $protocol = (string)($device['protocol'] ?? $this->directory->protocolForModel((string)($device['supplier'] ?? ''), (string)($device['model'] ?? '')));
-        $modelRow = $this->directory->modelForDevice($device);
+        $protocol = (string)($device['protocol'] ?? ProtocolRegistry::forModel((string)($device['supplier'] ?? ''), (string)($device['model'] ?? '')));
+        $modelRow = $this->directory->modelForSupplierAndName((string)($device['supplier'] ?? ''), (string)($device['model'] ?? ''));
         $configRows = $this->db->deviceConfigurations->allForImei($imei);
         $model = null;
         if ($modelRow !== null) {

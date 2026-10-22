@@ -6,7 +6,7 @@ namespace Hub\Location;
 
 use Predis\ClientInterface;
 
-final class RedisLocationResolutionCache implements LocationResolutionCacheContract
+final class RedisLocationResolutionCache
 {
     public function __construct(
         private readonly ClientInterface $redis,
@@ -14,6 +14,7 @@ final class RedisLocationResolutionCache implements LocationResolutionCacheContr
     ) {
     }
 
+    /** @return null|array{status: 'resolved'|'unresolved', coordinates?: array<string, float|bool>} */
     public function get(string $evidenceKey): ?array
     {
         $raw = $this->redis->get($this->key($evidenceKey));
@@ -33,6 +34,7 @@ final class RedisLocationResolutionCache implements LocationResolutionCacheContr
         return $entry;
     }
 
+    /** @param array<string, float|bool> $coordinates */
     public function putResolved(string $evidenceKey, array $coordinates, int $ttlSeconds): void
     {
         $this->put($evidenceKey, ['status' => 'resolved', 'coordinates' => $coordinates], $ttlSeconds);

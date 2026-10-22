@@ -8,7 +8,7 @@ use Hub\Infrastructure\Persistence\Repository\ApiDataAccess;
 use Hub\State\DeviceStore;
 use Hub\Device\CommercialModelResolver;
 use Hub\Device\DeviceHubServer;
-use Hub\Device\Firmware\RedisFirmwareUpgradeStore;
+use Hub\Device\Firmware\FirmwareUpgradeStore;
 use Hub\Device\HubMqttBridge;
 use Hub\Device\LifecycleEvents;
 use Hub\Device\PendingDownlinkQueue;
@@ -145,7 +145,7 @@ final class HubServices
             downlinkQueueTtlSeconds: (int)$config['hub']['downlink_queue_ttl_seconds'],
             locationTelemetryEnricher: $locationEnricher,
             denylist: $denylist,
-            firmwareUpgrades: new RedisFirmwareUpgradeStore($redis),
+            firmwareUpgrades: new FirmwareUpgradeStore($redis),
             effectiveConfiguration: static fn (string $imei): array => $dataAccess->configurationLifecycle
                 ->effectivePayloads($imei, MedicationRunout::CONFIGURATION_KEYS),
             // Na volta seguinte do ciclo: quem pôs na fila ainda vai gravar o registo do comando.

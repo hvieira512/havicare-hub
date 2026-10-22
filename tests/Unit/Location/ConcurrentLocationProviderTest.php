@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Location;
 
-use Hub\Location\CallbackLocationProvider;
+use Tests\Support\Doubles\CallbackLocationProvider;
 use Hub\Location\ConcurrentLocationProvider;
 use PHPUnit\Framework\TestCase;
 use React\Promise\Deferred;

@@ -102,7 +102,7 @@ final class RadarLayoutSyncTest extends MysqlDashboardTestCase
 
         $layout = $this->layouts->findByImei('594B3CCBA56B');
         self::assertNotNull($layout);
-        self::assertSame('2026-09-01 10:00:00', $layout['fetchedAt']);
+        self::assertSame('2026-09-01T10:00:00Z', $layout['fetchedAt']);
     }
 
     /** Um radar que rebenta não leva os seguintes atrás: a licença é percorrida até ao fim. */

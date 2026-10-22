@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Domain\Alarms;
 
-use Hub\Domain\Capability\AlarmClock\AlarmClockHandler;
+use Hub\Domain\Capability\CapabilityProtocolHandler;
 use Hub\Domain\Capability\AlarmClock\FourPTouch;
 use Hub\Domain\Capability\AlarmClock\Vivistar;
 use Hub\Domain\Capability\AlarmClock\Wonlex;
@@ -15,7 +15,7 @@ use PHPUnit\Framework\TestCase;
 final class AlarmClockHandlerIdempotenceTest extends TestCase
 {
     /**
-     * @return array<string, array{0: AlarmClockHandler, 1: array<string, mixed>}>
+     * @return array<string, array{0: CapabilityProtocolHandler, 1: array<string, mixed>}>
      */
     public static function handlers(): array
     {
@@ -39,7 +39,7 @@ final class AlarmClockHandlerIdempotenceTest extends TestCase
      */
     #[DataProvider('handlers')]
     public function testDecodingAnAlreadyDecodedValueChangesNothing(
-        AlarmClockHandler $handler,
+        CapabilityProtocolHandler $handler,
         array $native
     ): void {
         $once = $handler->fromNative($native);
@@ -56,7 +56,7 @@ final class AlarmClockHandlerIdempotenceTest extends TestCase
      */
     #[DataProvider('handlers')]
     public function testTheDefaultPayloadSurvivesTheSameRoundTrip(
-        AlarmClockHandler $handler,
+        CapabilityProtocolHandler $handler,
         array $native
     ): void {
         $default = $handler->defaultValue();

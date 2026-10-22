@@ -57,7 +57,7 @@ class DeviceAuthorizer
         ];
     }
 
-    private function commercialNameFor(string $supplier, string $model): string
+    public function commercialNameFor(string $supplier, string $model): string
     {
         return $this->commercialModelResolver?->resolveCommercialName($supplier, $model) ?? '';
     }

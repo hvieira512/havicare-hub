@@ -42,6 +42,20 @@ final class PendingDownlinkDedupeTest extends TestCase
         self::assertSame($operations, array_map(static fn ($downlink): string => $downlink->bytes, $queue->pendingFor(self::DEVICE)));
     }
 
+    /** Entregar um comando tira só esse da fila, e a de outro aparelho fica como estava. */
+    public function testRemovingADownlinkLeavesTheOthers(): void
+    {
+        $queue = new RedisPendingDownlinkQueue(new InMemoryRedisClient());
+        $first = $queue->enqueue(self::DEVICE, 'first', null, 300);
+        $queue->enqueue(self::DEVICE, 'second', null, 300);
+        $queue->enqueue('other-device', 'third', null, 300);
+
+        $queue->remove($first);
+
+        self::assertSame(['second'], array_map(static fn ($downlink): string => $downlink->bytes, $queue->pendingFor(self::DEVICE)));
+        self::assertCount(1, $queue->pendingFor('other-device'));
+    }
+
     /** O mesmo comando com o mesmo valor continua a ser um só: é para isso que a fila junta. */
     public function testTheSameCommandWithTheSameValueStaysOne(): void
     {

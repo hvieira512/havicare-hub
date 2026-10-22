@@ -6,7 +6,7 @@ namespace Hub\Location;
 
 use Predis\ClientInterface;
 
-final class RedisProviderCircuitStateStore implements ProviderCircuitStateStoreContract
+final class RedisProviderCircuitStateStore
 {
     public function __construct(
         private readonly ClientInterface $redis,
@@ -14,6 +14,7 @@ final class RedisProviderCircuitStateStore implements ProviderCircuitStateStoreC
     ) {
     }
 
+    /** @return array{consecutiveFailures: int, openUntil: int} */
     public function get(string $provider): array
     {
         $raw = $this->redis->get($this->key($provider));
@@ -28,6 +29,7 @@ final class RedisProviderCircuitStateStore implements ProviderCircuitStateStoreC
         ];
     }
 
+    /** @param array{consecutiveFailures: int, openUntil: int} $state */
     public function put(string $provider, array $state, int $ttlSeconds): void
     {
         $this->redis->setex(

@@ -7,10 +7,10 @@ namespace Hub\Ingress\Tcp\Supplier\Wonlex;
 use Hub\Device\DeviceEventDecoder;
 use Hub\Device\DeviceSession;
 use Hub\Protocol\Adapter\DeviceAdapterInterface;
-use Hub\Ingress\Tcp\AbstractTcpProtocol;
+use Hub\Ingress\Tcp\TcpProtocol;
 use Hub\Ingress\Tcp\TcpResponse;
 
-final class WonlexTcpProtocol extends AbstractTcpProtocol
+final class WonlexTcpProtocol extends TcpProtocol
 {
     /** @var callable(DeviceSession): array<string, mixed>|null */
     private $stateProvider;
@@ -24,60 +24,35 @@ final class WonlexTcpProtocol extends AbstractTcpProtocol
         $this->stateProvider = $stateProvider;
     }
 
+    public function downlinkCorrelation(string $bytes): array
+    {
+        $decoded = $this->adapter->decodeIncoming($bytes);
+
+        return is_array($decoded) && isset($decoded['ident'])
+            ? ['ident' => $decoded['ident'], 'ref' => (string)($decoded['ref'] ?? '')]
+            : [];
+    }
+
     /**
      * @return array<int, TcpResponse>
      */
     protected function responsesForDecoded(DeviceSession $session, array $decoded): array
     {
         $type = (string)($decoded['type'] ?? '');
-        $responses = [];
         $timestamp = (int) round(microtime(true) * 1000);
-        $state = $this->state($session);
+        $ident = $this->replyIdent($decoded['ident'] ?? null);
 
         if ($type === 'login') {
-            $responses[] = new TcpResponse($this->encodeOutgoing([
-                'type' => 'login',
-                'ident' => $this->replyIdent($decoded['ident'] ?? null),
-                'ref' => 's:reply',
-                'imei' => $session->imei,
-                'data' => [
-                    'type' => 'login',
-                    'imei' => $session->imei,
-                    'timestamp' => $timestamp,
-                ],
-                'timestamp' => $timestamp,
-            ]));
-
-            return $responses;
+            return [$this->reply($session, $type, $ident, $timestamp)];
         }
-
         if ($type === 'heartbeat') {
-            $responses[] = new TcpResponse($this->encodeOutgoing([
-                'type' => 'heartbeat',
-                'ident' => $this->replyIdent($decoded['ident'] ?? null),
-                'ref' => 's:reply',
-                'imei' => $session->imei,
-                'data' => [
-                    'type' => 'heartbeat',
-                    'imei' => $session->imei,
-                    'deviceModel' => $session->model,
-                    'timestamp' => $timestamp,
-                ],
-                'timestamp' => $timestamp,
-            ]));
-
-            return $responses;
+            return [$this->reply($session, $type, $ident, $timestamp, ['deviceModel' => $session->model])];
+        }
+        if (($decoded['ref'] ?? '') !== 'w:update' || $type === '') {
+            return [];
         }
 
-        if (($decoded['ref'] ?? '') !== 'w:update') {
-            return $responses;
-        }
-
-        if ($type === '') {
-            return $responses;
-        }
-
-        $ident = $this->replyIdent($decoded['ident'] ?? null);
+        $state = $this->state($session);
         if ($type === 'upGetDevConfig') {
             return $this->configurationSyncResponses($session, $state['configurations'] ?? [], $ident, $timestamp);
         }
@@ -88,20 +63,24 @@ final class WonlexTcpProtocol extends AbstractTcpProtocol
                 'value' => $this->sleepSummary($sleep),
             ], $ident, $timestamp)];
         }
-        $responses[] = new TcpResponse($this->encodeOutgoing([
+        return [$this->reply($session, $type, $ident, $timestamp, publishRaw: true)];
+    }
+
+    /**
+     * O `s:reply` com que o hub responde a uma trama do relógio.
+     *
+     * @param array<string, mixed> $data o que segue no `data` entre o `imei` e o `timestamp`
+     */
+    private function reply(DeviceSession $session, string $type, int $ident, int $timestamp, array $data = [], bool $publishRaw = false): TcpResponse
+    {
+        return new TcpResponse($this->adapter->encodeOutgoing([
             'type' => $type,
             'ident' => $ident,
             'ref' => 's:reply',
             'imei' => $session->imei,
-            'data' => [
-                'type' => $type,
-                'imei' => $session->imei,
-                'timestamp' => $timestamp,
-            ],
+            'data' => ['type' => $type, 'imei' => $session->imei] + $data + ['timestamp' => $timestamp],
             'timestamp' => $timestamp,
-        ]), true);
-
-        return $responses;
+        ]), $publishRaw);
     }
 
     /** @return array<string, mixed> */
@@ -123,7 +102,7 @@ final class WonlexTcpProtocol extends AbstractTcpProtocol
         int $ident,
         int $timestamp
     ): TcpResponse {
-        return new TcpResponse($this->encodeOutgoing([
+        return new TcpResponse($this->adapter->encodeOutgoing([
             'type' => $type,
             'ident' => $ident,
             'ref' => 's:down',

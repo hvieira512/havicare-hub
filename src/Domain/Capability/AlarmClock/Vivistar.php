@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 namespace Hub\Domain\Capability\AlarmClock;
 
+use Hub\Domain\Capability\CapabilityProtocolHandler;
+
 /**
  * Handler do `alarm_clock` do Vivistar / Wonlex, na chave nativa `reminders`:
  * `{ reminders: { masterEnabled: bool, items: [{time, days, enabled, type}] } }`.
  */
-final class Vivistar implements AlarmClockHandler
+final class Vivistar implements CapabilityProtocolHandler
 {
     use AlarmClockHelpers;
 
@@ -48,6 +50,10 @@ final class Vivistar implements AlarmClockHandler
         return ['reminders' => $payload];
     }
 
+    /**
+     * @param array<array-key, mixed> $desired
+     * @return list<array<string, mixed>>
+     */
     public function fromNative(array $desired): array
     {
         return self::publicItemList($desired, ['items', 'alarms'], self::publicItem(...));

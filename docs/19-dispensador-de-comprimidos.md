@@ -675,8 +675,7 @@ No hub, a transferência vive em três peças e num comando de linha:
 | Ficheiro | Responsabilidade |
 |---|---|
 | `src/Device/Firmware/FirmwareUpgrade.php` | O ficheiro, o checksum e o pacote seguinte a partir de um offset |
-| `src/Device/Firmware/FirmwareUpgradeStore.php` | O contrato de onde a transferência em curso é guardada |
-| `src/Device/Firmware/RedisFirmwareUpgradeStore.php` | A implementação em Redis, que sobrevive a um reinício do hub |
+| `src/Device/Firmware/FirmwareUpgradeStore.php` | Onde a transferência em curso é guardada, em Redis, que sobrevive a um reinício do hub |
 | `bin/upgrade-firmware.php` | Põe um ficheiro em fila para um aparelho |
 
 **Como se sabe que correu bem:** o `0x8002` é a versão, e passa a valer a nova

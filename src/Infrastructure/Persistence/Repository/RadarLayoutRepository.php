@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Hub\Infrastructure\Persistence\Repository;
 
 use Hub\Ingress\Mqtt\Qinglanst\QinglanstBridge;
+use Hub\Infrastructure\Persistence\TimestampFormatter;
 use PDO;
 
 /**
@@ -116,7 +117,7 @@ final class RadarLayoutRepository
                     'yMaxDm' => (int)$row['room_y_max_dm'],
                 ],
                 'areas' => [],
-                'fetchedAt' => (string)$row['fetched_at'],
+                'fetchedAt' => TimestampFormatter::toIso($row['fetched_at']),
             ];
         }
 

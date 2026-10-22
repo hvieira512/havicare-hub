@@ -109,7 +109,7 @@ final class CommandOutcomeAnnouncementTest extends TestCase
     public function testTheLegacyPhonebookLeavesWithItsOwnId(): void
     {
         $contact = ['nativeType' => 'PHBX2', 'protocol' => 'four-p-touch', 'nativeKey' => 'phonebook', 'status' => 'failed', 'error' => 'response_timeout',
-            'payload' => ['fields' => ['1', '004800750067006F', '+351938854803']], 'bytes' => '[3G*1234567890*0010*PHBX2,1]'];
+            'payload' => ['fields' => ['1', '004800750067006F', '+351938854803']], 'bytes' => '[3G*1234567890*0007*PHBX2,1]'];
         $this->store->recordCommand(self::DEVICE, 'old', $contact);
         $sentWith = [];
 

@@ -4,11 +4,12 @@ declare(strict_types=1);
 
 namespace Hub\Infrastructure\Persistence\Repository;
 
-use Hub\Infrastructure\Persistence\TimestampFormatter;
 use PDO;
 
 final class CompanyRepository
 {
+    use FetchesRows;
+
     public function __construct(private PDO $pdo)
     {
     }
@@ -16,29 +17,19 @@ final class CompanyRepository
     /** @return list<array<string, mixed>> */
     public function all(): array
     {
-        return TimestampFormatter::normalizeRows($this->pdo
-            ->query("SELECT c.id, c.name, c.created_at, c.updated_at, (SELECT COUNT(*) FROM licenses WHERE company_id = c.id) AS license_count FROM companies c ORDER BY c.name")
-            ->fetchAll());
+        return $this->fetchRows("SELECT c.id, c.name, c.created_at, c.updated_at, (SELECT COUNT(*) FROM licenses WHERE company_id = c.id) AS license_count FROM companies c ORDER BY c.name");
     }
 
     /** @return array<string, mixed>|null */
     public function findByName(string $name): ?array
     {
-        $stmt = $this->pdo->prepare('SELECT * FROM companies WHERE name = ?');
-        $stmt->execute([$name]);
-
-        $row = $stmt->fetch();
-        return $row === false ? null : TimestampFormatter::normalizeRow($row);
+        return $this->fetchOne('SELECT * FROM companies WHERE name = ?', [$name]);
     }
 
     /** @return array<string, mixed>|null */
     public function findById(int $id): ?array
     {
-        $stmt = $this->pdo->prepare('SELECT * FROM companies WHERE id = ?');
-        $stmt->execute([$id]);
-
-        $row = $stmt->fetch();
-        return $row === false ? null : TimestampFormatter::normalizeRow($row);
+        return $this->fetchOne('SELECT * FROM companies WHERE id = ?', [$id]);
     }
 
     public function create(string $name): int

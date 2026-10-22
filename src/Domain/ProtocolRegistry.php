@@ -73,7 +73,7 @@ final class ProtocolRegistry
                 'supportsConfigCatalog' => false,
             ],
             // `true`: o sensor não aceita downlink mas tem configurações, e quem decide se algo viaja é a
-            // capacidade, pelo `HubAppliedCapability`.
+            // capacidade, pelo `CapabilityRegistry::travelsToDevice`.
             'monit-mecs-pro-ble' => [
                 'label' => 'MONIT',
                 'deviceType' => 'diaper_sensor',

@@ -6,7 +6,9 @@ namespace Tests\Unit\Location;
 
 use Hub\Location\BeaconDbRequestBuilder;
 use Hub\Location\BeaconDbTelemetryEnricher;
-use Hub\Location\ArrayLocationResolutionCache;
+use Hub\Location\RedisLocationResolutionCache;
+use Tests\Support\Doubles\CallbackLocationProvider;
+use Tests\Support\Doubles\InMemoryRedisClient;
 use PHPUnit\Framework\TestCase;
 
 use function React\Promise\resolve;
@@ -18,7 +20,7 @@ final class BeaconDbTelemetryEnricherTest extends TestCase
         $requests = [];
         $enricher = new BeaconDbTelemetryEnricher(
             new BeaconDbRequestBuilder(),
-            function (array $request) use (&$requests) {
+            new CallbackLocationProvider(function (array $request) use (&$requests) {
                 $requests[] = $request;
                 return resolve([
                     'httpStatus' => 200,
@@ -27,7 +29,8 @@ final class BeaconDbTelemetryEnricherTest extends TestCase
                         'accuracy' => 300,
                     ],
                 ]);
-            },
+            }),
+            cache: new RedisLocationResolutionCache(new InMemoryRedisClient()),
         );
 
         $telemetry = $this->nonGpsTelemetry();
@@ -54,10 +57,11 @@ final class BeaconDbTelemetryEnricherTest extends TestCase
         $calls = 0;
         $enricher = new BeaconDbTelemetryEnricher(
             new BeaconDbRequestBuilder(),
-            function () use (&$calls) {
+            new CallbackLocationProvider(function () use (&$calls) {
                 $calls++;
                 return resolve([]);
-            },
+            }),
+            cache: new RedisLocationResolutionCache(new InMemoryRedisClient()),
         );
         $telemetry = $this->nonGpsTelemetry();
         $telemetry['data'] = [
@@ -79,18 +83,18 @@ final class BeaconDbTelemetryEnricherTest extends TestCase
     public function testSharedCacheSurvivesEnricherRecreation(): void
     {
         $calls = 0;
-        $cache = new ArrayLocationResolutionCache();
+        $cache = new RedisLocationResolutionCache(new InMemoryRedisClient());
         $resolver = $this->resolvesTo($calls);
         $first = new BeaconDbTelemetryEnricher(
             new BeaconDbRequestBuilder(),
-            $resolver,
+            new CallbackLocationProvider($resolver),
             cache: $cache,
         );
         $first->enrich($this->nonGpsTelemetry());
 
         $second = new BeaconDbTelemetryEnricher(
             new BeaconDbRequestBuilder(),
-            $resolver,
+            new CallbackLocationProvider($resolver),
             cache: $cache,
         );
         $result = null;
@@ -108,7 +112,8 @@ final class BeaconDbTelemetryEnricherTest extends TestCase
         $calls = 0;
         $enricher = new BeaconDbTelemetryEnricher(
             new BeaconDbRequestBuilder(),
-            $this->resolvesTo($calls),
+            new CallbackLocationProvider($this->resolvesTo($calls)),
+            cache: new RedisLocationResolutionCache(new InMemoryRedisClient()),
         );
         $first = $this->nonGpsTelemetry();
         $second = $first;
@@ -126,7 +131,8 @@ final class BeaconDbTelemetryEnricherTest extends TestCase
         $calls = 0;
         $enricher = new BeaconDbTelemetryEnricher(
             new BeaconDbRequestBuilder(),
-            $this->resolvesTo($calls),
+            new CallbackLocationProvider($this->resolvesTo($calls)),
+            cache: new RedisLocationResolutionCache(new InMemoryRedisClient()),
         );
         $telemetry = $this->nonGpsTelemetry();
         $telemetry['data']['gpsValid'] = false;
@@ -148,7 +154,8 @@ final class BeaconDbTelemetryEnricherTest extends TestCase
         $calls = 0;
         $enricher = new BeaconDbTelemetryEnricher(
             new BeaconDbRequestBuilder(),
-            $this->resolvesTo($calls),
+            new CallbackLocationProvider($this->resolvesTo($calls)),
+            cache: new RedisLocationResolutionCache(new InMemoryRedisClient()),
         );
         $telemetry = $this->nonGpsTelemetry();
         $telemetry['data']['source'] = 'cell';
@@ -174,10 +181,11 @@ final class BeaconDbTelemetryEnricherTest extends TestCase
         $calls = 0;
         $enricher = new BeaconDbTelemetryEnricher(
             new BeaconDbRequestBuilder(),
-            function () use (&$calls) {
+            new CallbackLocationProvider(function () use (&$calls) {
                 $calls++;
                 return resolve([]);
-            },
+            }),
+            cache: new RedisLocationResolutionCache(new InMemoryRedisClient()),
         );
         $telemetry = $this->nonGpsTelemetry();
         $telemetry['data']['wifiAccessPoints'] = [
@@ -198,11 +206,12 @@ final class BeaconDbTelemetryEnricherTest extends TestCase
     {
         $enricher = new BeaconDbTelemetryEnricher(
             new BeaconDbRequestBuilder(),
-            static fn () => resolve([
+            new CallbackLocationProvider(static fn () => resolve([
                 'httpStatus' => 200,
                 'body' => ['location' => ['lat' => 41.7, 'lng' => -8.8], 'accuracy' => 6000],
-            ]),
+            ])),
             maxAccuracyMeters: 5000,
+            cache: new RedisLocationResolutionCache(new InMemoryRedisClient()),
         );
         $telemetry = $this->nonGpsTelemetry();
         $telemetry['data']['gpsValid'] = false;
@@ -225,10 +234,11 @@ final class BeaconDbTelemetryEnricherTest extends TestCase
     {
         $enricher = new BeaconDbTelemetryEnricher(
             new BeaconDbRequestBuilder(),
-            static fn () => resolve([
+            new CallbackLocationProvider(static fn () => resolve([
                 'httpStatus' => 200,
                 'body' => ['location' => ['lat' => 41.7, 'lng' => -8.8]],
-            ]),
+            ])),
+            cache: new RedisLocationResolutionCache(new InMemoryRedisClient()),
         );
         $result = null;
         $enricher->enrich($this->nonGpsTelemetry())->then(function (array $value) use (&$result): void {
@@ -244,7 +254,8 @@ final class BeaconDbTelemetryEnricherTest extends TestCase
     {
         $enricher = new BeaconDbTelemetryEnricher(
             new BeaconDbRequestBuilder(),
-            static fn () => resolve(['httpStatus' => 404, 'body' => ['error' => 'not found']]),
+            new CallbackLocationProvider(static fn () => resolve(['httpStatus' => 404, 'body' => ['error' => 'not found']])),
+            cache: new RedisLocationResolutionCache(new InMemoryRedisClient()),
         );
         $telemetry = $this->nonGpsTelemetry();
         $telemetry['data']['gpsValid'] = false;

@@ -7,10 +7,10 @@ namespace Hub\Ingress\Tcp\Supplier\Vivistar;
 use Hub\Device\DeviceEventDecoder;
 use Hub\Device\DeviceSession;
 use Hub\Protocol\Adapter\DeviceAdapterInterface;
-use Hub\Ingress\Tcp\AbstractTcpProtocol;
+use Hub\Ingress\Tcp\TcpProtocol;
 use Hub\Ingress\Tcp\TcpResponse;
 
-final class VivistarTcpProtocol extends AbstractTcpProtocol
+final class VivistarTcpProtocol extends TcpProtocol
 {
     public function __construct(
         DeviceAdapterInterface $adapter,
@@ -27,23 +27,18 @@ final class VivistarTcpProtocol extends AbstractTcpProtocol
         $type = (string)($decoded['type'] ?? '');
 
         if ($type === 'login') {
-            return [new TcpResponse($this->encodeOutgoing(['type' => 'login_ok']))];
+            return [new TcpResponse($this->adapter->encodeOutgoing(['type' => 'login_ok']))];
         }
 
-        $ack = match ($type) {
-            'AP01' => 'IWBP01#',
-            'AP02' => 'IWBP02#',
-            'AP03' => 'IWBP03#',
-            'AP10' => 'IWBP10#',
-            'AP49' => 'IWBP49#',
-            'APHT' => 'IWBPHT#',
-            'APHP' => 'IWBPHP#',
-            'AP50' => 'IWBP50#',
-            'APHD' => 'IWBPHD#',
-            default => null,
-        };
+        // A confirmação é o próprio tipo com `IWB` em vez de `A`: `AP01` → `IWBP01#`.
+        return in_array($type, ['AP01', 'AP02', 'AP03', 'AP10', 'AP49', 'APHT', 'APHP', 'AP50', 'APHD'], true)
+            ? [new TcpResponse('IWB' . substr($type, 1) . '#')]
+            : [];
+    }
 
-        return $ack !== null ? [new TcpResponse($ack)] : [];
+    public function downlinkCorrelation(string $bytes): array
+    {
+        return preg_match('/^IWBP[A-Z0-9]{2},[^,]*,([^,#]+)/', $bytes, $matches) === 1 ? ['ident' => $matches[1]] : [];
     }
 
     public function commandMetadata(string $bytes): ?array

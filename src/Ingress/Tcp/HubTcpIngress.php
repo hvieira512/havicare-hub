@@ -57,7 +57,8 @@ class HubTcpIngress
             $packet = substr($this->buffers[$resourceId], 0, $packetLength);
             $this->buffers[$resourceId] = substr($this->buffers[$resourceId], $packetLength);
             if ($packet !== '' && trim($packet) !== '') {
-                $binaryFrame = $this->isWonlexFrame($packet) || $this->isPillFrame($packet);
+                // Uma trama binária sai do `nextPacketLength` já inteira: basta o início para a reconhecer.
+                $binaryFrame = $this->isWonlexFrameStart($packet) || $this->isPillFrameStart($packet);
                 $this->hubServer->onMessage($client, $binaryFrame ? $packet : trim($packet));
                 if (!array_key_exists($resourceId, $this->buffers)) {
                     return;
@@ -111,23 +112,9 @@ class HubTcpIngress
         return min($hashPos, $bracketPos) + 1;
     }
 
-    private function isWonlexFrame(string $packet): bool
-    {
-        return $this->isWonlexFrameStart($packet)
-            && strlen($packet) >= 4
-            && strlen($packet) === 4 + (int)(unpack('nlength', substr($packet, 2, 2))['length'] ?? -1);
-    }
-
     private function isWonlexFrameStart(string $buffer): bool
     {
         return strlen($buffer) >= 2 && substr($buffer, 0, 2) === "\xFC\xAF";
-    }
-
-    private function isPillFrame(string $packet): bool
-    {
-        return $this->isPillFrameStart($packet)
-            && strlen($packet) >= 3
-            && strlen($packet) === 3 + (int)(unpack('vlength', substr($packet, 1, 2))['length'] ?? -1) + 2;
     }
 
     private function isPillFrameStart(string $buffer): bool

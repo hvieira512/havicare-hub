@@ -23,40 +23,7 @@ final class ModelCapabilityRepository
      */
     public function enabledFeaturesForModelId(int $modelId): array
     {
-        return $this->enabledFeatures[$modelId] ??= $this->loadEnabledFeaturesForModelId($modelId);
-    }
-
-    /**
-     * @return list<string>
-     */
-    private function loadEnabledFeaturesForModelId(int $modelId): array
-    {
-        $stmt = $this->pdo->prepare('
-            SELECT mc.capability_key, m.device_type, m.internal_model, s.name AS supplier_name
-            FROM model_capabilities mc
-            JOIN models m ON m.id = mc.model_id
-            JOIN suppliers s ON s.id = m.supplier_id
-            WHERE mc.model_id = ? AND mc.enabled = 1
-            ORDER BY mc.capability_key
-        ');
-        $stmt->execute([$modelId]);
-
-        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
-        if ($rows === []) {
-            return [];
-        }
-
-        $allowed = $this->allowedFeaturesForModelRow($rows[0]);
-        $enabled = [];
-        foreach ($rows as $row) {
-            $key = trim((string)($row['capability_key'] ?? ''));
-            if ($key === '' || !isset($allowed[$key])) {
-                continue;
-            }
-            $enabled[$key] = true;
-        }
-
-        return array_keys($enabled);
+        return $this->enabledFeatures[$modelId] ??= $this->enabledFeaturesForModelIds([$modelId])[$modelId] ?? [];
     }
 
     /**
@@ -80,28 +47,18 @@ final class ModelCapabilityRepository
      */
     private function requestableFeaturesForModelIdFiltered(int $modelId, bool $telemetryOnly): array
     {
+        $enabled = array_flip($this->enabledFeaturesForModelId($modelId));
         $stmt = $this->pdo->prepare('
-            SELECT mc.capability_key, mc.is_requestable, m.device_type, m.internal_model, s.name AS supplier_name
-            FROM model_capabilities mc
-            JOIN models m ON m.id = mc.model_id
-            JOIN suppliers s ON s.id = m.supplier_id
-            WHERE mc.model_id = ? AND mc.enabled = 1
-            ORDER BY mc.capability_key
+            SELECT capability_key, is_requestable, device_type
+            FROM model_capabilities WHERE model_id = ? AND enabled = 1 ORDER BY capability_key
         ');
         $stmt->execute([$modelId]);
 
-        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
-        if ($rows === []) {
-            return [];
-        }
-
-        $allowed = $this->allowedFeaturesForModelRow($rows[0]);
-        $catalogue = self::catalogue((string)$rows[0]['device_type']);
         $requestable = [];
-        foreach ($rows as $row) {
-            $key = trim((string)($row['capability_key'] ?? ''));
-            $definition = $catalogue[$key] ?? null;
-            if ($definition === null || !isset($allowed[$key])) {
+        foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+            $key = (string)$row['capability_key'];
+            $definition = self::catalogue((string)$row['device_type'])[$key] ?? null;
+            if ($definition === null || !isset($enabled[$key])) {
                 continue;
             }
             if ($telemetryOnly && $definition['section'] !== 'telemetry') {
@@ -198,11 +155,10 @@ final class ModelCapabilityRepository
             if ($key === '' || !isset($allowedCache[$cacheKey][$key])) {
                 continue;
             }
-            $result[$modelId] ??= [];
-            $result[$modelId][] = $key;
+            $result[$modelId][$key] = true;
         }
 
-        return $result;
+        return array_map(array_keys(...), $result);
     }
 
     /**
@@ -225,14 +181,15 @@ final class ModelCapabilityRepository
             $disable->execute([$modelId]);
 
             if ($capabilityKeys !== []) {
-                $insert = $this->pdo->prepare('
-                    INSERT INTO model_capabilities (model_id, device_type, capability_key, enabled)
-                    VALUES (?, ?, ?, 1)
-                    ON DUPLICATE KEY UPDATE enabled = 1
-                ');
+                $params = [];
                 foreach ($capabilityKeys as $capabilityKey) {
-                    $insert->execute([$modelId, $deviceType, $capabilityKey]);
+                    array_push($params, $modelId, $deviceType, $capabilityKey);
                 }
+                $this->pdo->prepare(
+                    'INSERT INTO model_capabilities (model_id, device_type, capability_key, enabled) VALUES '
+                    . implode(', ', array_fill(0, count($capabilityKeys), '(?, ?, ?, 1)'))
+                    . ' ON DUPLICATE KEY UPDATE enabled = 1'
+                )->execute($params);
             }
         } catch (\Throwable $e) {
             if ($ownsTransaction) {

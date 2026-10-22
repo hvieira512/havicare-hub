@@ -83,13 +83,10 @@ final class CapabilityRegistry
             ?? ($this->generic[$genericKey] ??= new GenericCapability($genericKey, $this->fourPTouchGeneric));
     }
 
-    /**
-     * Se a alteração viaja para o dispositivo. Por omissão viaja, e só o `HubAppliedCapability`
-     * diz que o hub a aplica sozinho.
-     */
+    /** Se a alteração viaja para o dispositivo: só a sensibilidade das fraldas o hub aplica sozinho. */
     public function travelsToDevice(string $genericKey): bool
     {
-        return !($this->contract($genericKey) instanceof HubAppliedCapability);
+        return !($this->contract($genericKey) instanceof DiaperSensitivityCapability);
     }
 
     public function supportsProtocol(string $genericKey, string $protocol): bool
