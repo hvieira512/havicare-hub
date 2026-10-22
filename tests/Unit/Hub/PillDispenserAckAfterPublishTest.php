@@ -105,7 +105,7 @@ final class PillDispenserAckAfterPublishTest extends TestCase
         $acks = $this->acks($mqtt, [$this->frame(0x01, 1), $this->frame(0x02, 2, $fault), $this->frame(0x02, 2, $fault)]);
 
         self::assertSame(['register_ack', 'heartbeat_ack'], $acks);
-        self::assertCount(1, array_filter($mqtt->events, static fn (array $event): bool => $event['type'] === 'device_fault'));
+        self::assertCount(1, $mqtt->ofType('device_fault', 'events'));
     }
 
     /** O alerta de bateria fraca que não saiu volta a sair na repetição, e o heartbeat espera por ele. */
@@ -127,7 +127,7 @@ final class PillDispenserAckAfterPublishTest extends TestCase
         $acks = $this->acks($mqtt, [$this->frame(0x01, 1), $this->frame(0x02, 2, $low), $this->frame(0x02, 2, $low)]);
 
         self::assertSame(['register_ack', 'heartbeat_ack'], $acks);
-        self::assertCount(1, array_filter($mqtt->events, static fn (array $event): bool => $event['type'] === 'low_battery'));
+        self::assertCount(1, $mqtt->ofType('low_battery', 'events'));
     }
 
     /** O arranque de uma actualização segue com a confirmação: retida uma, fica por mandar a outra. */

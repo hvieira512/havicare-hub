@@ -95,10 +95,7 @@ final class JoyTechThermometerBridgeTest extends TestCase
     /** @return list<array<string, mixed>> */
     private static function temperatures(RecordingHubMqttBridge $mqtt): array
     {
-        return array_values(array_map(
-            static fn (array $entry): array => $entry['payload'],
-            array_filter($mqtt->telemetry, static fn (array $entry): bool => ($entry['payload']['type'] ?? null) === 'temperature'),
-        ));
+        return array_column($mqtt->ofType('temperature'), 'payload');
     }
 
     private static function frame(string $hex): string

@@ -67,6 +67,17 @@ class RecordingHubMqttBridge extends HubMqttBridge
     }
 
     /**
+     * O que saiu num canal com este `type`, por ordem.
+     *
+     * @param 'telemetry'|'events'|'statuses'|'raw' $channel
+     * @return list<array<string, mixed>>
+     */
+    public function ofType(string $type, string $channel = 'telemetry'): array
+    {
+        return array_values(array_filter($this->{$channel}, static fn (array $entry): bool => $entry['type'] === $type));
+    }
+
+    /**
      * @param array<string, mixed> $payload
      * @return array{type: ?string, imei: string, payload: array<string, mixed>, deviceType: string, licenseId: int, company: string}
      */

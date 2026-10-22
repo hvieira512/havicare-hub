@@ -25,7 +25,7 @@ final class BridgeSessionTest extends TestCase
             $bridge->handleReceivedMessage(self::TOPIC, self::session(true));
         }
 
-        self::assertCount(1, self::eventsOfType($mqtt, 'device.connected'));
+        self::assertCount(1, $mqtt->ofType('device.connected', 'events'));
     }
 
     /** A pulseira sai de alcance sempre que quem a usa se afasta, e o ecrã reflete-o sem esperar pelo varrimento de aparelhos parados. */
@@ -37,7 +37,7 @@ final class BridgeSessionTest extends TestCase
         $bridge->handleReceivedMessage(self::TOPIC, self::session(true));
         $bridge->handleReceivedMessage(self::TOPIC, self::session(false));
 
-        self::assertCount(1, self::eventsOfType($mqtt, 'device.disconnected'));
+        self::assertCount(1, $mqtt->ofType('device.disconnected', 'events'));
 
         $status = array_values(array_filter(
             $mqtt->statuses,
@@ -60,7 +60,7 @@ final class BridgeSessionTest extends TestCase
             'payload' => ['connected' => false],
         ], JSON_THROW_ON_ERROR));
 
-        self::assertCount(1, self::eventsOfType($mqtt, 'device.disconnected'));
+        self::assertCount(1, $mqtt->ofType('device.disconnected', 'events'));
     }
 
     /** Uma sessão nova depois de a perder volta a ser um acontecimento. */
@@ -73,7 +73,7 @@ final class BridgeSessionTest extends TestCase
             $bridge->handleReceivedMessage(self::TOPIC, self::session($authenticated));
         }
 
-        self::assertCount(2, self::eventsOfType($mqtt, 'device.connected'));
+        self::assertCount(2, $mqtt->ofType('device.connected', 'events'));
     }
 
     /** O gateway precisa do valor para saber se liga ou desliga, senão o «encontrar dispositivo» nunca pára. */
@@ -120,20 +120,9 @@ final class BridgeSessionTest extends TestCase
         self::assertSame(['02.73.01.00-5966', '02.74.00.00-5966'], $shown);
 
         // E no MQTT continuam a sair as quatro: essa comparação é de quem integra.
-        self::assertCount(4, array_filter(
-            $mqtt->telemetry,
-            static fn(array $e): bool => ($e['payload']['type'] ?? null) === 'firmware_version',
-        ));
+        self::assertCount(4, $mqtt->ofType('firmware_version'));
     }
 
-    /** @return list<array<string, mixed>> */
-    private static function eventsOfType(RecordingHubMqttBridge $mqtt, string $type): array
-    {
-        return array_values(array_filter(
-            $mqtt->events,
-            static fn(array $entry): bool => ($entry['payload']['type'] ?? null) === $type,
-        ));
-    }
 
     private static function session(bool $authenticated, ?string $firmware = null): string
     {

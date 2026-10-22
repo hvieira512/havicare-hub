@@ -79,10 +79,7 @@ final class BridgeMeasurementTest extends TestCase
             'sdkType' => 32, 'BMI' => 0, 'bodyFatPercentage' => 0, 'basalMetabolicRate' => 0,
         ]));
 
-        self::assertSame([], array_values(array_filter(
-            $mqtt->telemetry,
-            static fn(array $e): bool => ($e['payload']['type'] ?? null) === 'body_composition',
-        )));
+        self::assertSame([], $mqtt->ofType('body_composition'));
     }
 
     /**
@@ -106,10 +103,7 @@ final class BridgeMeasurementTest extends TestCase
             $bridge->handleReceivedMessage(self::TOPIC, self::confirmation($operation));
         }
 
-        $telemetry = array_values(array_filter(
-            $mqtt->telemetry,
-            static fn(array $entry): bool => ($entry['payload']['type'] ?? null) === $expectedType,
-        ));
+        $telemetry = $mqtt->ofType($expectedType);
 
         self::assertCount(1, $telemetry);
         self::assertSame($expected, $telemetry[0]['payload']['data']);
@@ -159,10 +153,7 @@ final class BridgeMeasurementTest extends TestCase
 
         self::assertSame([], $mqtt->telemetry);
 
-        $failures = array_values(array_filter(
-            $mqtt->events,
-            static fn(array $e): bool => ($e['payload']['type'] ?? null) === 'device.measurement_failed',
-        ));
+        $failures = $mqtt->ofType('device.measurement_failed', 'events');
 
         self::assertCount(1, $failures);
         self::assertSame(['reason' => 'not_worn'], $failures[0]['payload']['error']);
@@ -181,10 +172,7 @@ final class BridgeMeasurementTest extends TestCase
 
         self::assertSame([], $mqtt->telemetry);
 
-        $failures = array_values(array_filter(
-            $mqtt->events,
-            static fn(array $e): bool => ($e['payload']['type'] ?? null) === 'device.measurement_failed',
-        ));
+        $failures = $mqtt->ofType('device.measurement_failed', 'events');
         self::assertCount(1, $failures);
         self::assertSame(['reason' => 'no_signal'], $failures[0]['payload']['error']);
     }
@@ -208,10 +196,7 @@ final class BridgeMeasurementTest extends TestCase
             'payload' => ['samples' => [5, -3, 7, 2], 'samplingHz' => 500],
         ], JSON_THROW_ON_ERROR));
 
-        $ecg = array_values(array_filter(
-            $mqtt->telemetry,
-            static fn(array $e): bool => ($e['payload']['type'] ?? null) === 'ecg',
-        ));
+        $ecg = $mqtt->ofType('ecg');
         self::assertSame([5, -3, 7, 2], $ecg[0]['payload']['data']['samples']);
 
         $shown = array_values(array_filter(
@@ -254,7 +239,7 @@ final class BridgeMeasurementTest extends TestCase
 
         $bridge->handleReceivedMessage(self::TOPIC, self::confirmation('measure.heartRate.start'));
 
-        $readings = self::ofType($mqtt, 'heart_rate');
+        $readings = $mqtt->ofType('heart_rate');
         self::assertCount(1, $readings);
         self::assertSame(90, $readings[0]['payload']['data']['bpm']);
     }
@@ -275,7 +260,7 @@ final class BridgeMeasurementTest extends TestCase
         $now += 200;
         $bridge->dispatchQueued();
 
-        $readings = self::ofType($mqtt, 'heart_rate');
+        $readings = $mqtt->ofType('heart_rate');
         self::assertCount(1, $readings);
         self::assertSame(90, $readings[0]['payload']['data']['bpm']);
     }
@@ -293,16 +278,6 @@ final class BridgeMeasurementTest extends TestCase
 
 
 
-    /**
-     * @return list<array<string, mixed>>
-     */
-    private static function ofType(RecordingHubMqttBridge $mqtt, string $type): array
-    {
-        return array_values(array_filter(
-            $mqtt->telemetry,
-            static fn(array $e): bool => ($e['payload']['type'] ?? null) === $type,
-        ));
-    }
 
     /** @param array<string, mixed> $payload */
     private static function message(array $payload): string

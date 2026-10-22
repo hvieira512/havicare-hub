@@ -22,7 +22,7 @@ final class BridgeLowBatteryTest extends TestCase
         $bridge->handleReceivedMessage(self::TOPIC, self::battery(['VPDeviceIsPercent' => true, 'VPDeviceElectricPercent' => 9, 'VPDeviceElectricTypeIsLowVoltage' => 'lowVoltage']));
         $bridge->handleReceivedMessage(self::TOPIC, self::battery(['VPDeviceIsPercent' => true, 'VPDeviceElectricPercent' => 8, 'VPDeviceElectricTypeIsLowVoltage' => 'lowVoltage']));
 
-        $events = array_values(array_filter($mqtt->events, static fn (array $event): bool => $event['type'] === 'low_battery'));
+        $events = $mqtt->ofType('low_battery', 'events');
         self::assertCount(1, $events);
         self::assertSame(['percent' => 9], $events[0]['payload']['data']);
         self::assertSame(['percent' => 9, 'lowBattery' => true], $mqtt->telemetry[0]['payload']['data']);
@@ -39,7 +39,7 @@ final class BridgeLowBatteryTest extends TestCase
         $bridge->handleReceivedMessage(self::TOPIC, self::battery(['VPDeviceIsPercent' => true, 'VPDeviceElectricPercent' => 9, 'VPDeviceElectricTypeIsLowVoltage' => 'lowVoltage']));
 
         self::assertFalse($mqtt->telemetry[1]['payload']['data']['lowBattery'] ?? null);
-        self::assertCount(2, array_filter($mqtt->events, static fn (array $event): bool => $event['type'] === 'low_battery'));
+        self::assertCount(2, $mqtt->ofType('low_battery', 'events'));
     }
 
     /** Sem percentagem a tensão não se converte, mas a bateria fraca não depende dela. */

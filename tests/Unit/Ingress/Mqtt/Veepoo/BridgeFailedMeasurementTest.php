@@ -127,7 +127,7 @@ final class BridgeFailedMeasurementTest extends TestCase
 
         self::assertSame([], $queue->operations(), 'o pedido não pode ficar em fila');
 
-        $failures = self::failures($mqtt);
+        $failures = $mqtt->ofType('device.measurement_failed', 'events');
         self::assertCount(1, $failures);
         self::assertSame(['reason' => 'no_response'], $failures[0]['payload']['error']);
     }
@@ -149,7 +149,7 @@ final class BridgeFailedMeasurementTest extends TestCase
         ], JSON_THROW_ON_ERROR));
 
         self::assertSame([], $queue->operations());
-        self::assertSame([], self::failures($mqtt));
+        self::assertSame([], $mqtt->ofType('device.measurement_failed', 'events'));
     }
 
     /** Um comando que o gateway não conseguiu entregar fica falhado, com a razão dele. */
@@ -174,7 +174,7 @@ final class BridgeFailedMeasurementTest extends TestCase
         $last = end($marked);
         self::assertSame('failed', $last['status'] ?? null);
         self::assertSame('disconnected', $last['error'] ?? null);
-        self::assertSame([], self::failures($mqtt), 'não é uma medição');
+        self::assertSame([], $mqtt->ofType('device.measurement_failed', 'events'), 'não é uma medição');
     }
 
     /** Vibrar e parar são a mesma operação: a falha de um não leva o outro. */
@@ -207,7 +207,7 @@ final class BridgeFailedMeasurementTest extends TestCase
         $bridge->handleReceivedMessage(self::TOPIC, self::commandResult('measure.heartRate.start', ['ok' => false, 'error' => 'not_connected']));
 
         self::assertSame([], $queue->operations());
-        self::assertSame(['reason' => 'not_connected'], self::failures($mqtt)[0]['payload']['error']);
+        self::assertSame(['reason' => 'not_connected'], $mqtt->ofType('device.measurement_failed', 'events')[0]['payload']['error']);
     }
 
     /** Fora do pulso a pulseira responde com tramas a zero e o gateway confirma; decidir o que é leitura cabe ao hub. */
@@ -226,7 +226,7 @@ final class BridgeFailedMeasurementTest extends TestCase
 
         self::assertSame([], $queue->operations());
 
-        $failures = self::failures($mqtt);
+        $failures = $mqtt->ofType('device.measurement_failed', 'events');
         self::assertCount(1, $failures);
         self::assertSame(['reason' => 'no_reading'], $failures[0]['payload']['error']);
     }
@@ -245,7 +245,7 @@ final class BridgeFailedMeasurementTest extends TestCase
         $bridge->handleReceivedMessage(self::TOPIC, self::confirmation('measure.heartRate.start', null));
 
         self::assertSame([], $queue->operations());
-        self::assertSame([], self::failures($mqtt));
+        self::assertSame([], $mqtt->ofType('device.measurement_failed', 'events'));
     }
 
     /**
@@ -265,7 +265,7 @@ final class BridgeFailedMeasurementTest extends TestCase
         $queue->add('measure.heartRate.start');
         $bridge->handleReceivedMessage(self::TOPIC, self::confirmation('measure.heartRate.start', null));
 
-        $failures = self::failures($mqtt);
+        $failures = $mqtt->ofType('device.measurement_failed', 'events');
         self::assertCount(1, $failures);
         self::assertSame(['reason' => 'no_reading'], $failures[0]['payload']['error']);
     }
@@ -287,7 +287,7 @@ final class BridgeFailedMeasurementTest extends TestCase
 
         $reasons = array_map(
             static fn(array $e): mixed => $e['payload']['error']['reason'] ?? null,
-            self::failures($mqtt),
+            $mqtt->ofType('device.measurement_failed', 'events'),
         );
 
         self::assertSame(['not_worn', 'no_reading'], $reasons);
@@ -311,7 +311,7 @@ final class BridgeFailedMeasurementTest extends TestCase
         $bridge->handleReceivedMessage(self::TOPIC, self::confirmation('measure.ecg.start', null));
 
         self::assertSame([], $queue->operations());
-        self::assertSame([], self::failures($mqtt));
+        self::assertSame([], $mqtt->ofType('device.measurement_failed', 'events'));
     }
 
     /** A marca de um pedido expira, porque a confirmação que a consome pode nunca chegar. */
@@ -336,7 +336,7 @@ final class BridgeFailedMeasurementTest extends TestCase
 
         $reasons = array_map(
             static fn(array $e): mixed => $e['payload']['error']['reason'] ?? null,
-            self::failures($mqtt),
+            $mqtt->ofType('device.measurement_failed', 'events'),
         );
 
         self::assertSame(['not_worn', 'no_reading'], $reasons);
@@ -355,20 +355,9 @@ final class BridgeFailedMeasurementTest extends TestCase
         $bridge->handleReceivedMessage(self::TOPIC, self::measurement(['sdkType' => 51, 'heartRate' => 87]));
         $bridge->handleReceivedMessage(self::TOPIC, self::confirmation('measure.heartRate.start', null));
 
-        self::assertSame([], array_filter(
-            $mqtt->telemetry,
-            static fn(array $e): bool => ($e['payload']['type'] ?? null) === 'heart_rate',
-        ));
+        self::assertSame([], $mqtt->ofType('heart_rate'));
     }
 
-    /** @return list<array<string, mixed>> */
-    private static function failures(RecordingHubMqttBridge $mqtt): array
-    {
-        return array_values(array_filter(
-            $mqtt->events,
-            static fn(array $e): bool => ($e['payload']['type'] ?? null) === 'device.measurement_failed',
-        ));
-    }
 
     private static function confirmation(string $operation, ?string $outcome): string
     {

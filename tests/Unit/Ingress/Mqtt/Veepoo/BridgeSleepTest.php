@@ -20,10 +20,7 @@ final class BridgeSleepTest extends TestCase
         $mqtt = new RecordingHubMqttBridge();
         VeepooFixtures::bridge($mqtt)->handleReceivedMessage(self::TOPIC, self::sleepAsTheBraceletSendsIt());
 
-        $sleep = array_values(array_filter(
-            $mqtt->telemetry,
-            static fn(array $e): bool => ($e['payload']['type'] ?? null) === 'sleep',
-        ));
+        $sleep = $mqtt->ofType('sleep');
 
         self::assertCount(1, $sleep, 'a noite tem de sair, venha embrulhada em lista ou não');
         self::assertSame(10, $sleep[0]['payload']['data']['totalDurationMinutes']);
@@ -35,10 +32,7 @@ final class BridgeSleepTest extends TestCase
         $mqtt = new RecordingHubMqttBridge();
         VeepooFixtures::bridge($mqtt)->handleReceivedMessage(self::TOPIC, self::sleepAsTheBraceletSendsIt());
 
-        $sleep = array_values(array_filter(
-            $mqtt->telemetry,
-            static fn(array $e): bool => ($e['payload']['type'] ?? null) === 'sleep',
-        ));
+        $sleep = $mqtt->ofType('sleep');
 
         self::assertCount(1, $sleep);
         self::assertSame(
