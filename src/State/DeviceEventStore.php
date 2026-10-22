@@ -8,12 +8,9 @@ use Predis\ClientInterface;
 
 final class DeviceEventStore
 {
-    private const PREFIX = 'hub:dashboard';
-
     public function __construct(
         private ClientInterface $redis,
         private int $limit = 100,
-        private ?DeviceConfigurationProjection $projection = null,
     ) {
         $this->limit = max(1, $this->limit);
     }
@@ -23,13 +20,13 @@ final class DeviceEventStore
     {
         // O número de ordem deixa o stream mandar só o que é novo: o `recordedAt` tem resolução de um
         // segundo, e um radar publica vinte por segundo.
-        $payload['seq'] = (int)$this->redis->incr($this->sequenceKey($imei, $list));
+        $payload['seq'] = (int)$this->redis->incr(RedisKeys::list($imei, $list) . ':seq');
         $payload['recordedAt'] = gmdate('Y-m-d\\TH:i:s\\Z');
         $encoded = json_encode($payload, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
         if ($encoded === false) {
             return;
         }
-        $key = $this->deviceListKey($imei, $list);
+        $key = RedisKeys::list($imei, $list);
         $type = (string)($payload['type'] ?? '');
         $this->redis->pipeline(function ($pipe) use ($key, $encoded, $type): void {
             $pipe->lpush($key, [$encoded]);
@@ -39,16 +36,6 @@ final class DeviceEventStore
                 $pipe->hset($key . ':latest', $type, $encoded);
             }
         });
-
-        if ($this->projection !== null && $list === 'telemetry' && ($payload['type'] ?? '') === 'device_config') {
-            $source = isset($payload['source']) && is_array($payload['source']) ? $payload['source'] : [];
-            $this->projection->saveReported(
-                $imei,
-                (string)($source['protocol'] ?? ''),
-                (string)($source['nativeType'] ?? 'device_config'),
-                $payload
-            );
-        }
     }
 
     /**
@@ -59,7 +46,7 @@ final class DeviceEventStore
      */
     public function recent(string $imei, string $list, int $sinceSeq = 0): array
     {
-        $raw = $this->redis->lrange($this->deviceListKey($imei, $list), 0, $this->limit - 1);
+        $raw = $this->redis->lrange(RedisKeys::list($imei, $list), 0, $this->limit - 1);
 
         if ($sinceSeq <= 0) {
             return array_values(array_filter(array_map(
@@ -90,7 +77,7 @@ final class DeviceEventStore
     {
         $entries = array_map(
             static fn (string $line): mixed => json_decode($line, true),
-            array_values($this->redis->hgetall($this->deviceListKey($imei, $list) . ':latest')),
+            array_values($this->redis->hgetall(RedisKeys::list($imei, $list) . ':latest')),
         );
 
         return array_values(array_filter($entries, 'is_array'));
@@ -99,7 +86,7 @@ final class DeviceEventStore
     /** @return array<string, mixed>|null a entrada mais recente, sem ler a lista inteira */
     public function latest(string $imei, string $list): ?array
     {
-        $line = $this->redis->lrange($this->deviceListKey($imei, $list), 0, 0)[0] ?? null;
+        $line = $this->redis->lrange(RedisKeys::list($imei, $list), 0, 0)[0] ?? null;
         $entry = is_string($line) ? json_decode($line, true) : null;
 
         return is_array($entry) ? $entry : null;
@@ -108,21 +95,6 @@ final class DeviceEventStore
     /** O número de ordem da entrada mais recente, que é o cursor a devolver ao cliente. */
     public function latestSequence(string $imei, string $list): int
     {
-        return (int)($this->redis->get($this->sequenceKey($imei, $list)) ?? 0);
-    }
-
-    private function key(string $suffix): string
-    {
-        return self::PREFIX . ':' . $suffix;
-    }
-
-    private function deviceListKey(string $imei, string $list): string
-    {
-        return $this->key("device:{$imei}:{$list}");
-    }
-
-    private function sequenceKey(string $imei, string $list): string
-    {
-        return $this->key("device:{$imei}:{$list}:seq");
+        return (int)($this->redis->get(RedisKeys::list($imei, $list) . ':seq') ?? 0);
     }
 }

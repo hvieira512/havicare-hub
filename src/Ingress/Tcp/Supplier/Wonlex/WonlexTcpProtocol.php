@@ -24,6 +24,15 @@ final class WonlexTcpProtocol extends TcpProtocol
         $this->stateProvider = $stateProvider;
     }
 
+    public function downlinkCorrelation(string $bytes): array
+    {
+        $decoded = $this->adapter->decodeIncoming($bytes);
+
+        return is_array($decoded) && isset($decoded['ident'])
+            ? ['ident' => $decoded['ident'], 'ref' => (string)($decoded['ref'] ?? '')]
+            : [];
+    }
+
     /**
      * @return array<int, TcpResponse>
      */

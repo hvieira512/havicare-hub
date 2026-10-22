@@ -46,6 +46,11 @@ final class VivistarTcpProtocol extends TcpProtocol
         return $ack !== null ? [new TcpResponse($ack)] : [];
     }
 
+    public function downlinkCorrelation(string $bytes): array
+    {
+        return preg_match('/^IWBP[A-Z0-9]{2},[^,]*,([^,#]+)/', $bytes, $matches) === 1 ? ['ident' => $matches[1]] : [];
+    }
+
     public function commandMetadata(string $bytes): ?array
     {
         $metadata = parent::commandMetadata($bytes);

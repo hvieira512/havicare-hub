@@ -10,8 +10,6 @@ use Predis\ClientInterface;
 
 final class DeviceRuntimeStore
 {
-    private const PREFIX = 'hub:dashboard';
-
     public function __construct(
         private ClientInterface $redis,
         private int $limit = 100,
@@ -40,22 +38,22 @@ final class DeviceRuntimeStore
             'company' => DeviceMetadata::normalizeCompany($company),
         ];
         $this->redis->pipeline(function ($pipe) use ($imei, $payload): void {
-            $pipe->sadd($this->key('devices'), $imei);
-            $pipe->hmset($this->deviceKey($imei), $payload);
+            $pipe->sadd(RedisKeys::devices(), $imei);
+            $pipe->hmset(RedisKeys::device($imei), $payload);
         });
     }
 
     public function deleteDevice(string $imei): void
     {
-        foreach ($this->redis->lrange($this->deviceListKey($imei, 'commands'), 0, $this->limit - 1) as $id) {
-            $this->redis->hdel($this->commandIndexKey(), [(string)$id]);
+        foreach ($this->redis->lrange(RedisKeys::list($imei, 'commands'), 0, $this->limit - 1) as $id) {
+            $this->redis->hdel(RedisKeys::commandIndex(), [(string)$id]);
         }
 
-        $this->redis->srem($this->key('devices'), $imei);
-        $this->redis->zrem($this->onlineDeviceSetKey(), $imei);
-        $keys = [$this->deviceKey($imei), $this->commandHashKey($imei), $this->sightingKey($imei)];
+        $this->redis->srem(RedisKeys::devices(), $imei);
+        $this->redis->zrem(RedisKeys::onlineDevices(), $imei);
+        $keys = [RedisKeys::device($imei), RedisKeys::commandRecords($imei), RedisKeys::sighting($imei)];
         foreach (['raw', 'telemetry', 'events', 'commands', 'connections'] as $list) {
-            $list = $this->deviceListKey($imei, $list);
+            $list = RedisKeys::list($imei, $list);
             array_push($keys, $list, "{$list}:latest", "{$list}:seq");
         }
         $this->redis->del($keys);
@@ -69,8 +67,8 @@ final class DeviceRuntimeStore
             'licenseId' => DeviceMetadata::normalizeLicenseId($licenseId),
         ];
         $this->redis->pipeline(function ($pipe) use ($imei, $payload): void {
-            $pipe->sadd($this->key('devices'), $imei);
-            $pipe->hmset($this->deviceKey($imei), $payload);
+            $pipe->sadd(RedisKeys::devices(), $imei);
+            $pipe->hmset(RedisKeys::device($imei), $payload);
         });
     }
 
@@ -82,7 +80,7 @@ final class DeviceRuntimeStore
      */
     public function deviceSeen(string $imei, array $fields): bool
     {
-        $wasOnline = $this->redis->hget($this->deviceKey($imei), 'online') === '1';
+        $wasOnline = $this->redis->hget(RedisKeys::device($imei), 'online') === '1';
         $now = gmdate('Y-m-d\\TH:i:s\\Z');
         $payload = array_merge($fields, [
             'imei' => $imei,
@@ -90,9 +88,9 @@ final class DeviceRuntimeStore
         ]);
         $score = time();
         $this->redis->pipeline(function ($pipe) use ($imei, $payload, $score): void {
-            $pipe->sadd($this->key('devices'), $imei);
-            $pipe->hmset($this->deviceKey($imei), $payload);
-            $pipe->zadd($this->onlineDeviceSetKey(), [$imei => $score]);
+            $pipe->sadd(RedisKeys::devices(), $imei);
+            $pipe->hmset(RedisKeys::device($imei), $payload);
+            $pipe->zadd(RedisKeys::onlineDevices(), [$imei => $score]);
         });
 
         return !$wasOnline;
@@ -108,7 +106,7 @@ final class DeviceRuntimeStore
             return;
         }
 
-        $this->redis->hset($this->sightingKey($deviceKey), $gatewayKey, json_encode(
+        $this->redis->hset(RedisKeys::sighting($deviceKey), $gatewayKey, json_encode(
             Values::withoutNulls(['rssiDbm' => $rssiDbm, 'lastSeenAt' => gmdate('Y-m-d\\TH:i:s\\Z')]),
             JSON_THROW_ON_ERROR,
         ));
@@ -118,7 +116,7 @@ final class DeviceRuntimeStore
     public function gatewaySightings(string $deviceKey): array
     {
         $sightings = [];
-        foreach ($this->redis->hgetall($this->sightingKey($deviceKey)) ?: [] as $gatewayKey => $encoded) {
+        foreach ($this->redis->hgetall(RedisKeys::sighting($deviceKey)) ?: [] as $gatewayKey => $encoded) {
             $decoded = json_decode((string)$encoded, true);
             if (is_array($decoded)) {
                 $sightings[(string)$gatewayKey] = $decoded;
@@ -130,13 +128,13 @@ final class DeviceRuntimeStore
     /** Devolve se estava ligado. */
     public function deviceOffline(string $imei): bool
     {
-        $wasOnline = $this->redis->hget($this->deviceKey($imei), 'online') === '1';
-        $this->redis->hmset($this->deviceKey($imei), [
+        $wasOnline = $this->redis->hget(RedisKeys::device($imei), 'online') === '1';
+        $this->redis->hmset(RedisKeys::device($imei), [
             'imei' => $imei,
             'online' => '0',
             'lastStateAt' => gmdate('Y-m-d\\TH:i:s\\Z'),
         ]);
-        $this->redis->zrem($this->onlineDeviceSetKey(), $imei);
+        $this->redis->zrem(RedisKeys::onlineDevices(), $imei);
 
         return $wasOnline;
     }
@@ -146,7 +144,7 @@ final class DeviceRuntimeStore
      */
     public function devices(): array
     {
-        $states = $this->runtimeStates(array_map('strval', $this->redis->smembers($this->key('devices'))));
+        $states = $this->runtimeStates(array_map('strval', $this->redis->smembers(RedisKeys::devices())));
         $devices = array_values($states);
         usort($devices, static fn (array $a, array $b): int => strcmp((string)($a['imei'] ?? ''), (string)($b['imei'] ?? '')));
         return $devices;
@@ -155,7 +153,7 @@ final class DeviceRuntimeStore
     /** @return array<string, mixed> */
     public function device(string $imei): array
     {
-        return $this->normalizeDevice($this->redis->hgetall($this->deviceKey($imei)) ?: ['imei' => $imei]);
+        return $this->normalizeDevice($this->redis->hgetall(RedisKeys::device($imei)) ?: ['imei' => $imei]);
     }
 
     /**
@@ -174,7 +172,7 @@ final class DeviceRuntimeStore
 
         $responses = $this->redis->pipeline(function ($pipe) use ($imeis): void {
             foreach ($imeis as $imei) {
-                $pipe->hgetall($this->deviceKey($imei));
+                $pipe->hgetall(RedisKeys::device($imei));
             }
         });
 
@@ -184,7 +182,7 @@ final class DeviceRuntimeStore
             // resultados do pipeline, daí manter o caminho de leitura directa.
             $state = is_array($responses) && array_key_exists($index, $responses)
                 ? $responses[$index]
-                : $this->redis->hgetall($this->deviceKey($imei));
+                : $this->redis->hgetall(RedisKeys::device($imei));
             if ($state === []) {
                 continue;
             }
@@ -204,7 +202,7 @@ final class DeviceRuntimeStore
     {
         $now = time();
         /** @var array<string, string|float> $lastSeen */
-        $lastSeen = $this->redis->zrangebyscore($this->onlineDeviceSetKey(), '-inf', (string)($now - max(1, $timeoutSeconds)), ['withscores' => true]);
+        $lastSeen = $this->redis->zrangebyscore(RedisKeys::onlineDevices(), '-inf', (string)($now - max(1, $timeoutSeconds)), ['withscores' => true]);
         $states = $lastSeen !== [] ? $this->runtimeStates(array_map('strval', array_keys($lastSeen))) : [];
         $stale = [];
         foreach ($lastSeen as $imei => $seenAt) {
@@ -230,7 +228,7 @@ final class DeviceRuntimeStore
     {
         $candidates = array_values(array_filter(array_map(
             'strval',
-            $this->redis->zrangebyscore($this->onlineDeviceSetKey(), '-inf', '+inf')
+            $this->redis->zrangebyscore(RedisKeys::onlineDevices(), '-inf', '+inf')
         )));
         if ($candidates === []) {
             return [];
@@ -256,40 +254,5 @@ final class DeviceRuntimeStore
         $data['deviceType'] = DeviceMetadata::normalizeDeviceType((string)($data['deviceType'] ?? 'watch'));
         $data['licenseId'] = DeviceMetadata::normalizeLicenseId((string)($data['licenseId'] ?? '0'));
         return $data;
-    }
-
-    private function key(string $suffix): string
-    {
-        return self::PREFIX . ':' . $suffix;
-    }
-
-    private function deviceKey(string $imei): string
-    {
-        return $this->key("device:{$imei}");
-    }
-
-    private function deviceListKey(string $imei, string $list): string
-    {
-        return $this->key("device:{$imei}:{$list}");
-    }
-
-    private function sightingKey(string $imei): string
-    {
-        return $this->key("sighting:{$imei}");
-    }
-
-    private function commandHashKey(string $imei): string
-    {
-        return $this->key("device:{$imei}:command-records");
-    }
-
-    private function commandIndexKey(): string
-    {
-        return $this->key('command-index');
-    }
-
-    private function onlineDeviceSetKey(): string
-    {
-        return $this->key('online-devices-by-last-seen');
     }
 }

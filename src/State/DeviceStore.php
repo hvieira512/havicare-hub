@@ -8,7 +8,7 @@ use Hub\Domain\Capability\EventSeverity;
 use Hub\Infrastructure\Persistence\Repository\ApiDataAccess;
 use Hub\Command\DeviceConfigurationCatalog;
 use Hub\Log\Logger;
-use Hub\Protocol\Adapter\WonlexAdapter;
+use Hub\Ingress\Tcp\TcpProtocolRegistry;
 use Predis\ClientInterface;
 
 final class DeviceStore implements DeviceStoreContract
@@ -27,6 +27,8 @@ final class DeviceStore implements DeviceStoreContract
 
     private DeviceUpdateNotifier $updates;
 
+    private ?TcpProtocolRegistry $tcpProtocols = null;
+
     public function __construct(
         ClientInterface $redis,
         private int $limit = 100,
@@ -34,7 +36,7 @@ final class DeviceStore implements DeviceStoreContract
         $this->updates = new DeviceUpdateNotifier();
         $this->runtime = new DeviceRuntimeStore($redis, $this->limit);
         $this->projection = new DeviceConfigurationProjection();
-        $this->events = new DeviceEventStore($redis, $this->limit, $this->projection);
+        $this->events = new DeviceEventStore($redis, $this->limit);
         $this->commands = new DeviceCommandStore($redis, $this->runtime, $this->limit, $this->projection);
     }
 
@@ -147,6 +149,16 @@ final class DeviceStore implements DeviceStoreContract
         }
 
         $this->events->append($imei, $list, $list === 'events' ? EventSeverity::stamp($payload) : $payload);
+        // A configuração que o aparelho reporta fica também guardada na base, como a reportada.
+        if ($list === 'telemetry' && ($payload['type'] ?? '') === 'device_config') {
+            $source = is_array($payload['source'] ?? null) ? $payload['source'] : [];
+            $this->projection->saveReported(
+                $imei,
+                (string)($source['protocol'] ?? ''),
+                (string)($source['nativeType'] ?? 'device_config'),
+                $payload
+            );
+        }
         // O `DeviceService::recent()` serve telemetria, eventos e comandos; a lista crua não vai para
         // o stream, e anunciá-la acordava os ouvintes a cada mensagem de gateway.
         if ($list === 'telemetry' || $list === 'events') {
@@ -172,20 +184,10 @@ final class DeviceStore implements DeviceStoreContract
 
     public function recordCommand(string $imei, string $id, array $record): void
     {
-        if (($record['protocol'] ?? '') === 'wonlex-json' && !isset($record['ident'])) {
-            $bytes = DeviceCommandRecord::wireBytes($record);
-            if ($bytes !== '') {
-                $decoded = (new WonlexAdapter())->decodeIncoming($bytes);
-                if (is_array($decoded) && isset($decoded['ident'])) {
-                    $record['ident'] = $decoded['ident'];
-                    $record['ref'] = (string)($decoded['ref'] ?? '');
-                }
-            }
-        } elseif (($record['protocol'] ?? '') === 'vivistar-iw' && !isset($record['ident'])) {
-            $bytes = DeviceCommandRecord::wireBytes($record);
-            if (preg_match('/^IWBP[A-Z0-9]{2},[^,]*,([^,#]+)/', $bytes, $matches) === 1) {
-                $record['ident'] = $matches[1];
-            }
+        if (!isset($record['ident'])) {
+            $this->tcpProtocols ??= new TcpProtocolRegistry();
+            $record = array_merge($record, $this->tcpProtocols->get((string)($record['protocol'] ?? ''))
+                ?->downlinkCorrelation(DeviceCommandRecord::wireBytes($record)) ?? []);
         }
         $this->commands->recordCommand($imei, $id, $record);
         $this->updates->notify($imei);

@@ -52,6 +52,17 @@ abstract class TcpProtocol
         return null;
     }
 
+    /**
+     * O ident e o ref com que a resposta a este downlink se correlaciona; vazio num protocolo que
+     * não correlaciona assim.
+     *
+     * @return array{ident?: string|int, ref?: string}
+     */
+    public function downlinkCorrelation(string $bytes): array
+    {
+        return [];
+    }
+
     /** @return array{nativeType?: string, protocol?: string, ident?: string|int}|null */
     public function commandMetadata(string $bytes): ?array
     {
