@@ -58,7 +58,7 @@ final class RadarLayoutRepositoryTest extends MysqlDashboardTestCase
         self::assertNotNull($layout);
         self::assertSame(['Lavatório'], array_column($layout['areas'], 'name'));
         self::assertSame(-10, $layout['room']['xMinDm']);
-        self::assertSame('2026-09-17 16:00:00', $layout['fetchedAt']);
+        self::assertSame('2026-09-17T16:00:00Z', $layout['fetchedAt'], 'o instante sai em ISO UTC, como os outros *At da API');
     }
 
     /** As plantas de vários radares de uma vez: é assim que o ecrã da lista as pede. */
