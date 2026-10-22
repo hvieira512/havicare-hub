@@ -75,23 +75,11 @@ final class Wonlex implements AlarmClockHandler
             'week' => [
                 'order' => ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'],
             ],
-            // hitcare: as etiquetas ficam porque o hitCare as mostra do `_meta`; saem quando ele traduzir os valores.
             'mode' => [
-                'options' => [
-                    ['value' => 'daily', 'label' => 'Todos os dias'],
-                    ['value' => 'custom', 'label' => 'Personalizado'],
-                ],
+                'options' => [['value' => 'daily'], ['value' => 'custom']],
             ],
             'days' => [
-                'options' => [
-                    ['value' => 1, 'label' => 'Seg'],
-                    ['value' => 2, 'label' => 'Ter'],
-                    ['value' => 3, 'label' => 'Qua'],
-                    ['value' => 4, 'label' => 'Qui'],
-                    ['value' => 5, 'label' => 'Sex'],
-                    ['value' => 6, 'label' => 'Sáb'],
-                    ['value' => 7, 'label' => 'Dom'],
-                ],
+                'options' => array_map(static fn(int $day): array => ['value' => $day], range(1, 7)),
             ],
         ], $accumulatedMeta);
     }

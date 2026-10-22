@@ -12,6 +12,7 @@ final class FourPTouchConfigurationDefinitions
     public static function all(): array
     {
         $entry = ConfigurationDefinition::make(...);
+        $range = static fn(int $last): array => array_map(static fn(int $value): array => ['value' => $value], range(1, $last));
         $toggle = static fn(string $key, string $command, string $category, int $order): array => $entry(
             $key,
             $command,
@@ -37,18 +38,8 @@ final class FourPTouchConfigurationDefinitions
             $toggle('removeWatchAlarm', 'REMOVE', 'alerts', 30),
             $toggle('removeWatchSmsAlerts', 'REMOVESMS', 'alerts', 40),
             $entry('fallDownAlert', 'FALLDOWN', 'dualToggle', ['enabled', 'callCenterOnFall'], ['FALLDOWN'], category: 'alerts', order: 50),
-            // hitcare: as etiquetas ficam porque o hitCare as mostra do `_meta`; saem quando ele traduzir os valores.
             $entry('fallDownSensitivity', 'LSSET', 'fallSensitivityLevels', ['sensitivity'], ['LSSET'], category: 'alerts', order: 60, options: [
-                'sensitivity' => [
-                    ['value' => 1, 'label' => 'Máxima'],
-                    ['value' => 2, 'label' => 'Muito Alta'],
-                    ['value' => 3, 'label' => 'Alta'],
-                    ['value' => 4, 'label' => 'Moderada'],
-                    ['value' => 5, 'label' => 'Baixa'],
-                    ['value' => 6, 'label' => 'Muito Baixa'],
-                    ['value' => 7, 'label' => 'Quase Mínima'],
-                    ['value' => 8, 'label' => 'Mínima'],
-                ],
+                'sensitivity' => $range(8),
                 'levels' => [['value' => 6], ['value' => 8]],
             ]),
             $entry('takePills', 'TAKEPILLS', 'takePills', ['reminderSettings', 'reminderText', 'voiceData'], ['TAKEPILLS'], category: 'alerts', order: 70, limit: 3),
@@ -65,22 +56,9 @@ final class FourPTouchConfigurationDefinitions
             $entry('findDeviceCommand', 'FIND', 'action', [], ['FIND'], category: 'system', order: 5, transient: true),
             $entry('doNotDisturb', 'SILENCETIME', 'timeRanges', ['ranges'], ['SILENCETIME'], category: 'system', order: 60, limit: 4),
             // Sem `deviceStatus`: o `TS` pede-se no mosaico «Estado do dispositivo».
-            // hitcare: as etiquetas ficam porque o hitCare as mostra do `_meta`; saem quando ele traduzir os valores.
             $entry('alarmClock', 'REMIND', 'alarm_clock', ['alarms'], ['REMIND'], category: 'alerts', order: 5, limit: 3, options: [
-                'mode' => [
-                    ['value' => 1, 'label' => 'Uma vez'],
-                    ['value' => 2, 'label' => 'Todos os dias'],
-                    ['value' => 3, 'label' => 'Personalizado'],
-                ],
-                'days' => [
-                    ['value' => 1, 'label' => 'Seg'],
-                    ['value' => 2, 'label' => 'Ter'],
-                    ['value' => 3, 'label' => 'Qua'],
-                    ['value' => 4, 'label' => 'Qui'],
-                    ['value' => 5, 'label' => 'Sex'],
-                    ['value' => 6, 'label' => 'Sáb'],
-                    ['value' => 7, 'label' => 'Dom'],
-                ],
+                'mode' => $range(3),
+                'days' => $range(7),
             ]),
             $entry('phonebook', 'PHBX2', 'phonebook', ['contacts'], ['PHBX2', 'DPHBX', 'PHB', 'PHB2'], category: 'contacts', order: 55, limit: 100),
             $entry('profile', 'profile', 'soundProfile', ['mode'], ['profile'], category: 'system', order: 55, options: [

@@ -78,13 +78,8 @@ final class AlarmClockCapability implements CapabilityContract
         $meta = ($this->handlers[$protocol] ?? null)?->meta($accumulatedMeta) ?? $accumulatedMeta;
 
         $recurrenceOptions = $meta['mode']['options'] ?? null;
-        // hitcare: as etiquetas ficam porque o hitCare as mostra do `_meta`; saem quando ele traduzir os valores.
         if (!is_array($recurrenceOptions) || $recurrenceOptions === []) {
-            $recurrenceOptions = [
-                ['value' => 'once', 'label' => 'Uma vez'],
-                ['value' => 'daily', 'label' => 'Todos os dias'],
-                ['value' => 'custom', 'label' => 'Personalizado'],
-            ];
+            $recurrenceOptions = [['value' => 'once'], ['value' => 'daily'], ['value' => 'custom']];
         } else {
             $recurrenceOptions = array_map(static function (array $option): array {
                 $value = strtolower(trim((string)($option['value'] ?? '')));
@@ -96,10 +91,7 @@ final class AlarmClockCapability implements CapabilityContract
                     $value = 'custom';
                 }
 
-                return [
-                    'value' => $value !== '' ? $value : 'once',
-                    'label' => (string)($option['label'] ?? ''),
-                ];
+                return ['value' => $value !== '' ? $value : 'once'];
             }, $recurrenceOptions);
         }
         $meta['recurrence'] = ['options' => $recurrenceOptions];

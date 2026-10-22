@@ -18,10 +18,10 @@ final class CapabilityCatalogTest extends TestCase
             $sections[$definition['deviceType'] . '.' . $definition['key']] = $definition['section'];
         }
 
-        foreach (['watch.medication_reminders', 'pill_dispenser.medication_reminders', 'pill_dispenser.medication_period', 'pill_dispenser.alarm_volume', 'pill_dispenser.alarm_ringtone', 'pill_dispenser.mute_alarm'] as $key) {
+        foreach (['watch.alarm_clock', 'watch.medication_reminders', 'pill_dispenser.medication_reminders', 'pill_dispenser.medication_period', 'pill_dispenser.alarm_volume', 'pill_dispenser.alarm_ringtone', 'pill_dispenser.mute_alarm'] as $key) {
             self::assertSame('reminders', $sections[$key] ?? null, $key);
         }
-        foreach (['watch.alarm_clock', 'watch.fall_detection', 'watch.low_battery_alert', 'watch.help_call', 'pill_dispenser.emergency_call', 'pill_dispenser.help_call'] as $key) {
+        foreach (['watch.fall_detection', 'watch.low_battery_alert', 'watch.help_call', 'pill_dispenser.emergency_call', 'pill_dispenser.help_call'] as $key) {
             self::assertSame('alarms', $sections[$key] ?? null, $key);
         }
     }

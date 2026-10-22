@@ -27,9 +27,9 @@ final class DeviceCapabilityPresenterTest extends MysqlDashboardTestCase
     {
         $capabilities = $this->presenter->deviceCapabilities($this->model('Wonlex', 'HW20PRO'), 'wonlex-json', []);
 
-        self::assertArrayHasKey('alarm_clock', $capabilities['alarms']);
-        self::assertArrayHasKey('value', $capabilities['alarms']['alarm_clock']);
-        self::assertArrayHasKey('_meta', $capabilities['alarms']['alarm_clock']);
+        self::assertArrayHasKey('alarm_clock', $capabilities['reminders']);
+        self::assertArrayHasKey('value', $capabilities['reminders']['alarm_clock']);
+        self::assertArrayHasKey('_meta', $capabilities['reminders']['alarm_clock']);
     }
 
     public function testDefaultsAreOmittedWhenTheCallerAsksForStoredValuesOnly(): void
@@ -69,7 +69,7 @@ final class DeviceCapabilityPresenterTest extends MysqlDashboardTestCase
             'last_status' => 'acked',
         ]];
 
-        $alarm = $this->presenter->deviceCapabilities($model, 'wonlex-json', $rows)['alarms']['alarm_clock'];
+        $alarm = $this->presenter->deviceCapabilities($model, 'wonlex-json', $rows)['reminders']['alarm_clock'];
 
         self::assertSame('07:30', $alarm['value'][0]['time'] ?? null);
     }

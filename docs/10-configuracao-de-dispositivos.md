@@ -171,11 +171,6 @@ dicionário da dashboard, o `src/Dashboard/dashboard/pt-PT.json`, chaveados pela
 capacidade e, onde o mesmo nome faz coisas diferentes, pelo protocolo. O
 `PortugueseDictionaryTest` falha quando o catálogo ganha uma chave sem tradução.
 
-As etiquetas de opções que o hitCare mostra do `_meta` — o modo de envio da
-Vivistar, a sensibilidade de queda e a recorrência, os dias e o tipo dos
-despertadores — ficam enquanto ele não traduzir os valores; ver o
-[contrato MQTT](08-contrato-mqtt.md#pendente-do-hitcare).
-
 ### A forma pública da Wonlex e do 4P Touch
 
 | Configuração | Campos |
@@ -261,7 +256,7 @@ Serve de exemplo do padrão que todas seguem. A resposta do
 
 | Onde | O que é |
 |---|---|
-| `capabilities.alarms.alarm_clock` | O que o **modelo** suporta, presente mesmo sem configuração guardada |
+| `capabilities.reminders.alarm_clock` | O que o **modelo** suporta, presente mesmo sem configuração guardada |
 | `configurations.alarm_clock` | O que está **guardado** para aquele dispositivo |
 
 O `_meta` da capacidade descreve o que a interface pode oferecer, e é ele que
