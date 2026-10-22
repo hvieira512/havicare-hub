@@ -156,10 +156,6 @@ final class JoyTechOximeterBridge extends DeviceBridge implements GatewayRelay, 
     {
         $telemetry = TelemetryEnvelope::for($type, $context->deviceKey, $context->device, self::PROTOCOL, self::NATIVE_TYPE, $data, $context->gatewayKey);
         $telemetry['occurredAt'] = $occurredAt;
-        $this->mqttBridge->publishTelemetry($context->deviceKey, $telemetry, self::DEVICE_TYPE, $context->licenseId, $context->company);
-        $this->deviceStore?->append($context->deviceKey, 'telemetry', $telemetry + [
-            'deviceType' => self::DEVICE_TYPE,
-            'licenseId' => $context->licenseId,
-        ]);
+        $this->mqttBridge->publishAndStore($this->deviceStore, 'telemetry', $context->deviceKey, $telemetry, self::DEVICE_TYPE, $context->licenseId, $context->company);
     }
 }

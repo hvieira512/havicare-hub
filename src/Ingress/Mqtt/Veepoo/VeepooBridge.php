@@ -383,11 +383,7 @@ final class VeepooBridge extends DeviceBridge implements GatewayRelay, Dispatche
 
         $lowBattery = $this->lowBattery->observe($context->deviceKey, $battery);
         if ($lowBattery !== null) {
-            $this->mqttBridge->publishEvent($context->deviceKey, $lowBattery, 'bracelet', $context->licenseId, $context->company);
-            $this->deviceStore?->append($context->deviceKey, 'events', $lowBattery + [
-                'deviceType' => 'bracelet',
-                'licenseId' => $context->licenseId,
-            ]);
+            $this->mqttBridge->publishAndStore($this->deviceStore, 'events', $context->deviceKey, $lowBattery, 'bracelet', $context->licenseId, $context->company);
         }
     }
 

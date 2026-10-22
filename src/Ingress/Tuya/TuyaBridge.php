@@ -138,10 +138,8 @@ final class TuyaBridge implements MqttIngress
         $deviceType = (string)$device['deviceType'];
         $licenseId = DeviceMetadata::normalizeLicenseId($device['licenseId'] ?? 0);
         $company = (string)($device['company'] ?? 'null');
-        $stamp = ['deviceType' => $deviceType, 'licenseId' => $licenseId];
 
-        $this->mqttBridge->publishRaw($deviceId, $normalized['raw'], $deviceType, $licenseId, $company);
-        $this->deviceStore?->append($deviceId, 'raw', $normalized['raw'] + $stamp);
+        $this->mqttBridge->publishAndStore($this->deviceStore, 'raw', $deviceId, $normalized['raw'], $deviceType, $licenseId, $company);
         $cameOnline = $this->deviceStore?->deviceSeen($deviceId, [
             'supplier' => (string)$device['supplier'],
             'model' => (string)$device['model'],
@@ -158,12 +156,10 @@ final class TuyaBridge implements MqttIngress
         }
 
         foreach ($normalized['telemetry'] as $telemetry) {
-            $this->mqttBridge->publishTelemetry($deviceId, $telemetry, $deviceType, $licenseId, $company);
-            $this->deviceStore?->append($deviceId, 'telemetry', $telemetry + $stamp);
+            $this->mqttBridge->publishAndStore($this->deviceStore, 'telemetry', $deviceId, $telemetry, $deviceType, $licenseId, $company);
         }
         foreach ($normalized['events'] as $event) {
-            $this->mqttBridge->publishEvent($deviceId, $event, $deviceType, $licenseId, $company);
-            $this->deviceStore?->append($deviceId, 'events', $event + $stamp);
+            $this->mqttBridge->publishAndStore($this->deviceStore, 'events', $deviceId, $event, $deviceType, $licenseId, $company);
         }
     }
 

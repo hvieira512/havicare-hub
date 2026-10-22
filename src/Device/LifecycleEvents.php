@@ -73,7 +73,7 @@ final class LifecycleEvents
             $device = $this->devices->metadataFor($imei);
             $this->mqtt->publishEvent(
                 $imei,
-                RawPayload::event($imei, $device['supplier'], $device['model'], $type, $error, null, $device['commercialName']) + $body,
+                TelemetryEnvelope::event($imei, $device['supplier'], $device['model'], $type, $error, null, $device['commercialName']) + $body,
                 $device['deviceType'],
                 $device['licenseId'],
                 $device['company'],

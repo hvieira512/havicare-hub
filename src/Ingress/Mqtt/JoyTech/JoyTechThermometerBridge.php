@@ -166,10 +166,6 @@ final class JoyTechThermometerBridge extends DeviceBridge implements GatewayRela
             $context->gatewayKey,
         );
         $telemetry['occurredAt'] = $occurredAt;
-        $this->mqttBridge->publishTelemetry($context->deviceKey, $telemetry, self::DEVICE_TYPE, $context->licenseId, $context->company);
-        $this->deviceStore?->append($context->deviceKey, 'telemetry', $telemetry + [
-            'deviceType' => self::DEVICE_TYPE,
-            'licenseId' => $context->licenseId,
-        ]);
+        $this->mqttBridge->publishAndStore($this->deviceStore, 'telemetry', $context->deviceKey, $telemetry, self::DEVICE_TYPE, $context->licenseId, $context->company);
     }
 }

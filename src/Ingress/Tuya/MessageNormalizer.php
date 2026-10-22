@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Hub\Ingress\Tuya;
 
 use Hub\Device\DeviceDescriptor;
+use Hub\Device\TelemetryEnvelope;
 
 /**
  * Os pontos de dados da pulseira SOS Wi-Fi nas formas do hub. A categoria `sos` da Tuya só tem
@@ -50,17 +51,18 @@ final class MessageNormalizer
             $code = (string)($property['code'] ?? '');
             $value = $property['value'] ?? null;
             $time = (int)($property['time'] ?? 0);
-            $common = [
-                'occurredAt' => gmdate('Y-m-d\TH:i:s\Z', $time > 0 ? intdiv($time, 1000) : time()),
-                'device' => $descriptor,
-                'source' => ['protocol' => 'tuya-cloud', 'nativeType' => $code],
-            ];
+            $envelope = static function (string $type, array $data) use ($device, $code, $time): array {
+                $envelope = TelemetryEnvelope::for($type, (string)$device['imei'], $device, 'tuya-cloud', $code, $data);
+                $envelope['occurredAt'] = gmdate('Y-m-d\TH:i:s\Z', $time > 0 ? intdiv($time, 1000) : time());
+
+                return $envelope;
+            };
 
             // O `sos_state` a falso é o botão a voltar sozinho ao repouso, e não um cancelamento.
             if ($code === 'sos_state' && $value === true) {
-                $normalized['events'][] = ['type' => 'help_call'] + $common + ['data' => []];
+                $normalized['events'][] = $envelope('help_call', []);
             } elseif ($code === 'battery_percentage' && is_numeric($value)) {
-                $normalized['telemetry'][] = ['type' => 'battery'] + $common + ['data' => ['percent' => (int)$value]];
+                $normalized['telemetry'][] = $envelope('battery', ['percent' => (int)$value]);
             }
         }
 

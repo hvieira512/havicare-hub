@@ -32,22 +32,22 @@ class RecordingHubMqttBridge extends HubMqttBridge
         // Não chama o pai de propósito: não há broker a que ligar.
     }
 
-    public function publishRaw(string $imei, array $payload, string $deviceType, int $licenseId = 0, string $company = 'null'): void
+    public function publishRaw(string $imei, array $payload, string $deviceType, int $licenseId, string $company): void
     {
         $this->raw[] = self::entry($imei, $payload, $deviceType, $licenseId, $company);
     }
 
-    public function publishTelemetry(string $imei, array $payload, string $deviceType, int $licenseId = 0, string $company = 'null'): void
+    public function publishTelemetry(string $imei, array $payload, string $deviceType, int $licenseId, string $company): void
     {
         $this->telemetry[] = self::entry($imei, $payload, $deviceType, $licenseId, $company);
     }
 
-    public function publishEvent(string $imei, array $payload, string $deviceType, int $licenseId = 0, string $company = 'null'): void
+    public function publishEvent(string $imei, array $payload, string $deviceType, int $licenseId, string $company): void
     {
         $this->events[] = self::entry($imei, $payload, $deviceType, $licenseId, $company);
     }
 
-    public function publishStatus(string $imei, array $payload, bool $retain, string $deviceType, int $licenseId = 0, string $company = 'null'): void
+    public function publishStatus(string $imei, array $payload, bool $retain, string $deviceType, int $licenseId, string $company): void
     {
         $this->statuses[] = self::entry($imei, $payload, $deviceType, $licenseId, $company) + ['retain' => $retain];
     }

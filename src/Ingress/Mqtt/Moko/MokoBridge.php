@@ -297,15 +297,13 @@ final class MokoBridge extends MqttBridgeBase implements DispatchesQueued
 
         foreach ($this->gatewayNormalizer->telemetry($decoded, $gateway) as $telemetry) {
             if (CapabilityCatalog::isEventType((string)$telemetry['type'])) {
-                $this->mqttBridge->publishEvent($deviceKey, $telemetry, $deviceType, $licenseId, $company);
-                $this->deviceStore?->append($deviceKey, 'events', $telemetry + ['deviceType' => $deviceType, 'licenseId' => $licenseId]);
+                $this->mqttBridge->publishAndStore($this->deviceStore, 'events', $deviceKey, $telemetry, $deviceType, $licenseId, $company);
                 continue;
             }
             if (!$this->state->shouldPublish($deviceKey, (string)$telemetry['type'], $telemetry, $this->options->telemetryRefreshSeconds)) {
                 continue;
             }
-            $this->mqttBridge->publishTelemetry($deviceKey, $telemetry, $deviceType, $licenseId, $company);
-            $this->deviceStore?->append($deviceKey, 'telemetry', $telemetry + ['deviceType' => $deviceType, 'licenseId' => $licenseId]);
+            $this->mqttBridge->publishAndStore($this->deviceStore, 'telemetry', $deviceKey, $telemetry, $deviceType, $licenseId, $company);
         }
 
         $this->gateways->markOnline($gateway);

@@ -8,13 +8,12 @@ use Hub\Domain\Capability\EventSeverity;
 use Hub\Log\Logger;
 use Hub\Mqtt\ReconnectsOnLoopFailure;
 use PhpMqtt\Client\MqttClient;
+use Hub\State\DeviceReportStore;
 
 class HubMqttBridge
 {
     use ReconnectsOnLoopFailure;
 
-    private const DEFAULT_COMPANY = 'null';
-    private const DEFAULT_LICENSE_ID = 0;
 
     private MqttClient $publisher;
     private string $topicPrefix;
@@ -45,7 +44,7 @@ class HubMqttBridge
     }
 
     /** @param array<string, mixed> $payload */
-    public function publishRaw(string $imei, array $payload, string $deviceType, int $licenseId = self::DEFAULT_LICENSE_ID, string $company = self::DEFAULT_COMPANY): void
+    public function publishRaw(string $imei, array $payload, string $deviceType, int $licenseId, string $company): void
     {
         $this->publish(
             $this->topic($this->deviceTopic($company, $licenseId, $deviceType, $imei, 'raw')),
@@ -62,8 +61,8 @@ class HubMqttBridge
         array $payload,
         bool $retain,
         string $deviceType,
-        int $licenseId = self::DEFAULT_LICENSE_ID,
-        string $company = self::DEFAULT_COMPANY,
+        int $licenseId,
+        string $company,
     ): void {
         // QoS 1: a mensagem é retida, e um `offline` perdido deixa `online` no broker até
         // à transição seguinte.
@@ -79,7 +78,7 @@ class HubMqttBridge
     }
 
     /** @param array<string, mixed> $payload */
-    public function publishEvent(string $imei, array $payload, string $deviceType, int $licenseId = self::DEFAULT_LICENSE_ID, string $company = self::DEFAULT_COMPANY): void
+    public function publishEvent(string $imei, array $payload, string $deviceType, int $licenseId, string $company): void
     {
         $this->publish(
             $this->topic($this->deviceTopic($company, $licenseId, $deviceType, $imei, 'events')),
@@ -93,7 +92,7 @@ class HubMqttBridge
     }
 
     /** @param array<string, mixed> $payload */
-    public function publishTelemetry(string $imei, array $payload, string $deviceType, int $licenseId = self::DEFAULT_LICENSE_ID, string $company = self::DEFAULT_COMPANY): void
+    public function publishTelemetry(string $imei, array $payload, string $deviceType, int $licenseId, string $company): void
     {
         $this->publish(
             $this->topic($this->deviceTopic($company, $licenseId, $deviceType, $imei, 'telemetry')),
@@ -102,6 +101,29 @@ class HubMqttBridge
             $licenseId,
             'telemetry',
         );
+    }
+
+    /**
+     * Publica no canal e guarda o mesmo no histórico do aparelho, carimbado com o tipo e a licença.
+     *
+     * @param 'raw'|'telemetry'|'events' $channel
+     * @param array<string, mixed> $payload
+     */
+    public function publishAndStore(
+        ?DeviceReportStore $store,
+        string $channel,
+        string $imei,
+        array $payload,
+        string $deviceType,
+        int $licenseId,
+        string $company,
+    ): void {
+        match ($channel) {
+            'raw' => $this->publishRaw($imei, $payload, $deviceType, $licenseId, $company),
+            'telemetry' => $this->publishTelemetry($imei, $payload, $deviceType, $licenseId, $company),
+            'events' => $this->publishEvent($imei, $payload, $deviceType, $licenseId, $company),
+        };
+        $store?->append($imei, $channel, $payload + ['deviceType' => $deviceType, 'licenseId' => $licenseId]);
     }
 
     /** @param array<string, mixed> $payload */

@@ -25,7 +25,7 @@ final class ConnectionAnnouncer
         $this->status($imei, $device, $connected);
 
         [$deviceType, $licenseId, $company] = self::tenant($device);
-        $event = RawPayload::event(
+        $event = TelemetryEnvelope::event(
             $imei,
             (string)($device['supplier'] ?? ''),
             (string)($device['model'] ?? ''),
@@ -34,8 +34,7 @@ final class ConnectionAnnouncer
             null,
             (string)($device['commercialName'] ?? ''),
         );
-        $this->mqttBridge->publishEvent($imei, $event, $deviceType, $licenseId, $company);
-        $this->deviceStore?->append($imei, 'events', $event + ['deviceType' => $deviceType, 'licenseId' => $licenseId]);
+        $this->mqttBridge->publishAndStore($this->deviceStore, 'events', $imei, $event, $deviceType, $licenseId, $company);
     }
 
     /**
@@ -46,7 +45,7 @@ final class ConnectionAnnouncer
     public function status(string $imei, array $device, bool $connected): void
     {
         [$deviceType, $licenseId, $company] = self::tenant($device);
-        $status = RawPayload::status(
+        $status = TelemetryEnvelope::status(
             $imei,
             (string)($device['supplier'] ?? ''),
             (string)($device['model'] ?? ''),

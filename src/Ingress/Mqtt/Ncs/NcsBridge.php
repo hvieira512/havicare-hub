@@ -119,11 +119,7 @@ final class NcsBridge extends MqttBridgeBase
         }
 
         if (isset($normalized['event']) && is_array($normalized['event'])) {
-            $this->mqttBridge->publishEvent($deviceKey, $normalized['event'], $deviceType, $licenseId, $company);
-            $this->deviceStore?->append($deviceKey, 'events', array_merge($normalized['event'], [
-                'deviceType' => $deviceType,
-                'licenseId' => $licenseId,
-            ]));
+            $this->mqttBridge->publishAndStore($this->deviceStore, 'events', $deviceKey, $normalized['event'], $deviceType, $licenseId, $company);
         }
     }
 }

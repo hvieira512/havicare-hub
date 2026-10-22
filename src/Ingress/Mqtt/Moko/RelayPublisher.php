@@ -116,8 +116,7 @@ final class RelayPublisher
             if (!$this->state->shouldPublish($deviceKey, (string)$capability, $telemetry, $this->telemetryRefreshSeconds, (string)$gateway['imei'])) {
                 continue;
             }
-            $this->mqttBridge->publishTelemetry($deviceKey, $telemetry, $deviceType, $licenseId, $company);
-            $this->deviceStore?->append($deviceKey, 'telemetry', $telemetry + ['deviceType' => $deviceType, 'licenseId' => $licenseId]);
+            $this->mqttBridge->publishAndStore($this->deviceStore, 'telemetry', $deviceKey, $telemetry, $deviceType, $licenseId, $company);
         }
     }
 
@@ -135,8 +134,7 @@ final class RelayPublisher
         $licenseId = DeviceMetadata::normalizeLicenseId($device['licenseId'] ?? 0);
         $company = (string)($device['company'] ?? 'null');
         foreach ($events as $event) {
-            $this->mqttBridge->publishEvent($deviceKey, $event, $deviceType, $licenseId, $company);
-            $this->deviceStore?->append($deviceKey, 'events', $event + ['deviceType' => $deviceType, 'licenseId' => $licenseId]);
+            $this->mqttBridge->publishAndStore($this->deviceStore, 'events', $deviceKey, $event, $deviceType, $licenseId, $company);
         }
     }
 

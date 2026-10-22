@@ -6,7 +6,7 @@ namespace Hub\Ingress\Mqtt\Veepoo;
 
 use Hub\State\DeviceReportStore;
 use Hub\Device\HubMqttBridge;
-use Hub\Device\RawPayload;
+use Hub\Device\TelemetryEnvelope;
 use Hub\Support\Throttle;
 
 /**
@@ -41,7 +41,7 @@ final class MeasurementFailureReporter
         }
 
         // O motivo vai em `error`: o comando que pediu a medição aqui não se conhece.
-        $event = RawPayload::event(
+        $event = TelemetryEnvelope::event(
             $deviceKey,
             (string)($device['supplier'] ?? ''),
             (string)($device['model'] ?? ''),
@@ -51,10 +51,6 @@ final class MeasurementFailureReporter
             (string)($device['commercialName'] ?? ''),
         );
 
-        $this->mqttBridge->publishEvent($deviceKey, $event, 'bracelet', $licenseId, $company);
-        $this->deviceStore?->append($deviceKey, 'events', $event + [
-            'deviceType' => 'bracelet',
-            'licenseId' => $licenseId,
-        ]);
+        $this->mqttBridge->publishAndStore($this->deviceStore, 'events', $deviceKey, $event, 'bracelet', $licenseId, $company);
     }
 }

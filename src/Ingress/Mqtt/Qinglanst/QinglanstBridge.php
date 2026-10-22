@@ -204,20 +204,12 @@ final class QinglanstBridge extends MqttBridgeBase
         // O estrangulamento no Redis é por capacidade: as que chegam na mesma mensagem mudam
         // a ritmos diferentes.
         foreach ($normalized['telemetry'] as $capability => $telemetry) {
-            $this->mqttBridge->publishTelemetry($deviceKey, $telemetry, $deviceType, $licenseId, $company);
-            $this->deviceStore?->append($deviceKey, 'telemetry', array_merge($telemetry, [
-                'deviceType' => $deviceType,
-                'licenseId' => $licenseId,
-            ]));
+            $this->mqttBridge->publishAndStore($this->deviceStore, 'telemetry', $deviceKey, $telemetry, $deviceType, $licenseId, $company);
         }
 
         foreach ($this->activeDetections->fresh($deviceKey, $messageType, $normalized['events']) as $event) {
             $event = $this->withArea($deviceKey, $event);
-            $this->mqttBridge->publishEvent($deviceKey, $event, $deviceType, $licenseId, $company);
-            $this->deviceStore?->append($deviceKey, 'events', array_merge($event, [
-                'deviceType' => $deviceType,
-                'licenseId' => $licenseId,
-            ]));
+            $this->mqttBridge->publishAndStore($this->deviceStore, 'events', $deviceKey, $event, $deviceType, $licenseId, $company);
         }
     }
 
