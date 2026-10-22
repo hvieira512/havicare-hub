@@ -8,6 +8,7 @@ import {
 import { deviceTypeIcon } from "../components/device-type-tiles.js";
 import { modelPreviewHtml } from "../components/model-image.js";
 import { countLabel } from "../i18n.js";
+import { filterBranch, filterOption } from "../components/filter-tree.js";
 
 /** Tipo, modelo e licença do assistente de adicionar e do modal de editar: só HTML, sem estado. */
 
@@ -68,19 +69,17 @@ export function licensePickerHtml(tree, selected = null) {
         if ((group.licenses || []).length === 0) continue;
         rows.push(
             html`<div class="license-picker-company fw-medium text-secondary">${(companyLabel(group.company))}</div>`,
-            html`<div class="filter-branch position-relative d-flex flex-column">${group.licenses
-                .map((license) =>
-                    licenseRow({
-                        company: group.company,
-                        licenseId: license.licenseId,
-                        label: license.name
-                            ? `${license.name} (${license.licenseId})`
-                            : license.licenseId,
-                        selected: chosen === licenseKey(group.company, license.licenseId),
-                        nested: true,
-                    }),
-                )
-            }</div>`,
+            filterBranch(group.licenses.map((license) =>
+                licenseRow({
+                    company: group.company,
+                    licenseId: license.licenseId,
+                    label: license.name
+                        ? `${license.name} (${license.licenseId})`
+                        : license.licenseId,
+                    selected: chosen === licenseKey(group.company, license.licenseId),
+                    nested: true,
+                }),
+            )),
         );
     }
 
@@ -90,21 +89,13 @@ export function licensePickerHtml(tree, selected = null) {
 }
 
 function licenseRow({ company, licenseId, label, selected, nested = false }) {
-    const classes = [
-        "filter-option d-flex align-items-center text-start rounded-2",
-        nested ? "filter-option-nested" : "",
-        selected ? "selected" : "",
-    ]
-        .filter(Boolean)
-        .join(" ");
-
-    return html`
-        <button type="button" role="radio" aria-checked="${selected ? "true" : "false"}"
-            class="${classes}" data-license-pick
-            data-license-company="${company}" data-license-id="${licenseId}">
-            <span class="filter-option-box d-grid flex-shrink-0 rounded-circle"><i class="fa-solid fa-check"></i></span>
-            <span class="flex-fill min-w-0 text-truncate">${label}</span>
-        </button>`;
+    return filterOption({
+        attrs: html`role="radio" aria-checked="${selected ? "true" : "false"}" data-license-pick data-license-company="${company}" data-license-id="${licenseId}"`,
+        label,
+        selected,
+        nested,
+        radio: true,
+    });
 }
 
 /** A licença escolhida, como a badge da trilha a mostra. */
