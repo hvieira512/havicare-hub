@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace Tests\Unit\Ingress\Mqtt\Lefu;
 
 use Hub\Device\RedisPendingDownlinkQueue;
+use Hub\Ingress\Mqtt\JoyTech\RecentMeasurementKeys;
 use Hub\Ingress\Mqtt\Lefu\LefuTorreBridge;
+use Hub\Ingress\Mqtt\Lefu\ScaleOnlineUsers;
 use Hub\State\DeviceStoreContract;
 use PHPUnit\Framework\TestCase;
 use Tests\Support\Doubles\InMemoryRedisClient;
@@ -373,6 +375,8 @@ final class LefuTorreBridgeTest extends TestCase
             IngressFixtures::links($links),
             $queue,
             'havicare-hub/null/0/gw/+/raw',
+            new ScaleOnlineUsers($redis = new InMemoryRedisClient()),
+            new RecentMeasurementKeys($redis, 'hub:lefu:history-seen', 500),
             $store,
             fn (): float => $this->now,
             scaleUsers: $users,

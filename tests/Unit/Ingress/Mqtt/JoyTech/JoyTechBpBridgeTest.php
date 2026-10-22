@@ -38,7 +38,7 @@ final class JoyTechBpBridgeTest extends TestCase
     protected function setUp(): void
     {
         $this->now = (float)strtotime('2026-10-16T13:51:40Z');
-        $this->marks = new BloodPressureHistoryMarks();
+        $this->marks = new BloodPressureHistoryMarks(new InMemoryRedisClient());
         self::$offset = 60;
     }
 
@@ -402,9 +402,9 @@ final class JoyTechBpBridgeTest extends TestCase
             IngressFixtures::links($links),
             $queue,
             'havicare-hub/null/0/gw/+/raw',
+            $this->marks,
             $store,
             fn (): float => $this->now,
-            marks: $this->marks,
         );
     }
 }

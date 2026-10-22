@@ -7,11 +7,14 @@ namespace Tests\Unit\Ingress\Mqtt;
 use Hub\Device\HubMqttBridge;
 use Hub\Device\RedisPendingDownlinkQueue;
 use Hub\Ingress\Mqtt\Gateway\GatewayRelay;
+use Hub\Ingress\Mqtt\JoyTech\BloodPressureHistoryMarks;
 use Hub\Ingress\Mqtt\JoyTech\JoyTechBpBridge;
 use Hub\Ingress\Mqtt\JoyTech\JoyTechFrame;
 use Hub\Ingress\Mqtt\JoyTech\JoyTechOximeterBridge;
 use Hub\Ingress\Mqtt\JoyTech\JoyTechThermometerBridge;
+use Hub\Ingress\Mqtt\JoyTech\RecentMeasurementKeys;
 use Hub\Ingress\Mqtt\Lefu\LefuTorreBridge;
+use Hub\Ingress\Mqtt\Lefu\ScaleOnlineUsers;
 use Hub\Ingress\Mqtt\Veepoo\VeepooBridge;
 use Hub\State\DeviceStore;
 use PHPUnit\Framework\TestCase;
@@ -76,6 +79,8 @@ final class GattBridgeTranscriptTest extends TestCase
             IngressFixtures::links(),
             $queue,
             self::FILTER,
+            new ScaleOnlineUsers($this->redis),
+            new RecentMeasurementKeys($this->redis, 'hub:lefu:history-seen', 500),
             $this->store,
             fn (): float => $this->now,
             scaleUsers: static fn (string $imei): array => [
@@ -129,6 +134,7 @@ final class GattBridgeTranscriptTest extends TestCase
             IngressFixtures::links(),
             $queue,
             self::FILTER,
+            new BloodPressureHistoryMarks($this->redis),
             $this->store,
             fn (): float => $this->now,
         );
@@ -178,6 +184,7 @@ final class GattBridgeTranscriptTest extends TestCase
             IngressFixtures::links(),
             null,
             self::FILTER,
+            new BloodPressureHistoryMarks($this->redis),
             $this->store,
             fn (): float => $this->now,
         );
@@ -254,6 +261,7 @@ final class GattBridgeTranscriptTest extends TestCase
             $this->mqtt,
             IngressFixtures::links(),
             self::FILTER,
+            new RecentMeasurementKeys($this->redis),
             $this->store,
             fn (): float => $this->now,
         );

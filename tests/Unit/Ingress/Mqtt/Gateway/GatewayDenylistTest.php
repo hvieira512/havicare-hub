@@ -5,15 +5,19 @@ declare(strict_types=1);
 namespace Tests\Unit\Ingress\Mqtt\Gateway;
 
 use Hub\Ingress\Mqtt\Gateway\GatewayRelay;
+use Hub\Ingress\Mqtt\JoyTech\BloodPressureHistoryMarks;
 use Hub\Ingress\Mqtt\JoyTech\JoyTechBpBridge;
 use Hub\Ingress\Mqtt\JoyTech\JoyTechThermometerBridge;
+use Hub\Ingress\Mqtt\JoyTech\RecentMeasurementKeys;
 use Hub\Ingress\Mqtt\Lefu\LefuTorreBridge;
+use Hub\Ingress\Mqtt\Lefu\ScaleOnlineUsers;
 use Hub\Ingress\Mqtt\Veepoo\VeepooBridge;
 use Hub\Registry\Denylist;
 use Hub\State\DeviceStoreContract;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Tests\Support\Doubles\ArrayObservationStateStore;
+use Tests\Support\Doubles\InMemoryRedisClient;
 use Tests\Support\Doubles\IngressFixtures;
 use Tests\Support\Doubles\RecordingHubMqttBridge;
 
@@ -129,12 +133,13 @@ final class GatewayDenylistTest extends TestCase
         ] + $devices);
         $links = IngressFixtures::links();
         $topic = 'havicare-hub/null/0/gw/+/raw';
+        $redis = new InMemoryRedisClient();
 
         return match ($name) {
             'veepoo' => new VeepooBridge($whitelist, $mqtt, $links, null, new ArrayObservationStateStore(), $topic, $store, denylist: $denylist),
-            'lefu' => new LefuTorreBridge($whitelist, $mqtt, $links, null, $topic, $store, denylist: $denylist),
-            'joytech-bp' => new JoyTechBpBridge($whitelist, $mqtt, $links, null, $topic, $store, denylist: $denylist),
-            'joytech-thermometer' => new JoyTechThermometerBridge($whitelist, $mqtt, $links, $topic, $store, denylist: $denylist),
+            'lefu' => new LefuTorreBridge($whitelist, $mqtt, $links, null, $topic, new ScaleOnlineUsers($redis), new RecentMeasurementKeys($redis), $store, denylist: $denylist),
+            'joytech-bp' => new JoyTechBpBridge($whitelist, $mqtt, $links, null, $topic, new BloodPressureHistoryMarks($redis), $store, denylist: $denylist),
+            'joytech-thermometer' => new JoyTechThermometerBridge($whitelist, $mqtt, $links, $topic, new RecentMeasurementKeys($redis), $store, denylist: $denylist),
         };
     }
 }
