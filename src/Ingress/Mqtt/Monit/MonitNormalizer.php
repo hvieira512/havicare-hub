@@ -37,7 +37,7 @@ final class MonitNormalizer
         $occurredAt = gmdate('Y-m-d\TH:i:s\Z');
         $common = [
             'occurredAt' => $occurredAt,
-            'device' => $this->device($device),
+            'device' => DeviceDescriptor::of((string)$device['imei'], $device),
             'source' => array_filter([
                 'protocol' => 'monit-mecs-pro-ble',
                 'nativeType' => 'manufacturer_data',
@@ -109,14 +109,5 @@ final class MonitNormalizer
         }
 
         return max($floor, min($ceiling, $index));
-    }
-
-    /**
-     * @param array<string, mixed> $device
-     * @return array<string, mixed>
-     */
-    private function device(array $device): array
-    {
-        return DeviceDescriptor::of((string)$device['imei'], $device);
     }
 }

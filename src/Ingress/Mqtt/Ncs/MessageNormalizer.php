@@ -89,7 +89,7 @@ final class MessageNormalizer
         $event = [
             'type' => $eventType,
             'occurredAt' => gmdate('Y-m-d\TH:i:s\Z'),
-            'device' => $this->device($device),
+            'device' => DeviceDescriptor::of((string)$device['imei'], $device),
             'data' => $eventData,
         ];
 
@@ -120,15 +120,6 @@ final class MessageNormalizer
                 'sourceStatus' => $topic->statusName,
             ]),
         ];
-    }
-
-    /**
-     * @param array<string, mixed> $device
-     * @return array<string, string>
-     */
-    private function device(array $device): array
-    {
-        return DeviceDescriptor::of((string)$device['imei'], $device);
     }
 
     private function resolveNcsEventType(string $key): ?string

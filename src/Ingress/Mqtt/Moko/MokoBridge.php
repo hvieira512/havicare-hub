@@ -8,6 +8,7 @@ use Hub\Domain\Capability\CapabilityCatalog;
 use Hub\Domain\DeviceMetadata;
 use Hub\Device\CommercialModelResolver;
 use Hub\Device\ConnectionAnnouncer;
+use Hub\Device\DeviceDescriptor;
 use Hub\Domain\DiaperSensitivity;
 use Hub\Domain\GatewayDeviceLinkLookup;
 use Hub\Ingress\Mqtt\DispatchesQueued;
@@ -274,7 +275,7 @@ final class MokoBridge extends MqttBridgeBase implements DispatchesQueued
         $raw = [
             'direction' => 'uplink',
             'occurredAt' => gmdate('Y-m-d\TH:i:s\Z'),
-            'device' => RelayPublisher::describe($gateway),
+            'device' => DeviceDescriptor::of((string)$gateway['imei'], $gateway),
             'data' => $decoded,
             'debug' => [
                 'protocol' => $protocol,
@@ -514,7 +515,7 @@ final class MokoBridge extends MqttBridgeBase implements DispatchesQueued
             $previous = is_string($stored) ? explode('@', $stored, 2)[0] : null;
             $event = [
                 'type' => $eventType, 'occurredAt' => gmdate('Y-m-d\TH:i:s\Z'),
-                'device' => RelayPublisher::describe($sensor), 'data' => ['previousState' => $previous],
+                'device' => DeviceDescriptor::of((string)$sensor['imei'], $sensor), 'data' => ['previousState' => $previous],
                 'source' => ['protocol' => 'monit-mecs-pro-ble', 'gatewayId' => (string)$gateway['imei']],
             ];
             $this->relay->publishEvents($sensor, $gateway, [$event]);
