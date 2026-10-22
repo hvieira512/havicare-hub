@@ -1,6 +1,5 @@
 import {
     getDeviceTypeSuppliersModels as apiGetCatalog,
-    getModelFilters as apiGetModelFilters,
 } from "../../api/index.js";
 import { state } from "../../state.js";
 import { esc } from "../../format.js";
@@ -141,18 +140,6 @@ function renderModelsSection() {
     setSettingsNavCount("Models", models);
 }
 
-async function loadSettingsModelFilters() {
-    if (state.settingsModal.sectionLoaded.modelFilters) {
-        return state.settingsModal.modelFilters;
-    }
-
-    const response = await apiGetModelFilters();
-    const filters = response.data || [];
-    state.settingsModal.modelFilters = filters;
-    state.settingsModal.sectionLoaded.modelFilters = true;
-    return filters;
-}
-
 /** ponytail: sem paginação. Com centenas de modelos, nascem fechados e buscam os filhos ao abrir. */
 async function loadSettingsModelsSection() {
     const response = await apiGetCatalog();
@@ -232,7 +219,6 @@ export {
     backToModelList,
     handleModelsListSearchInput,
     initModelList,
-    loadSettingsModelFilters,
     loadSettingsModelsSection,
     renderModelsSection,
     showNewModelSlide,

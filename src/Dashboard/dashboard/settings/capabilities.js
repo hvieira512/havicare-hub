@@ -1,6 +1,4 @@
-import {
-    getModelFilters as apiGetModelFilters,
-} from "../api/index.js";
+import { loadModelFilters } from "./shell.js";
 import { state } from "../state.js";
 import { html, raw } from "../html.js";
 import { buttonGroup } from "../components/button-group.js";
@@ -71,18 +69,6 @@ async function loadCapabilityCatalog(deviceType) {
     return catalog;
 }
 
-async function ensureCapabilityModelFilters() {
-    if (
-        state.settingsModal.modelFilters.length > 0 ||
-        state.settingsModal.sectionLoaded.modelFilters
-    ) {
-        return;
-    }
-    const response = await apiGetModelFilters();
-    state.settingsModal.modelFilters = response.data || [];
-    state.settingsModal.sectionLoaded.modelFilters = true;
-}
-
 function loadCapabilitySuppliersForDeviceType(deviceType) {
     const group = state.settingsModal.modelFilters.find(
         (g) => normalizeDeviceType(g.deviceType || "") === deviceType,
@@ -119,7 +105,7 @@ async function loadSettingsCapabilitiesSection(
         view.templateEnabledKeys = [];
     }
     await loadCapabilityCatalog(normalized);
-    await ensureCapabilityModelFilters();
+    await loadModelFilters();
     loadCapabilitySuppliersForDeviceType(normalized);
     if (view.supplier) {
         await loadCapabilityTemplate(

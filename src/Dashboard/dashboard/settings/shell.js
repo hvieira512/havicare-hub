@@ -1,7 +1,9 @@
 import {
     getApiUsers as apiGetApiUsers,
+    getModelFilters as apiGetModelFilters,
     getModels as apiGetModels,
 } from "../api/index.js";
+import { state } from "../state.js";
 import { ensureLicensesLoaded } from "../licenses.js";
 import { resolvePaginationPage } from "../pagination.js";
 import { els } from "../dom.js";
@@ -52,4 +54,16 @@ export function setSettingsNavCount(key, total) {
 export function handleSettingsPaginationClick(event, pagination, actionPrefix, load) {
     const nextPage = resolvePaginationPage(event, pagination, actionPrefix);
     if (nextPage !== null) void load(nextPage);
+}
+
+/** Os fornecedores de cada tipo, uma vez por abertura; quem cria um modelo baixa o `sectionLoaded`. */
+export async function loadModelFilters() {
+    if (state.settingsModal.sectionLoaded.modelFilters) {
+        return state.settingsModal.modelFilters;
+    }
+
+    const response = await apiGetModelFilters();
+    state.settingsModal.modelFilters = response.data || [];
+    state.settingsModal.sectionLoaded.modelFilters = true;
+    return state.settingsModal.modelFilters;
 }

@@ -21,10 +21,10 @@ import { createWizard } from "../../devices/wizard.js";
 import { deviceTypeLabel, normalizeDeviceType } from "../../domain.js";
 import {
     backToModelList,
-    loadSettingsModelFilters,
     showNewModelSlide,
 } from "./list.js";
 import { els } from "../../dom.js";
+import { loadModelFilters } from "../shell.js";
 
 /** O modelo novo, em três passos; nasce com o template de capacidades do fornecedor para o tipo. */
 
@@ -274,7 +274,7 @@ function resetModelWizard() {
 
 async function openNewModelForm() {
     if (!state.settingsModal.sectionLoaded.modelFilters) {
-        await loadSettingsModelFilters();
+        await loadModelFilters();
     }
     resetModelWizard();
     render();
