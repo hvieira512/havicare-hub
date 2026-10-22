@@ -8,6 +8,7 @@ use Hub\Ingress\Mqtt\Veepoo\MeasurementNormalizer;
 use Hub\State\DeviceStoreContract;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
+use Tests\Support\CapturesLog;
 use Tests\Support\Doubles\IngressFixtures;
 use Tests\Support\Doubles\RecordingHubMqttBridge;
 use Tests\Support\Doubles\VeepooFixtures;
@@ -15,6 +16,8 @@ use Tests\Support\Doubles\VeepooFixtures;
 /** É aqui que o tipo do SDK, que o gateway reenvia sem interpretar, vira uma grandeza do hub. */
 final class BridgeMeasurementTest extends TestCase
 {
+    use CapturesLog;
+
     private const TOPIC = 'havicare-hub/null/0/gw/bef341903987/raw';
 
     /**
@@ -123,6 +126,7 @@ final class BridgeMeasurementTest extends TestCase
         $bridge = VeepooFixtures::bridge($mqtt);
 
         $stillSearching = [
+            ['sdkType' => 51, 'heartRate' => 0],
             ['sdkType' => 31, 'bloodOxygen' => 0],
             ['sdkType' => 22, 'bloodGlucose' => 0],
             ['sdkType' => 58, 'pressure' => 0],
@@ -134,6 +138,15 @@ final class BridgeMeasurementTest extends TestCase
         }
 
         self::assertSame([], $mqtt->telemetry);
+        self::assertStringNotContainsString('sem normalização', (string)file_get_contents($this->logFile));
+    }
+
+    /** Um tipo que o hub não conhece é que se avisa. */
+    public function testAnUnknownSdkTypeIsLogged(): void
+    {
+        IngressFixtures::relay(VeepooFixtures::bridge(new RecordingHubMqttBridge()), self::TOPIC, self::message(['sdkType' => 99]));
+
+        self::assertStringContainsString('tipo do SDK sem normalização: 99', (string)file_get_contents($this->logFile));
     }
 
     /** Com `wearNotPass` ou `leadOffType` vêm dezenas de tramas a zero, e o operador sabe porquê uma vez, não sessenta. */

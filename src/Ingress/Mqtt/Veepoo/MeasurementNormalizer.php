@@ -32,6 +32,12 @@ final class MeasurementNormalizer
         return $read === null ? null : $read($payload);
     }
 
+    /** Se o hub conhece o tipo, haja ou não leitura na trama. */
+    public static function knowsSdkType(int $sdkType): bool
+    {
+        return isset(self::sdkTypes()[$sdkType]);
+    }
+
     /** O pedido que mandou fazer esta medição, pelo tipo do SDK, o único identificador da resposta. */
     public static function operationForSdkType(int $sdkType): ?string
     {
