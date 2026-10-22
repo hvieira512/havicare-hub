@@ -194,7 +194,8 @@ Nos alertas da Wonlex há campos opcionais, os que a especificação marca com
 dos dois alertas de ritmo cardíaco, `enabled` incluído. O que falta não vai no
 `configs` — nem como 0 nem como `null` — e o relógio fica com o que tinha; o que
 vem é validado como sempre. O `thresholdPercent` do `low_battery_alert` não é
-opcional.
+opcional. No `sleep_monitoring` são opcionais, da mesma maneira, o `startTime` e
+o `endTime`; o `enabled` e o `targetMinutes` são obrigatórios.
 
 O construtor de cada protocolo traduz para o fio: `switchState`, `RemindValue`,
 `hpWarn`, `HHmmss`, os códigos do `LZ`, do `profile` e do `BP33`.

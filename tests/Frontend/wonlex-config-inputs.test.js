@@ -42,6 +42,12 @@ test("sleep times draw as time fields and read back in HH:MM", () => {
     assert.equal(readConfigPayload(root).startTime, "23:30");
 });
 
+test("a blank sleep time is left out of the payload", () => {
+    const root = section(sleepEntry, { enabled: true, endTime: "07:00", targetMinutes: 480 });
+
+    assert.deepEqual(readConfigPayload(root), { enabled: true, endTime: "07:00", targetMinutes: 480 });
+});
+
 test("the temperature threshold accepts decimals", () => {
     const root = section(temperatureEntry, { enabled: true, thresholdCelsius: 38.5 });
     const value = root.querySelector("[data-config-field=\"thresholdCelsius\"]");

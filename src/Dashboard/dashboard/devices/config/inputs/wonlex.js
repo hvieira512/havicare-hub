@@ -49,8 +49,7 @@ export const INPUTS = {
         render: sleepSettingsInput,
         read: (section) => ({
             enabled: readCheckbox(section, "enabled"),
-            startTime: readText(section, "startTime"),
-            endTime: readText(section, "endTime"),
+            ...Object.fromEntries(["startTime", "endTime"].map((name) => [name, readText(section, name)]).filter(([, value]) => value !== "")),
             targetMinutes: readNumber(section, "targetMinutes"),
         }),
     },

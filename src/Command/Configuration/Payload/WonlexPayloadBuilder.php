@@ -81,10 +81,11 @@ final class WonlexPayloadBuilder extends ConfigurationPayloadBuilder
     private static function sleepSettings(array $payload): array
     {
         // O relógio quer as horas em `HHmmss`.
+        $time = static fn(mixed $value, string $field): string => str_replace(':', '', self::hhmm($value, $field)) . '00';
+
         return ['configs' => ['SleepIntervalOrSwitch' => [
             'switchState' => self::boolInt($payload['enabled'] ?? null, 'enabled'),
-            'sleepStartTime' => str_replace(':', '', self::hhmm($payload['startTime'] ?? null, 'startTime')) . '00',
-            'sleepEndTime' => str_replace(':', '', self::hhmm($payload['endTime'] ?? null, 'endTime')) . '00',
+            ...self::optional($payload, ['startTime' => ['sleepStartTime', $time], 'endTime' => ['sleepEndTime', $time]]),
             'sleepTarget' => self::intInRange($payload['targetMinutes'] ?? null, 'targetMinutes'),
         ]]];
     }
@@ -136,8 +137,8 @@ final class WonlexPayloadBuilder extends ConfigurationPayloadBuilder
      * Os campos que a spec marca com `[*]`: o que falta não vai no fio, o que vem é validado.
      *
      * @param array<string, mixed> $payload
-     * @param array<string, array{string, callable(mixed, string): (int|float)}> $fields
-     * @return array<string, int|float>
+     * @param array<string, array{string, callable(mixed, string): (int|float|string)}> $fields
+     * @return array<string, int|float|string>
      */
     private static function optional(array $payload, array $fields): array
     {

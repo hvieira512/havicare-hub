@@ -572,6 +572,8 @@ final class DeviceConfigurationCatalogTest extends TestCase
         yield 'blood oxygen without threshold' => ['wonlexBloodOxygenWarn', ['enabled' => true], 'bloodOxygenWarn', 'reminderValue'];
         yield 'high temperature without threshold' => ['wonlexTemperatureExceedRemind', ['enabled' => true], 'TemperatureExceedRemind', 'RemindValue'];
         yield 'low temperature without threshold' => ['wonlexTemperatureBelowRemind', ['enabled' => true], 'TemperatureBelowRemind', 'RemindValue'];
+        yield 'sleep without start time' => ['wonlexSleepIntervalOrSwitch', ['enabled' => true, 'endTime' => '07:00', 'targetMinutes' => 480], 'SleepIntervalOrSwitch', 'sleepStartTime'];
+        yield 'sleep without end time' => ['wonlexSleepIntervalOrSwitch', ['enabled' => true, 'startTime' => '22:00', 'targetMinutes' => 480], 'SleepIntervalOrSwitch', 'sleepEndTime'];
     }
 
     /**
@@ -586,6 +588,13 @@ final class DeviceConfigurationCatalogTest extends TestCase
 
         self::assertArrayNotHasKey($wire, $payload['payload']['configs'][$config]);
         self::assertCount(count($value), $payload['payload']['configs'][$config]);
+    }
+
+    public function testWonlexOptionalSleepTimeIsStillValidated(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+
+        DeviceConfigurationCatalog::commandPayload('wonlex-json', 'wonlexSleepIntervalOrSwitch', ['enabled' => true, 'startTime' => '25:00', 'targetMinutes' => 480]);
     }
 
     public function testWonlexOptionalAlertFieldIsStillRangeChecked(): void
