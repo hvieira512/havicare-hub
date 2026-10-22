@@ -6,6 +6,9 @@ namespace Hub\Domain\Capability\Contacts;
 
 final class WonlexContactCodec
 {
+    // A especificação não limita o nome; o HW20PRO mostra só os primeiros cinco caracteres.
+    public const NAME_MAX_LENGTH = 5;
+
     private const DIAL_CODES = ['351', '34', '33', '39', '49', '44'];
 
     /**

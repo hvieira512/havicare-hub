@@ -136,10 +136,10 @@ final class PhonebookCapability implements CapabilityContract, CapabilityInputSa
             (int)($meta['limit'] ?? 0),
             $protocol === 'wonlex-json' ? 10 : FourPTouchPhonebookDelta::MAX_CONTACTS
         );
-        // Nem o `PHBX2` nem a Wonlex impõem limite de nome. Um `maxLength` nulo diz isso a quem
-        // desenha o ecrã, e desliga a truncatura do `sanitizeInput`.
+        // O `PHBX2` não impõe limite de nome: um `maxLength` nulo diz isso a quem desenha o ecrã,
+        // e desliga a truncatura do `sanitizeInput`.
         $meta['name'] = array_merge(
-            ['maxLength' => null],
+            ['maxLength' => $protocol === 'wonlex-json' ? WonlexContactCodec::NAME_MAX_LENGTH : null],
             is_array($meta['name'] ?? null) ? $meta['name'] : []
         );
         $meta['phone'] = array_merge(

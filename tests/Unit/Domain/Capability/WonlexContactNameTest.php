@@ -7,16 +7,16 @@ namespace Tests\Unit\Domain\Capability;
 use Hub\Domain\Capability\Contacts\PhonebookCapability;
 use PHPUnit\Framework\TestCase;
 
-/** A especificação da Wonlex não limita o nome do contacto, e o hub não o corta. */
+/** O HW20PRO mostra só cinco caracteres do nome de um contacto, e o hub corta-o aí. */
 final class WonlexContactNameTest extends TestCase
 {
-    public function testAWonlexContactKeepsItsWholeName(): void
+    public function testAWonlexContactNameIsCutToFiveCharacters(): void
     {
         $capability = new PhonebookCapability();
 
         $contacts = $capability->sanitizeInput('wonlex-json', [['name' => 'Enfermeira', 'phone' => '+351210000000']]);
 
-        self::assertSame('Enfermeira', $contacts[0]['name'] ?? null);
-        self::assertNull($capability->meta('wonlex-json')['name']['maxLength']);
+        self::assertSame('Enfer', $contacts[0]['name'] ?? null);
+        self::assertSame(5, $capability->meta('wonlex-json')['name']['maxLength']);
     }
 }

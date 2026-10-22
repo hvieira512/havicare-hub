@@ -299,10 +299,7 @@ final class DeviceDetailApiTest extends MysqlDashboardTestCase
         self::assertArrayNotHasKey('call_whitelist', $response['capabilities']['contacts'] ?? []);
         self::assertArrayNotHasKey('call_in_restriction', $response['capabilities']['contacts'] ?? []);
         self::assertSame(10, $response['capabilities']['contacts']['phonebook']['_meta']['limit'] ?? null);
-        self::assertNull(
-            $response['capabilities']['contacts']['phonebook']['_meta']['name']['maxLength'] ?? null,
-            'a especificação da Wonlex não limita o nome do contacto'
-        );
+        self::assertSame(5, $response['capabilities']['contacts']['phonebook']['_meta']['name']['maxLength'] ?? null);
         self::assertSame('phonebook', $response['capabilities']['contacts']['sos_contacts']['_meta']['sourceCapability'] ?? null);
         self::assertSame('subset', $response['capabilities']['contacts']['sos_contacts']['_meta']['selectionMode'] ?? null);
         self::assertSame(

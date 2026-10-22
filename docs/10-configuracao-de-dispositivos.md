@@ -224,6 +224,11 @@ O `push_message` é só da Vivistar e da 4P Touch. A Wonlex documenta um
 nem a mostra nem lhe responde, embora confirme os outros comandos na mesma
 sessão.
 
+O nome de um contacto da Wonlex vai cortado a cinco caracteres, e o `_meta` da
+lista telefónica anuncia `name.maxLength: 5`. A especificação não fixa limite;
+o número vem do HW20Pro, que num teste de 22/10/2026 recebeu «Rodrigo Al» e
+mostrou só os cinco primeiros.
+
 ### Pedir uma medição
 
 ```http

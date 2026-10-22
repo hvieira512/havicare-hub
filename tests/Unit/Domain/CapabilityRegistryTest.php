@@ -86,7 +86,7 @@ final class CapabilityRegistryTest extends TestCase
         );
     }
 
-    public function testWonlexPhonebookKeepsTheWholeNameInTheNativeFrame(): void
+    public function testWonlexPhonebookCutsTheNameToFiveCharactersInTheNativeFrame(): void
     {
         $registry = new CapabilityRegistry();
         $native = $registry->toNative('wonlex-json', 'phonebook', [
@@ -96,7 +96,7 @@ final class CapabilityRegistryTest extends TestCase
             ]],
         ]);
 
-        self::assertSame('Rodrigo', $native['familyNumber']['contacts'][0]['name'] ?? null);
+        self::assertSame('Rodri', $native['familyNumber']['contacts'][0]['name'] ?? null);
     }
 
     public function testFourPTouchPhonebookKeepsNamesTheDeviceAccepts(): void

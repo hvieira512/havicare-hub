@@ -545,7 +545,7 @@ final class DeviceConfigurationApiTest extends MysqlDashboardTestCase
             'deviceConfig',
         ], array_column($frames, 'type'));
         self::assertSame('351', $frames[0]['data']['familyNumbers'][0]['areaCode'] ?? null);
-        self::assertSame('Rodrigo', $frames[0]['data']['familyNumbers'][0]['name'] ?? null);
+        self::assertSame('Rodri', $frames[0]['data']['familyNumbers'][0]['name'] ?? null);
         self::assertSame('15', $frames[1]['data']['configs']['upHeartRate']['interval'] ?? null);
         self::assertSame('1111111', $frames[2]['data']['alarmClockList'][0]['week'] ?? null);
         self::assertSame('Medicine', $frames[2]['data']['alarmClockList'][0]['label'] ?? null);
@@ -558,7 +558,7 @@ final class DeviceConfigurationApiTest extends MysqlDashboardTestCase
         self::assertSame(1, $frames[5]['data']['configs']['SOSSwitch']['switchState'] ?? null);
         self::assertSame('daily', $response['configurations']['alarm_clock'][0]['recurrence']['kind'] ?? null);
         self::assertSame(
-            [['name' => 'Rodrigo', 'phone' => '+351210000000']],
+            [['name' => 'Rodri', 'phone' => '+351210000000']],
             $response['configurations']['phonebook'] ?? null
         );
         self::assertSame(['+351210000000'], $response['configurations']['sos_contacts'] ?? null);
