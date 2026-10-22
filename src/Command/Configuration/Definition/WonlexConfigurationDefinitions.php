@@ -47,7 +47,7 @@ final class WonlexConfigurationDefinitions
             $device('wonlexTemperatureBelowRemind', 'wonlexReminderThreshold', ['enabled', 'thresholdCelsius'], 'alerts', 60, bounds: ['thresholdCelsius' => ['min' => 0]]),
             $device('wonlexBPEarlyWarning', 'wonlexBloodPressureWarning', ['enabled', 'systolicMmHg', 'diastolicMmHg'], 'alerts', 70, bounds: ['systolicMmHg' => ['min' => 0], 'diastolicMmHg' => ['min' => 0]]),
             $device('wonlexHeartRateHighRemind', 'wonlexHeartRateRange', $heartRate, 'alerts', 80, bounds: $heartRateBounds),
-            // O limite principal fica por preencher: a ficha só dá o exemplo do alerta alto.
+            // Sem limite por omissão: o exemplo da ficha para o alerta baixo é cópia do alto, 120.
             $device('wonlexHeartRateLowRemind', 'wonlexHeartRateRange', $heartRate, 'alerts', 90, bounds: $heartRateBounds, options: ['default' => [
                 'enabled' => true, 'exerciseEnabled' => true, 'exerciseMinBpm' => 100, 'exerciseMaxBpm' => 140, 'exerciseThresholdBpm' => 140,
             ]]),

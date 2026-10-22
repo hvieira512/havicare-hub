@@ -557,6 +557,44 @@ final class DeviceConfigurationCatalogTest extends TestCase
         ], $bpWarning['payload']);
     }
 
+    /** @return iterable<string, array{string, array<string, mixed>, string, string}> */
+    public static function wonlexOptionalAlertFields(): iterable
+    {
+        $heartRate = ['enabled' => true, 'thresholdBpm' => 50, 'exerciseEnabled' => true, 'exerciseMinBpm' => 100, 'exerciseMaxBpm' => 140, 'exerciseThresholdBpm' => 140];
+        $heartRateWire = ['enabled' => 'switchState', 'thresholdBpm' => 'remindValue', 'exerciseEnabled' => 'exerciseSwitchState', 'exerciseMinBpm' => 'exerciseHRMin', 'exerciseMaxBpm' => 'exerciseHRMax', 'exerciseThresholdBpm' => 'exerciseRemindValue'];
+        foreach (['wonlexHeartRateHighRemind' => 'HROvertopRemind', 'wonlexHeartRateLowRemind' => 'HeartRateBelowRemind'] as $key => $config) {
+            foreach ($heartRateWire as $field => $wire) {
+                yield "{$key} without {$field}" => [$key, array_diff_key($heartRate, [$field => true]), $config, $wire];
+            }
+        }
+        yield 'blood pressure without systolic' => ['wonlexBPEarlyWarning', ['enabled' => true, 'diastolicMmHg' => 90], 'BPEarlyWarning', 'hpWarn'];
+        yield 'blood pressure without diastolic' => ['wonlexBPEarlyWarning', ['enabled' => true, 'systolicMmHg' => 135], 'BPEarlyWarning', 'LPWarn'];
+        yield 'blood oxygen without threshold' => ['wonlexBloodOxygenWarn', ['enabled' => true], 'bloodOxygenWarn', 'reminderValue'];
+        yield 'high temperature without threshold' => ['wonlexTemperatureExceedRemind', ['enabled' => true], 'TemperatureExceedRemind', 'RemindValue'];
+        yield 'low temperature without threshold' => ['wonlexTemperatureBelowRemind', ['enabled' => true], 'TemperatureBelowRemind', 'RemindValue'];
+    }
+
+    /**
+     * A spec marca estes campos com `[*]`, opcionais: o que falta não vai no `configs`.
+     *
+     * @param array<string, mixed> $value
+     */
+    #[DataProvider('wonlexOptionalAlertFields')]
+    public function testWonlexOptionalAlertFieldIsLeftOutWhenMissing(string $key, array $value, string $config, string $wire): void
+    {
+        $payload = DeviceConfigurationCatalog::commandPayload('wonlex-json', $key, $value);
+
+        self::assertArrayNotHasKey($wire, $payload['payload']['configs'][$config]);
+        self::assertCount(count($value), $payload['payload']['configs'][$config]);
+    }
+
+    public function testWonlexOptionalAlertFieldIsStillRangeChecked(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+
+        DeviceConfigurationCatalog::commandPayload('wonlex-json', 'wonlexHeartRateLowRemind', ['enabled' => true, 'thresholdBpm' => -1]);
+    }
+
     public function testWonlexTemperatureAndBatteryThresholdsBuildTheirWireNames(): void
     {
         self::assertSame(

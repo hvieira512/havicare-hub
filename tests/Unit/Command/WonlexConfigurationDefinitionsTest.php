@@ -42,7 +42,7 @@ final class WonlexConfigurationDefinitionsTest extends TestCase
         );
     }
 
-    /** A spec só dá de exemplo o 120 da alta, e um alerta baixo a 120 dispara sempre. */
+    /** O exemplo da spec para o alerta baixo é o 120 do alto, e um alerta baixo a 120 dispara sempre. */
     public function testLowHeartRateAlertHasNoDefaultLimit(): void
     {
         $low = ConfigurationInputDefaults::forEntry($this->entry('wonlexHeartRateLowRemind'));

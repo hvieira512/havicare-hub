@@ -188,6 +188,14 @@ capacidade e, onde o mesmo nome faz coisas diferentes, pelo protocolo. O
 | `language_timezone` (4P Touch) | `language` em etiqueta BCP 47 (`pt`, `en`, `zh-Hans`…) e `utcOffsetHours` |
 | `working_mode` (Vivistar) | `mode`: `normal` (15 min), `power_saving` (60 min), `emergency` (1 min, com GPS) e `custom`, que leva `intervalSeconds` (≥ 30) e `gpsEnabled` |
 
+Nos alertas da Wonlex há campos opcionais, os que a especificação marca com
+`[*]`: o limiar do `blood_oxygen_alert` e dos dois de temperatura, o
+`systolicMmHg` e o `diastolicMmHg` do `blood_pressure_alert`, e todos os seis
+dos dois alertas de ritmo cardíaco, `enabled` incluído. O que falta não vai no
+`configs` — nem como 0 nem como `null` — e o relógio fica com o que tinha; o que
+vem é validado como sempre. O `thresholdPercent` do `low_battery_alert` não é
+opcional.
+
 O construtor de cada protocolo traduz para o fio: `switchState`, `RemindValue`,
 `hpWarn`, `HHmmss`, os códigos do `LZ`, do `profile` e do `BP33`.
 
