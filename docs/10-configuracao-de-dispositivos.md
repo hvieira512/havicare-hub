@@ -188,6 +188,15 @@ capacidade e, onde o mesmo nome faz coisas diferentes, pelo protocolo. O
 | `language_timezone` (4P Touch) | `language` em etiqueta BCP 47 (`pt`, `en`, `zh-Hans`…) e `utcOffsetHours` |
 | `working_mode` (Vivistar) | `mode`: `normal` (15 min), `power_saving` (60 min), `emergency` (1 min, com GPS) e `custom`, que leva `intervalSeconds` (≥ 30) e `gpsEnabled` |
 
+Nos alertas da Wonlex há campos opcionais, os que a especificação marca com
+`[*]`: o limiar do `blood_oxygen_alert` e dos dois de temperatura, o
+`systolicMmHg` e o `diastolicMmHg` do `blood_pressure_alert`, e todos os seis
+dos dois alertas de ritmo cardíaco, `enabled` incluído. O que falta não vai no
+`configs` — nem como 0 nem como `null` — e o relógio fica com o que tinha; o que
+vem é validado como sempre. O `thresholdPercent` do `low_battery_alert` não é
+opcional. No `sleep_monitoring` são opcionais, da mesma maneira, o `startTime` e
+o `endTime`; o `enabled` e o `targetMinutes` são obrigatórios.
+
 O construtor de cada protocolo traduz para o fio: `switchState`, `RemindValue`,
 `hpWarn`, `HHmmss`, os códigos do `LZ`, do `profile` e do `BP33`.
 
@@ -209,6 +218,11 @@ a Wonlex em todos os números, o Vivistar na medição automática — sai só o
 A reposição de fábrica (`reset_device`) só a pede um `hub_admin`. A um
 `license_client` responde `403 forbidden`: o aparelho volta a apontar para o
 servidor do fornecedor e o hub perde-o.
+
+O `push_message` é só da Vivistar e da 4P Touch. A Wonlex documenta um
+`msgNotice`, mas deixa a apresentação ao desenho de cada aparelho, e o HW20Pro
+nem a mostra nem lhe responde, embora confirme os outros comandos na mesma
+sessão.
 
 ### Pedir uma medição
 

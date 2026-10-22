@@ -47,7 +47,7 @@ final class WonlexConfigurationDefinitions
             $device('wonlexTemperatureBelowRemind', 'wonlexReminderThreshold', ['enabled', 'thresholdCelsius'], 'alerts', 60, bounds: ['thresholdCelsius' => ['min' => 0]]),
             $device('wonlexBPEarlyWarning', 'wonlexBloodPressureWarning', ['enabled', 'systolicMmHg', 'diastolicMmHg'], 'alerts', 70, bounds: ['systolicMmHg' => ['min' => 0], 'diastolicMmHg' => ['min' => 0]]),
             $device('wonlexHeartRateHighRemind', 'wonlexHeartRateRange', $heartRate, 'alerts', 80, bounds: $heartRateBounds),
-            // O limite principal fica por preencher: a ficha só dá o exemplo do alerta alto.
+            // Sem limite por omissão: o exemplo da ficha para o alerta baixo é cópia do alto, 120.
             $device('wonlexHeartRateLowRemind', 'wonlexHeartRateRange', $heartRate, 'alerts', 90, bounds: $heartRateBounds, options: ['default' => [
                 'enabled' => true, 'exerciseEnabled' => true, 'exerciseMinBpm' => 100, 'exerciseMaxBpm' => 140, 'exerciseThresholdBpm' => 140,
             ]]),
@@ -62,8 +62,6 @@ final class WonlexConfigurationDefinitions
             $entry('restartCommand', 'restart', 'action', [], ['restart'], category: 'system', order: 120, transient: true, destructive: true),
             $entry('powerOffCommand', 'powerOff', 'action', [], ['powerOff'], category: 'system', order: 130, transient: true, destructive: true),
             $entry('findDeviceCommand', 'find', 'action', [], ['find'], category: 'system', order: 140, transient: true),
-            // O `msgNotice` é notificação de sentido único: a Wonlex não lhe define resposta.
-            $entry('pushMessage', 'msgNotice', 'pushMessage', ['message'], category: 'system', order: 145, transient: true, verb: 'send_message'),
         ];
     }
 }

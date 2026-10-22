@@ -28,8 +28,6 @@ final class ConfigurationDefaultPayloadTest extends TestCase
     /** O `uploadInterval` do four-p-touch é 0 por omissão e tem de ser positivo, e gravar sem mexer falha alto. */
     private const KNOWN_UNSENDABLE_DEFAULTS = [
         'four-p-touch.uploadInterval',
-        // O limite do alerta baixo da Wonlex fica vazio de propósito: quem o liga tem de o escolher.
-        'wonlex-json.wonlexHeartRateLowRemind',
     ];
 
     public function testEveryDefaultPayloadIsAcceptedByItsProtocolPayloadBuilder(): void

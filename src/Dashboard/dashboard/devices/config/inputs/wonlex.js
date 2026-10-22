@@ -29,6 +29,11 @@ function sleepSettingsInput(entry, desired, meta) {
         </div>`;
 }
 
+/** Os números que a ficha marca opcionais: um campo vazio fica fora do payload, e não vai como 0. */
+const optionalNumbers = (section, names) => Object.fromEntries(
+    names.filter((name) => readText(section, name) !== "").map((name) => [name, readNumber(section, name)]),
+);
+
 /** O segundo campo da definição é o limiar: em % no oxigénio, em °C na temperatura. */
 const thresholdField = (entry) => entry.fields?.[1] ?? "thresholdPercent";
 
@@ -37,16 +42,14 @@ export const INPUTS = {
         render: (entry, desired, meta) => switchWithNumbers(entry, desired, meta, ["systolicMmHg", "diastolicMmHg"]),
         read: (section) => ({
             enabled: readCheckbox(section, "enabled"),
-            systolicMmHg: readNumber(section, "systolicMmHg"),
-            diastolicMmHg: readNumber(section, "diastolicMmHg"),
+            ...optionalNumbers(section, ["systolicMmHg", "diastolicMmHg"]),
         }),
     },
     wonlexSleepSettings: {
         render: sleepSettingsInput,
         read: (section) => ({
             enabled: readCheckbox(section, "enabled"),
-            startTime: readText(section, "startTime"),
-            endTime: readText(section, "endTime"),
+            ...Object.fromEntries(["startTime", "endTime"].map((name) => [name, readText(section, name)]).filter(([, value]) => value !== "")),
             targetMinutes: readNumber(section, "targetMinutes"),
         }),
     },
@@ -54,7 +57,7 @@ export const INPUTS = {
         render: (entry, desired, meta) => switchWithNumbers(entry, desired, meta, [thresholdField(entry)]),
         read: (section) => {
             const name = section.querySelector("input[type=\"number\"][data-config-field]")?.dataset.configField ?? "thresholdPercent";
-            return { enabled: readCheckbox(section, "enabled"), [name]: readNumber(section, name) };
+            return { enabled: readCheckbox(section, "enabled"), ...optionalNumbers(section, [name]) };
         },
     },
     wonlexHeartRateRange: {
@@ -66,18 +69,10 @@ export const INPUTS = {
             html`${field(entryFieldLabel(entry, meta, "thresholdBpm"), boundedNumber(entry, meta, "thresholdBpm", desired), { cls: "col-md-6" })}
                 <div class="col-md-6">${switchField("exerciseEnabled", boolValue(desired.exerciseEnabled, false), { on: "Com limites de exercício", off: "Sem limites de exercício", cls: "mt-4" })}</div>`,
         ),
-        read: (section) => {
-            if (readText(section, "thresholdBpm") === "") {
-                throw new Error("Indique o limite principal");
-            }
-            return {
-                enabled: readCheckbox(section, "enabled"),
-                thresholdBpm: readNumber(section, "thresholdBpm"),
-                exerciseEnabled: readCheckbox(section, "exerciseEnabled"),
-                exerciseMinBpm: readNumber(section, "exerciseMinBpm"),
-                exerciseMaxBpm: readNumber(section, "exerciseMaxBpm"),
-                exerciseThresholdBpm: readNumber(section, "exerciseThresholdBpm"),
-            };
-        },
+        read: (section) => ({
+            enabled: readCheckbox(section, "enabled"),
+            exerciseEnabled: readCheckbox(section, "exerciseEnabled"),
+            ...optionalNumbers(section, ["thresholdBpm", "exerciseMinBpm", "exerciseMaxBpm", "exerciseThresholdBpm"]),
+        }),
     },
 };

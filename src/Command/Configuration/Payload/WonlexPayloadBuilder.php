@@ -52,10 +52,6 @@ final class WonlexPayloadBuilder extends ConfigurationPayloadBuilder
             'familyNumber' => ['familyNumbers' => self::familyNumbers($payload['contacts'] ?? null)],
             'SOSNumber' => ['sosNumbers' => self::sosNumbers($payload['contacts'] ?? $payload['numbers'] ?? [])],
             'factoryResetCommand', 'restartCommand', 'powerOffCommand', 'findDeviceCommand' => [],
-            'pushMessage' => [
-                'msgType' => 'msg',
-                'msg' => self::requiredString($payload['message'] ?? null, 'message'),
-            ],
             default => throw new \InvalidArgumentException("Unsupported Wonlex configuration {$key}"),
         };
     }
@@ -85,10 +81,11 @@ final class WonlexPayloadBuilder extends ConfigurationPayloadBuilder
     private static function sleepSettings(array $payload): array
     {
         // O relógio quer as horas em `HHmmss`.
+        $time = static fn(mixed $value, string $field): string => str_replace(':', '', self::hhmm($value, $field)) . '00';
+
         return ['configs' => ['SleepIntervalOrSwitch' => [
             'switchState' => self::boolInt($payload['enabled'] ?? null, 'enabled'),
-            'sleepStartTime' => str_replace(':', '', self::hhmm($payload['startTime'] ?? null, 'startTime')) . '00',
-            'sleepEndTime' => str_replace(':', '', self::hhmm($payload['endTime'] ?? null, 'endTime')) . '00',
+            ...self::optional($payload, ['startTime' => ['sleepStartTime', $time], 'endTime' => ['sleepEndTime', $time]]),
             'sleepTarget' => self::intInRange($payload['targetMinutes'] ?? null, 'targetMinutes'),
         ]]];
     }
@@ -101,7 +98,7 @@ final class WonlexPayloadBuilder extends ConfigurationPayloadBuilder
     {
         return ['configs' => [$configName => [
             'switchState' => self::boolInt($payload['enabled'] ?? null, 'enabled'),
-            $wireField => self::nonNegativeFloat($payload[$field] ?? null, $field),
+            ...self::optional($payload, [$field => [$wireField, self::nonNegativeFloat(...)]]),
         ]]];
     }
 
@@ -111,14 +108,14 @@ final class WonlexPayloadBuilder extends ConfigurationPayloadBuilder
      */
     private static function heartRateRange(string $configName, array $payload): array
     {
-        return ['configs' => [$configName => [
-            'switchState' => self::boolInt($payload['enabled'] ?? null, 'enabled'),
-            'remindValue' => self::intInRange($payload['thresholdBpm'] ?? null, 'thresholdBpm'),
-            'exerciseSwitchState' => self::boolInt($payload['exerciseEnabled'] ?? null, 'exerciseEnabled'),
-            'exerciseHRMin' => self::intInRange($payload['exerciseMinBpm'] ?? null, 'exerciseMinBpm'),
-            'exerciseHRMax' => self::intInRange($payload['exerciseMaxBpm'] ?? null, 'exerciseMaxBpm'),
-            'exerciseRemindValue' => self::intInRange($payload['exerciseThresholdBpm'] ?? null, 'exerciseThresholdBpm'),
-        ]]];
+        return ['configs' => [$configName => self::optional($payload, [
+            'enabled' => ['switchState', self::boolInt(...)],
+            'thresholdBpm' => ['remindValue', self::intInRange(...)],
+            'exerciseEnabled' => ['exerciseSwitchState', self::boolInt(...)],
+            'exerciseMinBpm' => ['exerciseHRMin', self::intInRange(...)],
+            'exerciseMaxBpm' => ['exerciseHRMax', self::intInRange(...)],
+            'exerciseThresholdBpm' => ['exerciseRemindValue', self::intInRange(...)],
+        ])]];
     }
 
     /**
@@ -129,9 +126,30 @@ final class WonlexPayloadBuilder extends ConfigurationPayloadBuilder
     {
         return ['configs' => ['BPEarlyWarning' => [
             'switchState' => self::boolInt($payload['enabled'] ?? null, 'enabled'),
-            'hpWarn' => self::intInRange($payload['systolicMmHg'] ?? null, 'systolicMmHg'),
-            'LPWarn' => self::intInRange($payload['diastolicMmHg'] ?? null, 'diastolicMmHg'),
+            ...self::optional($payload, [
+                'systolicMmHg' => ['hpWarn', self::intInRange(...)],
+                'diastolicMmHg' => ['LPWarn', self::intInRange(...)],
+            ]),
         ]]];
+    }
+
+    /**
+     * Os campos que a spec marca com `[*]`: o que falta não vai no fio, o que vem é validado.
+     *
+     * @param array<string, mixed> $payload
+     * @param array<string, array{string, callable(mixed, string): (int|float|string)}> $fields
+     * @return array<string, int|float|string>
+     */
+    private static function optional(array $payload, array $fields): array
+    {
+        $wire = [];
+        foreach ($fields as $field => [$wireField, $validate]) {
+            if (isset($payload[$field])) {
+                $wire[$wireField] = $validate($payload[$field], $field);
+            }
+        }
+
+        return $wire;
     }
 
     /**

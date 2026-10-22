@@ -429,41 +429,6 @@ final class DeviceConfigurationApiTest extends MysqlDashboardTestCase
         self::assertSame([], $db->deviceConfigurations->allForImei('861265061009822'));
     }
 
-    public function testWonlexPushMessageRequestSendsMessageNoticeWithoutWaitingForUndocumentedAck(): void
-    {
-        $submitted = [];
-        [$api, $db, $store] = $this->makeApi(hub: $this->recordingHub($submitted));
-        $imei = '868705080300698';
-        $model = $db->models->find('Wonlex', 'HW20PRO');
-
-        self::assertIsArray($model);
-        self::assertSame('ok', $api->create([
-            'imei' => $imei,
-            'supplier' => 'Wonlex',
-            'model' => 'HW20PRO',
-            'deviceType' => 'watch',
-            'licenseId' => null,
-        ])['status'] ?? null);
-        $db->modelCapabilities->replaceForModelId((int)$model['id'], ['push_message']);
-        $store->registerDevice($imei, 'Wonlex', 'HW20PRO');
-
-        $response = $api->featureRequests->requestFeature($imei, [
-            'capability' => 'push_message',
-            'value' => ['message' => 'Hello World'],
-        ]);
-
-        self::assertSame('sent', $response['status'] ?? null);
-        self::assertSame('sent', $response['commands'][0]['status'] ?? null);
-        self::assertFalse($response['commands'][0]['retryable'] ?? true);
-        self::assertSame([], $response['commands'][0]['expectedReplyTypes'] ?? null);
-        self::assertCount(1, $submitted);
-        $frame = (new \Hub\Protocol\Adapter\WonlexAdapter())->decodeIncoming($submitted[0]['bytes']);
-        self::assertSame('msgNotice', $frame['type'] ?? null);
-        self::assertSame('msg', $frame['data']['msgType'] ?? null);
-        self::assertSame('Hello World', $frame['data']['msg'] ?? null);
-        self::assertSame([], $db->deviceConfigurations->allForImei($imei));
-    }
-
     public function testPushMessageCannotBeSavedAsPersistentConfiguration(): void
     {
         [$api, $db] = $this->makeApi();
