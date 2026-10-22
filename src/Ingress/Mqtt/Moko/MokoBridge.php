@@ -10,6 +10,8 @@ use Hub\Device\CommercialModelResolver;
 use Hub\Device\ConnectionAnnouncer;
 use Hub\Domain\DiaperSensitivity;
 use Hub\Domain\GatewayDeviceLinkLookup;
+use Hub\Ingress\Mqtt\DispatchesQueued;
+use Hub\Ingress\Mqtt\Gateway\GatewayRelay;
 use Hub\Ingress\Mqtt\Gateway\GatewayTopic;
 use Hub\Ingress\Mqtt\Gateway\ObservationStateStore;
 use Hub\Ingress\Mqtt\Monit\MonitMecsProDecoder;
@@ -17,7 +19,11 @@ use Hub\Ingress\Mqtt\Monit\MonitNormalizer;
 use Hub\Ingress\Mqtt\MqttBridgeBase;
 use Hub\Log\Logger;
 
-final class MokoBridge extends MqttBridgeBase
+/**
+ * O subscritor único do `…/gw/+/raw`: trata as tramas MOKO, e entrega à ponte que a reclama
+ * cada mensagem que um gateway BLE reencaminha.
+ */
+final class MokoBridge extends MqttBridgeBase implements DispatchesQueued
 {
     /** Relatórios de scan, e não estado do gateway. 3070 é MKGW3; 30a0 e 30b2 são MKGW4. */
     private const SCAN_MESSAGE_IDS = ['3070', '30a0', '30b2'];
@@ -32,8 +38,8 @@ final class MokoBridge extends MqttBridgeBase
 
     /** A manutenção corre no máximo uma vez a cada tantos segundos, e não a cada tique. */
     private const MAINTENANCE_INTERVAL_SECONDS = 5.0;
-    private float $lastMaintenanceAt = 0.0;
 
+    /** @param list<GatewayRelay> $relays */
     public function __construct(
         \PhpMqtt\Client\MqttClient $subscriber,
         \Hub\Registry\Whitelist $whitelist,
@@ -47,13 +53,14 @@ final class MokoBridge extends MqttBridgeBase
         private readonly MokoGatewayOptions $options = new MokoGatewayOptions(),
         ?callable $clock = null,
         ?\Hub\Registry\Denylist $denylist = null,
+        private readonly array $relays = [],
     ) {
         parent::__construct(
             $subscriber,
             $whitelist,
             $mqttBridge,
             $topicFilter,
-            sourceName: 'moko-gateway',
+            sourceName: 'gateway',
             reconnectSubscriber: $reconnectSubscriber,
             deviceStore: $deviceStore,
             denylist: $denylist,
@@ -78,9 +85,8 @@ final class MokoBridge extends MqttBridgeBase
         $this->monitNormalizer = new MonitNormalizer();
         $this->gatewayNormalizer = new GatewayNormalizer();
         $this->w6bDecoder = new W6bDecoder();
-        $this->w6bNormalizer = new W6bNormalizer();
         $this->w6Decoder = new W6Decoder();
-        $this->w6Normalizer = new W6Normalizer();
+        $this->braceletNormalizer = new BraceletNormalizer();
     }
 
     private readonly GatewayDeviceLinkLookup $links;
@@ -88,18 +94,14 @@ final class MokoBridge extends MqttBridgeBase
     private readonly RelayPublisher $relay;
     private readonly GatewayPresence $gateways;
 
-    /** @var array<string, float> */
-    private array $relayingSeenAt = [];
-
     private const RELAYING_SEEN_SECONDS = 60;
     private readonly MessageDecoder $messageDecoder;
     private readonly MonitMecsProDecoder $monitDecoder;
     private readonly MonitNormalizer $monitNormalizer;
     private readonly GatewayNormalizer $gatewayNormalizer;
     private readonly W6bDecoder $w6bDecoder;
-    private readonly W6bNormalizer $w6bNormalizer;
     private readonly W6Decoder $w6Decoder;
-    private readonly W6Normalizer $w6Normalizer;
+    private readonly BraceletNormalizer $braceletNormalizer;
 
     /** Um gateway que reencaminha sessões GATT está vivo enquanto publica, como um MOKO. */
     private function relayingGatewaySeen(string $gatewayMac): void
@@ -112,10 +114,8 @@ final class MokoBridge extends MqttBridgeBase
         $deviceKey = (string)$gateway['imei'];
         $this->gateways->touch($deviceKey);
         // Reencaminha dezenas de tramas por segundo: o «visto» guarda-se de minuto a minuto.
-        $now = $this->clockNow();
         $cameOnline = false;
-        if ($now - ($this->relayingSeenAt[$deviceKey] ?? -INF) >= self::RELAYING_SEEN_SECONDS) {
-            $this->relayingSeenAt[$deviceKey] = $now;
+        if ($this->allow('relaying:' . $deviceKey, self::RELAYING_SEEN_SECONDS)) {
             $cameOnline = $this->deviceStore?->deviceSeen($deviceKey, [
                 'supplier' => (string)$gateway['supplier'], 'model' => (string)$gateway['model'],
                 'deviceType' => 'gateway', 'licenseId' => DeviceMetadata::normalizeLicenseId($gateway['licenseId'] ?? 0),
@@ -126,16 +126,51 @@ final class MokoBridge extends MqttBridgeBase
         $this->gateways->markOnline($this->enrichWithCommercialName($gateway), $cameOnline === true);
     }
 
-    /** Diz se a mensagem é de outra ingestão: as tramas MOKO, em JSON ou TLV, nunca trazem `source`. */
-    private static function declaresForeignSource(string $payload): bool
+    /**
+     * A mensagem de outra ponte, descodificada: as tramas MOKO, em JSON ou TLV, nunca trazem `source`.
+     *
+     * @return array<string, mixed>|null
+     */
+    private static function relayedMessage(string $payload): ?array
     {
         if (!str_contains($payload, '"source"')) {
-            return false;
+            return null;
         }
 
         $decoded = json_decode($payload, true);
 
-        return is_array($decoded) && is_string($decoded['source'] ?? null) && $decoded['source'] !== '';
+        return is_array($decoded) && is_string($decoded['source'] ?? null) && $decoded['source'] !== '' ? $decoded : null;
+    }
+
+    /** @param array<string, mixed> $message */
+    private function relay(string $topic, array $message): void
+    {
+        foreach ($this->relays as $relay) {
+            if (!$relay::claims($message)) {
+                continue;
+            }
+            // A sessão é de todas as pontes: a falha de uma não a pode derrubar.
+            try {
+                $relay->handle($topic, $message);
+            } catch (\Throwable $e) {
+                Logger::channel('hub')->error(sprintf('%s failed on %s: %s', $relay::class, $topic, $e->getMessage()));
+            }
+            return;
+        }
+    }
+
+    public function dispatchQueued(): void
+    {
+        foreach ($this->relays as $relay) {
+            if (!$relay instanceof DispatchesQueued) {
+                continue;
+            }
+            try {
+                $relay->dispatchQueued();
+            } catch (\Throwable $e) {
+                Logger::channel('hub')->error(sprintf('%s queued dispatch failed: %s', $relay::class, $e->getMessage()));
+            }
+        }
     }
 
     public function tick(float $timeout = 0.01): void
@@ -150,11 +185,9 @@ final class MokoBridge extends MqttBridgeBase
      */
     public function runDueMaintenance(): void
     {
-        $now = (float)$this->clockNow();
-        if ($now - $this->lastMaintenanceAt < self::MAINTENANCE_INTERVAL_SECONDS) {
+        if (!$this->allow('maintenance', self::MAINTENANCE_INTERVAL_SECONDS)) {
             return;
         }
-        $this->lastMaintenanceAt = $now;
         $this->expireIdleGateways();
         $this->expireStaleProximity();
     }
@@ -178,7 +211,7 @@ final class MokoBridge extends MqttBridgeBase
         $this->relay->expireStaleProximity();
     }
 
-    protected function handleMessage(string $topic, string $payload): void
+    public function handleReceivedMessage(string $topic, string $payload): void
     {
         $parsedTopic = GatewayTopic::parse($topic);
         if ($parsedTopic === null) {
@@ -188,8 +221,10 @@ final class MokoBridge extends MqttBridgeBase
 
         // O `.../gw/{mac}/raw` é partilhado com o gateway BLE da Havicare: o que ele reencaminha é
         // das outras pontes, e daqui só sai que ele está vivo.
-        if (self::declaresForeignSource($payload)) {
+        $relayed = self::relayedMessage($payload);
+        if ($relayed !== null) {
             $this->relayingGatewaySeen($parsedTopic->gatewayMac);
+            $this->relay($topic, $relayed);
             return;
         }
 
@@ -262,15 +297,13 @@ final class MokoBridge extends MqttBridgeBase
 
         foreach ($this->gatewayNormalizer->telemetry($decoded, $gateway) as $telemetry) {
             if (CapabilityCatalog::isEventType((string)$telemetry['type'])) {
-                $this->mqttBridge->publishEvent($deviceKey, $telemetry, $deviceType, $licenseId, $company);
-                $this->deviceStore?->append($deviceKey, 'events', $telemetry + ['deviceType' => $deviceType, 'licenseId' => $licenseId]);
+                $this->mqttBridge->publishAndStore($this->deviceStore, 'events', $deviceKey, $telemetry, $deviceType, $licenseId, $company);
                 continue;
             }
             if (!$this->state->shouldPublish($deviceKey, (string)$telemetry['type'], $telemetry, $this->options->telemetryRefreshSeconds)) {
                 continue;
             }
-            $this->mqttBridge->publishTelemetry($deviceKey, $telemetry, $deviceType, $licenseId, $company);
-            $this->deviceStore?->append($deviceKey, 'telemetry', $telemetry + ['deviceType' => $deviceType, 'licenseId' => $licenseId]);
+            $this->mqttBridge->publishAndStore($this->deviceStore, 'telemetry', $deviceKey, $telemetry, $deviceType, $licenseId, $company);
         }
 
         $this->gateways->markOnline($gateway);
@@ -398,10 +431,11 @@ final class MokoBridge extends MqttBridgeBase
                 : (int)$transition['previous'];
         }
 
-        $normalized = $this->w6bNormalizer->normalize(
+        $normalized = $this->braceletNormalizer->normalize(
             $decoded,
             $device,
             (string)$gateway['imei'],
+            'moko-w6b',
             $previousTriggerCount,
         );
 
@@ -437,7 +471,7 @@ final class MokoBridge extends MqttBridgeBase
             unset($decoded['alarm']);
         }
 
-        $normalized = $this->w6Normalizer->normalize($decoded, $device, (string)$gateway['imei']);
+        $normalized = $this->braceletNormalizer->normalize($decoded, $device, (string)$gateway['imei'], 'moko-w6');
 
         $this->relay->publishTelemetry($device, $gateway, 'moko-w6', $normalized, $decoded['rssiDbm'] ?? null);
         $this->relay->publishEvents($device, $gateway, $normalized['events']);

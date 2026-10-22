@@ -7,7 +7,6 @@ namespace Tests\Unit\Ingress\Mqtt\Veepoo;
 use Tests\Support\Doubles\ArrayObservationStateStore;
 use Hub\Ingress\Mqtt\Veepoo\VeepooBridge;
 use PHPUnit\Framework\TestCase;
-use Tests\Support\Doubles\FakeMqttSubscriber;
 use Tests\Support\Doubles\IngressFixtures;
 use Tests\Support\Doubles\RecordingHubMqttBridge;
 
@@ -29,9 +28,9 @@ final class BridgeDailyBlockReplayTest extends TestCase
         $mqtt = new RecordingHubMqttBridge();
         $bridge = $this->bridge($mqtt);
 
-        $bridge->handleReceivedMessage(self::TOPIC, self::message([self::BLOCK]));
+        IngressFixtures::relay($bridge, self::TOPIC, self::message([self::BLOCK]));
         $first = count($mqtt->telemetry);
-        $bridge->handleReceivedMessage(self::TOPIC, self::message([self::BLOCK]));
+        IngressFixtures::relay($bridge, self::TOPIC, self::message([self::BLOCK]));
 
         self::assertSame(5, $first, 'o bloco tem cinco minutos de batimentos');
         self::assertCount($first, $mqtt->telemetry, 'a segunda entrega não acrescenta nada');
@@ -43,10 +42,10 @@ final class BridgeDailyBlockReplayTest extends TestCase
         $mqtt = new RecordingHubMqttBridge();
         $bridge = $this->bridge($mqtt);
 
-        $bridge->handleReceivedMessage(self::TOPIC, self::message([
+        IngressFixtures::relay($bridge, self::TOPIC, self::message([
             ['date' => '2026-09-09-16-35', 'pulseReat' => [70, 71]],
         ]));
-        $bridge->handleReceivedMessage(self::TOPIC, self::message([self::BLOCK]));
+        IngressFixtures::relay($bridge, self::TOPIC, self::message([self::BLOCK]));
 
         self::assertCount(7, $mqtt->telemetry, 'dois minutos, e depois os cinco completos');
     }
@@ -56,7 +55,7 @@ final class BridgeDailyBlockReplayTest extends TestCase
     {
         $mqtt = new RecordingHubMqttBridge();
 
-        $this->bridge($mqtt)->handleReceivedMessage(self::TOPIC, self::message([
+        IngressFixtures::relay($this->bridge($mqtt), self::TOPIC, self::message([
             self::BLOCK,
             ['date' => '2026-09-09-16-40', 'pulseReat' => [75, 76, 77, 78, 79]],
         ]));
@@ -70,8 +69,9 @@ final class BridgeDailyBlockReplayTest extends TestCase
         $mqtt = new RecordingHubMqttBridge();
         $state = new ArrayObservationStateStore();
 
-        $this->bridge($mqtt, $state)->handleReceivedMessage(self::TOPIC, self::message([self::BLOCK]));
-        $this->bridge($mqtt, $state)->handleReceivedMessage(
+        IngressFixtures::relay($this->bridge($mqtt, $state), self::TOPIC, self::message([self::BLOCK]));
+        IngressFixtures::relay(
+            $this->bridge($mqtt, $state),
             'havicare-hub/null/0/gw/bef341903987/raw',
             self::message([self::BLOCK], 'dba376003185'),
         );
@@ -98,7 +98,6 @@ final class BridgeDailyBlockReplayTest extends TestCase
         ?ArrayObservationStateStore $state = null,
     ): VeepooBridge {
         return new VeepooBridge(
-            new FakeMqttSubscriber(),
             IngressFixtures::whitelist([
                 self::GATEWAY => IngressFixtures::device('Havicare', 'Veepoo Gateway', 'gateway'),
                 self::BRACELET => IngressFixtures::device('Wonlex', 'MF91', 'bracelet'),

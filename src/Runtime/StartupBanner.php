@@ -63,29 +63,11 @@ final class StartupBanner
             $log->info("MQTT {$label} topics: " . $mqttBridge->topic('{company}/{licenseId}/watch/{deviceKey}/' . $channel));
         }
 
-        // A terceira coluna é a secção de onde sai o filtro, e não se deduz da chave: a ingestão
-        // Veepoo lê o espaço de tópicos dos gateways e não tem secção própria.
+        // A chave de cada ingestão é a secção da configuração de onde sai o filtro.
         $descriptions = [
-            'ncs' => [
-                'NCS ingress topics',
-                '{company}/{licenseId}/ncs/{deviceKey}/{raw|status|events|telemetry}',
-                'ncs',
-            ],
-            'gateway' => [
-                'Gateway ingress topics',
-                '{company}/{licenseId}/gateway/{gatewayMac}/{raw|status|events|telemetry}',
-                'gateway',
-            ],
-            'veepoo' => [
-                'Veepoo bracelet ingress topics',
-                '{company}/{licenseId}/bracelet/{deviceKey}/{raw|status|events|telemetry}',
-                'gateway',
-            ],
-            'qinglanst' => [
-                'Qinglanst radar ingress',
-                '{company}/{licenseId}/radar/{deviceKey}/{telemetry|events}',
-                'qinglanst',
-            ],
+            'ncs' => ['NCS ingress topics', '{company}/{licenseId}/ncs/{deviceKey}/{raw|status|events|telemetry}'],
+            'gateway' => ['Gateway ingress topics', '{company}/{licenseId}/{deviceType}/{deviceKey}/{raw|status|events|telemetry}'],
+            'qinglanst' => ['Qinglanst radar ingress', '{company}/{licenseId}/radar/{deviceKey}/{telemetry|events}'],
         ];
 
         foreach ($enabledIngresses as $key) {
@@ -93,8 +75,8 @@ final class StartupBanner
                 continue;
             }
 
-            [$label, $target, $configSection] = $descriptions[$key];
-            $filter = trim((string)$config[$configSection]['topic_filter']);
+            [$label, $target] = $descriptions[$key];
+            $filter = trim((string)$config[$key]['topic_filter']);
             $log->info("{$label}: {$filter} -> " . $mqttBridge->topic($target));
         }
 

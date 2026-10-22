@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Hub\Ingress\Tcp;
 
 use Hub\Device\DeviceEventDecoder;
-use Hub\Device\DeviceEventPayloadBuilder;
 use Hub\Device\DeviceSession;
+use Hub\Device\TelemetryEnvelope;
 use Hub\Protocol\Adapter\DeviceAdapterInterface;
 
 abstract class AbstractTcpProtocol implements TcpProtocolInterface
@@ -46,7 +46,18 @@ abstract class AbstractTcpProtocol implements TcpProtocolInterface
 
         $telemetry = [];
         foreach ($this->eventDecoder->decode($session, $decoded) as $event) {
-            $telemetry[] = DeviceEventPayloadBuilder::decoded($session, $event);
+            $payload = TelemetryEnvelope::for(
+                (string)$event['feature'],
+                $session->imei,
+                ['supplier' => $session->supplier, 'model' => $session->model, 'commercialName' => $session->commercialName],
+                $session->protocol,
+                (string)$event['nativeType'],
+                $event['value'],
+            );
+            if (is_array($event['extra'] ?? null) && $event['extra'] !== []) {
+                $payload['extra'] = $event['extra'];
+            }
+            $telemetry[] = $payload;
         }
 
         return new TcpMessage(

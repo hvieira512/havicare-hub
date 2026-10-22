@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Hub\Ingress\Mqtt\Ncs;
 
 use Hub\Device\DeviceDescriptor;
-use Hub\Device\RawPayload;
+use Hub\Device\TelemetryEnvelope;
 use Hub\Support\Values;
 
 final class MessageNormalizer
@@ -45,7 +45,7 @@ final class MessageNormalizer
         }
 
         $online = (bool)$statusData['online'];
-        $statusPayload = RawPayload::status(
+        $statusPayload = TelemetryEnvelope::status(
             (string)$device['imei'],
             (string)$device['supplier'],
             (string)$device['model'],

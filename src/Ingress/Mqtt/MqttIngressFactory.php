@@ -15,7 +15,6 @@ use Hub\Ingress\Mqtt\Lefu\ScaleOnlineUsers;
 use Hub\Ingress\Mqtt\Moko\MokoBridge;
 use Hub\Ingress\Mqtt\Moko\MokoGatewayOptions;
 use Hub\Ingress\Mqtt\Ncs\NcsBridge;
-use Hub\Ingress\Mqtt\Qinglanst\DashboardWritePolicy as QinglanstDashboardWritePolicy;
 use Hub\Ingress\Mqtt\Qinglanst\QinglanstBridge;
 use Hub\Ingress\Mqtt\Veepoo\VeepooBridge;
 use Hub\Ingress\Tuya\TuyaBridge;
@@ -43,14 +42,7 @@ final class MqttIngressFactory
 
         $runner->add('NCS ingress', self::ncs($config, $services, $subscribers), 'ncs');
 
-        // As duas ingestões de gateway partilham de propósito o mesmo espaço de tópicos.
-        $gatewayTopicFilter = trim((string)$config['gateway']['topic_filter']);
-        $runner->add('MOKO gateway ingress', self::moko($config, $services, $subscribers, $gatewayTopicFilter), 'gateway');
-        $runner->add('Veepoo bracelet ingress', self::veepoo($config, $services, $subscribers, $gatewayTopicFilter), 'veepoo');
-        $runner->add('Lefu scale ingress', self::lefu($config, $services, $subscribers, $gatewayTopicFilter), 'lefu');
-        $runner->add('JoyTech blood pressure ingress', self::joyTech($config, $services, $subscribers, $gatewayTopicFilter), 'joytech');
-        $runner->add('JoyTech thermometer ingress', self::joyTechThermometer($config, $services, $subscribers, $gatewayTopicFilter), 'joytech-thermometer');
-        $runner->add('JoyTech oximeter ingress', self::joyTechOximeter($config, $services, $subscribers, $gatewayTopicFilter), 'joytech-oximeter');
+        $runner->add('Gateway ingress', self::gateway($config, $services, $subscribers), 'gateway');
 
         $runner->add('Qinglanst ingress', self::qinglanst($config, $services), 'qinglanst');
         $runner->add('Tuya ingress', self::tuya($config, $services, $loop), 'tuya');
@@ -83,19 +75,57 @@ final class MqttIngressFactory
         );
     }
 
-    /** @param array<string, mixed> $config */
-    private static function moko(
-        array $config,
-        HubServices $services,
-        SubscriberFactory $subscribers,
-        string $topicFilter,
-    ): ?MqttIngress {
+    /**
+     * Uma sessão só para todo o `…/gw/+/raw`: o MOKO trata as suas tramas e entrega o que um
+     * gateway BLE reencaminha à ponte que o reclama.
+     *
+     * @param array<string, mixed> $config
+     */
+    private static function gateway(array $config, HubServices $services, SubscriberFactory $subscribers): ?MqttIngress
+    {
         if (!$config['gateway']['enabled']) {
             return null;
         }
 
+        $topicFilter = trim((string)$config['gateway']['topic_filter']);
+        $common = [
+            'whitelist' => $services->whitelist,
+            'mqttBridge' => $services->mqttBridge,
+            'links' => $services->dataAccess->gatewayDeviceLinks,
+            'deviceStore' => $services->deviceStore,
+            'commercialModelResolver' => $services->commercialModelResolver,
+            'denylist' => $services->denylist,
+        ];
+        $relays = [
+            // Em Redis e não em memória: a maior releitura de blocos é no arranque do gateway, e
+            // tem de sobreviver a um reinício do hub.
+            new VeepooBridge(
+                ...$common,
+                downlinks: $services->downlinkQueue,
+                state: new RedisObservationStateStore($services->redis),
+                topicFilter: $topicFilter,
+            ),
+            new LefuTorreBridge(
+                ...$common,
+                queue: $services->downlinkQueue,
+                topicFilter: $topicFilter,
+                scaleUsers: static fn (string $imei): ?array => $services->dataAccess->configurationLifecycle
+                    ->effectivePayloads($imei, ['scale_users'])['scale_users'] ?? null,
+                onlineUsers: new ScaleOnlineUsers($services->redis),
+                historySeen: new RecentMeasurementKeys($services->redis, 'hub:lefu:history-seen', 500),
+            ),
+            new JoyTechBpBridge(
+                ...$common,
+                queue: $services->downlinkQueue,
+                topicFilter: $topicFilter,
+                marks: new BloodPressureHistoryMarks($services->redis),
+            ),
+            new JoyTechThermometerBridge(...$common, topicFilter: $topicFilter, seen: new RecentMeasurementKeys($services->redis)),
+            new JoyTechOximeterBridge(...$common),
+        ];
+
         return $subscribers->bind(
-            'moko-sub',
+            'gateway-sub',
             $topicFilter,
             fn ($subscriber, $reconnect) => new MokoBridge(
                 $subscriber,
@@ -112,163 +142,7 @@ final class MqttIngressFactory
                     $services->dataAccess->diaperSensitivity,
                 ),
                 denylist: $services->denylist,
-            ),
-        );
-    }
-
-    /** @param array<string, mixed> $config */
-    private static function lefu(
-        array $config,
-        HubServices $services,
-        SubscriberFactory $subscribers,
-        string $topicFilter,
-    ): ?MqttIngress {
-        if (!$config['gateway']['enabled']) {
-            return null;
-        }
-
-        return $subscribers->bind(
-            'lefu-sub',
-            $topicFilter,
-            fn ($subscriber, $reconnect) => new LefuTorreBridge(
-                $subscriber,
-                $services->whitelist,
-                $services->mqttBridge,
-                $services->dataAccess->gatewayDeviceLinks,
-                $services->downlinkQueue,
-                $topicFilter,
-                $reconnect,
-                $services->deviceStore,
-                commercialModelResolver: $services->commercialModelResolver,
-                denylist: $services->denylist,
-                scaleUsers: static fn (string $imei): ?array => $services->dataAccess->configurationLifecycle
-                    ->effectivePayloads($imei, ['scale_users'])['scale_users'] ?? null,
-                onlineUsers: new ScaleOnlineUsers($services->redis),
-                historySeen: new RecentMeasurementKeys($services->redis, 'hub:lefu:history-seen', 500),
-            ),
-        );
-    }
-
-    /** @param array<string, mixed> $config */
-    private static function joyTech(
-        array $config,
-        HubServices $services,
-        SubscriberFactory $subscribers,
-        string $topicFilter,
-    ): ?MqttIngress {
-        if (!$config['gateway']['enabled']) {
-            return null;
-        }
-
-        return $subscribers->bind(
-            'joytech-sub',
-            $topicFilter,
-            fn ($subscriber, $reconnect) => new JoyTechBpBridge(
-                $subscriber,
-                $services->whitelist,
-                $services->mqttBridge,
-                $services->dataAccess->gatewayDeviceLinks,
-                $services->downlinkQueue,
-                $topicFilter,
-                $reconnect,
-                $services->deviceStore,
-                commercialModelResolver: $services->commercialModelResolver,
-                denylist: $services->denylist,
-                marks: new BloodPressureHistoryMarks($services->redis),
-            ),
-        );
-    }
-
-    /** @param array<string, mixed> $config */
-    private static function joyTechThermometer(
-        array $config,
-        HubServices $services,
-        SubscriberFactory $subscribers,
-        string $topicFilter,
-    ): ?MqttIngress {
-        if (!$config['gateway']['enabled']) {
-            return null;
-        }
-
-        return $subscribers->bind(
-            'joytech-thermometer-sub',
-            $topicFilter,
-            fn ($subscriber, $reconnect) => new JoyTechThermometerBridge(
-                $subscriber,
-                $services->whitelist,
-                $services->mqttBridge,
-                $services->dataAccess->gatewayDeviceLinks,
-                $topicFilter,
-                $reconnect,
-                $services->deviceStore,
-                commercialModelResolver: $services->commercialModelResolver,
-                denylist: $services->denylist,
-                seen: new RecentMeasurementKeys($services->redis),
-            ),
-        );
-    }
-
-    /** @param array<string, mixed> $config */
-    private static function joyTechOximeter(
-        array $config,
-        HubServices $services,
-        SubscriberFactory $subscribers,
-        string $topicFilter,
-    ): ?MqttIngress {
-        if (!$config['gateway']['enabled']) {
-            return null;
-        }
-
-        return $subscribers->bind(
-            'joytech-oximeter-sub',
-            $topicFilter,
-            fn ($subscriber, $reconnect) => new JoyTechOximeterBridge(
-                $subscriber,
-                $services->whitelist,
-                $services->mqttBridge,
-                $services->dataAccess->gatewayDeviceLinks,
-                $topicFilter,
-                $reconnect,
-                $services->deviceStore,
-                commercialModelResolver: $services->commercialModelResolver,
-                denylist: $services->denylist,
-            ),
-        );
-    }
-
-    /**
-     * Pulseiras Veepoo entregues por um gateway BLE: partilham o tópico e o interruptor do MOKO,
-     * porque é o mesmo gateway que as serve.
-     *
-     * @param array<string, mixed> $config
-     */
-    private static function veepoo(
-        array $config,
-        HubServices $services,
-        SubscriberFactory $subscribers,
-        string $topicFilter,
-    ): ?MqttIngress {
-        if (!$config['gateway']['enabled']) {
-            return null;
-        }
-
-        return $subscribers->bind(
-            'veepoo-sub',
-            $topicFilter,
-            fn ($subscriber, $reconnect) => new VeepooBridge(
-                $subscriber,
-                $services->whitelist,
-                $services->mqttBridge,
-                $services->dataAccess->gatewayDeviceLinks,
-                $services->downlinkQueue,
-                // Em Redis e não em memória: a maior releitura de blocos é no arranque do
-                // gateway, e tem de sobreviver a um reinício do hub.
-                new RedisObservationStateStore($services->redis),
-                $topicFilter,
-                $reconnect,
-                $services->deviceStore,
-                commercialModelResolver: $services->commercialModelResolver,
-                denylist: $services->denylist,
+                relays: $relays,
             ),
         );
     }
@@ -322,10 +196,8 @@ final class MqttIngressFactory
                 $topicFilter,
                 $reconnect,
                 $services->deviceStore,
-                dashboardWritePolicy: new QinglanstDashboardWritePolicy(
-                    (int)$config['qinglanst']['dashboard_seen_min_interval_ms'],
-                    (int)$config['qinglanst']['raw_history_sample_ms'],
-                ),
+                seenIntervalMs: (int)$config['qinglanst']['dashboard_seen_min_interval_ms'],
+                rawHistorySampleMs: (int)$config['qinglanst']['raw_history_sample_ms'],
                 commercialModelResolver: $services->commercialModelResolver,
                 denylist: $services->denylist,
                 idleTimeoutSeconds: (int)$config['qinglanst']['idle_timeout_seconds'],

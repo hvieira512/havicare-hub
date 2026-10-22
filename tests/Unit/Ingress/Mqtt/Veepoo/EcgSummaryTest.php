@@ -7,7 +7,6 @@ namespace Tests\Unit\Ingress\Mqtt\Veepoo;
 use Tests\Support\Doubles\ArrayObservationStateStore;
 use Hub\Ingress\Mqtt\Veepoo\VeepooBridge;
 use PHPUnit\Framework\TestCase;
-use Tests\Support\Doubles\FakeMqttSubscriber;
 use Tests\Support\Doubles\IngressFixtures;
 use Tests\Support\Doubles\RecordingHubMqttBridge;
 
@@ -99,7 +98,7 @@ final class EcgSummaryTest extends TestCase
         $bridge = $this->bridge($mqtt);
 
         foreach (self::captured() as $frame) {
-            $bridge->handleReceivedMessage(self::TOPIC, json_encode([
+            IngressFixtures::relay($bridge, self::TOPIC, json_encode([
                 'source' => 'veepoo-node',
                 'kind' => 'measurement',
                 'device' => ['mac' => self::BRACELET],
@@ -133,7 +132,7 @@ final class EcgSummaryTest extends TestCase
     private function ecg(array $status): array
     {
         $mqtt = new RecordingHubMqttBridge();
-        $this->bridge($mqtt)->handleReceivedMessage(self::TOPIC, json_encode([
+        IngressFixtures::relay($this->bridge($mqtt), self::TOPIC, json_encode([
             'source' => 'veepoo-node',
             'kind' => 'ecg_wave',
             'device' => ['mac' => self::BRACELET],
@@ -152,7 +151,6 @@ final class EcgSummaryTest extends TestCase
     private function bridge(RecordingHubMqttBridge $mqtt): VeepooBridge
     {
         return new VeepooBridge(
-            new FakeMqttSubscriber(),
             IngressFixtures::whitelist([
                 self::GATEWAY => IngressFixtures::device('Havicare', 'Veepoo Gateway', 'gateway'),
                 self::BRACELET => IngressFixtures::device('Wonlex', 'MF91', 'bracelet'),

@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Ingress\Mqtt\Moko;
 
-use Hub\Ingress\Mqtt\Moko\W6bNormalizer;
+use Hub\Ingress\Mqtt\Moko\BraceletNormalizer;
 use PHPUnit\Framework\TestCase;
 
-final class W6bNormalizerTest extends TestCase
+final class BraceletNormalizerTest extends TestCase
 {
     private const DEVICE = [
         'imei' => 'fbd87c59ba8b',
@@ -40,10 +40,11 @@ final class W6bNormalizerTest extends TestCase
 
     public function testRisingTriggerCountEmitsAHelpCallCarryingThePressType(): void
     {
-        $result = (new W6bNormalizer())->normalize(
+        $result = (new BraceletNormalizer())->normalize(
             $this->decoded('long', 6),
             self::DEVICE,
             'd48c49f7909c',
+            'moko-w6b',
             previousTriggerCount: 5,
         );
 
@@ -62,10 +63,11 @@ final class W6bNormalizerTest extends TestCase
     {
         // O contador é anunciado continuamente, e por isso um aparelho já com 42 toques não
         // pode dar alarme no instante em que o hub reinicia.
-        $result = (new W6bNormalizer())->normalize(
+        $result = (new BraceletNormalizer())->normalize(
             $this->decoded('single', 42),
             self::DEVICE,
             'd48c49f7909c',
+            'moko-w6b',
             previousTriggerCount: null,
         );
 
@@ -74,10 +76,11 @@ final class W6bNormalizerTest extends TestCase
 
     public function testAnUnchangedCounterIsNotAPress(): void
     {
-        $result = (new W6bNormalizer())->normalize(
+        $result = (new BraceletNormalizer())->normalize(
             $this->decoded('single', 5),
             self::DEVICE,
             'd48c49f7909c',
+            'moko-w6b',
             previousTriggerCount: 5,
         );
 
@@ -86,10 +89,11 @@ final class W6bNormalizerTest extends TestCase
 
     public function testSeveralPressesBetweenSightingsAreCounted(): void
     {
-        $result = (new W6bNormalizer())->normalize(
+        $result = (new BraceletNormalizer())->normalize(
             $this->decoded('single', 9),
             self::DEVICE,
             'd48c49f7909c',
+            'moko-w6b',
             previousTriggerCount: 5,
         );
 
@@ -99,10 +103,11 @@ final class W6bNormalizerTest extends TestCase
     public function testACounterResetIsOnePressRatherThanANegativeDelta(): void
     {
         // Trocar a bateria reinicia o aparelho e põe os contadores a zero.
-        $result = (new W6bNormalizer())->normalize(
+        $result = (new BraceletNormalizer())->normalize(
             $this->decoded('single', 1),
             self::DEVICE,
             'd48c49f7909c',
+            'moko-w6b',
             previousTriggerCount: 40,
         );
 
@@ -113,10 +118,11 @@ final class W6bNormalizerTest extends TestCase
     {
         // O modo é descodificado mas não dá alarme, de propósito: quem dorme calmo
         // dispará-lo-ia todas as noites.
-        $result = (new W6bNormalizer())->normalize(
+        $result = (new BraceletNormalizer())->normalize(
             $this->decoded('inactivity', 3),
             self::DEVICE,
             'd48c49f7909c',
+            'moko-w6b',
             previousTriggerCount: 2,
         );
 
@@ -125,13 +131,14 @@ final class W6bNormalizerTest extends TestCase
 
     public function testBatteryAndMotionBecomeTelemetry(): void
     {
-        $result = (new W6bNormalizer())->normalize(
+        $result = (new BraceletNormalizer())->normalize(
             $this->decoded('single', 5, [
                 'accelerationMg' => ['x' => 40, 'y' => -124, 'z' => 984],
                 'batteryPercent' => 80,
             ]),
             self::DEVICE,
             'd48c49f7909c',
+            'moko-w6b',
             previousTriggerCount: 5,
         );
 
@@ -145,10 +152,11 @@ final class W6bNormalizerTest extends TestCase
 
     public function testVoltageIsUsedWhenThereIsNoPercentage(): void
     {
-        $result = (new W6bNormalizer())->normalize(
+        $result = (new BraceletNormalizer())->normalize(
             $this->decoded('single', 5, ['batteryVoltageMv' => 3276]),
             self::DEVICE,
             'd48c49f7909c',
+            'moko-w6b',
             previousTriggerCount: 5,
         );
 
@@ -157,14 +165,32 @@ final class W6bNormalizerTest extends TestCase
 
     public function testAnAlarmOnlyFrameProducesNoTelemetry(): void
     {
-        $result = (new W6bNormalizer())->normalize(
+        $result = (new BraceletNormalizer())->normalize(
             $this->decoded('single', 6),
             self::DEVICE,
             'd48c49f7909c',
+            'moko-w6b',
             previousTriggerCount: 5,
         );
 
         self::assertSame([], $result['telemetry']);
         self::assertCount(1, $result['events']);
+    }
+
+    /** A W6 não conta os toques: o que chega já é um, e sai sem contador. */
+    public function testAW6PressIsAHelpCallWithoutACounter(): void
+    {
+        $result = (new BraceletNormalizer())->normalize(
+            ['mac' => 'fbd87c59ba8b', 'rssiDbm' => -70, 'alarm' => ['pressMode' => 'triple']],
+            self::DEVICE,
+            'd48c49f7909c',
+            'moko-w6',
+        );
+
+        self::assertSame(['pressType' => 'triple'], $result['events'][0]['data']);
+        self::assertSame(
+            ['protocol' => 'moko-w6', 'nativeType' => 'service_data', 'gatewayId' => 'd48c49f7909c', 'rssiDbm' => -70],
+            $result['events'][0]['source'],
+        );
     }
 }

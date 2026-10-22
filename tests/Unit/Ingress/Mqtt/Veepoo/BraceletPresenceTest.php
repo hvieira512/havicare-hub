@@ -13,17 +13,17 @@ use Tests\Support\Doubles\RecordingHubMqttBridge;
 /** O estado que conta é o do Redis, que a manutenção também muda, e não o que este processo se lembra. */
 final class BraceletPresenceTest extends TestCase
 {
-    private const DEVICE = ['supplier' => 'Unique Scales', 'model' => 'HC-CF632BLE'];
+    private const DEVICE = ['supplier' => 'Unique Scales', 'model' => 'HC-CF632BLE', 'deviceType' => 'scale'];
 
     public function testAfterTheHubGaveItUpTheNextSessionIsAConnection(): void
     {
         $mqtt = new RecordingHubMqttBridge();
         $store = new DeviceStore(new InMemoryRedisClient());
-        $presence = new BraceletPresence($mqtt, $store, 'lefu-torre', 'scale');
+        $presence = new BraceletPresence($mqtt, $store, 'lefu-torre');
 
-        $presence->markOnline('cfe908067329', self::DEVICE, 0, 'null');
+        $presence->markOnline('cfe908067329', self::DEVICE);
         $store->deviceOffline('cfe908067329');
-        $presence->markOnline('cfe908067329', self::DEVICE, 0, 'null');
+        $presence->markOnline('cfe908067329', self::DEVICE);
 
         self::assertSame(['device.connected', 'device.connected'], array_column($mqtt->events, 'type'));
     }
@@ -33,7 +33,7 @@ final class BraceletPresenceTest extends TestCase
     {
         $mqtt = new RecordingHubMqttBridge();
 
-        (new BraceletPresence($mqtt, new DeviceStore(new InMemoryRedisClient()), 'lefu-torre', 'scale'))->markOffline('cfe908067329', self::DEVICE, 0, 'null');
+        (new BraceletPresence($mqtt, new DeviceStore(new InMemoryRedisClient()), 'lefu-torre'))->markOffline('cfe908067329', self::DEVICE);
 
         self::assertSame(['offline'], array_column(array_column($mqtt->statuses, 'payload'), 'state'));
     }

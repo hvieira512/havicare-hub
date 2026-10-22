@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace Hub\Ingress\Http\Qinglanst;
 
-use Hub\Device\DeviceDescriptor;
 use Hub\Device\HubMqttBridge;
 use Hub\Domain\DeviceMetadata;
 use Hub\Infrastructure\Persistence\Repository\DeviceConfigurationLifecycleRepository;
 use Hub\Infrastructure\Persistence\Repository\WhitelistRepository;
 use Hub\State\DeviceStoreContract;
+use Hub\Device\TelemetryEnvelope;
 
 /**
  * O que uma leitura do radar (`deviceProp`) diz passa a ser o que o hub mostra: as configurações
@@ -47,15 +47,8 @@ final class RadarStateAbsorber
         $licenseId = DeviceMetadata::normalizeLicenseId($device['license_id'] ?? 0);
         $company = (string)($device['company'] ?? 'null');
         foreach ($this->commands->telemetry($props) as $type => $data) {
-            $telemetry = [
-                'type' => $type,
-                'occurredAt' => gmdate('Y-m-d\TH:i:s\Z'),
-                'device' => DeviceDescriptor::of($imei, $device),
-                'source' => ['protocol' => self::PROTOCOL, 'nativeType' => 'deviceProp'],
-                'data' => $data,
-            ];
-            $this->mqtt->publishTelemetry($imei, $telemetry, $deviceType, $licenseId, $company);
-            $this->store?->append($imei, 'telemetry', $telemetry + ['deviceType' => $deviceType, 'licenseId' => $licenseId]);
+            $telemetry = TelemetryEnvelope::for($type, $imei, $device, self::PROTOCOL, 'deviceProp', $data);
+            $this->mqtt->publishAndStore($this->store, 'telemetry', $imei, $telemetry, $deviceType, $licenseId, $company);
         }
     }
 

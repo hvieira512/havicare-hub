@@ -338,7 +338,6 @@ configurarem. O callback HTTP da cloud não se liga.
 | `src/Ingress/Mqtt/Qinglanst/QinglanstBridge.php` | Subscreve, identifica, publica |
 | `src/Ingress/Mqtt/Qinglanst/PayloadDecoder.php` | Os quatro formatos binários, e os códigos numéricos para nomes |
 | `src/Ingress/Mqtt/Qinglanst/MessageNormalizer.php` | Telemetria, limiares e eventos |
-| `src/Ingress/Mqtt/Qinglanst/DashboardWritePolicy.php` | Os dois travões |
 
 A planta das divisões não vem pelo MQTT: é lida à cloud do fabricante, a pedido,
 pelo `POST /api/devices/{imei}/radar-layout/sync`.

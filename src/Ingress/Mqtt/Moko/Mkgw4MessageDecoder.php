@@ -246,11 +246,7 @@ final class Mkgw4MessageDecoder implements MessageDecoder
 
     private function unsigned(string $bytes): int
     {
-        $value = 0;
-        foreach (unpack('C*', $bytes) ?: [] as $byte) {
-            $value = ($value << 8) | $byte;
-        }
-        return $value;
+        return (int)hexdec(bin2hex($bytes));
     }
 
     private function signed(string $bytes): int

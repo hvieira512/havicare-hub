@@ -148,7 +148,7 @@ class DeviceHubServer
         $commercialName = $this->currentCommercialName($imei, $session?->commercialName ?? '');
         try {
             $command = self::withRequestId($this->commandMetadata($bytes, $session?->protocol), $context);
-            $this->mqtt->publishEvent($imei, RawPayload::event(
+            $this->mqtt->publishEvent($imei, TelemetryEnvelope::event(
                 $imei,
                 $session?->supplier ?? '',
                 $session?->model ?? '',
@@ -171,7 +171,7 @@ class DeviceHubServer
             if ($session !== null) {
                 $this->mqtt->publishRaw(
                     $imei,
-                    RawPayload::raw($imei, $session->supplier, $session->model, 'tcp', $session->protocol, $bytes, 'downlink', (string)$conn->resourceId, $commercialName),
+                    TelemetryEnvelope::raw($imei, $session->supplier, $session->model, 'tcp', $session->protocol, $bytes, 'downlink', (string)$conn->resourceId, $commercialName),
                     $session->deviceType,
                     $licenseId,
                     $company,
@@ -204,7 +204,7 @@ class DeviceHubServer
         $metadata = $this->authorizer->metadataFor($imei);
         try {
             $command = self::withRequestId($bytes !== null ? $this->commandMetadata($bytes) : null, $context);
-            $this->mqtt->publishEvent($imei, RawPayload::event(
+            $this->mqtt->publishEvent($imei, TelemetryEnvelope::event(
                 $imei,
                 $metadata['supplier'],
                 $metadata['model'],
@@ -257,7 +257,7 @@ class DeviceHubServer
             if ($renewal) {
                 return true;
             }
-            $this->mqtt->publishEvent($imei, RawPayload::event(
+            $this->mqtt->publishEvent($imei, TelemetryEnvelope::event(
                 $imei,
                 $metadata['supplier'],
                 $metadata['model'],
@@ -358,7 +358,7 @@ class DeviceHubServer
         try {
             $this->mqtt->publishRaw(
                 $session->imei,
-                RawPayload::raw($session->imei, $session->supplier, $session->model, 'tcp', $session->protocol, $raw, 'uplink', $connectionId, $session->commercialName),
+                TelemetryEnvelope::raw($session->imei, $session->supplier, $session->model, 'tcp', $session->protocol, $raw, 'uplink', $connectionId, $session->commercialName),
                 $session->deviceType,
                 $this->currentLicenseId($session->imei, $session->licenseId),
                 $this->currentCompany($session->imei, $session->company),
@@ -531,8 +531,8 @@ class DeviceHubServer
             // `retain: false`: uma recusa é um acontecimento e não um estado, e retida chegava a quem
             // subscrevesse depois.
             $deviceType = ProtocolRegistry::describe($identity->protocol)['deviceType'];
-            $this->mqtt->publishStatus($identity->imei, RawPayload::status($identity->imei, '', '', 'error', $error), false, $deviceType);
-            $this->mqtt->publishEvent($identity->imei, RawPayload::event($identity->imei, '', '', 'device.rejected', $error), $deviceType);
+            $this->mqtt->publishStatus($identity->imei, TelemetryEnvelope::status($identity->imei, '', '', 'error', $error), false, $deviceType, 0, 'null');
+            $this->mqtt->publishEvent($identity->imei, TelemetryEnvelope::event($identity->imei, '', '', 'device.rejected', $error), $deviceType, 0, 'null');
         } catch (\Throwable $e) {
             $this->mqtt->logPublishFailure('hub', $identity->imei, $e);
         }
@@ -609,7 +609,7 @@ class DeviceHubServer
     private function publishStatus(string $imei, string $supplier, string $model, string $state, string $deviceType, int $licenseId = 0, string $company = 'null', string $commercialName = ''): void
     {
         try {
-            $this->mqtt->publishStatus($imei, RawPayload::status($imei, $supplier, $model, $state, null, $commercialName), true, $deviceType, $licenseId, $company);
+            $this->mqtt->publishStatus($imei, TelemetryEnvelope::status($imei, $supplier, $model, $state, null, $commercialName), true, $deviceType, $licenseId, $company);
             if ($state === 'online') {
                 $this->deviceStore?->deviceSeen($imei, [
                     'supplier' => $supplier,
@@ -631,7 +631,7 @@ class DeviceHubServer
     private function publishEvent(string $imei, string $supplier, string $model, string $type, string $deviceType, int $licenseId = 0, string $company = 'null', string $commercialName = ''): void
     {
         try {
-            $this->mqtt->publishEvent($imei, RawPayload::event($imei, $supplier, $model, $type, null, null, $commercialName), $deviceType, $licenseId, $company);
+            $this->mqtt->publishEvent($imei, TelemetryEnvelope::event($imei, $supplier, $model, $type, null, null, $commercialName), $deviceType, $licenseId, $company);
             $this->recordEvent($imei, $supplier, $model, $type, null, $deviceType, $licenseId, $commercialName);
         } catch (\Throwable $e) {
             $this->mqtt->logPublishFailure('hub', $imei, $e);
@@ -652,7 +652,7 @@ class DeviceHubServer
             'online' => '1',
             'lastConnectionId' => $connectionId,
         ]);
-        $this->deviceStore?->append($session->imei, 'raw', RawPayload::raw(
+        $this->deviceStore?->append($session->imei, 'raw', TelemetryEnvelope::raw(
             $session->imei,
             $session->supplier,
             $session->model,
@@ -677,7 +677,7 @@ class DeviceHubServer
         string $commercialName = ''
     ): void {
         $this->deviceStore?->append($imei, 'events', array_merge(
-            RawPayload::event($imei, $supplier, $model, $type, null, $command, $commercialName),
+            TelemetryEnvelope::event($imei, $supplier, $model, $type, null, $command, $commercialName),
             ['deviceType' => $deviceType, 'licenseId' => $licenseId]
         ));
     }
@@ -777,7 +777,7 @@ class DeviceHubServer
         try {
             $this->mqtt->publishRaw(
                 $session->imei,
-                RawPayload::raw($session->imei, $session->supplier, $session->model, 'tcp', $session->protocol, $response->bytes, 'downlink', $connectionId, $session->commercialName),
+                TelemetryEnvelope::raw($session->imei, $session->supplier, $session->model, 'tcp', $session->protocol, $response->bytes, 'downlink', $connectionId, $session->commercialName),
                 $session->deviceType,
                 $this->currentLicenseId($session->imei, $session->licenseId),
                 $this->currentCompany($session->imei, $session->company),

@@ -9,7 +9,6 @@ use Hub\Ingress\Mqtt\JoyTech\JoyTechBpBridge;
 use Hub\Ingress\Mqtt\JoyTech\JoyTechFrame;
 use Hub\State\DeviceStoreContract;
 use PHPUnit\Framework\TestCase;
-use Tests\Support\Doubles\FakeMqttSubscriber;
 use Tests\Support\Doubles\IngressFixtures;
 use Tests\Support\Doubles\OneShotDownlinkQueue;
 use Tests\Support\Doubles\RecordingHubMqttBridge;
@@ -50,8 +49,8 @@ final class JoyTechEcgTest extends TestCase
     {
         $mqtt = new RecordingHubMqttBridge();
         $bridge = $this->bridge($mqtt);
-        $bridge->handleReceivedMessage(self::TOPIC, self::message('session', ['connected' => true]));
-        $bridge->handleReceivedMessage(self::TOPIC, self::message('frame', [
+        IngressFixtures::relay($bridge, self::TOPIC, self::message('session', ['connected' => true]));
+        IngressFixtures::relay($bridge, self::TOPIC, self::message('frame', [
             'char' => 'fff1',
             'hex' => JoyTechFrame::encode(0x83, pack('nnCC', 119, 86, 71, 0) . pack('C*', 26, 10, 16, 17, 31, 1)),
         ]));
@@ -66,7 +65,7 @@ final class JoyTechEcgTest extends TestCase
         $mqtt = new RecordingHubMqttBridge();
         $queue = new OneShotDownlinkQueue('readBloodPressureHistory', ['id' => 'op-1', 'command' => 'readBloodPressureHistory', 'payload' => []]);
 
-        $this->bridge($mqtt, queue: $queue)->handleReceivedMessage(self::TOPIC, self::message('session', ['connected' => true]));
+        IngressFixtures::relay($this->bridge($mqtt, queue: $queue), self::TOPIC, self::message('session', ['connected' => true]));
 
         self::assertSame(['calibrateClock', 'readBloodPressureHistory'], array_column(array_column($mqtt->gatewayCommands, 'payload'), 'operation'));
     }
@@ -143,8 +142,8 @@ final class JoyTechEcgTest extends TestCase
         $dropped = new RecordingHubMqttBridge();
         $bridge = $this->bridge($dropped);
         $this->replay($bridge, array_slice($capture, 0, 900));
-        $bridge->handleReceivedMessage(self::TOPIC, self::message('session', ['connected' => false]));
-        $bridge->handleReceivedMessage(self::TOPIC, self::message('session', ['connected' => true]));
+        IngressFixtures::relay($bridge, self::TOPIC, self::message('session', ['connected' => false]));
+        IngressFixtures::relay($bridge, self::TOPIC, self::message('session', ['connected' => true]));
         $this->replay($bridge, array_slice($capture, -1));
 
         self::assertSame([], array_filter(array_column($mqtt->telemetry, 'payload'), static fn (array $t): bool => $t['type'] === 'ecg'));
@@ -171,7 +170,7 @@ final class JoyTechEcgTest extends TestCase
         $start = $this->now;
         foreach ($frames as [$ms, $hex]) {
             $this->now = max($this->now, $start + $ms / 1000);
-            $bridge->handleReceivedMessage(self::TOPIC, self::message('frame', ['char' => 'fff1', 'hex' => $hex]));
+            IngressFixtures::relay($bridge, self::TOPIC, self::message('frame', ['char' => 'fff1', 'hex' => $hex]));
         }
     }
 
@@ -204,7 +203,6 @@ final class JoyTechEcgTest extends TestCase
     private function bridge(RecordingHubMqttBridge $mqtt, ?DeviceStoreContract $store = null, ?PendingDownlinkQueue $queue = null): JoyTechBpBridge
     {
         return new JoyTechBpBridge(
-            new FakeMqttSubscriber(),
             IngressFixtures::whitelist([
                 self::GATEWAY => IngressFixtures::device('Havicare', 'BLE Gateway', 'gateway'),
                 self::MONITOR => IngressFixtures::device('JoyTech', 'HC-6679B', 'blood_pressure_monitor'),
@@ -213,7 +211,6 @@ final class JoyTechEcgTest extends TestCase
             IngressFixtures::links(),
             $queue,
             'havicare-hub/null/0/gw/+/raw',
-            null,
             $store,
             fn (): float => $this->now,
         );

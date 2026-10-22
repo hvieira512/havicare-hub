@@ -7,7 +7,6 @@ namespace Tests\Unit\Ingress\Mqtt\Veepoo;
 use Hub\Ingress\Mqtt\Veepoo\VeepooBridge;
 use PHPUnit\Framework\TestCase;
 use Tests\Support\Doubles\ArrayObservationStateStore;
-use Tests\Support\Doubles\FakeMqttSubscriber;
 use Tests\Support\Doubles\IngressFixtures;
 use Tests\Support\Doubles\RecordingHubMqttBridge;
 
@@ -23,8 +22,8 @@ final class BridgeLowBatteryTest extends TestCase
         $mqtt = new RecordingHubMqttBridge();
         $bridge = $this->bridge($mqtt);
 
-        $bridge->handleReceivedMessage(self::TOPIC, self::battery(['VPDeviceIsPercent' => true, 'VPDeviceElectricPercent' => 9, 'VPDeviceElectricTypeIsLowVoltage' => 'lowVoltage']));
-        $bridge->handleReceivedMessage(self::TOPIC, self::battery(['VPDeviceIsPercent' => true, 'VPDeviceElectricPercent' => 8, 'VPDeviceElectricTypeIsLowVoltage' => 'lowVoltage']));
+        IngressFixtures::relay($bridge, self::TOPIC, self::battery(['VPDeviceIsPercent' => true, 'VPDeviceElectricPercent' => 9, 'VPDeviceElectricTypeIsLowVoltage' => 'lowVoltage']));
+        IngressFixtures::relay($bridge, self::TOPIC, self::battery(['VPDeviceIsPercent' => true, 'VPDeviceElectricPercent' => 8, 'VPDeviceElectricTypeIsLowVoltage' => 'lowVoltage']));
 
         $events = array_values(array_filter($mqtt->events, static fn (array $event): bool => $event['type'] === 'low_battery'));
         self::assertCount(1, $events);
@@ -38,9 +37,9 @@ final class BridgeLowBatteryTest extends TestCase
         $mqtt = new RecordingHubMqttBridge();
         $bridge = $this->bridge($mqtt);
 
-        $bridge->handleReceivedMessage(self::TOPIC, self::battery(['VPDeviceIsPercent' => true, 'VPDeviceElectricPercent' => 9, 'VPDeviceElectricTypeIsLowVoltage' => 'lowVoltage']));
-        $bridge->handleReceivedMessage(self::TOPIC, self::battery(['VPDeviceIsPercent' => true, 'VPDeviceElectricPercent' => 80, 'VPDeviceElectricTypeIsLowVoltage' => 'normal']));
-        $bridge->handleReceivedMessage(self::TOPIC, self::battery(['VPDeviceIsPercent' => true, 'VPDeviceElectricPercent' => 9, 'VPDeviceElectricTypeIsLowVoltage' => 'lowVoltage']));
+        IngressFixtures::relay($bridge, self::TOPIC, self::battery(['VPDeviceIsPercent' => true, 'VPDeviceElectricPercent' => 9, 'VPDeviceElectricTypeIsLowVoltage' => 'lowVoltage']));
+        IngressFixtures::relay($bridge, self::TOPIC, self::battery(['VPDeviceIsPercent' => true, 'VPDeviceElectricPercent' => 80, 'VPDeviceElectricTypeIsLowVoltage' => 'normal']));
+        IngressFixtures::relay($bridge, self::TOPIC, self::battery(['VPDeviceIsPercent' => true, 'VPDeviceElectricPercent' => 9, 'VPDeviceElectricTypeIsLowVoltage' => 'lowVoltage']));
 
         self::assertFalse($mqtt->telemetry[1]['payload']['data']['lowBattery'] ?? null);
         self::assertCount(2, array_filter($mqtt->events, static fn (array $event): bool => $event['type'] === 'low_battery'));
@@ -50,7 +49,7 @@ final class BridgeLowBatteryTest extends TestCase
     public function testAGradeReadingStillCarriesTheFlag(): void
     {
         $mqtt = new RecordingHubMqttBridge();
-        $this->bridge($mqtt)->handleReceivedMessage(self::TOPIC, self::battery(['VPDeviceIsPercent' => false, 'VPDeviceElectricGrade' => 1, 'VPDeviceElectricTypeIsLowVoltage' => 'lowVoltage']));
+        IngressFixtures::relay($this->bridge($mqtt), self::TOPIC, self::battery(['VPDeviceIsPercent' => false, 'VPDeviceElectricGrade' => 1, 'VPDeviceElectricTypeIsLowVoltage' => 'lowVoltage']));
 
         self::assertSame(['lowBattery' => true], $mqtt->telemetry[0]['payload']['data'] ?? null);
         self::assertSame(['low_battery'], array_column($mqtt->events, 'type'));
@@ -70,7 +69,6 @@ final class BridgeLowBatteryTest extends TestCase
     private function bridge(RecordingHubMqttBridge $mqtt): VeepooBridge
     {
         return new VeepooBridge(
-            new FakeMqttSubscriber(),
             IngressFixtures::whitelist([
                 self::GATEWAY => IngressFixtures::device('Havicare', 'Veepoo Gateway', 'gateway'),
                 self::BRACELET => IngressFixtures::device('Wonlex', 'MF91', 'bracelet'),

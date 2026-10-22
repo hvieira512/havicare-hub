@@ -8,7 +8,6 @@ use Hub\Device\CommercialModelResolver;
 use Hub\Ingress\Mqtt\Veepoo\VeepooBridge;
 use PHPUnit\Framework\TestCase;
 use Tests\Support\Doubles\ArrayObservationStateStore;
-use Tests\Support\Doubles\FakeMqttSubscriber;
 use Tests\Support\Doubles\IngressFixtures;
 use Tests\Support\Doubles\RecordingHubMqttBridge;
 
@@ -22,7 +21,7 @@ final class BridgeCommercialNameTest extends TestCase
     public function testTelemetryCarriesTheCommercialNameFromTheCatalogue(): void
     {
         $mqtt = new RecordingHubMqttBridge();
-        $this->bridge($mqtt)->handleReceivedMessage(self::TOPIC, self::battery());
+        IngressFixtures::relay($this->bridge($mqtt), self::TOPIC, self::battery());
 
         self::assertSame('Havicare MF91', $mqtt->telemetry[0]['payload']['device']['commercialName'] ?? null);
     }
@@ -31,7 +30,7 @@ final class BridgeCommercialNameTest extends TestCase
     public function testTheSleepRecordCarriesItToo(): void
     {
         $mqtt = new RecordingHubMqttBridge();
-        $this->bridge($mqtt)->handleReceivedMessage(self::TOPIC, self::sleep());
+        IngressFixtures::relay($this->bridge($mqtt), self::TOPIC, self::sleep());
 
         self::assertNotSame([], $mqtt->telemetry);
         foreach ($mqtt->telemetry as $entry) {
@@ -42,7 +41,7 @@ final class BridgeCommercialNameTest extends TestCase
     public function testTheDailyBlocksCarryItToo(): void
     {
         $mqtt = new RecordingHubMqttBridge();
-        $this->bridge($mqtt)->handleReceivedMessage(self::TOPIC, json_encode([
+        IngressFixtures::relay($this->bridge($mqtt), self::TOPIC, json_encode([
             'source' => 'veepoo-node',
             'kind' => 'daily_block',
             'device' => ['mac' => self::BRACELET],
@@ -56,8 +55,7 @@ final class BridgeCommercialNameTest extends TestCase
     public function testAnUnknownModelOmitsTheCommercialName(): void
     {
         $mqtt = new RecordingHubMqttBridge();
-        $this->bridge($mqtt, new CommercialModelResolver())
-            ->handleReceivedMessage(self::TOPIC, self::battery());
+        IngressFixtures::relay($this->bridge($mqtt, new CommercialModelResolver()), self::TOPIC, self::battery());
 
         self::assertArrayNotHasKey('commercialName', $mqtt->telemetry[0]['payload']['device']);
     }
@@ -96,7 +94,6 @@ final class BridgeCommercialNameTest extends TestCase
         ?CommercialModelResolver $resolver = null,
     ): VeepooBridge {
         return new VeepooBridge(
-            new FakeMqttSubscriber(),
             IngressFixtures::whitelist([
                 self::GATEWAY => IngressFixtures::device('Havicare', 'Veepoo Gateway', 'gateway'),
                 self::BRACELET => IngressFixtures::device('Wonlex', 'MF91', 'bracelet'),

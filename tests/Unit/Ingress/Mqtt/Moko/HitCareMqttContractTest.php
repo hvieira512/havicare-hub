@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Ingress\Mqtt\Moko;
 
-use Hub\Device\RawPayload;
+use Hub\Device\TelemetryEnvelope;
 use Hub\Ingress\Mqtt\Moko\MokoBridge;
 use PHPUnit\Framework\TestCase;
 use Tests\Support\Doubles\ArrayObservationStateStore;
@@ -52,8 +52,8 @@ final class HitCareMqttContractTest extends TestCase
     /** Guarda o hitCare: o gateway que se cala sai `offline`, com o `updatedAt`, e o evento `device.disconnected`. */
     public function testTheGatewayGoingSilentHasTheShapeHitCareParses(): void
     {
-        $status = RawPayload::status(self::GATEWAY, 'MOKO', 'MKGW3', 'offline');
-        $event = RawPayload::event(self::GATEWAY, 'MOKO', 'MKGW3', 'device.disconnected');
+        $status = TelemetryEnvelope::status(self::GATEWAY, 'MOKO', 'MKGW3', 'offline');
+        $event = TelemetryEnvelope::event(self::GATEWAY, 'MOKO', 'MKGW3', 'device.disconnected');
 
         self::assertSame('offline', $status['state']);
         self::assertMatchesRegularExpression('/Z$/', $status['updatedAt']);

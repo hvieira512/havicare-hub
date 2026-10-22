@@ -10,10 +10,7 @@ use Hub\Runtime\StartupBanner;
 use PHPUnit\Framework\TestCase;
 use Tests\Support\Doubles\FakeMqttSubscriber;
 
-/**
- * O banner de arranque diz, meses depois, com que configuração se corria. A Veepoo lê a
- * secção de configuração dos gateways, que não tem o nome dela.
- */
+/** O banner de arranque diz, meses depois, com que configuração se corria. */
 final class StartupBannerTest extends TestCase
 {
     private string $logFile;
@@ -45,16 +42,13 @@ final class StartupBannerTest extends TestCase
         self::assertStringContainsString('Qinglanst client id: qinglanst-radar-*', $output);
     }
 
-    public function testTheVeepooIngressReportsTheGatewayTopicFilter(): void
+    /** Uma só ingestão serve o gateway e tudo o que ele reencaminha, de vários tipos de aparelho. */
+    public function testTheGatewayIngressReportsItsTopicFilter(): void
     {
-        $output = $this->banner(['gateway', 'veepoo']);
+        $output = $this->banner(['gateway']);
 
         self::assertStringContainsString(
-            'Veepoo bracelet ingress topics: havicare-hub/null/0/gw/+/raw',
-            $output,
-        );
-        self::assertStringContainsString(
-            'havicare-hub/{company}/{licenseId}/bracelet/{deviceKey}/{raw|status|events|telemetry}',
+            'Gateway ingress topics: havicare-hub/null/0/gw/+/raw -> havicare-hub/{company}/{licenseId}/{deviceType}/{deviceKey}/{raw|status|events|telemetry}',
             $output,
         );
     }

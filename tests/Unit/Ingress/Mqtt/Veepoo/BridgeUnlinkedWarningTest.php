@@ -8,7 +8,6 @@ use Tests\Support\Doubles\ArrayObservationStateStore;
 use Hub\Ingress\Mqtt\Veepoo\VeepooBridge;
 use Hub\Log\Logger;
 use PHPUnit\Framework\TestCase;
-use Tests\Support\Doubles\FakeMqttSubscriber;
 use Tests\Support\Doubles\IngressFixtures;
 use Tests\Support\Doubles\RecordingHubMqttBridge;
 
@@ -47,13 +46,13 @@ final class BridgeUnlinkedWarningTest extends TestCase
             return (float)$now;
         });
 
-        $bridge->handleReceivedMessage(self::TOPIC, self::session());
+        IngressFixtures::relay($bridge, self::TOPIC, self::session());
         $now += 30;
-        $bridge->handleReceivedMessage(self::TOPIC, self::session());
+        IngressFixtures::relay($bridge, self::TOPIC, self::session());
         self::assertSame(1, $this->warnings(), 'dentro da janela é a mesma queixa');
 
         $now += 90;
-        $bridge->handleReceivedMessage(self::TOPIC, self::session());
+        IngressFixtures::relay($bridge, self::TOPIC, self::session());
 
         self::assertSame(2, $this->warnings());
     }
@@ -76,7 +75,6 @@ final class BridgeUnlinkedWarningTest extends TestCase
     private function bridge(?callable $clock = null): VeepooBridge
     {
         return new VeepooBridge(
-            new FakeMqttSubscriber(),
             IngressFixtures::whitelist([
                 self::GATEWAY => IngressFixtures::device('Havicare', 'Veepoo Gateway', 'gateway'),
                 self::BRACELET => IngressFixtures::device('Wonlex', 'MF91', 'bracelet'),

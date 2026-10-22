@@ -4,14 +4,14 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Hub;
 
-use Hub\Device\RawPayload;
+use Hub\Device\TelemetryEnvelope;
 use PHPUnit\Framework\TestCase;
 
-final class RawPayloadTest extends TestCase
+final class TelemetryEnvelopeRawTest extends TestCase
 {
-    public function testRawPayloadKeepsTextDebugDataUnderDebugKey(): void
+    public function testTheRawEnvelopeKeepsTextDebugDataUnderDebugKey(): void
     {
-        $payload = RawPayload::raw('865028000000308', 'Vivistar', 'VIVISTAR-CARE', 'tcp', 'vivistar-iw', 'IWAP49,72#', 'uplink', '1', 'Vivistar L08 Pro');
+        $payload = TelemetryEnvelope::raw('865028000000308', 'Vivistar', 'VIVISTAR-CARE', 'tcp', 'vivistar-iw', 'IWAP49,72#', 'uplink', '1', 'Vivistar L08 Pro');
 
         self::assertArrayNotHasKey('schemaVersion', $payload);
         self::assertSame('uplink', $payload['direction']);
@@ -24,7 +24,7 @@ final class RawPayloadTest extends TestCase
         self::assertSame('1', $payload['debug']['connectionId']);
     }
 
-    public function testRawPayloadKeepsBinaryDebugDataAsBase64(): void
+    public function testTheRawEnvelopeKeepsBinaryDebugDataAsBase64(): void
     {
         $json = json_encode([
             'type' => 'upBO',
@@ -33,7 +33,7 @@ final class RawPayloadTest extends TestCase
         ], JSON_THROW_ON_ERROR);
         $raw = pack('nn', 0xFCAF, strlen($json)) . $json;
 
-        $payload = RawPayload::raw('865028000000306', 'Wonlex', 'HW20PRO', 'tcp', 'wonlex-json', $raw, 'uplink');
+        $payload = TelemetryEnvelope::raw('865028000000306', 'Wonlex', 'HW20PRO', 'tcp', 'wonlex-json', $raw, 'uplink');
 
         self::assertSame('base64', $payload['debug']['encoding']);
         self::assertSame([
@@ -45,11 +45,11 @@ final class RawPayloadTest extends TestCase
         self::assertArrayNotHasKey('text', $payload);
     }
 
-    public function testRawPayloadDoesNotAddDecodedDataForMalformedWonlexFrame(): void
+    public function testTheRawEnvelopeDoesNotAddDecodedDataForMalformedWonlexFrame(): void
     {
         $raw = pack('nn', 0xFCAF, 10) . '{}';
 
-        $payload = RawPayload::raw('865028000000306', 'Wonlex', 'HW20PRO', 'tcp', 'wonlex-json', $raw, 'uplink');
+        $payload = TelemetryEnvelope::raw('865028000000306', 'Wonlex', 'HW20PRO', 'tcp', 'wonlex-json', $raw, 'uplink');
 
         self::assertSame('base64', $payload['debug']['encoding']);
         self::assertSame(base64_encode($raw), $payload['debug']['payload']);
@@ -58,7 +58,7 @@ final class RawPayloadTest extends TestCase
 
     public function testStatusPayloadDoesNotExposeDebugFields(): void
     {
-        $payload = RawPayload::status('868705080300697', 'Wonlex', 'HW20PRO', 'online', null, 'Wonlex HW20 Pro');
+        $payload = TelemetryEnvelope::status('868705080300697', 'Wonlex', 'HW20PRO', 'online', null, 'Wonlex HW20 Pro');
 
         self::assertSame([
             'state' => 'online',
@@ -74,7 +74,7 @@ final class RawPayloadTest extends TestCase
 
     public function testEventPayloadDoesNotExposeDebugFields(): void
     {
-        $payload = RawPayload::event('868705080300697', 'Wonlex', 'HW20PRO', 'device.connected', null, null, 'Wonlex HW20 Pro');
+        $payload = TelemetryEnvelope::event('868705080300697', 'Wonlex', 'HW20PRO', 'device.connected', null, null, 'Wonlex HW20 Pro');
 
         self::assertSame([
             'type' => 'device.connected',

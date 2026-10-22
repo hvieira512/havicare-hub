@@ -13,6 +13,7 @@ use Hub\Domain\DeviceMetadata;
 use Hub\Domain\ProtocolRegistry;
 use Hub\Ingress\Mqtt\Gateway\ObservationStateStore;
 use Hub\Registry\Whitelist;
+use Hub\Support\Throttle;
 use Hub\Support\Values;
 
 /**
@@ -27,12 +28,7 @@ final class RelayPublisher
         'diaper_sensor' => 'monit-mecs-pro-ble',
     ];
 
-    /**
-     * Quando o último `raw` de cada aparelho foi guardado no histórico.
-     *
-     * @var array<string, float>
-     */
-    private array $lastRelayedRawAt = [];
+    private readonly Throttle $rawHistory;
 
     private ?ProximityTracker $proximity = null;
 
@@ -52,6 +48,7 @@ final class RelayPublisher
     ) {
         $this->clock = $clock !== null ? \Closure::fromCallable($clock) : static fn(): float => microtime(true);
         $this->connections = new ConnectionAnnouncer($mqttBridge, $deviceStore);
+        $this->rawHistory = new Throttle();
     }
 
     /**
@@ -83,7 +80,7 @@ final class RelayPublisher
         ];
         // O MQTT leva todas as observações; o histórico, uma amostra por dispositivo.
         $this->mqttBridge->publishRaw($deviceKey, $raw, $deviceType, $licenseId, $company);
-        if ($this->deviceStore !== null && $this->shouldStoreRaw($deviceKey)) {
+        if ($this->deviceStore !== null && $this->rawHistory->allow($deviceKey, $this->rawHistorySampleSeconds, (float)($this->clock)())) {
             $this->deviceStore->append($deviceKey, 'raw', $raw + ['deviceType' => $deviceType, 'licenseId' => $licenseId]);
         }
     }
@@ -119,8 +116,7 @@ final class RelayPublisher
             if (!$this->state->shouldPublish($deviceKey, (string)$capability, $telemetry, $this->telemetryRefreshSeconds, (string)$gateway['imei'])) {
                 continue;
             }
-            $this->mqttBridge->publishTelemetry($deviceKey, $telemetry, $deviceType, $licenseId, $company);
-            $this->deviceStore?->append($deviceKey, 'telemetry', $telemetry + ['deviceType' => $deviceType, 'licenseId' => $licenseId]);
+            $this->mqttBridge->publishAndStore($this->deviceStore, 'telemetry', $deviceKey, $telemetry, $deviceType, $licenseId, $company);
         }
     }
 
@@ -138,8 +134,7 @@ final class RelayPublisher
         $licenseId = DeviceMetadata::normalizeLicenseId($device['licenseId'] ?? 0);
         $company = (string)($device['company'] ?? 'null');
         foreach ($events as $event) {
-            $this->mqttBridge->publishEvent($deviceKey, $event, $deviceType, $licenseId, $company);
-            $this->deviceStore?->append($deviceKey, 'events', $event + ['deviceType' => $deviceType, 'licenseId' => $licenseId]);
+            $this->mqttBridge->publishAndStore($this->deviceStore, 'events', $deviceKey, $event, $deviceType, $licenseId, $company);
         }
     }
 
@@ -157,9 +152,7 @@ final class RelayPublisher
             }
             try {
                 $this->publishProximity(
-                    $this->commercialModelResolver === null
-                        ? $device
-                        : $this->withCommercialName($device),
+                    $this->commercialModelResolver?->enrich($device) ?? $device,
                     $gateway,
                     self::relayedProtocol($device),
                     ['state' => 'unknown', 'samples' => 0],
@@ -260,35 +253,9 @@ final class RelayPublisher
         );
     }
 
-    private function shouldStoreRaw(string $deviceKey): bool
-    {
-        $now = (float)($this->clock)();
-        if ($this->rawHistorySampleSeconds <= 0) {
-            $this->lastRelayedRawAt[$deviceKey] = $now;
-            return true;
-        }
-
-        $last = $this->lastRelayedRawAt[$deviceKey] ?? null;
-        if ($last !== null && ($now - $last) < $this->rawHistorySampleSeconds) {
-            return false;
-        }
-
-        $this->lastRelayedRawAt[$deviceKey] = $now;
-        return true;
-    }
-
     /** Guardado, ao contrário dos decoders: leva a janela de amostras. */
     private function proximity(): ProximityTracker
     {
         return $this->proximity ??= new ProximityTracker();
-    }
-
-    /**
-     * @param array<string, mixed> $device
-     * @return array<string, mixed>
-     */
-    private function withCommercialName(array $device): array
-    {
-        return $this->commercialModelResolver?->enrich($device) ?? $device;
     }
 }

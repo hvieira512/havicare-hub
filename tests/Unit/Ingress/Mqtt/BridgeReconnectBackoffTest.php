@@ -67,7 +67,7 @@ final class DeadOnArrivalSubscriber extends MqttClient
 
 final class AlwaysFailingBridge extends MqttBridgeBase
 {
-    protected function handleMessage(string $topic, string $payload): void
+    public function handleReceivedMessage(string $topic, string $payload): void
     {
     }
 }

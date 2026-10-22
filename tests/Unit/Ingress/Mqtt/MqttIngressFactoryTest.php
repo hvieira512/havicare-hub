@@ -4,14 +4,25 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Ingress\Mqtt;
 
+use Hub\Device\CommercialModelResolver;
+use Hub\Infrastructure\Persistence\Repository\ApiDataAccess;
+use Hub\Infrastructure\Persistence\Repository\DiaperSensitivityRepository;
+use Hub\Infrastructure\Persistence\Repository\GatewayDeviceLinkRepository;
 use Hub\Ingress\Mqtt\MqttIngressFactory;
 use Hub\Mqtt\BrokerSettings;
 use Hub\Mqtt\ConnectionFactory;
+use Hub\Registry\Denylist;
 use Hub\Runtime\HubServices;
+use Hub\State\DeviceStore;
 use PHPUnit\Framework\TestCase;
 use React\EventLoop\StreamSelectLoop;
+use Tests\Support\Doubles\InMemoryRedisClient;
+use Tests\Support\Doubles\IngressFixtures;
+use Tests\Support\Doubles\OneShotDownlinkQueue;
+use Tests\Support\Doubles\RecordingConnectionFactory;
+use Tests\Support\Doubles\RecordingHubMqttBridge;
 
-/** Os caminhos ligados abrem sessão MQTT e só se exercitam no `tests/scenarios`; aqui prende-se o fornecedor desligado. */
+/** O fornecedor desligado não abre sessão, e o gateway ligado abre uma só. */
 final class MqttIngressFactoryTest extends TestCase
 {
     public function testNothingIsRegisteredWhenEverySupplierIsOff(): void
@@ -24,6 +35,23 @@ final class MqttIngressFactoryTest extends TestCase
         );
 
         self::assertSame([], $runner->keys());
+    }
+
+    /** Dois subscritores com o mesmo id expulsam-se do broker: o gateway tem um só, e estável. */
+    public function testTheGatewayIsOneSubscriptionUnderAStableClientId(): void
+    {
+        $config = self::config();
+        $config['gateway']['enabled'] = true;
+        $connections = new RecordingConnectionFactory(new BrokerSettings('mqtt.example.com', 1883, '', '', 'health-mqtt', 60, 5, 5));
+
+        $runner = MqttIngressFactory::build($config, self::gatewayServices(), $connections, new StreamSelectLoop());
+
+        self::assertSame(['gateway'], $runner->keys());
+        self::assertSame(
+            ['health-mqtt-gateway-sub'],
+            array_map(static fn ($client): string => $client->getClientId(), $connections->created),
+        );
+        self::assertCount(1, $connections->repositories[0]->getSubscriptionsMatchingTopic('havicare-hub/null/0/gw/d48c49f7909c/raw'));
     }
 
     /** @return array<string, mixed> */
@@ -54,6 +82,41 @@ final class MqttIngressFactoryTest extends TestCase
     private static function settings(): BrokerSettings
     {
         return new BrokerSettings('mqtt.example.com', 1883, '', '', 'test', 60, 5, 5);
+    }
+
+    /** O que as pontes do gateway recebem ao construir-se; nenhuma o chama antes de haver mensagens. */
+    private static function gatewayServices(): HubServices
+    {
+        $dataAccess = new \ReflectionClass(ApiDataAccess::class);
+        $data = $dataAccess->newInstanceWithoutConstructor();
+        $dataAccess->getProperty('gatewayDeviceLinks')->setValue(
+            $data,
+            (new \ReflectionClass(GatewayDeviceLinkRepository::class))->newInstanceWithoutConstructor(),
+        );
+        $dataAccess->getProperty('diaperSensitivity')->setValue(
+            $data,
+            (new \ReflectionClass(DiaperSensitivityRepository::class))->newInstanceWithoutConstructor(),
+        );
+
+        $redis = new InMemoryRedisClient();
+        $reflection = new \ReflectionClass(HubServices::class);
+        $services = $reflection->newInstanceWithoutConstructor();
+        foreach (
+            [
+            'dataAccess' => $data,
+            'redis' => $redis,
+            'whitelist' => IngressFixtures::whitelist(),
+            'denylist' => new Denylist(),
+            'downlinkQueue' => new OneShotDownlinkQueue(''),
+            'deviceStore' => new DeviceStore($redis),
+            'commercialModelResolver' => new CommercialModelResolver(),
+            'mqttBridge' => new RecordingHubMqttBridge(),
+            ] as $property => $value
+        ) {
+            $reflection->getProperty($property)->setValue($services, $value);
+        }
+
+        return $services;
     }
 
     /** Nunca é tocado: com tudo desligado, nenhum construtor de bridge chega a correr. */

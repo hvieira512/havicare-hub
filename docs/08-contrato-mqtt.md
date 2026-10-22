@@ -486,7 +486,7 @@ cada fabricante já publica:
 | Origem | Filtro | Sessão |
 |---|---|---|
 | NCS Voerka | `/voerka/#` | a do hub |
-| Gateways MOKO | `havicare-hub/null/0/gw/+/raw` | a do hub |
+| Gateways MOKO e BLE | `havicare-hub/null/0/gw/+/raw` | a do hub, uma para todas as pontes |
 | Radar Qinglanst | `radar/+/+` | própria, no **mesmo** broker |
 
 O radar abre sessão à parte — credenciais e identificador de cliente próprios —
@@ -563,8 +563,7 @@ marcado com um comentário `hitcare:`.
 | Ficheiro | Responsabilidade |
 |---|---|
 | `src/Device/HubMqttBridge.php` | Compõe todos os tópicos e publica os quatro canais |
-| `src/Device/RawPayload.php` | As formas de `raw`, `status` e do ciclo de vida |
-| `src/Device/DeviceEventPayloadBuilder.php` | A forma de `telemetry` e dos alarmes |
+| `src/Device/TelemetryEnvelope.php` | As formas de `telemetry`, dos alarmes, de `raw`, de `status` e do ciclo de vida |
 | `src/Domain/Capability/EventSeverity.php` | A `severity` de cada evento, carimbada no `HubMqttBridge::publishEvent` e no histórico |
 | `src/Device/LowBatteryTransitions.php` | O `low_battery` de quem repete a bandeira em cada leitura |
 | `src/Ingress/Mqtt/Qinglanst/ActiveDetections.php` | As detecções do radar que duram saem uma vez |

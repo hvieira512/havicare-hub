@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Hub\Ingress\Mqtt\JoyTech;
 
+use Hub\Ingress\Mqtt\DeviceBridge;
+use Hub\Ingress\Mqtt\Gateway\GatewayRelay;
 use Hub\Device\CommercialModelResolver;
 use Hub\Device\HubMqttBridge;
 use Hub\Device\PendingDownlinkQueue;
@@ -13,20 +15,18 @@ use Hub\Domain\GatewayDeviceLinkLookup;
 use Hub\Ingress\Mqtt\DispatchesQueued;
 use Hub\Ingress\Mqtt\Gateway\GattDeviceContext;
 use Hub\Ingress\Mqtt\Gateway\GattDownlinks;
-use Hub\Ingress\Mqtt\MqttBridgeBase;
 use Hub\Ingress\Mqtt\Veepoo\BraceletPresence;
 use Hub\Log\Logger;
 use Hub\Registry\Denylist;
 use Hub\Registry\Whitelist;
 use Hub\State\DeviceCommandLog;
 use Hub\State\DeviceReportStore;
-use PhpMqtt\Client\MqttClient;
 
 /**
  * Ingestão dos tensiómetros JoyTech entregues por um gateway GATT, que reencaminha cada trama do
  * `FFF1` inteira: o protocolo é todo do hub, à ida e à volta.
  */
-final class JoyTechBpBridge extends MqttBridgeBase implements DispatchesQueued
+final class JoyTechBpBridge extends DeviceBridge implements GatewayRelay, DispatchesQueued
 {
     private const PROTOCOL = 'joytech-bp';
 
@@ -85,31 +85,18 @@ final class JoyTechBpBridge extends MqttBridgeBase implements DispatchesQueued
     private readonly ?DeviceReportStore $reports;
 
     public function __construct(
-        MqttClient $subscriber,
         Whitelist $whitelist,
         HubMqttBridge $mqttBridge,
         private readonly GatewayDeviceLinkLookup $links,
         ?PendingDownlinkQueue $queue,
         string $topicFilter,
-        ?callable $reconnectSubscriber = null,
         null|(DeviceReportStore&DeviceCommandLog) $deviceStore = null,
         ?callable $clock = null,
         ?CommercialModelResolver $commercialModelResolver = null,
         private readonly BloodPressureHistoryMarks $marks = new BloodPressureHistoryMarks(),
         ?Denylist $denylist = null,
     ) {
-        parent::__construct(
-            $subscriber,
-            $whitelist,
-            $mqttBridge,
-            $topicFilter,
-            'joytech',
-            $reconnectSubscriber,
-            $deviceStore,
-            denylist: $denylist,
-            clock: $clock,
-            commercialModelResolver: $commercialModelResolver,
-        );
+        parent::__construct($whitelist, $mqttBridge, $deviceStore, $denylist, $clock, $commercialModelResolver);
         $this->downlinks = new GattDownlinks($queue, $mqttBridge, $deviceStore, $topicFilter, (new JoyTechCommandEncoder())->writes(...));
         $this->reports = $deviceStore;
         $this->ecg = new EcgRecordings();
@@ -138,18 +125,15 @@ final class JoyTechBpBridge extends MqttBridgeBase implements DispatchesQueued
         $this->startReading($deviceKey);
     }
 
-    protected function handleMessage(string $topic, string $payload): void
+    /** A fonte é a de todos os JoyTech: o nome do aparelho distingue-os. */
+    public static function claims(array $message): bool
     {
-        $message = json_decode($payload, true);
-        // O mesmo tópico serve outras marcas, e a mesma fonte os termómetros: o nome distingue-os.
-        if (
-            !is_array($message)
-            || ($message['source'] ?? null) !== 'joytech-node'
-            || !str_starts_with(trim((string)($message['device']['model'] ?? '')), 'DBP')
-        ) {
-            return;
-        }
+        return ($message['source'] ?? null) === 'joytech-node'
+            && str_starts_with(trim((string)($message['device']['model'] ?? '')), 'DBP');
+    }
 
+    public function handle(string $topic, array $message): void
+    {
         $context = $this->resolveGattDevice($topic, $message, $this->links, self::PROTOCOL, self::DEVICE_TYPE);
         if ($context === null) {
             return;
@@ -185,12 +169,12 @@ final class JoyTechBpBridge extends MqttBridgeBase implements DispatchesQueued
             unset($this->reading[$deviceKey]);
             $this->ecg->drop($deviceKey);
             unset($this->sessions[$deviceKey]);
-            $this->presence($context)->markOffline($deviceKey, $context->device, $context->licenseId, $context->company);
+            $this->presence($context)->markOffline($deviceKey, $context->device);
             return;
         }
 
         $this->sessions[$deviceKey] = ['gateway' => $context->gatewayKey, 'offset' => $offsetMinutes, 'memoryRead' => false, 'readAt' => null];
-        $this->presence($context)->markOnline($deviceKey, $context->device, $context->licenseId, $context->company);
+        $this->presence($context)->markOnline($deviceKey, $context->device);
 
         // O aparelho não pede a hora, e a memória é datada por ela: acerta-se a cada ligação.
         $this->downlinks->sendDirect($deviceKey, $context->gatewayKey, 'calibrateClock', [], 0, $offsetMinutes);
@@ -292,7 +276,7 @@ final class JoyTechBpBridge extends MqttBridgeBase implements DispatchesQueued
     {
         $protocol = self::protocolOf($context);
 
-        return $this->presences[$protocol] ??= new BraceletPresence($this->mqttBridge, $this->reports, $protocol, self::DEVICE_TYPE);
+        return $this->presences[$protocol] ??= new BraceletPresence($this->mqttBridge, $this->reports, $protocol);
     }
 
     /** O 6292B e o 6679B partilham a ponte; o protocolo diz qual mede o ECG. */

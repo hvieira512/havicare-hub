@@ -22,18 +22,50 @@ final class ConnectionAnnouncer
     /** @param array<string, mixed> $device como a whitelist ou o estado em tempo real o descrevem */
     public function announce(string $imei, array $device, bool $connected): void
     {
-        $supplier = (string)($device['supplier'] ?? '');
-        $model = (string)($device['model'] ?? '');
-        $commercial = (string)($device['commercialName'] ?? '');
-        $deviceType = DeviceMetadata::normalizeDeviceType((string)($device['deviceType'] ?? ''));
-        $licenseId = DeviceMetadata::normalizeLicenseId($device['licenseId'] ?? 0);
-        $company = DeviceMetadata::normalizeCompany((string)($device['company'] ?? 'null'));
+        $this->status($imei, $device, $connected);
 
-        $status = RawPayload::status($imei, $supplier, $model, $connected ? 'online' : 'offline', null, $commercial);
-        $event = RawPayload::event($imei, $supplier, $model, $connected ? 'device.connected' : 'device.disconnected', null, null, $commercial);
+        [$deviceType, $licenseId, $company] = self::tenant($device);
+        $event = TelemetryEnvelope::event(
+            $imei,
+            (string)($device['supplier'] ?? ''),
+            (string)($device['model'] ?? ''),
+            $connected ? 'device.connected' : 'device.disconnected',
+            null,
+            null,
+            (string)($device['commercialName'] ?? ''),
+        );
+        $this->mqttBridge->publishAndStore($this->deviceStore, 'events', $imei, $event, $deviceType, $licenseId, $company);
+    }
 
+    /**
+     * Só o estado retido, sem acontecimento: para quem o repete enquanto a ligação dura.
+     *
+     * @param array<string, mixed> $device
+     */
+    public function status(string $imei, array $device, bool $connected): void
+    {
+        [$deviceType, $licenseId, $company] = self::tenant($device);
+        $status = TelemetryEnvelope::status(
+            $imei,
+            (string)($device['supplier'] ?? ''),
+            (string)($device['model'] ?? ''),
+            $connected ? 'online' : 'offline',
+            null,
+            (string)($device['commercialName'] ?? ''),
+        );
         $this->mqttBridge->publishStatus($imei, $status, true, $deviceType, $licenseId, $company);
-        $this->mqttBridge->publishEvent($imei, $event, $deviceType, $licenseId, $company);
-        $this->deviceStore?->append($imei, 'events', $event + ['deviceType' => $deviceType, 'licenseId' => $licenseId]);
+    }
+
+    /**
+     * @param array<string, mixed> $device
+     * @return array{string, int, string}
+     */
+    private static function tenant(array $device): array
+    {
+        return [
+            DeviceMetadata::normalizeDeviceType((string)($device['deviceType'] ?? '')),
+            DeviceMetadata::normalizeLicenseId($device['licenseId'] ?? 0),
+            DeviceMetadata::normalizeCompany((string)($device['company'] ?? 'null')),
+        ];
     }
 }

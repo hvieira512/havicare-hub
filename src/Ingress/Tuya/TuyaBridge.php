@@ -13,6 +13,7 @@ use Hub\Log\Logger;
 use Hub\Registry\Denylist;
 use Hub\Registry\Whitelist;
 use Hub\State\DeviceReportStore;
+use Hub\Support\Throttle;
 use Ratchet\Client\Connector;
 use Ratchet\Client\WebSocket;
 use Ratchet\RFC6455\Messaging\Frame;
@@ -40,8 +41,8 @@ final class TuyaBridge implements MqttIngress
     /** @var array<string, int> entregas falhadas por `messageId` */
     private array $failedDeliveries = [];
 
-    /** @var array<string, int> quando cada aparelho por registar foi anotado, uma vez por minuto */
-    private array $rejectedAt = [];
+    /** Cada aparelho por registar é anotado uma vez por minuto. */
+    private readonly Throttle $rejected;
 
     public function __construct(
         private readonly string $accessId,
@@ -59,6 +60,7 @@ final class TuyaBridge implements MqttIngress
         $this->normalizer = new MessageNormalizer();
         $this->connections = new ConnectionAnnouncer($mqttBridge, $deviceStore);
         $this->loop = $loop ?? Loop::get();
+        $this->rejected = new Throttle();
     }
 
     /** A ligação é assíncrona e volta a tentar sozinha: uma cloud em baixo não impede o hub de arrancar. */
@@ -125,8 +127,7 @@ final class TuyaBridge implements MqttIngress
 
         $device = $this->whitelist->resolve($deviceId, self::PROTOCOL);
         if ($device === null) {
-            if (!$this->denylist?->contains($deviceId) && time() - ($this->rejectedAt[$deviceId] ?? 0) >= 60) {
-                $this->rejectedAt[$deviceId] = time();
+            if (!$this->denylist?->contains($deviceId) && $this->rejected->allow($deviceId, 60, time())) {
                 $this->deviceStore?->recordRejectedDevice($deviceId, self::PROTOCOL, '', $deviceId, 'device_not_authorized');
             }
             return;
@@ -137,10 +138,8 @@ final class TuyaBridge implements MqttIngress
         $deviceType = (string)$device['deviceType'];
         $licenseId = DeviceMetadata::normalizeLicenseId($device['licenseId'] ?? 0);
         $company = (string)($device['company'] ?? 'null');
-        $stamp = ['deviceType' => $deviceType, 'licenseId' => $licenseId];
 
-        $this->mqttBridge->publishRaw($deviceId, $normalized['raw'], $deviceType, $licenseId, $company);
-        $this->deviceStore?->append($deviceId, 'raw', $normalized['raw'] + $stamp);
+        $this->mqttBridge->publishAndStore($this->deviceStore, 'raw', $deviceId, $normalized['raw'], $deviceType, $licenseId, $company);
         $cameOnline = $this->deviceStore?->deviceSeen($deviceId, [
             'supplier' => (string)$device['supplier'],
             'model' => (string)$device['model'],
@@ -157,12 +156,10 @@ final class TuyaBridge implements MqttIngress
         }
 
         foreach ($normalized['telemetry'] as $telemetry) {
-            $this->mqttBridge->publishTelemetry($deviceId, $telemetry, $deviceType, $licenseId, $company);
-            $this->deviceStore?->append($deviceId, 'telemetry', $telemetry + $stamp);
+            $this->mqttBridge->publishAndStore($this->deviceStore, 'telemetry', $deviceId, $telemetry, $deviceType, $licenseId, $company);
         }
         foreach ($normalized['events'] as $event) {
-            $this->mqttBridge->publishEvent($deviceId, $event, $deviceType, $licenseId, $company);
-            $this->deviceStore?->append($deviceId, 'events', $event + $stamp);
+            $this->mqttBridge->publishAndStore($this->deviceStore, 'events', $deviceId, $event, $deviceType, $licenseId, $company);
         }
     }
 

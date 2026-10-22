@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Support\Doubles;
 
+use Hub\Ingress\Mqtt\Gateway\GatewayRelay;
 use Hub\Domain\GatewayDeviceLinkLookup;
 use Hub\Registry\Whitelist;
 
@@ -83,6 +84,15 @@ final class IngressFixtures
                 return $this->linked;
             }
         };
+    }
+
+    /** Entrega uma mensagem como o subscritor do gateway: descodificada, e só se a ponte a reclamar. */
+    public static function relay(GatewayRelay $bridge, string $topic, string $payload): void
+    {
+        $message = json_decode($payload, true);
+        if (is_array($message) && $bridge::claims($message)) {
+            $bridge->handle($topic, $message);
+        }
     }
 
     /** Constrói a mensagem de scan BLE do gateway que leva um anúncio MECS-PRO. */
