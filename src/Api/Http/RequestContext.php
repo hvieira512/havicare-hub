@@ -14,8 +14,8 @@ final class RequestContext
     public const ATTR_RAW_BODY = 'apiRawBody';
     public const ATTR_REQUEST_ID = 'apiRequestId';
 
-    /** O proxy corre na mesma máquina; nenhum outro endereço pode declarar por quem fala. */
-    private const TRUSTED_PROXIES = ['127.0.0.1', '::1'];
+    /** Sem `TRUSTED_PROXIES`, só um proxy na mesma máquina pode declarar por quem fala. */
+    private const DEFAULT_TRUSTED_PROXIES = ['127.0.0.1', '::1'];
 
     public static function auth(ServerRequestInterface $request): ?ApiAuthContext
     {
@@ -72,13 +72,13 @@ final class RequestContext
     }
 
     /**
-     * O endereço de quem fez o pedido: atrás do nginx, o `REMOTE_ADDR` é o do proxy. O cabeçalho
-     * só vale vindo do loopback, e vale o **último** elemento da lista.
+     * O endereço de quem fez o pedido: atrás do proxy, o `REMOTE_ADDR` é o dele. O cabeçalho só
+     * vale vindo de um proxy do `TRUSTED_PROXIES`, e vale o **último** elemento da lista.
      */
     public static function clientAddress(ServerRequestInterface $request): string
     {
         $remote = trim((string)($request->getServerParams()['REMOTE_ADDR'] ?? ''));
-        if (!in_array($remote, self::TRUSTED_PROXIES, true)) {
+        if (!self::fromTrustedProxy($request)) {
             return $remote;
         }
 
@@ -98,7 +98,14 @@ final class RequestContext
             return '';
         }
 
-        $scheme = $uri->getScheme() ?: 'http';
+        $forwardedProto = strtolower(trim($request->getHeaderLine('X-Forwarded-Proto')));
+        $scheme = self::fromTrustedProxy($request) && in_array($forwardedProto, ['http', 'https'], true)
+            ? $forwardedProto
+            : ($uri->getScheme() ?: 'http');
+        if ($scheme !== ($uri->getScheme() ?: 'http')) {
+            // A porta que se vê é a do proxy para cá, e não a que o browser usou.
+            $uri = $uri->withPort(null);
+        }
         $port = $uri->getPort();
         $authority = $host;
         if ($port !== null) {
@@ -109,5 +116,13 @@ final class RequestContext
         }
 
         return $scheme . '://' . $authority;
+    }
+
+    private static function fromTrustedProxy(ServerRequestInterface $request): bool
+    {
+        $configured = array_filter(array_map('trim', explode(',', (string)getenv('TRUSTED_PROXIES'))));
+        $trusted = $configured === [] ? self::DEFAULT_TRUSTED_PROXIES : $configured;
+
+        return in_array(trim((string)($request->getServerParams()['REMOTE_ADDR'] ?? '')), $trusted, true);
     }
 }
