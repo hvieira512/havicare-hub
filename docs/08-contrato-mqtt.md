@@ -402,6 +402,59 @@ Um evento sai quando a condição **começa**, e não enquanto dura:
 O estado vive em memória: um reinício do hub volta a anunciar o que estiver
 ativo. Quem consome a QoS 1 já tem de tolerar repetidos.
 
+#### Proposta: alarmes clínicos e o fecho das condições
+
+> **Por aprovar e por construir.** Nada desta subsecção está em vigor: as tabelas
+> acima continuam a ser o contrato. O desenho completo, com o inventário que o
+> justifica, está no [capítulo 26](26-alarmes-clinicos.md).
+
+O hub passa a ser o único a decidir a gravidade, e quem integra deixa de
+classificar. Para isso:
+
+- **Limites por dispositivo.** `heart_rate_limits`, `blood_oxygen_limits`,
+  `blood_pressure_limits`, `temperature_limits` e `breath_rate_limits`, escritos
+  pelo `PATCH /api/devices/{imei}/configurations`. O hub aplica-os à telemetria; no
+  radar, que alarma sozinho, traduz-os para o limiar dele. Nos dois casos a
+  gravidade sai do nível de limite que a leitura passou.
+- **Fecho.** Todo o evento que fecha uma condição leva `data.clears` com o `type`
+  que fecha, e `data.conditionKey` quando o mesmo dispositivo pode ter várias do
+  mesmo tipo abertas.
+
+Regras de gravidade que mudam:
+
+| `type` | Hoje | Proposta |
+|---|---|---|
+| `heart_rate_high` · `heart_rate_low` | `alarm` fora de 20–160 bpm | `alarm` ou `alert` pelo `heart_rate_limits`; publicados também pelo hub para relógios, pulseira Veepoo, tensiómetro, oxímetro e balança |
+| `breath_rate_high` · `breath_rate_low` | `alert` | idem, com o `breath_rate_limits`; também Wonlex e Veepoo |
+| `apnea` | `alarm` | `alert` |
+| `weak_vital_signs` | `alert` | `alarm` |
+| `device_state` | `alert` | `info` |
+| `medication_alarm_change` · `medication_intake` | `alert` numa dose falhada ou toma anormal | `info`; a dose falhada passa a `dose_missed` |
+| `device.disconnected` | sem `severity` | `alert`; `info` nos aparelhos que só se ligam para medir |
+| `device.connected` | sem `severity` | `info`, com `data.clears: "device.disconnected"` |
+
+Tipos novos:
+
+| `type` | `data` | `severity` |
+|---|---|---|
+| `blood_oxygen_low` | `spo2Percent`, `limitPercent` | `alert` · `alarm` |
+| `blood_pressure_high` · `blood_pressure_low` | `systolicMmHg`, `diastolicMmHg`, `limitSystolicMmHg`, `limitDiastolicMmHg` | `alert` · `alarm` |
+| `temperature_high` · `temperature_low` | `bodyCelsius`, `limitCelsius`, `site` | `alert` · `alarm` |
+| `dose_missed` | `slot`, `scheduledAt`, `doseDate`, `conditionKey` | `alert` |
+| `{type}_cleared` | a leitura que fechou, `clears` | `info` |
+
+Os pares que já existem ganham o `clears`: o `zone_entry` da cerca fecha o
+`zone_exit`, o `change_required` vindo de `attention` fecha o `check_required`, o
+`reset` do NCS fecha o `help_call` do mesmo `pagerId`, e o `medication_intake` com
+`result: "abnormal"` fecha o `dose_missed` da mesma dose. A cerca passa a ser
+configuração do hub (`safe_zones`), e os bits de cerca da 4P Touch deixam de ser
+publicados.
+
+Nenhuma gravidade nem nenhum `type` que o hitCare lê muda; o que toca o NCS, a
+fralda, os gateways e as pulseiras é acrescento, e vai coordenado com ele (ver
+[«Pendente do hitCare»](#pendente-do-hitcare) e a secção 9 do
+[capítulo 26](26-alarmes-clinicos.md#9-o-hitcare)).
+
 ## 5. `status`
 
 ```json
