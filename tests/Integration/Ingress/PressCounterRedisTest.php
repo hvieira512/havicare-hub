@@ -47,7 +47,7 @@ final class PressCounterRedisTest extends TestCase
     public function testTwoGatewaysDeliveringTheSameNewCounterAtOncePublishOnce(): void
     {
         $other = new RedisObservationStateStore(new RedisClient($this->parameters), $this->root);
-        $other->advanceCounter(self::KEY, 69);
+        $other->advanceCounter(self::KEY, 'gwA', 69);
 
         // O outro gateway entrega o mesmo 70 logo a seguir ao primeiro comando deste.
         $interleaved = new class ($this->parameters) extends RedisClient {
@@ -67,24 +67,27 @@ final class PressCounterRedisTest extends TestCase
         };
         $otherResult = null;
         $interleaved->afterFirstCommand = static function () use ($other, &$otherResult): void {
-            $otherResult = $other->advanceCounter(self::KEY, 70);
+            $otherResult = $other->advanceCounter(self::KEY, 'gwB', 70);
         };
 
-        $result = (new RedisObservationStateStore($interleaved, $this->root))->advanceCounter(self::KEY, 70);
+        $result = (new RedisObservationStateStore($interleaved, $this->root))->advanceCounter(self::KEY, 'gwA', 70);
 
         self::assertCount(1, array_filter([$result, $otherResult], static fn(?int $previous): bool => $previous !== null));
     }
 
-    public function testOnlyARiseOrAResetNearZeroIsAPress(): void
+    public function testOnlyARiseOrADropOnTheSameGatewayIsAPress(): void
     {
         $store = new RedisObservationStateStore($this->redis, $this->root);
 
-        self::assertNull($store->advanceCounter(self::KEY, 37), 'a primeira observação é a linha de base');
-        self::assertSame(37, $store->advanceCounter(self::KEY, 39));
-        self::assertNull($store->advanceCounter(self::KEY, 39));
-        self::assertNull($store->advanceCounter(self::KEY, 38), 'um gateway atrasado não é toque');
-        self::assertNull($store->advanceCounter(self::KEY, 39), 'nem o deixa guardado');
-        self::assertSame(0, $store->advanceCounter(self::KEY, 1), 'perto do zero é um reinício');
+        self::assertNull($store->advanceCounter(self::KEY, 'gwA', 37), 'a primeira observação é a linha de base');
+        self::assertSame(37, $store->advanceCounter(self::KEY, 'gwA', 39));
+        self::assertNull($store->advanceCounter(self::KEY, 'gwA', 39));
+        self::assertNull($store->advanceCounter(self::KEY, 'gwB', 38), 'um gateway atrasado não é toque');
+        self::assertNull($store->advanceCounter(self::KEY, 'gwB', 39), 'igualar a marca também não');
+        self::assertSame(0, $store->advanceCounter(self::KEY, 'gwA', 4), 'descer no mesmo gateway é reinício');
+        self::assertNull($store->advanceCounter(self::KEY, 'gwB', 3), 'o valor de antes do reinício não fica no outro gateway');
+        self::assertSame(4, $store->advanceCounter(self::KEY, 'gwB', 5));
         self::assertGreaterThan(0, $this->redis?->ttl($this->root . ':condition:' . self::KEY));
+        self::assertGreaterThan(0, $this->redis?->ttl($this->root . ':condition:' . self::KEY . ':gateways'));
     }
 }

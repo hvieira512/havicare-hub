@@ -12,27 +12,28 @@ final class RedisObservationStateStore implements ObservationStateStore
     private const CONDITION_TTL_SECONDS = 86400;
 
     /**
-     * Um contador até este valor, com o guardado mais do que isto acima, é um reinício; abaixo
-     * disso é um gateway atrasado. Um atraso maior, ou um reinício visto já depois disto, perde-se.
+     * Ler, decidir e guardar num só passo, para dois gateways com o mesmo valor não publicarem os
+     * dois. A marca é o maior valor visto; cada gateway guarda o último seu, porque só no mesmo
+     * gateway uma descida é reinício: entre gateways é atraso.
      */
-    public const COUNTER_RESET_MAX = 3;
-
-    /** Ler, decidir e guardar num só passo, para dois gateways com o mesmo valor não publicarem os dois. */
     private const ADVANCE_COUNTER_SCRIPT = <<<'LUA'
-        local stored = tonumber(redis.call('GET', KEYS[1]))
-        local count, ttl, resetMax = tonumber(ARGV[1]), ARGV[2], tonumber(ARGV[3])
-        if stored ~= nil and count == stored then
+        local mark = tonumber(redis.call('GET', KEYS[1]))
+        local last = tonumber(redis.call('HGET', KEYS[2], ARGV[1]))
+        local count, ttl = tonumber(ARGV[2]), ARGV[3]
+        local from = nil
+        if mark == nil or count > mark then
+            redis.call('SET', KEYS[1], count, 'EX', ttl)
+            from = mark
+        elseif count < mark and last ~= nil and count < last then
+            redis.call('SET', KEYS[1], count, 'EX', ttl)
+            redis.call('DEL', KEYS[2])
+            from = 0
+        else
             redis.call('EXPIRE', KEYS[1], ttl)
-            return nil
         end
-        if stored ~= nil and count < stored and not (count <= resetMax and stored - count > resetMax) then
-            return nil
-        end
-        redis.call('SET', KEYS[1], count, 'EX', ttl)
-        if stored == nil then
-            return nil
-        end
-        return count > stored and stored or 0
+        redis.call('HSET', KEYS[2], ARGV[1], count)
+        redis.call('EXPIRE', KEYS[2], ttl)
+        return from
         LUA;
 
     public function __construct(
@@ -85,16 +86,18 @@ final class RedisObservationStateStore implements ObservationStateStore
         return ['previous' => $known ? $previous : null];
     }
 
-    public function advanceCounter(string $deviceKey, int $count): ?int
+    public function advanceCounter(string $deviceKey, string $observedBy, int $count): ?int
     {
-        $previous = $this->redis->eval(
+        $key = "{$this->prefix}:condition:{$deviceKey}";
+        $from = $this->redis->eval(
             self::ADVANCE_COUNTER_SCRIPT,
-            1,
-            "{$this->prefix}:condition:{$deviceKey}",
+            2,
+            $key,
+            "{$key}:gateways",
+            $observedBy,
             (string)$count,
             (string)self::CONDITION_TTL_SECONDS,
-            (string)self::COUNTER_RESET_MAX,
         );
-        return $previous === null ? null : (int)$previous;
+        return $from === null ? null : (int)$from;
     }
 }

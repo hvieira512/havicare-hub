@@ -213,19 +213,28 @@ Cada tipo de dispositivo exige um mecanismo distinto:
 
 | Dispositivo | Mecanismo | Fundamento |
 |---|---|---|
-| **W6B** | Contador cumulativo, guardado por pulseira e modo; só uma subida é acionamento, e conta a diferença | A trama transporta contador |
+| **W6B** | Contador cumulativo por pulseira e modo; uma subida é acionamento, e uma descida só quando o mesmo gateway a vê | A trama transporta contador |
 | **W6** | Janela temporal de 35 s por modo | A trama não transporta contador e repete-se durante 30 s |
 | **Fralda** | Transição de estado | O que releva é a mudança de condição, não a repetição |
 
-Na W6B o contador guardado é um só por pulseira, e todos os gateways que a
-captam o atualizam. Por isso uma descida quase nunca é um toque: é um gateway
-atrasado — um MKGW4 a despejar o lote — que viu o valor de antes. Essa descida
-ignora-se e não se guarda. A exceção é o reinício (troca de bateria), que põe os
-contadores a zero: um valor até **3** com o guardado mais de 3 acima conta-se
-como toques desde zero. Por exemplo, 37 e depois 1 é um toque; 71 e depois 70 é
-nada. Um reinício só visto depois do quarto toque, ou um gateway mais de três
-toques atrasado, ficam fora da regra. A primeira observação estabelece a linha
-de base e não publica.
+Na W6B guardam-se duas coisas por pulseira e modo: a **marca**, o maior valor
+visto por qualquer gateway, e o **último valor de cada gateway**. Um gateway
+sozinho nunca vê o contador descer, a não ser que a pulseira tenha reiniciado
+(troca de bateria); uma descida só em relação a outro gateway é atraso — um
+MKGW4 a despejar o lote.
+
+| Valor recebido | Decisão |
+|---|---|
+| Acima da marca | `help_call` com `presses` = a diferença; passa a ser a marca |
+| Igual à marca | nada |
+| Abaixo da marca e abaixo do último deste gateway | reinício: `presses` = o valor (zero não publica), e a marca recomeça nele |
+| Abaixo da marca, e este gateway nunca reportou ou não desceu | atraso: ignora-se |
+
+Por exemplo, com a marca a 37 vinda do gateway A: A reporta 4 → quatro toques,
+mesmo que os três primeiros tenham escapado a todos os gateways. Um B que nunca
+tinha reportado e diz 4 não se distingue de um B atrasado, e fica ignorado até A
+mostrar a descida. A regra erra para o lado de publicar: perder um SOS é pior do
+que um a mais. A primeira observação estabelece a linha de base e não publica.
 
 A leitura, a decisão e a escrita fazem-se num só script Lua no Redis: dois
 gateways a entregar o mesmo valor novo ao mesmo tempo publicam um `help_call` só.

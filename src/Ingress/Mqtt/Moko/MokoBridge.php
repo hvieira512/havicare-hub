@@ -408,6 +408,7 @@ final class MokoBridge extends MqttBridgeBase implements DispatchesQueued
         $previousTriggerCount = isset($decoded['alarm']['pressMode'], $decoded['alarm']['triggerCount'])
             ? $this->state->advanceCounter(
                 $deviceKey . ':press:' . $decoded['alarm']['pressMode'],
+                (string)$gateway['imei'],
                 (int)$decoded['alarm']['triggerCount'],
             )
             : null;
