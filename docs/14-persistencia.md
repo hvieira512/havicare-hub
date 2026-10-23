@@ -339,7 +339,7 @@ lá.
 | `four-p-touch` | contínuo | `LK` | 300 s | 5 a 8 min pela especificação; 300 s observado em produção, 22/10/2026 | 630 s | `online` / `offline` |
 | `vivistar-iw` | contínuo | `AP03` | 480 s; com `working_mode` confirmado em `power_saving`, 3600 s, e em `custom`, o `intervalSeconds` se for maior | o AP03 só se regula por SMS (`#hb#`); 480 s observado em produção, 22/10/2026; os modos no BP33 | 990 s | `online` / `offline` |
 | `zayata-m228` | contínuo | heartbeat `0x02` | 60 s | o `0x8004` que o aparelho declara no registo ([19a](19a-dispensador-parametros.md)) | 150 s | `online` / `offline` |
-| `moko-mkgw3` | contínuo | estado de rede `3004` | 30 s | MKGW3 MQTT V2.3 §3.3.3, omissão | 90 s | `online` / `offline` |
+| `moko-mkgw3` (MKGW3 e MKGW-mini) | contínuo | estado de rede `3004` | 30 s | MKGW3 MQTT V2.3 §3.3.3, omissão | 90 s | `online` / `offline` |
 | `moko-mkgw4` | contínuo | estado `0x3004` | 600 s | regula-se no `0x100C`, que o hub não guarda; 600 s é o mais lento observado em produção, 22/10/2026 | 1230 s | `online` / `offline` |
 | `havicare-ble-gateway` | contínuo | `heartbeat` do `havicare-gateway` | 60 s | `HEARTBEAT_MS` do havicare-ble-gateway | 150 s | `online` / `offline` |
 | `veepoo-ble` | contínuo | o `session` que o gateway repete enquanto a ligação dura | 30 s | `HEARTBEAT_SECONDS` do havicare-ble-gateway | 90 s | `online` / `offline` |

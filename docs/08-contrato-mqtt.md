@@ -430,7 +430,7 @@ calado `2 × intervalo + 30 s`; os intervalos e as fontes estão na
 | Pulseira Veepoo | Quando o gateway liga ao aparelho | Quando a ligação BLE cai, ou 90 s sem o `session` que o gateway repete |
 | Balança, tensiómetro, termómetro e oxímetro | `measuring` quando o gateway liga ao aparelho | `idle` quando a ligação cai, ou 120 s sem tramas |
 | Radares | Na primeira mensagem | 150 s calados |
-| Gateways | Na primeira mensagem | 90 s no MKGW3, 1230 s no MKGW4, 150 s no da Havicare |
+| Gateways | Na primeira mensagem | 90 s no MKGW3 e no MKGW-mini, 1230 s no MKGW4, 150 s no da Havicare |
 | Pulseira Tuya | No `deviceOnline` ou numa leitura; `idle`, sem evento, no `deviceOffline` da cloud, que é o botão a adormecer | 57630 s sem acordar |
 | NCS | Pelo estado que o próprio aparelho publica | Pelo testamento que publica, ou 2430 s sem o estado periódico |
 
