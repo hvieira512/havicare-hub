@@ -509,20 +509,19 @@ Os eventos do canal `events` levam:
 | `eventId` | UUID por publicação. A entrega QoS 1 repete a mesma publicação com o mesmo `eventId`: é a chave para ignorar o repetido |
 | `type`, `occurredAt`, `device`, `data` | Como hoje |
 | `severity` | `alarm` · `alert` · `info`: a classificação do hub **deste** facto. **Ausente** num evento que acaba alguma coisa: um fim não é grave nem deixa de ser |
-| `subject` | `{ kind, id }`, só quando um dispositivo representa várias coisas (abaixo) |
 | `clears` | O `type` que este evento acaba, ao nível de topo. Só nos eventos que acabam alguma coisa |
 
 Os fins novos têm tipo próprio, `{type}_cleared`: quem filtra pelo `type` sem
 conhecer o `clears` — o hitCare, um painel — ignora-os, que é a falha segura. Os
 pares que já existem guardam o nome e ganham só o campo:
 
-| Evento | `clears` | Com o mesmo `subject` |
+| Evento | `clears` | Com o mesmo campo do `data` |
 |---|---|---|
-| `{type}_cleared` | `{type}` | o da condição, quando há |
+| `{type}_cleared` | `{type}` | o da condição, quando há (abaixo) |
 | `device.connected` | `device.disconnected` | — |
 | `zone_entry` com `zone: geofence` | `zone_exit` | — |
-| `reset` do NCS | `help_call` | o `pager` |
-| `medication_intake` com `result: "abnormal"` | `dose_missed` | a `dose` |
+| `reset` do NCS | `help_call` | `pagerId` |
+| `medication_intake` com `result: "abnormal"` | `dose_missed` | `slot` e `doseDate` |
 
 Nos pares, a `severity` mantém-se a que o evento já tinha (`info`): são factos
 próprios que, além disso, acabam outro.
@@ -582,7 +581,7 @@ intervalo.
 
 ### O que o hub guarda
 
-Um bit por (dispositivo, `type`, `subject`): ativo ou não. Serve para o hub só
+Um bit por (dispositivo, `type`, e o campo do `data` que distingue, quando há): ativo ou não. Serve para o hub só
 publicar um `_cleared` depois de ter publicado o que ele acaba, e para não
 repetir o mesmo nível enquanto dura. É o mesmo género de estado que já tem a
 transição da fralda e a da bateria fraca, e fica no Redis — onde a correção
@@ -615,45 +614,32 @@ está ativo agora» por dispositivo, a partir do mesmo bit.
 ### O que a Havicare faz com isto
 
 Escolha dela, e não contrato: qualquer evento quer dizer que aconteceu alguma
-coisa, e abre um alerta ou junta-se ao aberto do mesmo (dispositivo, `type`,
-`subject`); um evento com `clears` fecha sozinho o alerta aberto de
-(dispositivo, `clears`, `subject`). A subida de alerta para alarme chega-lhe como
+coisa, e abre um alerta ou junta-se ao aberto do mesmo dispositivo e `type`; um
+evento com `clears` fecha sozinho o alerta aberto de (dispositivo, `clears`) —
+nos casos da tabela abaixo, com o mesmo campo do `data`. A subida de alerta para alarme chega-lhe como
 mais um evento do mesmo `type`, e é uma repetição com gravidade maior. Outro
 consumidor pode fazer outra coisa com os mesmos factos.
 
-### O sujeito: `subject`
+### Vários do mesmo tipo no mesmo dispositivo
 
 Um dispositivo do hub representa às vezes vários emissores ou várias pessoas: o
 W812 do NCS serve vários pagers, o radar vê várias pessoas, a mesma pulseira
 passa por várias portas com alarme de proximidade, o dispensador tem nove doses e
-cinco avarias possíveis. Para o consumidor, «um alerta por dispositivo e `type`»
-juntava o quarto 15 à chamada do quarto 12.
+cinco avarias possíveis. O envelope não ganha campo para isso: o que os distingue
+já está no `data` de hoje, e fica onde está.
 
-O envelope ganha, ao nível de topo, **`subject: { kind, id }`** — **ausente**
-quando o dispositivo é o único sujeito, que é o caso da maior parte dos eventos.
-Diz de quem ou de quê é o facto; com ele, quem consome distingue dois factos do
-mesmo `type` no mesmo dispositivo, e o `clears` acaba o do sujeito certo.
+| Eventos | Campo do `data` |
+|---|---|
+| `help_call` e `reset` do NCS | `pagerId` |
+| `fall`, `zone_entry`, `zone_exit` do radar | `personIndex` — fraco: o radar re-identifica as pessoas |
+| `proximity_alarm` | `gatewayId` |
+| `device_fault` e o seu `_cleared` | `fault` |
+| `dose_missed`, `medication_alarm_change`, `medication_intake` | `slot` e `doseDate` |
 
-| `kind` | `id` | De onde vem | Em |
-|---|---|---|---|
-| `pager` | o `pagerId` | `payload.id` da Voerka | `help_call` e `reset` do NCS |
-| `person` | o `personIndex` | a trama `position` do radar | `fall`, `zone_entry`, `zone_exit` do radar |
-| `gateway` | o `gatewayId` | o gateway que ouviu | `proximity_alarm` |
-| `fault` | o `fault` | a TAG do dispensador | `device_fault` |
-| `dose` | `{slot}@{doseDate}`, por exemplo `"3@2026-10-23"` | o plano confirmado | `dose_missed`, `medication_alarm_change`, `medication_intake` |
-
-```json
-{ "eventId": "…", "type": "help_call", "severity": "alarm",
-  "subject": { "kind": "pager", "id": "123456" },
-  "data": { "pagerId": "123456" } }
-```
-
-O `person` é fraco: o radar re-identifica as pessoas, e o mesmo `personIndex`
-pode ser outra pessoa minutos depois, ou a mesma pessoa mudar de índice. Serve
-para não juntar duas quedas simultâneas; não serve para seguir alguém.
-
-**Os campos de origem ficam no `data`.** O hitCare lê o `data.pagerId`, e o
-`subject` é acrescento: nada do que já se lia muda de sítio.
+Quem consome usa-os para não juntar o quarto 15 à chamada do quarto 12, e para
+casar um fim com o que ele acaba: um `reset` acaba o `help_call` do mesmo
+`pagerId`; um `medication_intake` `abnormal`, o `dose_missed` do mesmo `slot` e
+`doseDate`.
 
 ### O desligado atrás de um gateway
 
@@ -695,10 +681,10 @@ de pé e o aparelho é que deixou de ser ouvido — saiu do alcance, ficou sem b
 | `check_required` | `check_required_cleared` | A fralda fica limpa, ou passa a muda |
 | `change_required` | `change_required_cleared` | O `diaper_condition` volta a `clean` |
 | `low_battery` | `low_battery_cleared` | A bandeira apaga (`LowBatteryTransitions`); no MKGW4, que só manda o alarme, não há fim |
-| `device_fault` | `device_fault_cleared`, com o `fault` | O dispensador dá a avaria por apagada |
+| `device_fault` | `device_fault_cleared`, com o mesmo `data.fault` | O dispensador dá a avaria por apagada |
 | `storage_environment` | `storage_environment_cleared` | Idem |
-| `dose_missed` | `medication_intake` com `result: "abnormal"`, com a `dose` | A toma tardia da mesma dose |
-| `help_call` (NCS) | `reset`, com o `pager` | O `key` 0, 1 ou 2 da Voerka |
+| `dose_missed` | `medication_intake` com `result: "abnormal"`, com o mesmo `slot` e `doseDate` | A toma tardia da mesma dose |
+| `help_call` (NCS) | `reset`, com o mesmo `pagerId` | O `key` 0, 1 ou 2 da Voerka |
 
 **Não têm fim** os factos de um instante: `help_call` fora do NCS, `fall`,
 `proximity_alarm`, `apnea`, `heart_rate_abnormal`, `device_removed`, os
@@ -730,7 +716,7 @@ Da segunda, depois da decisão do Hugo de manter o hub como normalizador:
 | 6 | Duplicados | `eventId` em todos os eventos |
 | 8 | Contrato da configuração | **Adotado** (secção 4) |
 | 9 | Repetir a medição | Desenhado, **por decidir** pelo Hugo (pergunta 6) |
-| — | `subject` e o `gatewayId`/`cause` do desligado | **Adotado** |
+| — | O `gatewayId`/`cause` do desligado | **Adotado** |
 
 ## 9. O que não leva limiar
 
@@ -764,7 +750,6 @@ Cada mudança, e o que pede a quem já consome:
 |---|---|---|
 | `eventId` em todos os eventos | todas as famílias | Acrescento ao envelope; ignorável |
 | `clears` nos eventos que acabam alguma coisa, incluindo o `device.connected` e o `reset` do NCS | todas | Acrescento ao envelope; ignorável |
-| `subject` no envelope, quando o dispositivo não é o único sujeito | NCS (`pager`), radar, gateways (`proximity_alarm`), dispensador | Acrescento; o `data.pagerId` que o hitCare lê fica onde está |
 | `device.disconnected` de um aparelho retransmitido ganha `data.gatewayId` e, com o gateway em baixo, `data.cause` | pulseiras e sensores de fralda do hitCare | Os eventos de ciclo de vida não levavam `data`: **coordenar**, junto com a linha seguinte |
 | `device.disconnected` e `device.connected` ganham `severity` | todas, incluindo NCS, gateways e pulseiras do hitCare | Os eventos de ciclo de vida não a levavam: **coordenar** com o hitCare |
 | Tipos novos `{type}_cleared` | todas; no hitCare, `check_required_cleared`, `change_required_cleared`, `low_battery_cleared` | Um consumidor que rejeite tipos desconhecidos parte: **coordenar**. O contrato congelado da fralda garante os `type` existentes, não a ausência de novos ([17](17-sensor-de-fralda.md#4-o-contrato-congelado)) |

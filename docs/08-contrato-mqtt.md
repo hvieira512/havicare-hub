@@ -424,7 +424,6 @@ radar, que alarma sozinho, traduz-os para o limiar dele.
 | `eventId` | UUID por publicação: a chave para ignorar os repetidos da QoS 1 |
 | `type`, `occurredAt`, `device`, `data` | Como hoje |
 | `severity` | `alarm` · `alert` · `info`, do facto. **Ausente** num `{type}_cleared` |
-| `subject` | `{ kind, id }`, só quando um dispositivo representa várias coisas |
 | `clears` | O `type` que o evento acaba, só nos que acabam alguma coisa |
 
 Uma gravidade maior do mesmo facto (SpO2 de `alert` para `alarm`) é mais um evento
@@ -433,23 +432,16 @@ do mesmo `type`. Descer de nível não publica nada.
 **O fim.** Os fins novos têm tipo próprio, `{type}_cleared`, com `clears` e sem
 `severity`. Os pares que já existem guardam o nome e ganham o `clears`:
 `device.connected` acaba o `device.disconnected`; o `zone_entry` da cerca, o
-`zone_exit`; o `reset` do NCS, o `help_call` do mesmo `subject`; o
-`medication_intake` com `result: "abnormal"`, o `dose_missed` da mesma dose. Um
+`zone_exit`; o `reset` do NCS, o `help_call` do mesmo `data.pagerId`; o
+`medication_intake` com `result: "abnormal"`, o `dose_missed` do mesmo `slot` e
+`doseDate`. Um
 fim só sai depois de ter saído o que ele acaba. Um fim perdido na QoS 1 fica
 perdido, por agora.
 
-**O sujeito.** `subject: { kind, id }`, ausente quando o dispositivo é o único
-sujeito:
-
-| `kind` | `id` | Em |
-|---|---|---|
-| `pager` | o `pagerId` | `help_call` e `reset` do NCS |
-| `person` | o `personIndex` (o radar re-identifica pessoas) | `fall`, `zone_entry`, `zone_exit` do radar |
-| `gateway` | o `gatewayId` | `proximity_alarm` |
-| `fault` | o `fault` | `device_fault` |
-| `dose` | `{slot}@{doseDate}`, por exemplo `"3@2026-10-23"` | `dose_missed`, `medication_*` |
-
-Os campos de origem continuam no `data`.
+**Vários do mesmo tipo.** Quando um dispositivo representa várias coisas, o que
+as distingue já está no `data`: `pagerId` no NCS, `personIndex` no radar,
+`gatewayId` no `proximity_alarm`, `fault` no `device_fault`, `slot` e `doseDate`
+nas doses. É por esses campos que quem consome casa um fim com o que ele acaba.
 
 **O desligado atrás de um gateway.** O `device.disconnected` de um aparelho
 retransmitido por um gateway MOKO ou da Havicare leva `data.gatewayId`, o último
@@ -482,8 +474,8 @@ Tipos novos:
 A cerca passa a ser configuração do hub (`safe_zones`), e os bits de cerca da 4P
 Touch deixam de ser publicados.
 
-Nenhuma gravidade nem nenhum `type` que o hitCare lê muda. O `eventId`, o
-`clears` e o `subject` são acrescentos; os `{type}_cleared` são tipos novos, e a
+Nenhuma gravidade nem nenhum `type` que o hitCare lê muda. O `eventId` e o
+`clears` são acrescentos; os `{type}_cleared` são tipos novos, e a
 `severity` e o `data` nos `device.*` vão coordenados com ele (ver
 [«Pendente do hitCare»](#pendente-do-hitcare) e a secção 10 do
 [capítulo 26](26-alarmes-clinicos.md#10-o-hitcare-e-a-compatibilidade)).
