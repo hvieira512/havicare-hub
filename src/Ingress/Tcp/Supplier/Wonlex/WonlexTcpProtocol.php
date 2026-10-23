@@ -24,6 +24,12 @@ final class WonlexTcpProtocol extends TcpProtocol
         $this->stateProvider = $stateProvider;
     }
 
+    /** Alguns firmwares geram um ident novo no `w:reply` e no `w:update`. */
+    public function echoesReplyIdent(): bool
+    {
+        return false;
+    }
+
     public function downlinkCorrelation(string $bytes): array
     {
         $decoded = $this->adapter->decodeIncoming($bytes);
