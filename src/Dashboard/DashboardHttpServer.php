@@ -42,8 +42,6 @@ final class DashboardHttpServer
     private ApiKernel $apiKernel;
     /** @var array<string, string> */
     private array $assetCache = [];
-    // Nula e não promovida: o teste dos componentes monta isto sem construtor.
-    private ?DashboardHttpOptions $options = null;
 
     public function __construct(
         private DeviceStore $store,
@@ -51,7 +49,7 @@ final class DashboardHttpServer
         private Whitelist $whitelist,
         private DeviceHubServer $hub,
         private ApiDataAccess $db,
-        ?DashboardHttpOptions $options = null,
+        private DashboardHttpOptions $options,
         // A mesma instância com que a ingestão anuncia uma publicação; sem ela o stream de
         // inquilino nunca recebe nada.
         private ?MessageFanout $messages = null,
@@ -59,7 +57,6 @@ final class DashboardHttpServer
         // A mesma instância que o processo do hub monta; quando falta, monta-se aqui.
         ?RadarLayoutSync $radarLayoutSync = null,
     ) {
-        $this->options = $options ??= new DashboardHttpOptions();
         $radarLayoutSync ??= new RadarLayoutSync(
             new QinglanstApiClient(new Browser()),
             new LayoutParser(),
@@ -102,12 +99,6 @@ final class DashboardHttpServer
             $options->maxOpenStreams,
             $options->maxOpenStreamsPerUser,
         );
-    }
-
-    /** Os valores afinados, ou os de origem numa instância montada sem construtor. */
-    private function options(): DashboardHttpOptions
-    {
-        return $this->options ??= new DashboardHttpOptions();
     }
 
     /**
@@ -192,7 +183,7 @@ final class DashboardHttpServer
 
     private function page(): string
     {
-        $dashboardApiAuthRequired = $this->options()->apiAuthRequired;
+        $dashboardApiAuthRequired = $this->options->apiAuthRequired;
         $assetVersion = $this->assetVersion();
 
         ob_start();

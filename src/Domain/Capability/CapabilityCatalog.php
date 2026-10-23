@@ -272,14 +272,7 @@ final class CapabilityCatalog
             return null;
         }
 
-        $catalog = [];
-        foreach (self::definitions() as $definition) {
-            $definitionKey = trim((string)($definition['key'] ?? ''));
-            if ($definitionKey !== '') {
-                $catalog[$definitionKey] = true;
-            }
-        }
-        if (isset($catalog[$key])) {
+        if (self::isCatalogKey($key)) {
             return $key;
         }
 
@@ -334,7 +327,6 @@ final class CapabilityCatalog
         }
 
         return match ($key) {
-            'alarm_clock' => 'alarm_clock',
             'familyNumber' => 'phonebook',
             'SOSNumber' => 'sos_contacts',
             'wonlexLowPower' => 'low_battery_alert',
@@ -346,8 +338,6 @@ final class CapabilityCatalog
             'wonlexBPEarlyWarning' => 'blood_pressure_alert',
             'wonlexHeartRateHighRemind' => 'heart_rate_high_alert',
             'wonlexHeartRateLowRemind' => 'heart_rate_low_alert',
-            'phonebook' => 'phonebook',
-            'call_whitelist' => 'call_whitelist',
             'autoHealthMeasurement' => 'auto_vitals_interval',
             'fallSensitivity' => 'fall_sensitivity',
             'wonlexHeartRateInterval' => 'heart_rate_measurement_interval',
@@ -365,86 +355,27 @@ final class CapabilityCatalog
             'wonlexContinuousTempSwitch' => 'temperature_continuous',
             'wonlexStepTarget' => 'step_goal',
             'wonlexSleepIntervalOrSwitch' => 'sleep_monitoring',
-            // Protocolos cujo comando é a própria chave genérica: o `veepoo-ble` manda o nome da
-            // operação ao gateway, que tem a sessão BLE.
-            'heart_rate_continuous',
-            'blood_pressure_trend',
-            'temperature_continuous',
-            'hrv_continuous',
-            'blood_sugar_continuous',
-            'blood_lipids_continuous',
-            'stress_continuous',
-            'sleep_monitoring',
-            'blood_oxygen_alert',
-            'blood_oxygen_window',
-            'heart_rate_alert',
-            'skin_tone',
-            'personal_info',
-            'find_device' => $key,
             'wonlexStepInterval' => 'step_reporting_interval',
             'locationInterval' => 'location_reporting_interval',
             'workingMode' => 'working_mode',
-            'wonlexCallInLimitSwitch' => 'whitelist_enabled',
-            'rejectUnknownCalls', 'whitelistSwitch', 'callInRestriction' => 'whitelist_enabled',
-            'whitelist_enabled' => 'whitelist_enabled',
+            'wonlexCallInLimitSwitch', 'rejectUnknownCalls', 'whitelistSwitch', 'callInRestriction' => 'whitelist_enabled',
             'factoryResetCommand' => 'reset_device',
             'restartCommand' => 'restart_device',
             'powerOffCommand' => 'power_off',
             'findDeviceCommand' => 'find_device',
             'pushMessage' => 'push_message',
-            // A chave nativa é a genérica: não há comando nativo de que esta seja tradução,
-            // porque o hub aplica-a sozinho.
-            'diaper_sensitivity' => 'diaper_sensitivity',
-            'proximity_alert' => 'proximity_alert',
-            // O dispensador declara as definições já pela chave genérica; o nativo é o
-            // `command`, que é o que monta a trama.
-            'medication_reminders',
-            'medication_period',
-            'early_dispense',
-            'missed_dispense',
-            'child_lock',
-            'emergency_call',
-            'date_format',
-            'time_format',
-            'auto_clock',
-            'key_tone',
-            'retrieval_warning',
-            'retrieval_timeout',
-            'loaded_cells',
-            'alarm_volume',
-            'alarm_ringtone',
-            'do_not_disturb',
-            'device_language',
-            'time_zone',
-            'sync_configuration',
-            'dispense_now',
-            'calibrate_clock',
-            'mute_alarm',
-            'reset_tray',
-            'restart_device',
-            // A balança Torre também declara pela chave genérica.
-            'heart_rate_measurement',
-            'impedance_measurement',
-            'weight_unit',
-            'select_scale_user',
-            'scale_users',
-            'read_scale_history',
-            'read_blood_pressure_history',
-            // O radar também: a chave é a operação que a entrega traduz para a cloud.
-            'vital_sign_sensitivity',
-            'working_mode',
-            'breath_rate_alert',
-            'weak_vital_signs_alarm',
-            'fall_alarm',
-            'sitting_on_floor_alarm',
-            'radar_installation',
-            'detection_boundary',
-            'radar_areas',
-            'measure_boundary',
-            'read_device_state',
-            'reset_device' => $key,
-            default => null,
+            // Os protocolos que declaram pela chave genérica -- veepoo, dispensador, balança, radar --
+            // não precisam de tradução.
+            default => self::isCatalogKey($key) ? $key : null,
         };
+    }
+
+    private static function isCatalogKey(string $key): bool
+    {
+        static $keys = null;
+        $keys ??= array_fill_keys(array_column(self::definitions(), 'key'), true);
+
+        return isset($keys[$key]);
     }
 
     /**

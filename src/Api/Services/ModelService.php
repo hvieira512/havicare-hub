@@ -250,7 +250,7 @@ class ModelService
         }
 
         $catalog = $this->db->genericCapabilities->all($deviceType);
-        $enabledKeys = SupplierCapabilityTemplate::keysForSupplierDeviceType($supplierName, $deviceType);
+        $enabledKeys = SupplierCapabilityTemplate::keysForProtocol($protocol, $deviceType);
 
         return [
             'supplierId' => $supplierId,
@@ -377,7 +377,7 @@ class ModelService
             return ApiError::unknownProtocol('Could not determine protocol for this supplier')->toArray();
         }
 
-        $defaultFeatures = SupplierCapabilityTemplate::keysForSupplierDeviceType($supplierName, $deviceType);
+        $defaultFeatures = SupplierCapabilityTemplate::keysForProtocol($protocol, $deviceType);
         $defaultFeatureSet = array_flip($defaultFeatures);
         $hasEnabledCapabilitiesSelection = $request->choseCapabilities();
         $enabledCapabilities = $this->featureValues($request->capabilities);
@@ -466,7 +466,7 @@ class ModelService
             }
         }
         $supplierSupported = array_fill_keys(
-            SupplierCapabilityTemplate::keysForSupplierDeviceType($supplier, $deviceType),
+            SupplierCapabilityTemplate::keysForProtocol(ProtocolRegistry::forSupplier($supplier, $deviceType), $deviceType),
             true
         );
 

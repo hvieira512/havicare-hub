@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Integration\Dashboard;
 
 use GuzzleHttp\Psr7\ServerRequest;
+use Hub\Dashboard\DashboardHttpOptions;
 use Hub\Dashboard\DashboardHttpServer;
 use Tests\Support\DashboardHttpTestCase;
 
@@ -13,7 +14,7 @@ final class DashboardHttpServerTest extends DashboardHttpTestCase
 {
     public function testDashboardPageRendersPhpComponentsRepeatedly(): void
     {
-        $server = (new \ReflectionClass(DashboardHttpServer::class))->newInstanceWithoutConstructor();
+        $server = self::assetServer();
         $method = new \ReflectionMethod(DashboardHttpServer::class, 'page');
 
         $first = $method->invoke($server);
@@ -51,7 +52,7 @@ final class DashboardHttpServerTest extends DashboardHttpTestCase
 
     public function testDashboardOnlyServesExplicitPublicAssets(): void
     {
-        $server = (new \ReflectionClass(DashboardHttpServer::class))->newInstanceWithoutConstructor();
+        $server = self::assetServer();
 
         $stylesheet = $server(new ServerRequest('GET', '/assets/css/modals.css'));
         self::assertSame(200, $stylesheet->getStatusCode());
@@ -72,7 +73,7 @@ final class DashboardHttpServerTest extends DashboardHttpTestCase
 
     public function testOwnAssetsRevalidateWhileVendorAssetsAreImmutable(): void
     {
-        $server = (new \ReflectionClass(DashboardHttpServer::class))->newInstanceWithoutConstructor();
+        $server = self::assetServer();
 
         $stylesheet = $server(new ServerRequest('GET', '/assets/css/modals.css'));
         $etag = $stylesheet->getHeaderLine('ETag');
@@ -91,7 +92,7 @@ final class DashboardHttpServerTest extends DashboardHttpTestCase
 
     public function testDashboardDoesNotExposeSourceOrFilesOutsidePublicAssetRoots(): void
     {
-        $server = (new \ReflectionClass(DashboardHttpServer::class))->newInstanceWithoutConstructor();
+        $server = self::assetServer();
 
         foreach (
             [
@@ -110,7 +111,7 @@ final class DashboardHttpServerTest extends DashboardHttpTestCase
     /** Abaixo dos 992px o cartão de login tem o seu `h1`, porque o painel desaparece. */
     public function testTheLoginCardCarriesAHeadingForTheWidthsWithoutThePanel(): void
     {
-        $server = (new \ReflectionClass(DashboardHttpServer::class))->newInstanceWithoutConstructor();
+        $server = self::assetServer();
 
         $html = (string)$server(new ServerRequest('GET', '/dashboard'))->getBody();
         $start = strpos($html, 'dashboard-login-card');
@@ -142,5 +143,14 @@ final class DashboardHttpServerTest extends DashboardHttpTestCase
         $devices = $server(new ServerRequest('GET', '/api/devices', ['Authorization' => 'Bearer ' . $token]));
         self::assertSame(200, $devices->getStatusCode(), (string)$devices->getBody());
         self::assertSame('', $devices->getHeaderLine('ETag'));
+    }
+
+    /** Só o que serve a página e os estáticos, sem a pilha da API. */
+    private static function assetServer(): DashboardHttpServer
+    {
+        $server = (new \ReflectionClass(DashboardHttpServer::class))->newInstanceWithoutConstructor();
+        (new \ReflectionProperty(DashboardHttpServer::class, 'options'))->setValue($server, new DashboardHttpOptions());
+
+        return $server;
     }
 }
