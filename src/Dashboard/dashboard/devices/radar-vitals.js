@@ -2,8 +2,8 @@ import { fieldValue } from "../format.js";
 import { html } from "../html.js";
 
 /**
- * Os sinais vitais de um radar ao lado da planta, com os gráficos do `live/info-panel.js` do
- * hitCare; os pontos vêm do histórico do stream e das leituras que chegam a seguir.
+ * Os sinais vitais de um radar ao lado da planta; os pontos vêm do histórico do stream e das
+ * leituras que chegam a seguir.
  */
 
 /**

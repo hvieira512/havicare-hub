@@ -9,7 +9,7 @@ import {
 } from "./panel.js";
 import { appendRepeatRow, removeRepeatRow } from "./row-editing.js";
 import { syncLoadedCellsRunout } from "./loaded-cells-runout.js";
-import { syncAlarmClockCustomVisibility } from "./alarm-fields.js";
+import { refreshAlarmLineFrom, syncAlarmClockCustomVisibility } from "./alarm-fields.js";
 import { syncFallSensitivityLevels } from "./inputs/four-p-touch.js";
 import {
     applyConfigPreset,
@@ -100,6 +100,7 @@ function dispatchConfigClick(event) {
 }
 
 export function handleDeviceConfigChange(event) {
+    refreshAlarmLineFrom(event);
     dispatchConfigChange(event);
     syncConfigCountsFrom(event.target);
 }
@@ -163,6 +164,7 @@ function dispatchConfigChange(event) {
 }
 
 export function handleDeviceConfigInput(event) {
+    refreshAlarmLineFrom(event);
     if (event.target.matches("[data-phone-local]")) {
         syncPhoneControl(event.target);
     }

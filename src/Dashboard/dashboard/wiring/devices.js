@@ -30,6 +30,7 @@ import {
     handleDownlinkPagerClick,
     handleTelemetryPagerClick,
     removeDetailFilter,
+    SIDE_BY_SIDE_QUERY,
     syncDetailSearchPlaceholder,
     updateDetailFilterDraft,
 } from "../devices/detail-filters.js";
@@ -273,7 +274,7 @@ function bindDetail() {
     els.connectionHistory.addEventListener("click", handleConnectionHistoryClick);
     els.activityTabs?.addEventListener("shown.bs.tab", syncDetailSearchPlaceholder);
     globalThis
-        .matchMedia?.("(min-width: 1200px)")
+        .matchMedia?.(SIDE_BY_SIDE_QUERY)
         ?.addEventListener("change", syncDetailSearchPlaceholder);
     els.applyDetailFiltersBtn.addEventListener("click", applyDetailFilters);
     els.clearDetailFiltersBtn.addEventListener("click", clearDetailFilters);

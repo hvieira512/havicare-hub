@@ -57,7 +57,7 @@ function diaperSensitivityInput(entry, desired, meta) {
 /** O limiar arrasta-se entre «Longe» e «Perto», ou escreve-se o dBm exacto; os dois são o mesmo campo. */
 function proximityAlarmInput(entry, desired, meta) {
     const bounds = meta.bounds ?? {};
-    const [min, max] = bounds.triggerDbm ?? [-100, -30];
+    const [min = "", max = ""] = bounds.triggerDbm ?? [];
     const linked = meta.linkedDevices ?? [];
     const chosen = Array.isArray(desired.devices) ? desired.devices.map(String) : [];
     const scope = desired.devices === "all" || desired.devices === undefined ? "all" : "chosen";

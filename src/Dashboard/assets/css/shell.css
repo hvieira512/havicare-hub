@@ -257,6 +257,14 @@
     background: var(--bs-border-color);
 }
 
+.tree-field-id {
+    width: 8rem;
+}
+
+.tree-field-name {
+    min-width: 12rem;
+}
+
 @media (max-width: 575.98px) {
     .tree-row {
         padding-left: 1.5rem;

@@ -1,10 +1,7 @@
 import { areaName, areaTypeStyle, brandColor, postureStyle } from "../radar-style.js";
 import { fieldValue } from "../format.js";
 
-/**
- * A planta da divisão de um radar em Konva, portada do `_js/radar/scene/radar-scene.js` do
- * cliente, com as formas já lidas pelo `LayoutParser` e os campos do hub.
- */
+/** A planta da divisão de um radar em Konva, com as formas já lidas pelo `LayoutParser`. */
 
 /** O ar entre a divisão e a borda da tela. */
 const PADDING = 30;

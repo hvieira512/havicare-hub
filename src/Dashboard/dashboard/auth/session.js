@@ -78,7 +78,7 @@ const showTimeoutWarning = () => {
     warningVisible = true;
     void Swal.fire({
         icon: "warning",
-        title: "A sessão está prestes a terminar",
+        titleText: "A sessão está prestes a terminar",
         text: "Não foi detetada atividade. Confirme para continuar a utilizar o Hub.",
         confirmButtonText: "Continuar sessão",
         timer: remainingMs,

@@ -188,12 +188,7 @@ export function syncAlarmClockCustomVisibility(row) {
         ?.classList.toggle("d-none", checkedValue(row, "recurrenceKind") !== "custom");
 }
 
-function refreshAlarmLineFrom(event) {
+export function refreshAlarmLineFrom(event) {
     const row = event.target?.closest?.("[data-repeat-row]");
     if (row) refreshAlarmLine(row);
-}
-
-if (typeof document !== "undefined") {
-    document.addEventListener("input", refreshAlarmLineFrom, true);
-    document.addEventListener("change", refreshAlarmLineFrom, true);
 }
