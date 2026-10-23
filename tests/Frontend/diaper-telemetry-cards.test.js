@@ -41,47 +41,36 @@ test("MONIT condition renders as a status card without a request button", () => 
     assert.doesNotMatch(html, /data-action="requestFeature"/);
 });
 
-test("MONIT moisture bands each channel against the normalizer thresholds", () => {
-    // O 3 é seco (<4), o 4 e o 11 são húmidos, e o 12 é o limiar de afectado.
+const bandsOf = (html) => [...html.matchAll(/diaper-channel-fill diaper-channel-fill--(\w+)/g)]
+    .map((match) => match[1]);
+
+test("MONIT moisture paints each channel with the state the hub computed", () => {
+    // O 5 com `wet` prova que a tira não refaz a conta a partir do delta.
     const html = moistureCard({
-        channels: [channel(1, 3), channel(2, 4), channel(3, 11), channel(4, 12)],
+        channels: [
+            { ...channel(1, 3), state: "dry" },
+            { ...channel(2, 4), state: "damp" },
+            { ...channel(3, 5), state: "wet" },
+        ],
         affectedChannelCount: 1,
-        maximumDelta: 12,
-    });
-
-    const bands = [...html.matchAll(/diaper-channel-fill diaper-channel-fill--(\w+)/g)]
-        .map((match) => match[1]);
-    assert.deepEqual(bands, ["dry", "damp", "damp", "wet"]);
-});
-
-test("MONIT moisture takes the thresholds from the reading, not from a constant", () => {
-    // Preset alto: um canal conta como molhado a partir de 7 e bastam 3 para mudar.
-    // Nada disto se pode escrever no cartão -- é configurável por sensor.
-    const html = moistureCard({
-        channels: [channel(1, 1), channel(2, 2), channel(3, 6), channel(4, 7), channel(5, 20)],
-        affectedChannelCount: 2,
-        maximumDelta: 20,
+        maximumDelta: 5,
         requiredChannelCount: 3,
         wetDelta: 7,
     });
 
-    const bands = [...html.matchAll(/diaper-channel-fill diaper-channel-fill--(\w+)/g)]
-        .map((match) => match[1]);
-    // Seco é abaixo de `cleanMaxDelta` = intdiv(7, 4) + 1 = 2, como no normalizador.
-    assert.deepEqual(bands, ["dry", "damp", "damp", "wet", "wet"]);
-    assert.match(textOf(html), /2 de 3 canais acima do limiar \(7\)/);
+    assert.deepEqual(bandsOf(html), ["dry", "damp", "wet"]);
+    assert.match(textOf(html), /1 de 3 canais acima do limiar \(7\)/);
 });
 
 test("MONIT moisture falls back to the normal preset for readings stored before the thresholds travelled", () => {
+    // Sem estado por canal, a tira não pinta nenhum.
     const html = moistureCard({
         channels: [channel(1, 3), channel(2, 12)],
         affectedChannelCount: 1,
         maximumDelta: 12,
     });
 
-    const bands = [...html.matchAll(/diaper-channel-fill diaper-channel-fill--(\w+)/g)]
-        .map((match) => match[1]);
-    assert.deepEqual(bands, ["dry", "wet"]);
+    assert.deepEqual(bandsOf(html), ["dry", "dry"]);
     assert.match(html, /de 2 canais acima do limiar \(12\)/);
 });
 

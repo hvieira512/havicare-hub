@@ -48,11 +48,14 @@ final class MonitNormalizer
 
         $channels = [];
         foreach ($decoded['baseline'] as $index => $baseline) {
+            $delta = $decoded['normalized'][$index];
             $channels[] = [
                 'index' => $index + 1,
                 'baseline' => $baseline,
                 'value' => $decoded['raw'][$index],
-                'delta' => $decoded['normalized'][$index],
+                'delta' => $delta,
+                // Os mesmos limiares do `condition`: todos `dry` é exactamente `clean`.
+                'state' => $delta >= $pollutionValue ? 'wet' : ($delta >= $cleanMaxDelta ? 'damp' : 'dry'),
             ];
         }
         $affected = count(array_filter($decoded['normalized'], static fn(int $value): bool => $value >= $pollutionValue));

@@ -36,9 +36,9 @@ sempre uma verificação do `type` do lado do cliente.
 ```json
 {
   "channels": [
-    {"index": 1,  "baseline": 1,  "value": 2,  "delta": 1},
-    {"index": 5,  "baseline": 32, "value": 36, "delta": 4},
-    {"index": 10, "baseline": 32, "value": 36, "delta": 4}
+    {"index": 1,  "baseline": 1,  "value": 2,  "delta": 1, "state": "dry"},
+    {"index": 5,  "baseline": 32, "value": 36, "delta": 4, "state": "damp"},
+    {"index": 10, "baseline": 32, "value": 36, "delta": 4, "state": "damp"}
   ],
   "affectedChannelCount": 0,
   "maximumDelta": 4,
@@ -53,6 +53,7 @@ sempre uma verificação do `type` do lado do cliente.
 | `baseline` | A referência de seco do canal, de 0 a 63. Varia muito entre canais — é uma calibração por elétrodo, não uma leitura |
 | `value` | A leitura capacitiva atual, de 0 a 63 |
 | `delta` | `max(value - baseline, 0)`. É o único número do canal com significado para quem consome |
+| `state` | `wet` com `delta` igual ou superior ao `wetDelta`; `damp` a partir do limiar de `clean` do `diaper_condition` (`floor(wetDelta / 4) + 1`); `dry` abaixo. Os limiares são os do estado, e por isso todos os canais `dry` é exatamente `clean` |
 | `affectedChannelCount` | Quantos canais têm `delta` igual ou superior ao `wetDelta` |
 | `maximumDelta` | O maior `delta` dos dez canais |
 | `requiredChannelCount` | Quantos canais molhados obrigam a muda **neste** sensor |

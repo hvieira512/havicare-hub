@@ -117,6 +117,41 @@ final class MonitSensitivityTest extends TestCase
         self::assertSame(7, $reading['wet']);
     }
 
+    public function testEachChannelCarriesItsStateUnderTheSensorThresholds(): void
+    {
+        // Com o molhado a 7, o seco acaba abaixo de 2: a tira lê isto e não refaz a conta.
+        $result = (new MonitNormalizer())->normalize(
+            $this->decoded([1, 2, 6, 7, 20]),
+            self::DEVICE,
+            'c5e390f30bce',
+            ['pollutionRange' => 3, 'pollutionValue' => 7],
+        );
+
+        self::assertSame(
+            ['dry', 'damp', 'damp', 'wet', 'wet', 'dry', 'dry', 'dry', 'dry', 'dry'],
+            array_column($result['telemetry']['diaper_moisture']['data']['channels'], 'state')
+        );
+    }
+
+    public function testAllChannelsDryExactlyWhenTheConditionIsClean(): void
+    {
+        [$valueMin, $valueMax] = DiaperSensitivity::VALUE_BOUNDS;
+
+        for ($value = $valueMin; $value <= $valueMax; $value++) {
+            foreach (self::VECTORS as $deltas) {
+                $result = (new MonitNormalizer())->normalize(
+                    $this->decoded($deltas),
+                    self::DEVICE,
+                    'c5e390f30bce',
+                    ['pollutionRange' => 4, 'pollutionValue' => $value],
+                );
+                $states = array_unique(array_column($result['telemetry']['diaper_moisture']['data']['channels'], 'state'));
+
+                self::assertSame($result['condition'] === 'clean', $states === ['dry'], "value={$value} deltas=" . implode(',', $deltas));
+            }
+        }
+    }
+
     public function testTheScreenInvariantsHoldForEverySetting(): void
     {
         // Varrido sobre todas as configurações alcançáveis pela API: o número e o badge estão
