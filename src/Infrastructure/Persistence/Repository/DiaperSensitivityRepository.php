@@ -6,6 +6,7 @@ namespace Hub\Infrastructure\Persistence\Repository;
 
 use Hub\Domain\DiaperSensitivity;
 use Hub\Domain\DiaperSensitivityLookup;
+use Hub\Support\TtlCache;
 use PDO;
 
 /**
@@ -14,26 +15,22 @@ use PDO;
  */
 final class DiaperSensitivityRepository implements DiaperSensitivityLookup
 {
-    // Teto do cache. A chave é o sensor, limitado pelo inventário, mas o teto fecha a porta a
-    // um crescimento patológico num processo de longa vida.
-    private const MAX_CACHED = 10000;
+    private TtlCache $cache;
 
-    /** @var array<string, array{settings: array{pollutionRange: int, pollutionValue: int}, loadedAt: int}> */
-    private array $cache = [];
-
-    public function __construct(private PDO $pdo, private int $cacheTtlSeconds = 5)
+    public function __construct(private PDO $pdo, int $cacheTtlSeconds = 5)
     {
-        $this->cacheTtlSeconds = max(0, $this->cacheTtlSeconds);
+        $this->cache = new TtlCache($cacheTtlSeconds);
     }
 
     /** @return array{pollutionRange: int, pollutionValue: int} */
     public function forDevice(string $sensorKey): array
     {
-        $cached = $this->cache[$sensorKey] ?? null;
-        if (is_array($cached) && time() - $cached['loadedAt'] <= $this->cacheTtlSeconds) {
-            return $cached['settings'];
-        }
+        return $this->cache->remember($sensorKey, fn (): array => $this->load($sensorKey));
+    }
 
+    /** @return array{pollutionRange: int, pollutionValue: int} */
+    private function load(string $sensorKey): array
+    {
         $stmt = $this->pdo->prepare('
             SELECT desired_payload
             FROM device_configurations
@@ -44,18 +41,12 @@ final class DiaperSensitivityRepository implements DiaperSensitivityLookup
 
         // A ausência de linha é o preset normal e não um erro, e é por isso que não há
         // backfill: um sensor que ninguém configurou usa o preset.
-        $settings = is_array($payload)
+        return is_array($payload)
             && isset($payload['pollutionRange'], $payload['pollutionValue'])
             ? [
                 'pollutionRange' => (int)$payload['pollutionRange'],
                 'pollutionValue' => (int)$payload['pollutionValue'],
             ]
             : DiaperSensitivity::normal();
-        if (!isset($this->cache[$sensorKey]) && count($this->cache) >= self::MAX_CACHED) {
-            unset($this->cache[array_key_first($this->cache)]);
-        }
-        $this->cache[$sensorKey] = ['settings' => $settings, 'loadedAt' => time()];
-
-        return $settings;
     }
 }
