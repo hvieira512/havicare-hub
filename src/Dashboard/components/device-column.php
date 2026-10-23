@@ -5,7 +5,7 @@
                                 <span class="section-label">Dispositivo</span>
                                 <div class="d-flex align-items-center gap-2">
                                         <button id="openDeviceSelectorBtn" class="btn btn-sm btn-primary" type="button">
-                                            <i class="fa-solid fa-list me-1"></i>
+                                            <?= icon('fa-list', 'me-1') ?>
                                             Escolher
                                         </button>
                                     <button id="addDeviceBtn" class="btn btn-sm btn-outline-secondary" type="button" title="Adicionar dispositivo" aria-label="Adicionar dispositivo"><?= icon('fa-plus') ?></button>

@@ -28,11 +28,14 @@ export function initDetailFilters() {
     syncDetailSearchPlaceholder();
 }
 
-/** A busca nomeia o painel à vista; a partir do `xl` estão os dois, e serve o texto geral. */
+/** A partir do `xl` as leituras e os pedidos estão lado a lado. */
+export const SIDE_BY_SIDE_QUERY = "(min-width: 1200px)";
+
+/** A busca nomeia o painel à vista; com os dois à vista, serve o texto geral. */
 export function syncDetailSearchPlaceholder() {
     if (!els?.detailSearch) return;
 
-    const sideBySide = globalThis.matchMedia?.("(min-width: 1200px)")?.matches;
+    const sideBySide = globalThis.matchMedia?.(SIDE_BY_SIDE_QUERY)?.matches;
     const onRequests = !sideBySide && els.downlinkColumn?.classList.contains("active");
     const onReadings = !sideBySide && els.telemetryColumn?.classList.contains("active");
 
