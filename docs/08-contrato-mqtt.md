@@ -421,10 +421,13 @@ radar, que alarma sozinho, traduz-os para o limiar dele.
 
 | Campo | O que é |
 |---|---|
-| `eventId` | UUID por publicação: a chave para ignorar os repetidos da QoS 1 |
 | `type`, `occurredAt`, `device`, `data` | Como hoje |
 | `severity` | `alarm` · `alert` · `info`, do facto. **Ausente** num `{type}_cleared` |
 | `clears` | O `type` que o evento acaba, só nos que acabam alguma coisa |
+
+Os repetidos da QoS 1 reconhecem-se por dispositivo + `type` + `occurredAt`, mais o
+campo do `data` que distingue. Dois factos reais do mesmo `type` no mesmo segundo
+juntam-se num: o `occurredAt` é ao segundo.
 
 Uma gravidade maior do mesmo facto (SpO2 de `alert` para `alarm`) é mais um evento
 do mesmo `type`. Descer de nível não publica nada.
@@ -474,8 +477,8 @@ Tipos novos:
 A cerca passa a ser configuração do hub (`safe_zones`), e os bits de cerca da 4P
 Touch deixam de ser publicados.
 
-Nenhuma gravidade nem nenhum `type` que o hitCare lê muda. O `eventId` e o
-`clears` são acrescentos; os `{type}_cleared` são tipos novos, e a
+Nenhuma gravidade nem nenhum `type` que o hitCare lê muda. O `clears` é
+acrescento; os `{type}_cleared` são tipos novos, e a
 `severity` e o `data` nos `device.*` vão coordenados com ele (ver
 [«Pendente do hitCare»](#pendente-do-hitcare) e a secção 10 do
 [capítulo 26](26-alarmes-clinicos.md#10-o-hitcare-e-a-compatibilidade)).

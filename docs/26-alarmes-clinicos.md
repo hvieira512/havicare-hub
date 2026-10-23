@@ -506,10 +506,16 @@ Os eventos do canal `events` levam:
 
 | Campo | O que é |
 |---|---|
-| `eventId` | UUID por publicação. A entrega QoS 1 repete a mesma publicação com o mesmo `eventId`: é a chave para ignorar o repetido |
 | `type`, `occurredAt`, `device`, `data` | Como hoje |
 | `severity` | `alarm` · `alert` · `info`: a classificação do hub **deste** facto. **Ausente** num evento que acaba alguma coisa: um fim não é grave nem deixa de ser |
 | `clears` | O `type` que este evento acaba, ao nível de topo. Só nos eventos que acabam alguma coisa |
+
+**Os repetidos da QoS 1** reconhece-os quem consome pela chave dispositivo +
+`type` + `occurredAt`, mais o campo do `data` que distingue quando há
+(`personIndex`, `areaId`, `pagerId`…). O limite, numa linha: dois factos reais do
+mesmo `type` no mesmo segundo e no mesmo dispositivo juntam-se num — o
+`occurredAt` é ao segundo, e uma rajada de toques da W6B por um gateway que envia
+em lote dá isso, com a contagem no `presses`.
 
 Os fins novos têm tipo próprio, `{type}_cleared`: quem filtra pelo `type` sem
 conhecer o `clears` — o hitCare, um painel — ignora-os, que é a falha segura. Os
@@ -536,7 +542,6 @@ O 91 confirma o 92 — SpO2 baixa:
 
 ```json
 {
-  "eventId": "0f9d6c1e-6a52-4d1b-9a0e-2b7d3c1f4a10",
   "type": "blood_oxygen_low",
   "severity": "alert",
   "occurredAt": "2026-10-23T02:15:00Z",
@@ -551,7 +556,6 @@ novo do mesmo `type`:
 
 ```json
 {
-  "eventId": "7c3a9e20-1b4d-4f6e-8a2c-5d9b0e1f3a42",
   "type": "blood_oxygen_low",
   "severity": "alarm",
   "occurredAt": "2026-10-23T02:45:00Z",
@@ -566,7 +570,6 @@ novo. O 96 está no intervalo com a margem (≥ 95):
 
 ```json
 {
-  "eventId": "e2b47d91-0c3f-4a8e-b615-9f2d7a0c4e58",
   "type": "blood_oxygen_low_cleared",
   "clears": "blood_oxygen_low",
   "occurredAt": "2026-10-23T03:45:00Z",
@@ -656,7 +659,7 @@ O `device.disconnected` de um aparelho retransmitido passa a levar:
 | `data.cause: "gateway_offline"` | quando esse gateway já está `offline` no momento em que o aparelho se dá por desligado | A queda é do gateway, e não do aparelho |
 
 ```json
-{ "eventId": "…", "type": "device.disconnected", "severity": "alert",
+{ "type": "device.disconnected", "severity": "alert",
   "device": { "id": "d48c49f7909c", "supplier": "MOKO", "model": "W6B" },
   "data": { "gatewayId": "c5e390f30bce", "cause": "gateway_offline" } }
 ```
@@ -713,7 +716,7 @@ Da segunda, depois da decisão do Hugo de manter o hub como normalizador:
 | 1, 2, 5, 7, 10 | Identidade da condição, fase, ressincronização, prova, versão | **Retirados**: são ciclo de vida de alertas, lógica de quem consome. Sobra o `clears` |
 | 3 | Instantes marcados | Não é preciso: um instante é o que nunca terá `_cleared` (tabela da secção 7) |
 | 4 | Motivo do fim | **Retirado**; o hub publica o fim também quando os limites mudam, se desligam, ou o dispositivo muda de dono |
-| 6 | Duplicados | `eventId` em todos os eventos |
+| 6 | Duplicados | Sem campo novo: quem consome usa dispositivo + `type` + `occurredAt` (secção 7) |
 | 8 | Contrato da configuração | **Adotado** (secção 4) |
 | 9 | Repetir a medição | Desenhado, **por decidir** pelo Hugo (pergunta 6) |
 | — | O `gatewayId`/`cause` do desligado | **Adotado** |
@@ -748,7 +751,6 @@ Cada mudança, e o que pede a quem já consome:
 
 | Mudança | Onde | Para quem já consome |
 |---|---|---|
-| `eventId` em todos os eventos | todas as famílias | Acrescento ao envelope; ignorável |
 | `clears` nos eventos que acabam alguma coisa, incluindo o `device.connected` e o `reset` do NCS | todas | Acrescento ao envelope; ignorável |
 | `device.disconnected` de um aparelho retransmitido ganha `data.gatewayId` e, com o gateway em baixo, `data.cause` | pulseiras e sensores de fralda do hitCare | Os eventos de ciclo de vida não levavam `data`: **coordenar**, junto com a linha seguinte |
 | `device.disconnected` e `device.connected` ganham `severity` | todas, incluindo NCS, gateways e pulseiras do hitCare | Os eventos de ciclo de vida não a levavam: **coordenar** com o hitCare |
