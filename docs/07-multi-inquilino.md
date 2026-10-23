@@ -162,6 +162,12 @@ Por isso, ao reassociar, o hub publica uma mensagem **de comprimento zero** no
 tópico antigo. É a única forma de o MQTT apagar uma retida — um JSON vazio
 apenas a substituiria por outra.
 
+**Os alarmes que duram saem outra vez.** Uma queda em curso, uma avaria acesa ou
+a bateria fraca só saem quando começam, e o que já saiu fica dado por anunciado
+([persistência](14-persistencia.md#alarmes-que-duram)). Ao reassociar, o hub
+esquece-os, e a trama seguinte publica-os no tópico do cliente novo, que nunca os
+recebeu.
+
 ## 6. Quem vê o quê na API
 
 Dois papéis:

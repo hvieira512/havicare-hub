@@ -52,7 +52,7 @@ final class DeviceRuntimeStore
 
         $this->redis->srem(RedisKeys::devices(), $imei);
         $this->redis->zrem(RedisKeys::onlineDevices(), $imei);
-        $keys = [RedisKeys::device($imei), RedisKeys::commandRecords($imei), RedisKeys::sighting($imei)];
+        $keys = [RedisKeys::device($imei), RedisKeys::commandRecords($imei), RedisKeys::sighting($imei), RedisKeys::activeAlarms($imei)];
         foreach (['raw', 'telemetry', 'events', 'commands', 'connections'] as $list) {
             $list = RedisKeys::list($imei, $list);
             array_push($keys, $list, "{$list}:latest", "{$list}:seq");
@@ -71,6 +71,12 @@ final class DeviceRuntimeStore
             $pipe->sadd(RedisKeys::devices(), $imei);
             $pipe->hmset(RedisKeys::device($imei), $payload);
         });
+    }
+
+    /** O que dura e já saiu volta a sair na próxima trama: um dono novo nunca o recebeu. */
+    public function forgetActiveAlarms(string $imei): void
+    {
+        $this->redis->del([RedisKeys::activeAlarms($imei)]);
     }
 
     /**

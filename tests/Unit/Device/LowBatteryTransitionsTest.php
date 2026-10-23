@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace Tests\Unit\Device;
 
 use Hub\Device\LowBatteryTransitions;
+use Hub\State\ActiveAlarms;
 use PHPUnit\Framework\TestCase;
+use Tests\Support\Doubles\InMemoryRedisClient;
 
 /** Estes aparelhos repetem a bandeira de bateria fraca em cada leitura, e o `low_battery` sai só quando ela acende. */
 final class LowBatteryTransitionsTest extends TestCase
@@ -28,6 +30,15 @@ final class LowBatteryTransitionsTest extends TestCase
         $transitions->observe('a', $this->battery(['lowBattery' => true]));
 
         self::assertNull($transitions->observe('a', $this->battery(['lowBattery' => true])));
+    }
+
+    /** O que já saiu fica no Redis: o hub que arranca não volta a anunciar a bateria fraca. */
+    public function testTheFlagStillOnAfterARestartRaisesNothing(): void
+    {
+        $redis = new InMemoryRedisClient();
+        (new LowBatteryTransitions(new ActiveAlarms($redis)))->observe('a', $this->battery(['lowBattery' => true]));
+
+        self::assertNull((new LowBatteryTransitions(new ActiveAlarms($redis)))->observe('a', $this->battery(['lowBattery' => true])));
     }
 
     public function testChargingAndRunningLowAgainRaisesItAgain(): void

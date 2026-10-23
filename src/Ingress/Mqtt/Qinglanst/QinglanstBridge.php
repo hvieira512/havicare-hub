@@ -9,6 +9,7 @@ use Hub\Device\DeviceDescriptor;
 use Hub\Domain\DeviceMetadata;
 use Hub\Ingress\Mqtt\MqttBridgeBase;
 use Hub\Log\Logger;
+use Hub\State\ActiveAlarms;
 
 final class QinglanstBridge extends MqttBridgeBase
 {
@@ -34,6 +35,7 @@ final class QinglanstBridge extends MqttBridgeBase
         ?\Hub\Registry\Denylist $denylist = null,
         private readonly ?\Closure $layouts = null,
         private readonly ?\Closure $onMessage = null,
+        ActiveAlarms $alarms = new ActiveAlarms(),
     ) {
         parent::__construct(
             $subscriber,
@@ -49,7 +51,7 @@ final class QinglanstBridge extends MqttBridgeBase
         $this->decoder = new PayloadDecoder();
         $this->normalizer = new MessageNormalizer();
         $this->connections = new ConnectionAnnouncer($mqttBridge, $deviceStore);
-        $this->activeDetections = new ActiveDetections();
+        $this->activeDetections = new ActiveDetections($alarms);
     }
 
     /** Os tipos de área da planta do fabricante, pelo número com que vêm, na enumeração do contrato. */

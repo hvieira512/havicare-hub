@@ -84,7 +84,7 @@ final class DeviceAssociationService
      */
     private function writeAssociation(DeviceMetadata $existing, string $imei, string $company, int $licenseId): void
     {
-        $this->releaseRetainedStatus($existing, $imei, $company, $licenseId);
+        $this->releasePreviousOwner($existing, $imei, $company, $licenseId);
         $this->store->updateDeviceAssociation($imei, $company, $licenseId);
         $this->whitelist->updateAssociation($imei, $company, $licenseId);
     }
@@ -108,14 +108,15 @@ final class DeviceAssociationService
 
     /**
      * Larga o estado retido no tópico do cliente anterior, que continuaria a servir o último
-     * estado do dispositivo.
+     * estado do dispositivo, e os alarmes ativos que só esse cliente recebeu.
      */
-    private function releaseRetainedStatus(DeviceMetadata $existing, string $imei, string $company, int $licenseId): void
+    private function releasePreviousOwner(DeviceMetadata $existing, string $imei, string $company, int $licenseId): void
     {
         if ($existing->company === DeviceMetadata::normalizeCompany($company) && $existing->licenseId === $licenseId) {
             return;
         }
 
         $this->hub->clearRetainedStatus($existing->company, $existing->licenseId, $existing->deviceType, $imei);
+        $this->store->forgetActiveAlarms($imei);
     }
 }

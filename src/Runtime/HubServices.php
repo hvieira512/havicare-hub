@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Hub\Runtime;
 
 use Hub\Infrastructure\Persistence\Repository\ApiDataAccess;
+use Hub\State\ActiveAlarms;
 use Hub\State\DeviceStore;
 use Hub\Device\CommercialModelResolver;
 use Hub\Device\DeviceHubServer;
@@ -152,6 +153,7 @@ final class HubServices
             downlinkQueued: static fn (string $imei) => Loop::futureTick(
                 static fn () => $qinglanstCloudDownlinks->dispatchPending($imei, now: true),
             ),
+            alarms: new ActiveAlarms($redis),
         );
 
         return new self(

@@ -9,6 +9,8 @@ use Hub\Api\Request\DeviceWriteRequest;
 use Hub\Api\Auth\ApiAuthContext;
 use Hub\Api\Services\DeviceService;
 use Hub\Infrastructure\Persistence\Repository\ApiDataAccess;
+use Hub\Ingress\Mqtt\Qinglanst\QinglanstBridge;
+use Hub\State\ActiveAlarms;
 use Hub\State\DeviceStore;
 use Hub\State\RedisKeys;
 use Hub\Device\DeviceHubServer;
@@ -16,11 +18,17 @@ use Hub\Domain\DeviceMetadata;
 use Hub\Registry\Whitelist;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\MockObject\Stub;
+use Tests\Support\Doubles\FakeMqttSubscriber;
 use Tests\Support\Doubles\InMemoryRedisClient;
+use Tests\Support\Doubles\IngressFixtures;
+use Tests\Support\Doubles\RecordingHubMqttBridge;
 use Tests\Support\MysqlDashboardTestCase;
 
 final class DeviceServiceTest extends MysqlDashboardTestCase
 {
+    private const RADAR = 'radar-canonical-1';
+    private const RADAR_UID = 'radar-topic-uid';
+
     private DeviceService $service;
     private InMemoryRedisClient $redis;
     /** @var Whitelist&MockObject */
@@ -143,6 +151,61 @@ final class DeviceServiceTest extends MysqlDashboardTestCase
 
         self::assertSame('ok', $result['status'] ?? null);
         self::assertSame(['redis', 'sql'], $writes);
+    }
+
+    /** O dono novo recebe no tópico dele a queda que já estava em curso. */
+    public function testAssociatingAnotherOwnerAnnouncesTheActiveFallAgain(): void
+    {
+        $fall = $this->radarWithAFallAnnounced();
+
+        $result = $fall['service']->associations->associate(self::RADAR, new DeviceAssociationRequest('other', 2002));
+        $fall['frame']();
+
+        self::assertSame('ok', $result['status'] ?? null);
+
+        self::assertSame([1001, 2002], array_column($fall['mqtt']->events, 'licenseId'));
+    }
+
+    public function testUpdatingTheOwnerAnnouncesTheActiveFallAgain(): void
+    {
+        $fall = $this->radarWithAFallAnnounced();
+        $this->db->models->add($this->db->suppliers->create('Qinglanst'), 'HC2', 'HC2', 'radar');
+
+        $result = $fall['service']->update(self::RADAR, new DeviceWriteRequest(
+            supplier: 'Qinglanst',
+            model: 'HC2',
+            licenseId: 2002,
+            deviceId: self::RADAR_UID,
+            company: 'other',
+        ));
+        $fall['frame']();
+
+        self::assertSame('ok', $result['status'] ?? null);
+        self::assertSame([1001, 2002], array_column($fall['mqtt']->events, 'licenseId'));
+    }
+
+    /** @return array{service: DeviceService, mqtt: RecordingHubMqttBridge, frame: \Closure(): void} */
+    private function radarWithAFallAnnounced(): array
+    {
+        $this->db->companies->create('other');
+        $whitelist = IngressFixtures::whitelist([self::RADAR => IngressFixtures::radar() + ['deviceId' => self::RADAR_UID]]);
+        $mqtt = new RecordingHubMqttBridge();
+        $bridge = new QinglanstBridge(new FakeMqttSubscriber(), $whitelist, $mqtt, alarms: new ActiveAlarms($this->redis));
+        $fallen = array_fill(0, 16, 0);
+        [$fallen[0], $fallen[1], $fallen[2], $fallen[13]] = [1, 4, 5, 2];
+        $frame = static fn () => $bridge->handleReceivedMessage('radar/1001/' . self::RADAR_UID, json_encode([
+            'payload' => ['deviceCode' => self::RADAR_UID, 'position' => base64_encode(implode('', array_map('chr', $fallen)))],
+        ], JSON_THROW_ON_ERROR));
+
+        $frame();
+        $frame();
+        self::assertSame(['fall'], array_column($mqtt->events, 'type'));
+
+        return [
+            'service' => new DeviceService(new DeviceStore($this->redis), $whitelist, $this->hub, $this->db),
+            'mqtt' => $mqtt,
+            'frame' => $frame,
+        ];
     }
 
     private function mockDeviceAccess(string $imei, string $protocol, string $supplier, string $model): void

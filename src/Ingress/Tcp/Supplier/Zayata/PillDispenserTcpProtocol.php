@@ -9,11 +9,13 @@ use Hub\Device\DeviceEventDecoder;
 use Hub\Device\DeviceSession;
 use Hub\Device\Firmware\FirmwareUpgrade;
 use Hub\Device\Firmware\FirmwareUpgradeStore;
+use Hub\Domain\Liveness;
 use Hub\Ingress\Tcp\TcpProtocol;
 use Hub\Ingress\Tcp\TcpMessage;
 use Hub\Ingress\Tcp\TcpResponse;
 use Hub\Log\Logger;
 use Hub\Protocol\Adapter\DeviceAdapterInterface;
+use Hub\State\ActiveAlarms;
 
 /**
  * O M228 espera confirmação de cada pacote `0x01`–`0x04`: o mesmo tipo com o bit alto, a ecoar
@@ -23,9 +25,11 @@ final class PillDispenserTcpProtocol extends TcpProtocol
 {
     private const ACKNOWLEDGED_TYPES = ['register', 'heartbeat', 'event', 'change'];
 
-    // ponytail: em memória, por processo; um reinício volta a anunciar o que estiver aceso.
-    /** @var array<string, true> */
-    private array $activeConditions = [];
+    /**
+     * A chamada não vem no heartbeat nem diz quando acaba (seis minutos depois ainda estava
+     * acesa, docs/19): passado este prazo, uma pressão nova volta a sair.
+     */
+    private const HELP_CALL_TTL_SECONDS = 600;
 
     /**
      * O estado da actualização antes de a trama corrente o avançar, por aparelho.
@@ -38,6 +42,7 @@ final class PillDispenserTcpProtocol extends TcpProtocol
         DeviceAdapterInterface $adapter,
         DeviceEventDecoder $eventDecoder,
         private readonly ?FirmwareUpgradeStore $upgrades = null,
+        private readonly ActiveAlarms $alarms = new ActiveAlarms(),
     ) {
         parent::__construct($adapter, $eventDecoder);
     }
@@ -92,15 +97,12 @@ final class PillDispenserTcpProtocol extends TcpProtocol
         $tlv = is_array($message->decoded['tlv'] ?? null) ? $message->decoded['tlv'] : [];
         $raised = [];
         foreach (PillDispenserEventDecoder::conditions($tlv) as $condition => $active) {
-            $key = $session->imei . '|' . $condition;
-            if ($active && !isset($this->activeConditions[$key])) {
+            if ($active && $this->alarms->get($session->imei, $condition) === null) {
                 $raised[$condition] = true;
             }
-            if ($active) {
-                $this->activeConditions[$key] = true;
-            } else {
-                unset($this->activeConditions[$key]);
-            }
+            // O heartbeat renova o prazo das que repete: calado até se dar por desligado, volta a anunciar.
+            $ttl = $condition === 'help_call' ? self::HELP_CALL_TTL_SECONDS : Liveness::idleTimeout('zayata-m228') ?? 0;
+            $this->alarms->set($session->imei, $condition, $active ? '1' : null, $ttl);
         }
 
         $telemetry = array_values(array_filter(
@@ -122,7 +124,7 @@ final class PillDispenserTcpProtocol extends TcpProtocol
         // Retida a resposta, o aparelho repete o pacote: o que aqui se deu por anunciado ou enviado volta atrás.
         $withheld = function () use ($imei, $raised, $upgradeBefore): void {
             foreach (array_keys($raised) as $condition) {
-                unset($this->activeConditions[$imei . '|' . $condition]);
+                $this->alarms->set($imei, $condition, null, 0);
             }
             if ($upgradeBefore !== null) {
                 $this->upgrades?->save($imei, $upgradeBefore);

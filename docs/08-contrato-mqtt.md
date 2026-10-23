@@ -404,8 +404,11 @@ Um evento sai quando a condição **começa**, e não enquanto dura:
   Veepoo, dispensador). O `battery` na telemetria leva `lowBattery` sempre que o
   aparelho o diz.
 
-O estado vive em memória: um reinício do hub volta a anunciar o que estiver
-ativo. Quem consome a QoS 1 já tem de tolerar repetidos.
+O que já saiu fica no [Redis](14-persistencia.md#alarmes-que-duram), por
+aparelho: um reinício do hub não volta a anunciar o que continua ativo. Cada
+entrada tem prazo e renova-se com a repetição, e um aparelho calado para lá dele
+volta a anunciar o que trouxer. Mudar o dono do aparelho esquece-as, e o que
+estiver ativo sai de novo, no tópico do dono novo.
 
 ## 5. `status`
 
@@ -582,6 +585,7 @@ marcado com um comentário `hitcare:`.
 | `src/Domain/Capability/EventSeverity.php` | A `severity` de cada evento, carimbada no `HubMqttBridge::publishEvent` e no histórico |
 | `src/Device/LowBatteryTransitions.php` | O `low_battery` de quem repete a bandeira em cada leitura |
 | `src/Ingress/Mqtt/Qinglanst/ActiveDetections.php` | As detecções do radar que duram saem uma vez |
+| `src/State/ActiveAlarms.php` | O que já saiu dos alarmes que duram, no Redis e com prazo |
 | `src/Device/DeviceHubServer.php` | A escolha do canal na ingestão TCP, que pergunta ao `CapabilityCatalog::isEventType()` |
 | `src/Domain/Capability/CapabilityCatalog.php` | O `isEvent` de cada definição, que é quem decide o canal |
 | `src/Mqtt/BrokerSettings.php` · `ConnectionFactory.php` | Ligação, TLS, identificadores de cliente |

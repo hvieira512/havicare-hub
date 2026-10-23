@@ -172,7 +172,9 @@ esconde a queda da outra. Dentro da mesma pessoa, a postura ganha ao movimento.
 uma queda que se mantém um minuto eram sessenta eventos. A ponte guarda o que
 estava ativo na trama anterior do mesmo tipo e só publica o que é novo — a queda
 que começa, e não a que continua. Os valores medidos não contam para isto: uma
-frequência alta que passa de 130 para 134 é a mesma.
+frequência alta que passa de 130 para 134 é a mesma. O que estava ativo fica no
+[Redis](14-persistencia.md#alarmes-que-duram) e sobrevive a um reinício; cada
+trama renova-o por 150 s, o silêncio com que o radar se dá por desligado.
 
 **A área vem da planta.** O radar diz o número da área; o nome e o tipo são os
 da [planta sincronizada](#6-os-tipos-de-área-da-planta). Sem planta, o evento
