@@ -7,8 +7,10 @@ import { countLabel } from "../../i18n.js";
 
 /** A faixa do dia: uma coluna por dose, na ordem das horas do plano de medicação. */
 
-/** Os nove do protocolo, em `PillDispenserAdapter::ALARM_SLOTS`. O frontend não os partilha. */
-const ALARM_SLOTS = 9;
+/** Quantos alarmes o aparelho tem: o `limit` que a API declara para o plano. */
+function alarmSlots() {
+    return Number(state.selectedDetail?.capabilities?.reminders?.medication_reminders?._meta?.limit) || 0;
+}
 
 /** Três famílias de cor e não seis: o que correu bem, o que está a decorrer, e o que falhou. */
 const DOSE_BAND = {
@@ -24,10 +26,11 @@ const DOSE_BAND = {
 /** A hora de cada alarme, do plano efectivo: o desejado, o aparelho pode ainda não o ter. */
 function planHours() {
     const plans = state.selectedDetail?.effectiveConfigurations?.medication_reminders?.plans;
+    const slots = alarmSlots();
     const hours = new Map();
 
     medicationPlanTimes(plans).forEach((entry) => {
-        if (!entry.enabled || entry.slot < 1 || entry.slot > ALARM_SLOTS) {
+        if (!entry.enabled || entry.slot < 1 || entry.slot > slots) {
             return;
         }
         hours.set(
@@ -52,7 +55,8 @@ export function doseLabel(slot) {
 }
 
 export function medicationDoseStrip(alarms) {
-    if (!Array.isArray(alarms) || alarms.length < ALARM_SLOTS) {
+    const slots = alarmSlots();
+    if (slots === 0 || !Array.isArray(alarms) || alarms.length < slots) {
         return "";
     }
 
@@ -61,11 +65,11 @@ export function medicationDoseStrip(alarms) {
 
     // Uma dose é um slot que o plano marcou; sem plano, um slot que o aparelho reportou fora do
     // repouso.
-    const marked = Array.from({ length: ALARM_SLOTS }, (_unused, index) => index + 1)
+    const marked = Array.from({ length: slots }, (_unused, index) => index + 1)
         .filter((slot) => (hours.size > 0 ? hours.has(slot) : (bySlot.get(slot) || "idle") !== "idle"))
         .sort((left, right) => (hours.get(left) || "").localeCompare(hours.get(right) || "") || left - right);
 
-    const free = Array.from({ length: ALARM_SLOTS }, (_unused, index) => index + 1)
+    const free = Array.from({ length: slots }, (_unused, index) => index + 1)
         .filter((slot) => !marked.includes(slot));
 
     const columns = marked.map((slot) => {

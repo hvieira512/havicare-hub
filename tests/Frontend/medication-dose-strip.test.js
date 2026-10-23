@@ -34,8 +34,11 @@ const NINE = (overrides = {}) =>
 const strip = (data) =>
     parseFragment(uplinkCardContent("medication_alarm_status", data).body || "");
 
+/** Quantos alarmes o aparelho tem vem do `limit` do plano, que a API declara por modelo. */
+const capabilities = (limit = 9) => ({ reminders: { medication_reminders: { _meta: { limit } } } });
+
 beforeEach(() => {
-    state.selectedDetail = { effectiveConfigurations: { medication_reminders: PLAN } };
+    state.selectedDetail = { capabilities: capabilities(), effectiveConfigurations: { medication_reminders: PLAN } };
 });
 
 test("each scheduled dose is a column with its time", () => {
@@ -77,6 +80,15 @@ test("each dose's state goes in its column", () => {
     assert.match(doses[2].textContent, /[Ff]alhada/);
 });
 
+test("the number of alarms comes from the plan's limit", () => {
+    state.selectedDetail.capabilities = capabilities(4);
+
+    const four = strip({ takenCount: 0, missedCount: 0, alarms: NINE().slice(0, 4) });
+
+    assert.equal(four.querySelectorAll("[data-dose-slot]").length, 4);
+    assert.equal(four.querySelector("[data-dose-free]"), null, "os quatro estão marcados no plano");
+});
+
 test("unscheduled slots collapse into one", () => {
     const free = strip({ takenCount: 0, missedCount: 0, alarms: NINE() })
         .querySelector("[data-dose-free]");
@@ -91,7 +103,7 @@ test("unscheduled slots collapse into one", () => {
  * garantidamente disse.
  */
 test("without a synced plan, the column goes by alarm number", () => {
-    state.selectedDetail = {};
+    state.selectedDetail = { capabilities: capabilities() };
 
     const doses = strip({
         takenCount: 1,
