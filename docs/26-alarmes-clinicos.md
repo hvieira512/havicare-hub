@@ -13,10 +13,10 @@ escalar e fechar alertas é lógica de quem consome, e outro cliente pode querer
 outra; o que a Havicare faz está na secção 7, como escolha dela.
 
 O que o contrato garante é que cada medição clínica chega com um limiar decidido
-num sítio só, e que o fim de uma condição é publicado como facto, com um campo
-que diz o que acabou. O capítulo faz o inventário do que cada aparelho mede e do
-que já alarma sozinho, e propõe as configurações, os eventos, a persistência e o
-envelope.
+num sítio só, e que o fim de uma condição é publicado como facto, num tipo que
+diz o que acabou. O capítulo faz o inventário do que cada aparelho mede e do que
+já alarma sozinho, e propõe as configurações, os eventos e a persistência — sem
+campos novos no envelope.
 
 ## 1. A regra
 
@@ -497,18 +497,32 @@ seguinte, que pode vir daqui a uma hora.
 
 O hub é um normalizador: publica factos, cada um com a sua gravidade. O que se
 faz com eles — juntar repetições, escalar, fechar — é lógica de quem consome, e
-outro cliente pode querer outra. O contrato não tem ciclo de vida de alertas;
-tem um envelope, e um campo que diz que uma coisa acabou.
+outro cliente pode querer outra. O contrato não tem ciclo de vida de alertas nem
+campos novos no envelope: tem tipos que dizem que uma coisa acabou, e uma tabela
+que diz qual.
 
-### O envelope
+### Que evento acaba qual
 
-Os eventos do canal `events` levam:
+**A regra:** `{type}_cleared` acaba o `{type}`. Os fins novos têm tipo próprio,
+e quem filtra pelo `type` sem os conhecer — o hitCare, um painel — ignora-os, que
+é a falha segura. Não levam `severity`: um fim não é grave nem deixa de ser.
 
-| Campo | O que é |
-|---|---|
-| `type`, `occurredAt`, `device`, `data` | Como hoje |
-| `severity` | `alarm` · `alert` · `info`: a classificação do hub **deste** facto. **Ausente** num evento que acaba alguma coisa: um fim não é grave nem deixa de ser |
-| `clears` | O `type` que este evento acaba, ao nível de topo. Só nos eventos que acabam alguma coisa |
+**Os pares que já existem** guardam o nome e a gravidade que têm, e o contrato
+diz o que acabam:
+
+| Este evento | Acaba | Com o mesmo campo do `data` |
+|---|---|---|
+| `device.connected` | `device.disconnected` | — |
+| `zone_entry` com `zone: geofence` | `zone_exit` com `zone: geofence` | — |
+| `reset` do NCS | `help_call` | `pagerId` |
+| `change_required` | `check_required` | — |
+| `medication_intake` com `result: "abnormal"` | `dose_missed` | `slot` e `doseDate` |
+
+Num `{type}_cleared` vai o mesmo campo do `data` que distingue o `{type}`, quando
+há (o `fault` do `device_fault`, por exemplo).
+
+O resto do envelope fica como hoje: `type`, `occurredAt`, `device`, `data` e a
+`severity`.
 
 **Os repetidos da QoS 1** reconhece-os quem consome pela chave dispositivo +
 `type` + `occurredAt`, mais o campo do `data` que distingue quando há
@@ -516,21 +530,6 @@ Os eventos do canal `events` levam:
 mesmo `type` no mesmo segundo e no mesmo dispositivo juntam-se num — o
 `occurredAt` é ao segundo, e uma rajada de toques da W6B por um gateway que envia
 em lote dá isso, com a contagem no `presses`.
-
-Os fins novos têm tipo próprio, `{type}_cleared`: quem filtra pelo `type` sem
-conhecer o `clears` — o hitCare, um painel — ignora-os, que é a falha segura. Os
-pares que já existem guardam o nome e ganham só o campo:
-
-| Evento | `clears` | Com o mesmo campo do `data` |
-|---|---|---|
-| `{type}_cleared` | `{type}` | o da condição, quando há (abaixo) |
-| `device.connected` | `device.disconnected` | — |
-| `zone_entry` com `zone: geofence` | `zone_exit` | — |
-| `reset` do NCS | `help_call` | `pagerId` |
-| `medication_intake` com `result: "abnormal"` | `dose_missed` | `slot` e `doseDate` |
-
-Nos pares, a `severity` mantém-se a que o evento já tinha (`info`): são factos
-próprios que, além disso, acabam outro.
 
 ### Um exemplo
 
@@ -571,7 +570,6 @@ novo. O 96 está no intervalo com a margem (≥ 95):
 ```json
 {
   "type": "blood_oxygen_low_cleared",
-  "clears": "blood_oxygen_low",
   "occurredAt": "2026-10-23T03:45:00Z",
   "device": { "id": "861265061009822", "supplier": "4P Touch", "model": "D41" },
   "data": { "spo2Percent": 96 },
@@ -604,8 +602,8 @@ O bit muda, e publica-se o fim, também quando deixa de haver quem vigie:
 
 Uma frequência que salta de 130 para 45 entre duas leituras publica
 `heart_rate_high_cleared` e `heart_rate_low`, com o mesmo `occurredAt`. A fralda
-que passa de húmida a suja publica `check_required_cleared` e `change_required`:
-o fim do alerta e o alarme novo, cada um com o seu tipo e um só sentido.
+que passa de húmida a suja publica só o `change_required`, que pela tabela acima
+acaba o `check_required`.
 
 ### Fins perdidos
 
@@ -618,8 +616,8 @@ está ativo agora» por dispositivo, a partir do mesmo bit.
 
 Escolha dela, e não contrato: qualquer evento quer dizer que aconteceu alguma
 coisa, e abre um alerta ou junta-se ao aberto do mesmo dispositivo e `type`; um
-evento com `clears` fecha sozinho o alerta aberto de (dispositivo, `clears`) —
-nos casos da tabela abaixo, com o mesmo campo do `data`. A subida de alerta para alarme chega-lhe como
+evento que acaba outro, pela tabela «Que evento acaba qual», fecha sozinho o
+alerta aberto desse outro, com o mesmo campo do `data` quando há. A subida de alerta para alarme chega-lhe como
 mais um evento do mesmo `type`, e é uma repetição com gravidade maior. Outro
 consumidor pode fazer outra coisa com os mesmos factos.
 
@@ -681,7 +679,7 @@ de pé e o aparelho é que deixou de ser ouvido — saiu do alcance, ficou sem b
 | as condições da regra do hub | `{type}_cleared` | A leitura dentro do intervalo, com a margem (secção 6) |
 | `zone_exit` com `zone: geofence` | `zone_entry` com `zone: geofence` | `safe_zones` |
 | `device.disconnected` | `device.connected` | O ciclo de vida de hoje |
-| `check_required` | `check_required_cleared` | A fralda fica limpa, ou passa a muda |
+| `check_required` | `check_required_cleared`, ou o `change_required` | A fralda fica limpa, ou passa a muda |
 | `change_required` | `change_required_cleared` | O `diaper_condition` volta a `clean` |
 | `low_battery` | `low_battery_cleared` | A bandeira apaga (`LowBatteryTransitions`); no MKGW4, que só manda o alarme, não há fim |
 | `device_fault` | `device_fault_cleared`, com o mesmo `data.fault` | O dispensador dá a avaria por apagada |
@@ -702,9 +700,9 @@ Da primeira revisão:
 | | Proposta da Havicare | Aqui |
 |---|---|---|
 | a | `device.disconnected` com `alert`, acabado pelo `device.connected` | **Adotado**, com `info` nos aparelhos que se desligam a cada medição |
-| b | Um campo, `clears`, em todo o fim | **Adotado**, ao nível de topo. **Recusado** o fim com o mesmo `type` da abertura: os fins novos têm tipo próprio |
+| b | Um campo, `clears`, em todo o fim | **Retirado** por decisão do Hugo: o nome `{type}_cleared` e a tabela dos pares dizem o mesmo. **Recusado** o fim com o mesmo `type` da abertura |
 | c | `device_state` da Wonlex a `info` | **Adotado** |
-| d | `change_required` acaba o `check_required` | **Adotado**, como dois eventos: `check_required_cleared` e `change_required` |
+| d | `change_required` acaba o `check_required` | **Adotado**, como par na tabela |
 | — | `dose_missed` por dose, acabado pela toma tardia | **Adotado**, com o `abnormal` — e não o `late` — como fim: no M228 o `late` é a toma depois do aviso e antes de a dose falhar |
 | — | Cercas como configuração do hub, com `zone_exit` e `zone_entry` | **Adotado** (`safe_zones`) |
 
@@ -713,7 +711,7 @@ Da segunda, depois da decisão do Hugo de manter o hub como normalizador:
 | | Pedido | Aqui |
 |---|---|---|
 | 0 | O fim é um facto, e não uma ordem | **Adotado** |
-| 1, 2, 5, 7, 10 | Identidade da condição, fase, ressincronização, prova, versão | **Retirados**: são ciclo de vida de alertas, lógica de quem consome. Sobra o `clears` |
+| 1, 2, 5, 7, 10 | Identidade da condição, fase, ressincronização, prova, versão | **Retirados**: são ciclo de vida de alertas, lógica de quem consome |
 | 3 | Instantes marcados | Não é preciso: um instante é o que nunca terá `_cleared` (tabela da secção 7) |
 | 4 | Motivo do fim | **Retirado**; o hub publica o fim também quando os limites mudam, se desligam, ou o dispositivo muda de dono |
 | 6 | Duplicados | Sem campo novo: quem consome usa dispositivo + `type` + `occurredAt` (secção 7) |
@@ -751,11 +749,10 @@ Cada mudança, e o que pede a quem já consome:
 
 | Mudança | Onde | Para quem já consome |
 |---|---|---|
-| `clears` nos eventos que acabam alguma coisa, incluindo o `device.connected` e o `reset` do NCS | todas | Acrescento ao envelope; ignorável |
 | `device.disconnected` de um aparelho retransmitido ganha `data.gatewayId` e, com o gateway em baixo, `data.cause` | pulseiras e sensores de fralda do hitCare | Os eventos de ciclo de vida não levavam `data`: **coordenar**, junto com a linha seguinte |
 | `device.disconnected` e `device.connected` ganham `severity` | todas, incluindo NCS, gateways e pulseiras do hitCare | Os eventos de ciclo de vida não a levavam: **coordenar** com o hitCare |
 | Tipos novos `{type}_cleared` | todas; no hitCare, `check_required_cleared`, `change_required_cleared`, `low_battery_cleared` | Um consumidor que rejeite tipos desconhecidos parte: **coordenar**. O contrato congelado da fralda garante os `type` existentes, não a ausência de novos ([17](17-sensor-de-fralda.md#4-o-contrato-congelado)) |
-| O `change_required` vindo de `attention` vem acompanhado do `check_required_cleared` | fralda | Um evento a mais com o mesmo `occurredAt`, de um tipo novo |
+| O `change_required` passa a acabar o `check_required`, pela tabela de pares | fralda | Nenhum evento nem campo novo: é documentação |
 | Gravidades que mudam (`apnea`, `weak_vital_signs`, `device_state`, `medication_*`, a frequência do radar) | radar, Wonlex, dispensador | Nenhuma destas famílias é do hitCare |
 | Os bits de cerca da 4P Touch deixam de sair | relógios 4P Touch | Não é do hitCare |
 | `heart_rate_alert` e `breath_rate_alert` do radar dão lugar a `*_limits` | API do radar | Quebra quem os escreve (pergunta 8) |

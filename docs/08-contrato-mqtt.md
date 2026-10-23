@@ -417,29 +417,26 @@ consome.
 pelo `PATCH /api/devices/{imei}/configurations`. O hub aplica-os à telemetria; no
 radar, que alarma sozinho, traduz-os para o limiar dele.
 
-**O envelope** dos eventos de `events`:
-
-| Campo | O que é |
-|---|---|
-| `type`, `occurredAt`, `device`, `data` | Como hoje |
-| `severity` | `alarm` · `alert` · `info`, do facto. **Ausente** num `{type}_cleared` |
-| `clears` | O `type` que o evento acaba, só nos que acabam alguma coisa |
-
-Os repetidos da QoS 1 reconhecem-se por dispositivo + `type` + `occurredAt`, mais o
-campo do `data` que distingue. Dois factos reais do mesmo `type` no mesmo segundo
-juntam-se num: o `occurredAt` é ao segundo.
+**O envelope fica como está**: nenhum campo novo. A `severity` falta só nos
+`{type}_cleared`. Os repetidos da QoS 1 reconhecem-se por dispositivo + `type` +
+`occurredAt`, mais o campo do `data` que distingue; dois factos reais do mesmo
+`type` no mesmo segundo juntam-se num, porque o `occurredAt` é ao segundo.
 
 Uma gravidade maior do mesmo facto (SpO2 de `alert` para `alarm`) é mais um evento
 do mesmo `type`. Descer de nível não publica nada.
 
-**O fim.** Os fins novos têm tipo próprio, `{type}_cleared`, com `clears` e sem
-`severity`. Os pares que já existem guardam o nome e ganham o `clears`:
-`device.connected` acaba o `device.disconnected`; o `zone_entry` da cerca, o
-`zone_exit`; o `reset` do NCS, o `help_call` do mesmo `data.pagerId`; o
-`medication_intake` com `result: "abnormal"`, o `dose_missed` do mesmo `slot` e
-`doseDate`. Um
-fim só sai depois de ter saído o que ele acaba. Um fim perdido na QoS 1 fica
-perdido, por agora.
+**Que evento acaba qual.** `{type}_cleared` acaba o `{type}`, sem `severity`, e só
+sai depois de ter saído o que acaba. Os pares que já existem:
+
+| Este evento | Acaba | Com o mesmo campo do `data` |
+|---|---|---|
+| `device.connected` | `device.disconnected` | — |
+| `zone_entry` com `zone: geofence` | `zone_exit` com `zone: geofence` | — |
+| `reset` do NCS | `help_call` | `pagerId` |
+| `change_required` | `check_required` | — |
+| `medication_intake` com `result: "abnormal"` | `dose_missed` | `slot` e `doseDate` |
+
+Um fim perdido na QoS 1 fica perdido, por agora.
 
 **Vários do mesmo tipo.** Quando um dispositivo representa várias coisas, o que
 as distingue já está no `data`: `pagerId` no NCS, `personIndex` no radar,
@@ -462,7 +459,7 @@ Regras de gravidade que mudam:
 | `device_state` | `alert` | `info` |
 | `medication_alarm_change` · `medication_intake` | `alert` numa dose falhada ou toma anormal | `info`; a dose falhada passa a `dose_missed` |
 | `device.disconnected` | sem `severity` | `alert`; `info` nos aparelhos que só se ligam para medir |
-| `device.connected` | sem `severity` | `info`, com `clears: "device.disconnected"` |
+| `device.connected` | sem `severity` | `info`; acaba o `device.disconnected` |
 
 Tipos novos:
 
@@ -477,8 +474,8 @@ Tipos novos:
 A cerca passa a ser configuração do hub (`safe_zones`), e os bits de cerca da 4P
 Touch deixam de ser publicados.
 
-Nenhuma gravidade nem nenhum `type` que o hitCare lê muda. O `clears` é
-acrescento; os `{type}_cleared` são tipos novos, e a
+Nenhuma gravidade nem nenhum `type` que o hitCare lê muda. Os `{type}_cleared`
+são tipos novos, e a
 `severity` e o `data` nos `device.*` vão coordenados com ele (ver
 [«Pendente do hitCare»](#pendente-do-hitcare) e a secção 10 do
 [capítulo 26](26-alarmes-clinicos.md#10-o-hitcare-e-a-compatibilidade)).
