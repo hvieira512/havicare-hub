@@ -9,6 +9,7 @@ use Hub\Api\Request\RequestBinder;
 use GuzzleHttp\Psr7\ServerRequest;
 use Hub\Infrastructure\Persistence\Repository\ApiDataAccess;
 use Hub\Api\Services\ModelService;
+use Hub\Domain\ProtocolRegistry;
 use Hub\Domain\SupplierCapabilityTemplate;
 use Tests\Support\MysqlDashboardTestCase;
 
@@ -351,7 +352,7 @@ final class ModelsApiTest extends MysqlDashboardTestCase
         self::assertSame('ok', $result['status'] ?? null);
         $model = $db->models->find('4P Touch', 'D46-PLUS');
         self::assertIsArray($model);
-        $expected = SupplierCapabilityTemplate::keysForSupplierDeviceType('4P Touch', 'watch');
+        $expected = SupplierCapabilityTemplate::keysForProtocol(ProtocolRegistry::forSupplier('4P Touch', 'watch'), 'watch');
         $actual = $db->modelCapabilities->enabledFeaturesForModelId((int)$model['id']);
         sort($expected);
         sort($actual);

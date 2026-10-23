@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Integration\Dashboard;
 
 use Hub\Infrastructure\Persistence\Repository\ApiDataAccess;
+use Hub\Domain\ProtocolRegistry;
 use Hub\Domain\SupplierCapabilityTemplate;
 use Hub\Infrastructure\Persistence\ReferenceCatalogSeeder;
 use Tests\Support\MysqlDashboardTestCase;
@@ -23,7 +24,7 @@ final class DatabaseStoreTest extends MysqlDashboardTestCase
         self::assertIsArray($model);
         self::assertSame('R05', $model['commercial_name'] ?? null);
         self::assertSame('watch', $model['device_type'] ?? null);
-        $expected = SupplierCapabilityTemplate::keysForSupplierDeviceType('Vivistar', 'watch');
+        $expected = SupplierCapabilityTemplate::keysForProtocol(ProtocolRegistry::forSupplier('Vivistar', 'watch'), 'watch');
         $actual = $db->modelCapabilities->enabledFeaturesForModelId((int)$model['id']);
         sort($expected);
         sort($actual);
