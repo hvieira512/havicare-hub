@@ -25,7 +25,7 @@ final class NamedTimeZoneFollowerTest extends DashboardHttpTestCase
         });
         [$server, $db, $store] = $this->makeServerWithDatabase($hub);
         $db->whitelist->register(self::IMEI, 'Zayata', 'M228', 'pill_dispenser', 1001, '', '', 'hitcare');
-        $store->registerDevice(self::IMEI, 'Zayata', 'M228', 'pill_dispenser', 1001, '', '', 'hitcare');
+        $store->runtime->registerDevice(self::IMEI, 'Zayata', 'M228', 'pill_dispenser', 1001, '', '', 'hitcare');
         $model = $db->models->find('Zayata', 'M228');
         self::assertIsArray($model);
         $db->modelCapabilities->replaceForModelId((int)$model['id'], ['time_zone', 'calibrate_clock']);

@@ -61,7 +61,7 @@ final class DeviceDetailApiTest extends MysqlDashboardTestCase
     {
         [$api, $db, $store] = $this->makeApi();
         $db->whitelist->register('bea6c3dd8e02', 'Voerka', 'W812', 'ncs', 0, '', 'bea6c3dd8e02');
-        $store->registerDevice('bea6c3dd8e02', 'Voerka', 'W812', 'ncs', 1001, '', '', 'hitcare');
+        $store->runtime->registerDevice('bea6c3dd8e02', 'Voerka', 'W812', 'ncs', 1001, '', '', 'hitcare');
 
         $response = $api->show('bea6c3dd8e02', null, '');
 
@@ -83,7 +83,7 @@ final class DeviceDetailApiTest extends MysqlDashboardTestCase
         $model = $db->models->find('4P Touch', 'D46');
 
         self::assertIsArray($model);
-        $store->registerDevice('864293000000222', '4P Touch', 'D46', 'watch', 1001, '', '', 'hitcare');
+        $store->runtime->registerDevice('864293000000222', '4P Touch', 'D46', 'watch', 1001, '', '', 'hitcare');
         $db->modelCapabilities->replaceForModelId((int)$model['id'], ['alarm_clock', 'phonebook']);
 
         $response = $api->show('864293000000222', null, '');
@@ -126,7 +126,7 @@ final class DeviceDetailApiTest extends MysqlDashboardTestCase
         $model = $db->models->find('4P Touch', 'D46');
 
         self::assertIsArray($model);
-        $store->registerDevice('861728087060467', '4P Touch', 'D46', 'watch', 1001, '', '', 'hitcare');
+        $store->runtime->registerDevice('861728087060467', '4P Touch', 'D46', 'watch', 1001, '', '', 'hitcare');
         $db->modelCapabilities->replaceForModelId((int)$model['id'], ['sos_contacts']);
         ConfigurationFixtures::desired(
             $db,
@@ -164,7 +164,7 @@ final class DeviceDetailApiTest extends MysqlDashboardTestCase
         $model = $db->models->find('4P Touch', 'D46');
 
         self::assertIsArray($model);
-        $store->registerDevice('637507597567372', '4P Touch', 'D46', 'watch', 1001, '', '', 'hitcare');
+        $store->runtime->registerDevice('637507597567372', '4P Touch', 'D46', 'watch', 1001, '', '', 'hitcare');
         $db->modelCapabilities->replaceForModelId((int)$model['id'], ['call_whitelist']);
         ConfigurationFixtures::desired(
             $db,
@@ -201,7 +201,7 @@ final class DeviceDetailApiTest extends MysqlDashboardTestCase
         $model = $db->models->find('4P Touch', 'D46');
 
         self::assertIsArray($model);
-        $store->registerDevice('637507597567372', '4P Touch', 'D46', 'watch', 1001, '', '', 'hitcare');
+        $store->runtime->registerDevice('637507597567372', '4P Touch', 'D46', 'watch', 1001, '', '', 'hitcare');
         $db->modelCapabilities->replaceForModelId((int)$model['id'], ['call_whitelist']);
         ConfigurationFixtures::desired(
             $db,
@@ -441,7 +441,7 @@ final class DeviceDetailApiTest extends MysqlDashboardTestCase
         $model = $db->models->find('4P Touch', 'D46');
 
         self::assertIsArray($model);
-        $store->registerDevice('861728087060467', '4P Touch', 'D46', 'watch', 1001, '', '', 'hitcare');
+        $store->runtime->registerDevice('861728087060467', '4P Touch', 'D46', 'watch', 1001, '', '', 'hitcare');
         $db->modelCapabilities->replaceForModelId((int)$model['id'], [
             'location_reporting_interval',
             'fall_detection',
@@ -482,7 +482,7 @@ final class DeviceDetailApiTest extends MysqlDashboardTestCase
         $voiceData = base64_encode(str_repeat('audio', 20000));
 
         self::assertIsArray($model);
-        $store->registerDevice('868017032159118', '4P Touch', 'D46', 'watch', 1001, '', '', 'hitcare');
+        $store->runtime->registerDevice('868017032159118', '4P Touch', 'D46', 'watch', 1001, '', '', 'hitcare');
         $db->modelCapabilities->replaceForModelId((int)$model['id'], ['medication_reminders']);
         ConfigurationFixtures::desired(
             $db,
@@ -521,7 +521,7 @@ final class DeviceDetailApiTest extends MysqlDashboardTestCase
         $model = $db->models->find('Vivistar', 'L08 Pro');
 
         self::assertIsArray($model);
-        $store->registerDevice('861265061009822', 'Vivistar', 'L08 Pro', 'watch', 1001, '', '', 'hitcare');
+        $store->runtime->registerDevice('861265061009822', 'Vivistar', 'L08 Pro', 'watch', 1001, '', '', 'hitcare');
         $db->modelCapabilities->replaceForModelId((int)$model['id'], ['alarm_clock']);
         ConfigurationFixtures::desired(
             $db,
@@ -573,7 +573,7 @@ final class DeviceDetailApiTest extends MysqlDashboardTestCase
         $model = $db->models->find('4P Touch', 'D46');
 
         self::assertIsArray($model);
-        $store->registerDevice('868017032159118', '4P Touch', 'D46', 'watch', 1001, '', '', 'hitcare');
+        $store->runtime->registerDevice('868017032159118', '4P Touch', 'D46', 'watch', 1001, '', '', 'hitcare');
         $db->modelCapabilities->replaceForModelId((int)$model['id'], ['alarm_clock']);
         ConfigurationFixtures::desired(
             $db,
@@ -625,7 +625,7 @@ final class DeviceDetailApiTest extends MysqlDashboardTestCase
         $model = $db->models->find('Vivistar', 'L08 Pro');
 
         self::assertIsArray($model);
-        $store->registerDevice('861265061009822', 'Vivistar', 'L08 Pro', 'watch', 0, '', '', 'hitcare');
+        $store->runtime->registerDevice('861265061009822', 'Vivistar', 'L08 Pro', 'watch', 0, '', '', 'hitcare');
         $db->modelCapabilities->replaceForModelId((int)$model['id'], ['alarm_clock']);
         ConfigurationFixtures::desired(
             $db,

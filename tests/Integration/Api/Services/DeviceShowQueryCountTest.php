@@ -6,11 +6,12 @@ namespace Tests\Integration\Api\Services;
 
 use Hub\Infrastructure\Persistence\Repository\ApiDataAccess;
 use Hub\Api\Services\DeviceService;
-use Hub\State\DeviceStoreContract;
+use Hub\State\DeviceStore;
 use Hub\Device\DeviceHubServer;
 use Hub\Registry\Whitelist;
 use PDO;
 use PDOStatement;
+use Tests\Support\Doubles\InMemoryRedisClient;
 use Tests\Support\MysqlDashboardTestCase;
 
 /** Quantas vezes o detalhe de um dispositivo o vai buscar. É o ecrã mais aberto da dashboard. */
@@ -29,7 +30,7 @@ final class DeviceShowQueryCountTest extends MysqlDashboardTestCase
         $whitelist->register($imei, 'Vivistar', 'L08 Pro', 'watch', 1001, '', $imei, 'hitcare');
 
         $service = new DeviceService(
-            $this->createStub(DeviceStoreContract::class),
+            new DeviceStore(new InMemoryRedisClient()),
             $whitelist,
             $this->createStub(DeviceHubServer::class),
             $db,

@@ -84,7 +84,7 @@ final class HubServices
         );
 
         $lifecycleEvents = new LifecycleEvents($mqttBridge, $whitelist, $commercialModelResolver);
-        $deviceStore->announceCommandsTo($lifecycleEvents->command(...));
+        $deviceStore->commands->announceTo($lifecycleEvents->command(...));
         $dataAccess->deviceConfigurations->announceOutcomesTo($lifecycleEvents->configuration(...));
 
         $locationEnricher = LocationEnricherFactory::create(

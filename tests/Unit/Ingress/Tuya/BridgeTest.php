@@ -115,7 +115,7 @@ final class BridgeTest extends TestCase
 
         self::assertSame(['online', 'idle'], array_column(array_column($this->mqtt->statuses, 'payload'), 'state'));
         self::assertSame(['device.connected'], array_column(array_column($this->events(), 'payload'), 'type'));
-        self::assertTrue($this->store->device(self::BUTTON)['online']);
+        self::assertTrue($this->store->runtime->device(self::BUTTON)['online']);
     }
 
     public function testTheNextWakeUpIsOnlineAgainWithoutAConnect(): void
@@ -135,7 +135,7 @@ final class BridgeTest extends TestCase
         $this->redis->zadd(RedisKeys::onlineDevices(), [self::BUTTON => time() - 2 * 28800 - 30]);
         $this->bridge->handleReceivedMessage('', $this->frame($this->offline()));
 
-        self::assertSame([self::BUTTON], $this->store->expireStaleDevices());
+        self::assertSame([self::BUTTON], $this->store->runtime->expireStaleDevices());
     }
 
     public function testAHandledMessageIsAcknowledged(): void

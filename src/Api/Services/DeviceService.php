@@ -14,7 +14,7 @@ use Hub\Infrastructure\Persistence\Repository\ApiDataAccess;
 use Hub\Api\Request\DeviceWriteRequest;
 use Hub\Domain\Capability\CapabilityCatalog;
 use Hub\Domain\Capability\CapabilityRegistry;
-use Hub\State\DeviceStoreContract;
+use Hub\State\DeviceStore;
 use Hub\State\DeviceUpdateNotifier;
 use Hub\Domain\DeviceMetadata;
 use Hub\Domain\DeviceTypeCatalog;
@@ -42,7 +42,7 @@ class DeviceService
     public readonly DeviceFeatureRequestService $featureRequests;
 
     public function __construct(
-        private DeviceStoreContract $store,
+        private DeviceStore $store,
         private Whitelist $whitelist,
         private DeviceHubServer $hub,
         private ApiDataAccess $db,
@@ -60,10 +60,10 @@ class DeviceService
             $this->db,
             $this->capabilityRegistry,
         );
-        $this->associations = new DeviceAssociationService($this->store, $this->whitelist, $this->db, $this->hub);
+        $this->associations = new DeviceAssociationService($this->store->runtime, $this->whitelist, $this->db, $this->hub);
         $this->capabilities = new DeviceCapabilityPresenter($this->capabilityRegistry, $this->db);
         $this->configurationSync = new ConfigurationSyncStatus();
-        $this->directory = new DeviceDirectory($this->store, $this->whitelist, $this->db);
+        $this->directory = new DeviceDirectory($this->store->runtime, $this->whitelist, $this->db);
         $this->lifecyclePresenter = new ConfigurationLifecyclePresenter(
             $this->db->deviceConfigurations,
             $this->capabilities,
@@ -71,6 +71,7 @@ class DeviceService
         );
         $this->featureRequests = new DeviceFeatureRequestService(
             $this->store,
+            $this->store->commands,
             $this->hub,
             $this->db,
             $this->capabilityRegistry,
@@ -114,13 +115,13 @@ class DeviceService
         // agora; desligados, os que falharam; quem dorme ou espera a próxima leitura fica fora dos dois.
         $queryFilters = $filters;
         if ($online === true) {
-            $queryFilters['imeiIn'] = $this->store->reachableDeviceImeis();
+            $queryFilters['imeiIn'] = $this->store->runtime->reachableDeviceImeis();
         } elseif ($online === false) {
-            $queryFilters['imeiNotIn'] = [...$this->store->onlineDeviceImeis(), ...$this->onDemandImeis()];
+            $queryFilters['imeiNotIn'] = [...$this->store->runtime->onlineDeviceImeis(), ...$this->onDemandImeis()];
         }
 
         $result = $this->db->whitelist->listPage($queryFilters, $page, $limit, $licenseScope, $companyScope);
-        $runtimeStates = $this->store->runtimeStates(array_map(
+        $runtimeStates = $this->store->runtime->runtimeStates(array_map(
             static fn (array $device): string => (string)($device['imei'] ?? ''),
             $result['items']
         ));
@@ -164,7 +165,7 @@ class DeviceService
         return [
             'total' => $this->db->whitelist->countDevices([], $licenseScope, $companyScope),
             'online' => $this->db->whitelist->countDevices(
-                ['imeiIn' => $this->store->reachableDeviceImeis()],
+                ['imeiIn' => $this->store->runtime->reachableDeviceImeis()],
                 $licenseScope,
                 $companyScope
             ),
@@ -257,7 +258,7 @@ class DeviceService
             if ($relayedKey === '' || $gatewayKey === '') {
                 continue;
             }
-            $byDevice[$relayedKey] ??= $this->store->gatewaySightings($relayedKey);
+            $byDevice[$relayedKey] ??= $this->store->runtime->gatewaySightings($relayedKey);
             $sighting = $byDevice[$relayedKey][$gatewayKey] ?? null;
             if (is_array($sighting)) {
                 $links[$index] += [
@@ -265,7 +266,7 @@ class DeviceService
                     'signalSeenAt' => (string)($sighting['lastSeenAt'] ?? ''),
                 ];
             }
-            $candidates[$relayedKey] ??= $this->store->proximityAlarmCandidates($relayedKey);
+            $candidates[$relayedKey] ??= $this->store->runtime->proximityAlarmCandidates($relayedKey);
             $links[$index]['proximityAlarmCandidateAt'] = $candidates[$relayedKey][$gatewayKey] ?? null;
             $links[$index]['image'] = $this->modelImage(
                 $this->directory->modelForSupplierAndName((string)($link['supplier'] ?? ''), (string)($link['model'] ?? '')),
@@ -433,7 +434,7 @@ class DeviceService
         $deviceId = $this->directory->normalizeDeviceId($imei, $supplier, $model, $deviceType, $deviceId);
         // Redis primeiro, inventário a seguir: uma entrada a mais na projecção é invisível, e a ordem
         // contrária deixaria na lista um dispositivo que a dashboard não conhece.
-        $this->store->registerDevice($imei, $supplier, $model, $deviceType, $licenseId, $simNumber, $deviceId, $company);
+        $this->store->runtime->registerDevice($imei, $supplier, $model, $deviceType, $licenseId, $simNumber, $deviceId, $company);
         try {
             $this->whitelist->register($imei, $supplier, $model, $deviceType, $licenseId, $simNumber, $deviceId, $company);
         } catch (\Throwable $e) {
@@ -518,7 +519,7 @@ class DeviceService
         if ($newImei !== $imei) {
             $this->whitelist->rename($imei, $newImei);
         }
-        $this->store->registerDevice($newImei, $supplier, $model, $deviceType, $licenseId, $simNumber, $deviceId, $company);
+        $this->store->runtime->registerDevice($newImei, $supplier, $model, $deviceType, $licenseId, $simNumber, $deviceId, $company);
         $this->whitelist->register($newImei, $supplier, $model, $deviceType, $licenseId, $simNumber, $deviceId, $company);
         if ($newImei !== $imei) {
             $this->store->deleteDevice($imei);
@@ -604,15 +605,15 @@ class DeviceService
         $connectionsSince = max(0, (int)($since['connections'] ?? 0));
 
         return [
-            'telemetry' => self::withObjectData($this->store->recent($imei, 'telemetry', $telemetrySince)),
-            'latestTelemetry' => self::withObjectData($this->store->latestOfEachType($imei, 'telemetry')),
-            'events' => self::withObjectData($this->store->recent($imei, 'events', $eventsSince)),
-            'connections' => $this->store->recent($imei, 'connections', $connectionsSince),
-            'commands' => $this->store->commands($imei),
+            'telemetry' => self::withObjectData($this->store->events->recent($imei, 'telemetry', $telemetrySince)),
+            'latestTelemetry' => self::withObjectData($this->store->events->latestOfEachType($imei, 'telemetry')),
+            'events' => self::withObjectData($this->store->events->recent($imei, 'events', $eventsSince)),
+            'connections' => $this->store->events->recent($imei, 'connections', $connectionsSince),
+            'commands' => $this->store->commands->commands($imei),
             'cursor' => [
-                'telemetry' => $this->store->latestSequence($imei, 'telemetry'),
-                'events' => $this->store->latestSequence($imei, 'events'),
-                'connections' => $this->store->latestSequence($imei, 'connections'),
+                'telemetry' => $this->store->events->latestSequence($imei, 'telemetry'),
+                'events' => $this->store->events->latestSequence($imei, 'events'),
+                'connections' => $this->store->events->latestSequence($imei, 'connections'),
             ],
             // Quantas entradas o histórico guarda, para o cliente aparar a lista ao juntar
             // uma diferença sem ter de adivinhar o limite do servidor.

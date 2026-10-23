@@ -22,7 +22,7 @@ final class CommandOutcomeAnnouncementTest extends TestCase
     {
         $this->store = new DeviceStore(new InMemoryRedisClient());
         $this->store->deviceSeen(self::DEVICE, ['deviceType' => 'watch', 'online' => '1']);
-        $this->store->announceCommandsTo(function (string $imei, string $type, array $command): void {
+        $this->store->commands->announceTo(function (string $imei, string $type, array $command): void {
             $this->announced[] = [$type, (string)$command['id'], (string)($command['error'] ?? '')];
         });
         $this->store->recordCommand(self::DEVICE, 'c-1', ['status' => 'waiting', 'nativeType' => 'BP84', 'sentAt' => '2026-10-20T09:00:00Z']);

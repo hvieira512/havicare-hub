@@ -99,7 +99,7 @@ final class MedicationNamesTest extends MysqlDashboardTestCase
     {
         [$api, $db, $store] = $this->makeApi(hub: $this->recordingHub($submitted));
         $db->whitelist->register(self::IMEI, 'Zayata', 'M228', 'pill_dispenser');
-        $store->registerDevice(self::IMEI, 'Zayata', 'M228', 'pill_dispenser');
+        $store->runtime->registerDevice(self::IMEI, 'Zayata', 'M228', 'pill_dispenser');
         $model = $db->models->find('Zayata', 'M228');
         self::assertIsArray($model);
         $db->modelCapabilities->replaceForModelId((int)$model['id'], ['medication_reminders']);

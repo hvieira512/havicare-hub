@@ -9,7 +9,7 @@ use Hub\Api\Http\ApiError;
 use Hub\Api\Http\DevicePresentation;
 use Hub\Infrastructure\Persistence\Repository\ApiDataAccess;
 use Hub\Api\Request\DeviceAssociationRequest;
-use Hub\State\DeviceRegistry;
+use Hub\State\DeviceRuntimeStore;
 use Hub\Domain\DeviceMetadata;
 use Hub\Device\DeviceHubServer;
 use Hub\Registry\Whitelist;
@@ -17,7 +17,7 @@ use Hub\Registry\Whitelist;
 final class DeviceAssociationService
 {
     public function __construct(
-        private DeviceRegistry $store,
+        private DeviceRuntimeStore $store,
         private Whitelist $whitelist,
         private ApiDataAccess $db,
         private DeviceHubServer $hub,

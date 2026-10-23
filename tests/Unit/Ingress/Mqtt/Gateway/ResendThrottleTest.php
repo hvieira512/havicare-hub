@@ -86,7 +86,7 @@ final class ResendThrottleTest extends TestCase
         $store = new DeviceStore(new InMemoryRedisClient());
         $store->recordCommand('cfe908067329', 'c-1', ['status' => 'queued', 'nativeType' => 'weightUnit']);
         $announced = [];
-        $store->announceCommandsTo(static function (string $imei, string $type) use (&$announced): void {
+        $store->commands->announceTo(static function (string $imei, string $type) use (&$announced): void {
             $announced[] = $type;
         });
 

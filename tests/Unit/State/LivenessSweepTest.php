@@ -50,8 +50,8 @@ final class LivenessSweepTest extends TestCase
     {
         $this->seen(self::DEVICE, $protocol, 2 * $interval + 30);
 
-        self::assertSame([self::DEVICE], $this->store->expireStaleDevices());
-        self::assertFalse($this->store->device(self::DEVICE)['online']);
+        self::assertSame([self::DEVICE], $this->store->runtime->expireStaleDevices());
+        self::assertFalse($this->store->runtime->device(self::DEVICE)['online']);
     }
 
     #[DataProvider('intervals')]
@@ -59,8 +59,8 @@ final class LivenessSweepTest extends TestCase
     {
         $this->seen(self::DEVICE, $protocol, 2 * $interval + 28);
 
-        self::assertSame([], $this->store->expireStaleDevices());
-        self::assertTrue($this->store->device(self::DEVICE)['online']);
+        self::assertSame([], $this->store->runtime->expireStaleDevices());
+        self::assertTrue($this->store->runtime->device(self::DEVICE)['online']);
     }
 
     /** Adormecido continua alcançável: o prazo conta do último despertar, durma ou não. */
@@ -68,11 +68,11 @@ final class LivenessSweepTest extends TestCase
     {
         $this->seen(self::DEVICE, 'tuya-cloud', 28800 + 60);
         $this->store->deviceAsleep(self::DEVICE, true);
-        self::assertSame([], $this->store->expireStaleDevices());
+        self::assertSame([], $this->store->runtime->expireStaleDevices());
 
         $this->seen(self::DEVICE, 'tuya-cloud', 2 * 28800 + 30);
         $this->store->deviceAsleep(self::DEVICE, true);
-        self::assertSame([self::DEVICE], $this->store->expireStaleDevices());
+        self::assertSame([self::DEVICE], $this->store->runtime->expireStaleDevices());
     }
 
     public function testOnlyAnOnlineDeviceFallsAsleep(): void
@@ -101,7 +101,7 @@ final class LivenessSweepTest extends TestCase
     {
         $this->seen(self::DEVICE, $protocol, 120);
 
-        self::assertSame([self::DEVICE], $this->store->expireStaleDevices());
+        self::assertSame([self::DEVICE], $this->store->runtime->expireStaleDevices());
     }
 
     #[DataProvider('onDemandDevices')]
@@ -109,7 +109,7 @@ final class LivenessSweepTest extends TestCase
     {
         $this->seen(self::DEVICE, $protocol, 100);
 
-        self::assertSame([], $this->store->expireStaleDevices());
+        self::assertSame([], $this->store->runtime->expireStaleDevices());
     }
 
     /** Uma trama no meio da sessão prova-a viva, sem a voltar a abrir. */
@@ -119,7 +119,7 @@ final class LivenessSweepTest extends TestCase
 
         $this->store->deviceHeard(self::DEVICE);
 
-        self::assertSame([], $this->store->expireStaleDevices());
+        self::assertSame([], $this->store->runtime->expireStaleDevices());
     }
 
     public function testHearingAnOfflineDeviceDoesNotBringItBack(): void
@@ -129,8 +129,8 @@ final class LivenessSweepTest extends TestCase
 
         $this->store->deviceHeard(self::DEVICE);
 
-        self::assertFalse($this->store->device(self::DEVICE)['online']);
-        self::assertSame([], $this->store->onlineDeviceImeis());
+        self::assertFalse($this->store->runtime->device(self::DEVICE)['online']);
+        self::assertSame([], $this->store->runtime->onlineDeviceImeis());
     }
 
     public function testOnlyTheRequestedTypeIsExpired(): void
@@ -138,8 +138,8 @@ final class LivenessSweepTest extends TestCase
         $this->seen(self::DEVICE, 'qinglanst-radar', 3600, deviceType: 'radar');
         $this->seen(self::GATEWAY, 'moko-mkgw3', 3600, deviceType: 'gateway');
 
-        self::assertSame([self::DEVICE], $this->store->expireStaleDevices('radar'));
-        self::assertTrue($this->store->device(self::GATEWAY)['online']);
+        self::assertSame([self::DEVICE], $this->store->runtime->expireStaleDevices('radar'));
+        self::assertTrue($this->store->runtime->device(self::GATEWAY)['online']);
     }
 
     private function seen(string $key, string $protocol, int $silentSeconds, string $deviceType = 'watch'): void

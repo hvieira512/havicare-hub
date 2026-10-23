@@ -45,9 +45,9 @@ final class MaintenanceScheduler
                 );
                 $store->expireWaitingCommands($commandTimeout);
                 // Uma ligação TCP aberta decide-a o servidor, que a anuncia ao fechar o socket.
-                foreach ($store->expireStaleDevices(hasSession: $hubServer->isConnected(...)) as $imei) {
+                foreach ($store->runtime->expireStaleDevices(hasSession: $hubServer->isConnected(...)) as $imei) {
                     try {
-                        $connections->announce($imei, $services->commercialModelResolver->enrich($store->device($imei)), false);
+                        $connections->announce($imei, $services->commercialModelResolver->enrich($store->runtime->device($imei)), false);
                     } catch (\Throwable $e) {
                         $services->mqttBridge->logPublishFailure('hub', $imei, $e);
                     }
@@ -70,7 +70,7 @@ final class MaintenanceScheduler
                     $timeZones ??= new NamedTimeZoneFollower(
                         new DeviceService($store, $services->whitelist, $hubServer, $services->dataAccess),
                         $services->dataAccess->deviceConfigurations,
-                        static fn (): array => $store->onlineDeviceImeis(),
+                        static fn (): array => $store->runtime->onlineDeviceImeis(),
                     );
                     foreach ($timeZones->tick() as $imei) {
                         Logger::channel('hub')->info("Time zone offset rewritten IMEI={$imei}");

@@ -72,7 +72,11 @@ final class DeviceEventStore
         return $entries;
     }
 
-    /** @return list<array<string, mixed>> */
+    /**
+     * A última entrada de cada tipo, também as que já saíram da lista.
+     *
+     * @return list<array<string, mixed>>
+     */
     public function latestOfEachType(string $imei, string $list): array
     {
         $entries = array_map(

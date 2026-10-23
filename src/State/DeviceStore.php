@@ -20,9 +20,9 @@ final class DeviceStore implements DeviceStoreContract
     private array $withConnectionHistory = [];
 
     private ?ApiDataAccess $db = null;
-    private DeviceRuntimeStore $runtime;
-    private DeviceEventStore $events;
-    private DeviceCommandStore $commands;
+    public readonly DeviceRuntimeStore $runtime;
+    public readonly DeviceEventStore $events;
+    public readonly DeviceCommandStore $commands;
     private DeviceConfigurationProjection $projection;
 
     private DeviceUpdateNotifier $updates;
@@ -55,12 +55,6 @@ final class DeviceStore implements DeviceStoreContract
         return $this->updates;
     }
 
-    /** @param callable(string, string, array<string, mixed>): void $announce */
-    public function announceCommandsTo(callable $announce): void
-    {
-        $this->commands->announceTo($announce);
-    }
-
     public function setDataAccess(?ApiDataAccess $db): void
     {
         $this->db = $db;
@@ -88,28 +82,10 @@ final class DeviceStore implements DeviceStoreContract
         );
     }
 
-    public function registerDevice(
-        string $imei,
-        string $supplier,
-        string $model,
-        string $deviceType = 'watch',
-        int|string $licenseId = 0,
-        string $simNumber = '',
-        string $deviceId = '',
-        string $company = 'null'
-    ): void {
-        $this->runtime->registerDevice($imei, $supplier, $model, $deviceType, $licenseId, $simNumber, $deviceId, $company);
-    }
-
     public function deleteDevice(string $imei): void
     {
         $this->runtime->deleteDevice($imei);
         unset($this->withConnectionHistory[$imei]);
-    }
-
-    public function updateDeviceAssociation(string $imei, string $company, int $licenseId): void
-    {
-        $this->runtime->updateDeviceAssociation($imei, $company, $licenseId);
     }
 
     public function deviceSeen(string $imei, array $fields): bool
@@ -136,21 +112,9 @@ final class DeviceStore implements DeviceStoreContract
         $this->runtime->recordGatewaySighting($deviceKey, $gatewayKey, $rssiDbm);
     }
 
-    /** @return array<string, array<string, mixed>> */
-    public function gatewaySightings(string $deviceKey): array
-    {
-        return $this->runtime->gatewaySightings($deviceKey);
-    }
-
     public function recordProximityAlarmCandidate(string $deviceKey, string $gatewayKey): void
     {
         $this->runtime->recordProximityAlarmCandidate($deviceKey, $gatewayKey);
-    }
-
-    /** @return array<string, string> */
-    public function proximityAlarmCandidates(string $deviceKey): array
-    {
-        return $this->runtime->proximityAlarmCandidates($deviceKey);
     }
 
     public function deviceOffline(string $imei): bool
@@ -166,11 +130,6 @@ final class DeviceStore implements DeviceStoreContract
     public function deviceAsleep(string $imei, bool $asleep): bool
     {
         return $this->runtime->deviceAsleep($imei, $asleep);
-    }
-
-    public function reachableDeviceImeis(): array
-    {
-        return $this->runtime->reachableDeviceImeis();
     }
 
     public function append(string $imei, string $list, array $payload): void
@@ -270,54 +229,9 @@ final class DeviceStore implements DeviceStoreContract
         $this->updates->notifyAll();
     }
 
-    public function expireStaleDevices(?string $deviceType = null, ?\Closure $hasSession = null): array
-    {
-        return $this->runtime->expireStaleDevices($deviceType, $hasSession);
-    }
-
-    /**
-     * @return array<int, array<string, mixed>>
-     */
-    public function devices(): array
-    {
-        return $this->runtime->devices();
-    }
-
-    public function device(string $imei): array
-    {
-        return $this->runtime->device($imei);
-    }
-
-    /**
-     * @param list<string> $imeis
-     * @return array<string, array<string, mixed>>
-     */
-    public function runtimeStates(array $imeis): array
-    {
-        return $this->runtime->runtimeStates($imeis);
-    }
-
-    /**
-     * @return list<string>
-     */
-    public function onlineDeviceImeis(): array
-    {
-        return $this->runtime->onlineDeviceImeis();
-    }
-
     public function recent(string $imei, string $list, int $sinceSeq = 0): array
     {
         return $this->events->recent($imei, $list, $sinceSeq);
-    }
-
-    public function latestOfEachType(string $imei, string $list): array
-    {
-        return $this->events->latestOfEachType($imei, $list);
-    }
-
-    public function latestSequence(string $imei, string $list): int
-    {
-        return $this->events->latestSequence($imei, $list);
     }
 
     public function historyLimit(): int

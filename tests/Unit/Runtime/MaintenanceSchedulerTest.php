@@ -39,7 +39,7 @@ final class MaintenanceSchedulerTest extends TestCase
         $this->redis = new InMemoryRedisClient();
         $this->mqtt = new FailingMaintenanceMqttBridge();
         $this->store = new DeviceStore($this->redis);
-        $this->store->registerDevice(self::IMEI, 'Vivistar', 'VIVISTAR-CARE');
+        $this->store->runtime->registerDevice(self::IMEI, 'Vivistar', 'VIVISTAR-CARE');
         $this->hubServer = $this->recordingHubServer();
 
         MaintenanceScheduler::schedule($this->loop(), $this->services(), [
@@ -237,7 +237,7 @@ final class MaintenanceSchedulerTest extends TestCase
         $this->tick();
 
         self::assertSame([], $this->mqtt->events);
-        self::assertTrue($this->store->device(self::IMEI)['online']);
+        self::assertTrue($this->store->runtime->device(self::IMEI)['online']);
     }
 
     /** Depois de um reinício do hub, um relógio que não voltou não tem socket que o anuncie: anuncia-o a manutenção. */
