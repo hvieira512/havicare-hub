@@ -425,16 +425,16 @@ radar, que alarma sozinho, traduz-os para o limiar dele.
 Uma gravidade maior do mesmo facto (SpO2 de `alert` para `alarm`) é mais um evento
 do mesmo `type`. Descer de nível não publica nada.
 
-**Que evento acaba qual.** `{type}_cleared` acaba o `{type}`, sem `severity`, e só
-sai depois de ter saído o que acaba. Os pares que já existem:
+**Que evento acaba qual.** O hub publica `{type}_cleared`, sem `severity`, sempre
+que uma condição que reportou deixa de ser verdade, e mais nada: não decide que um
+evento acaba outro. Os pares existem só onde o aparelho reporta o fim numa
+mensagem sua:
 
 | Este evento | Acaba | Com o mesmo campo do `data` |
 |---|---|---|
 | `device.connected` | `device.disconnected` | — |
 | `zone_entry` com `zone: geofence` | `zone_exit` com `zone: geofence` | — |
 | `reset` do NCS | `help_call` | `pagerId` |
-| `change_required` | `check_required` | — |
-| `medication_intake` com `result: "abnormal"` | `dose_missed` | `slot` e `doseDate` |
 
 Um fim perdido na QoS 1 fica perdido, por agora.
 

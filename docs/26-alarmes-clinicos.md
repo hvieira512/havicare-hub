@@ -434,7 +434,7 @@ apneias repetidas, o caminho é uma contagem por hora no hub, e não o episódio
 |---|---|---|
 | `device_state` | `alert` | **`info`**. O desligar e a reposição de fábrica da Wonlex são factos; o que pede alguém é o aparelho calado, e esse é o `device.disconnected` que vem logo a seguir. Alertar nos dois era duplicar |
 | `medication_alarm_change` | `alert` numa dose falhada | **`info`** sempre. A dose falhada passa a ser o `dose_missed` |
-| `medication_intake` | `alert` com `abnormal` ou `missed` | **`info`** sempre. O `abnormal` — a toma depois de a dose ter sido dada como falhada ([19](19-dispensador-de-comprimidos.md)) — acaba o `dose_missed` |
+| `medication_intake` | `alert` com `abnormal` ou `missed` | **`info`** sempre. O `abnormal` é a toma depois de a dose ter sido dada como falhada ([19](19-dispensador-de-comprimidos.md)) |
 | `dose_missed` | — | **Novo**, `alert`: `slot`, `scheduledAt`, `doseDate`. Um por dose, quando ela é dada como falhada pela primeira via que chegar: a mudança do alarme para `missed`, `timed_out` ou `retrieval_timed_out`, ou a toma com `result: "missed"`. Hoje a mesma dose dá dois alertas |
 | `device.disconnected` | sem `severity` | **`alert`** nos aparelhos contínuos; **`info`** nos que só se ligam para medir (balança, tensiómetro, termómetro, oxímetro), que se desligam no fim de cada medição |
 | `device.connected` | sem `severity` | **`info`**, e diz que acabou o `device.disconnected` |
@@ -503,20 +503,20 @@ que diz qual.
 
 ### Que evento acaba qual
 
-**A regra:** `{type}_cleared` acaba o `{type}`. Os fins novos têm tipo próprio,
+**A regra:** o hub publica `{type}_cleared` sempre que uma condição que reportou
+deixa de ser verdade, seja porque for, e mais nada. Não decide que um evento acaba
+outro: isso é ciclo de vida de alertas, de quem consome. Os fins novos têm tipo próprio,
 e quem filtra pelo `type` sem os conhecer — o hitCare, um painel — ignora-os, que
 é a falha segura. Não levam `severity`: um fim não é grave nem deixa de ser.
 
-**Os pares que já existem** guardam o nome e a gravidade que têm, e o contrato
-diz o que acabam:
+**Os pares** existem só onde o próprio aparelho reporta o fim, numa mensagem sua.
+Guardam o nome e a gravidade que têm, e o contrato diz o que acabam:
 
 | Este evento | Acaba | Com o mesmo campo do `data` |
 |---|---|---|
 | `device.connected` | `device.disconnected` | — |
 | `zone_entry` com `zone: geofence` | `zone_exit` com `zone: geofence` | — |
 | `reset` do NCS | `help_call` | `pagerId` |
-| `change_required` | `check_required` | — |
-| `medication_intake` com `result: "abnormal"` | `dose_missed` | `slot` e `doseDate` |
 
 Num `{type}_cleared` vai o mesmo campo do `data` que distingue o `{type}`, quando
 há (o `fault` do `device_fault`, por exemplo).
@@ -601,9 +601,9 @@ O bit muda, e publica-se o fim, também quando deixa de haver quem vigie:
 ### Duas condições seguidas
 
 Uma frequência que salta de 130 para 45 entre duas leituras publica
-`heart_rate_high_cleared` e `heart_rate_low`, com o mesmo `occurredAt`. A fralda
-que passa de húmida a suja publica só o `change_required`, que pela tabela acima
-acaba o `check_required`.
+`heart_rate_high_cleared` e `heart_rate_low`, com o mesmo `occurredAt`. A fralda que passa
+de húmida a suja publica `check_required_cleared` — húmida deixou de ser verdade —
+e `change_required`. Se isso é um alerta ou dois, decide quem consome.
 
 ### Fins perdidos
 
@@ -639,8 +639,7 @@ já está no `data` de hoje, e fica onde está.
 
 Quem consome usa-os para não juntar o quarto 15 à chamada do quarto 12, e para
 casar um fim com o que ele acaba: um `reset` acaba o `help_call` do mesmo
-`pagerId`; um `medication_intake` `abnormal`, o `dose_missed` do mesmo `slot` e
-`doseDate`.
+`pagerId`, um `device_fault_cleared` o `device_fault` do mesmo `fault`.
 
 ### O desligado atrás de um gateway
 
@@ -679,17 +678,19 @@ de pé e o aparelho é que deixou de ser ouvido — saiu do alcance, ficou sem b
 | as condições da regra do hub | `{type}_cleared` | A leitura dentro do intervalo, com a margem (secção 6) |
 | `zone_exit` com `zone: geofence` | `zone_entry` com `zone: geofence` | `safe_zones` |
 | `device.disconnected` | `device.connected` | O ciclo de vida de hoje |
-| `check_required` | `check_required_cleared`, ou o `change_required` | A fralda fica limpa, ou passa a muda |
+| `check_required` | `check_required_cleared` | A fralda deixa de estar húmida: fica limpa, ou passa a muda |
 | `change_required` | `change_required_cleared` | O `diaper_condition` volta a `clean` |
 | `low_battery` | `low_battery_cleared` | A bandeira apaga (`LowBatteryTransitions`); no MKGW4, que só manda o alarme, não há fim |
 | `device_fault` | `device_fault_cleared`, com o mesmo `data.fault` | O dispensador dá a avaria por apagada |
 | `storage_environment` | `storage_environment_cleared` | Idem |
-| `dose_missed` | `medication_intake` com `result: "abnormal"`, com o mesmo `slot` e `doseDate` | A toma tardia da mesma dose |
 | `help_call` (NCS) | `reset`, com o mesmo `pagerId` | O `key` 0, 1 ou 2 da Voerka |
 
 **Não têm fim** os factos de um instante: `help_call` fora do NCS, `fall`,
 `proximity_alarm`, `apnea`, `heart_rate_abnormal`, `device_removed`, os
-`zone_entry`/`zone_exit` de divisão e de área, `device_state`, os `medication_*`.
+`zone_entry`/`zone_exit` de divisão e de área, `device_state`, os `medication_*`
+e o `dose_missed` — uma dose falhada continua a ser um facto, e a toma tardia
+sai como `medication_intake` (`info`), mais nada. O que ela faz ao alerta é de
+quem consome.
 O `device_removed` da 4P Touch podia acabar pelo bit 3 do estado («watch
 state»), mas a ficha não diz o que o bit quer dizer em cada valor.
 
@@ -702,8 +703,8 @@ Da primeira revisão:
 | a | `device.disconnected` com `alert`, acabado pelo `device.connected` | **Adotado**, com `info` nos aparelhos que se desligam a cada medição |
 | b | Um campo, `clears`, em todo o fim | **Retirado** por decisão do Hugo: o nome `{type}_cleared` e a tabela dos pares dizem o mesmo. **Recusado** o fim com o mesmo `type` da abertura |
 | c | `device_state` da Wonlex a `info` | **Adotado** |
-| d | `change_required` acaba o `check_required` | **Adotado**, como par na tabela |
-| — | `dose_missed` por dose, acabado pela toma tardia | **Adotado**, com o `abnormal` — e não o `late` — como fim: no M228 o `late` é a toma depois do aviso e antes de a dose falhar |
+| d | `change_required` acaba o `check_required` | **Retirado** por decisão do Hugo: o hub publica `check_required_cleared` e `change_required`, e juntá-los é de quem consome |
+| — | `dose_missed` por dose, acabado pela toma tardia | **Adotado** o `dose_missed` por dose; **retirado** o fim: a toma tardia é um `medication_intake` (`info`), e o que faz ao alerta é de quem consome |
 | — | Cercas como configuração do hub, com `zone_exit` e `zone_entry` | **Adotado** (`safe_zones`) |
 
 Da segunda, depois da decisão do Hugo de manter o hub como normalizador:
@@ -752,7 +753,7 @@ Cada mudança, e o que pede a quem já consome:
 | `device.disconnected` de um aparelho retransmitido ganha `data.gatewayId` e, com o gateway em baixo, `data.cause` | pulseiras e sensores de fralda do hitCare | Os eventos de ciclo de vida não levavam `data`: **coordenar**, junto com a linha seguinte |
 | `device.disconnected` e `device.connected` ganham `severity` | todas, incluindo NCS, gateways e pulseiras do hitCare | Os eventos de ciclo de vida não a levavam: **coordenar** com o hitCare |
 | Tipos novos `{type}_cleared` | todas; no hitCare, `check_required_cleared`, `change_required_cleared`, `low_battery_cleared` | Um consumidor que rejeite tipos desconhecidos parte: **coordenar**. O contrato congelado da fralda garante os `type` existentes, não a ausência de novos ([17](17-sensor-de-fralda.md#4-o-contrato-congelado)) |
-| O `change_required` passa a acabar o `check_required`, pela tabela de pares | fralda | Nenhum evento nem campo novo: é documentação |
+| A fralda que passa de húmida a suja publica `check_required_cleared` junto com o `change_required` | fralda | Um evento a mais com o mesmo `occurredAt`, de um tipo novo |
 | Gravidades que mudam (`apnea`, `weak_vital_signs`, `device_state`, `medication_*`, a frequência do radar) | radar, Wonlex, dispensador | Nenhuma destas famílias é do hitCare |
 | Os bits de cerca da 4P Touch deixam de sair | relógios 4P Touch | Não é do hitCare |
 | `heart_rate_alert` e `breath_rate_alert` do radar dão lugar a `*_limits` | API do radar | Quebra quem os escreve (pergunta 8) |
