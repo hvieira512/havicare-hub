@@ -14,6 +14,7 @@ use Hub\Registry\Denylist;
 use Hub\Registry\Whitelist;
 use Hub\State\DeviceReportStore;
 use Hub\Support\Throttle;
+use Predis\ClientInterface;
 use Ratchet\Client\Connector;
 use Ratchet\Client\WebSocket;
 use Ratchet\RFC6455\Messaging\Frame;
@@ -32,6 +33,9 @@ final class TuyaBridge implements MqttIngress
     private const SILENCE_SECONDS = 90;
     /** Uma falha do hub deixa a mensagem para o Pulsar voltar a entregar, mas não para sempre. */
     private const MAX_DELIVERIES = 5;
+    /** A Tuya guarda as mensagens duas horas: lembrada três, uma reentrega já não volta a publicar. */
+    private const HANDLED_TTL_SECONDS = 10800;
+    private const HANDLED_KEY = 'hub:tuya:handled:';
 
     private readonly MessageNormalizer $normalizer;
     private readonly ConnectionAnnouncer $connections;
@@ -55,6 +59,7 @@ final class TuyaBridge implements MqttIngress
         private readonly ?CommercialModelResolver $commercialModelResolver = null,
         private readonly ?Denylist $denylist = null,
         ?LoopInterface $loop = null,
+        private readonly ?ClientInterface $redis = null,
     ) {
         $this->normalizer = new MessageNormalizer();
         $this->connections = new ConnectionAnnouncer($mqttBridge, $deviceStore);
@@ -89,7 +94,9 @@ final class TuyaBridge implements MqttIngress
         }
 
         try {
-            $this->handle($wire);
+            if (!$this->wasHandled($messageId)) {
+                $this->handle($wire, $messageId);
+            }
         } catch (\Throwable $e) {
             $deliveries = ($this->failedDeliveries[$messageId] ?? 0) + 1;
             if ($deliveries < self::MAX_DELIVERIES) {
@@ -110,7 +117,7 @@ final class TuyaBridge implements MqttIngress
     }
 
     /** @param array<string, mixed> $wire */
-    private function handle(array $wire): void
+    private function handle(array $wire, ?string $messageId = null): void
     {
         try {
             $business = PulsarFrame::open($wire, $this->accessSecret);
@@ -167,8 +174,35 @@ final class TuyaBridge implements MqttIngress
         foreach ($normalized['telemetry'] as $telemetry) {
             $this->mqttBridge->publishAndStore($this->deviceStore, 'telemetry', $deviceId, $telemetry, $deviceType, $licenseId, $company);
         }
+        // Marca-se depois de o alarme sair e antes de se guardar: uma falha a guardar já não o repete.
         foreach ($normalized['events'] as $event) {
-            $this->mqttBridge->publishAndStore($this->deviceStore, 'events', $deviceId, $event, $deviceType, $licenseId, $company);
+            $this->mqttBridge->publishAndStore(null, 'events', $deviceId, $event, $deviceType, $licenseId, $company);
+        }
+        if ($messageId !== null) {
+            $this->markHandled($messageId);
+        }
+        foreach ($normalized['events'] as $event) {
+            $this->deviceStore?->append($deviceId, 'events', $event + ['deviceType' => $deviceType, 'licenseId' => $licenseId]);
+        }
+    }
+
+    /** Sem Redis não se sabe se já saiu: publica-se, porque um alarme repetido vale mais do que um perdido. */
+    private function wasHandled(string $messageId): bool
+    {
+        try {
+            return $this->redis?->get(self::HANDLED_KEY . $messageId) !== null;
+        } catch (\Throwable $e) {
+            Logger::channel('hub')->warning("Tuya redelivery check unavailable: {$e->getMessage()}");
+            return false;
+        }
+    }
+
+    private function markHandled(string $messageId): void
+    {
+        try {
+            $this->redis?->setex(self::HANDLED_KEY . $messageId, self::HANDLED_TTL_SECONDS, '1');
+        } catch (\Throwable $e) {
+            Logger::channel('hub')->warning("Tuya message not marked as handled: {$e->getMessage()}");
         }
     }
 

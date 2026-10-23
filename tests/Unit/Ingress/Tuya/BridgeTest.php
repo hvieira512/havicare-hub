@@ -9,6 +9,7 @@ use Hub\State\DeviceStore;
 use Hub\State\RedisKeys;
 use Hub\State\DeviceStoreContract;
 use PHPUnit\Framework\TestCase;
+use Predis\ClientInterface;
 use Tests\Support\Doubles\InMemoryRedisClient;
 use Tests\Support\Doubles\IngressFixtures;
 use Tests\Support\Doubles\RecordingHubMqttBridge;
@@ -179,6 +180,70 @@ final class BridgeTest extends TestCase
         self::assertSame([null, null, null, null, 'CAAQARgAIAA='], $acks);
     }
 
+    /** O alarme já saiu quando a falha chegou: a reentrega confirma-se sem o repetir. */
+    public function testARedeliveredMessageThatWasAlreadyPublishedPublishesNothing(): void
+    {
+        $store = $this->createMock(DeviceStoreContract::class);
+        $store->method('append')->willReturnCallback(static function (string $imei, string $list): void {
+            if ($list === 'events') {
+                throw new \RuntimeException('Redis unavailable');
+            }
+        });
+        $bridge = $this->bridge(IngressFixtures::whitelist([
+            self::BUTTON => IngressFixtures::device('PST', 'CF103W', 'bracelet'),
+        ]), $store, $this->redis);
+        $frame = $this->frame($this->property('sos_state', 23, true, 1790778037435));
+
+        self::assertNull($bridge->receive($frame));
+        self::assertSame('CAAQARgAIAA=', $bridge->receive($frame));
+        self::assertCount(1, $this->events('help_call'));
+    }
+
+    public function testTheSameMessageDeliveredTwicePublishesOneHelpCall(): void
+    {
+        $bridge = $this->bridge(IngressFixtures::whitelist([
+            self::BUTTON => IngressFixtures::device('PST', 'CF103W', 'bracelet'),
+        ]), $this->store, $this->redis);
+        $frame = $this->frame($this->property('sos_state', 23, true, 1790778037435));
+
+        $bridge->receive($frame);
+        $bridge->receive($frame);
+
+        self::assertCount(1, $this->events('help_call'));
+    }
+
+    public function testADeliveryThatFailedBeforePublishingIsPublishedOnRedelivery(): void
+    {
+        $store = $this->createMock(DeviceStoreContract::class);
+        $store->method('deviceSeen')->willReturnOnConsecutiveCalls(
+            self::throwException(new \RuntimeException('Redis unavailable')),
+            true,
+        );
+        $bridge = $this->bridge(IngressFixtures::whitelist([
+            self::BUTTON => IngressFixtures::device('PST', 'CF103W', 'bracelet'),
+        ]), $store, $this->redis);
+        $frame = $this->frame($this->property('sos_state', 23, true, 1790778037435));
+
+        self::assertNull($bridge->receive($frame));
+        self::assertSame('CAAQARgAIAA=', $bridge->receive($frame));
+        self::assertCount(1, $this->events('help_call'));
+    }
+
+    /** Sem Redis não se sabe se já saiu: antes um alarme repetido do que um perdido. */
+    public function testWithoutRedisARedeliveredHelpCallIsPublishedAgain(): void
+    {
+        $redis = $this->createMock(ClientInterface::class);
+        $redis->method('__call')->willThrowException(new \RuntimeException('Connection refused'));
+        $bridge = $this->bridge(IngressFixtures::whitelist([
+            self::BUTTON => IngressFixtures::device('PST', 'CF103W', 'bracelet'),
+        ]), $this->store, $redis);
+        $frame = $this->frame($this->property('sos_state', 23, true, 1790778037435));
+
+        self::assertSame('CAAQARgAIAA=', $bridge->receive($frame));
+        self::assertSame('CAAQARgAIAA=', $bridge->receive($frame));
+        self::assertCount(2, $this->events('help_call'));
+    }
+
     /** Mudar o nome ou apagar um botão na app não é o aparelho a falar. */
     public function testCloudMessagesAboutAnUnregisteredButtonAreNotRecorded(): void
     {
@@ -191,7 +256,7 @@ final class BridgeTest extends TestCase
         ]));
     }
 
-    private function bridge(\Hub\Registry\Whitelist $whitelist, DeviceStoreContract $store): TuyaBridge
+    private function bridge(\Hub\Registry\Whitelist $whitelist, DeviceStoreContract $store, ?ClientInterface $redis = null): TuyaBridge
     {
         return new TuyaBridge(
             self::ACCESS_ID,
@@ -201,6 +266,7 @@ final class BridgeTest extends TestCase
             $whitelist,
             $this->mqtt,
             $store,
+            redis: $redis,
         );
     }
 
