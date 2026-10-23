@@ -915,6 +915,27 @@ final class DeviceConfigurationCatalogTest extends TestCase
         self::assertSame($nativeKey, $config['key'] ?? null);
     }
 
+    /** A chave pública de cada protocolo resolve-se pela mesma tabela que traduz a nativa. */
+    #[DataProvider('publicKeyProvider')]
+    public function testPublicKeysResolveToTheDefinitionThatDeclaresThem(string $protocol, string $publicKey, string $nativeKey): void
+    {
+        self::assertSame($nativeKey, DeviceConfigurationCatalog::nativeKey($protocol, $publicKey));
+        self::assertSame($publicKey, CapabilityCatalog::mapConfigurationKey($nativeKey));
+    }
+
+    /**
+     * @return iterable<string, array{0: string, 1: string, 2: string}>
+     */
+    public static function publicKeyProvider(): iterable
+    {
+        yield 'wonlex phonebook' => ['wonlex-json', 'phonebook', 'familyNumber'];
+        yield 'wonlex fall detection' => ['wonlex-json', 'fall_detection', 'wonlexFallWarnSwitch'];
+        yield 'vivistar push message' => ['vivistar-iw', 'push_message', 'pushMessage'];
+        yield 'vivistar alarm clock' => ['vivistar-iw', 'alarm_clock', 'reminders'];
+        yield 'four-p-touch sos contacts' => ['four-p-touch', 'sos_contacts', 'sosContacts'];
+        yield 'dispenser identity' => ['zayata-m228', 'medication_reminders', 'medication_reminders'];
+    }
+
     public function testFourPTouchWalkTimeAndTemperatureIntervalBuildNativeFields(): void
     {
         $walkTime = DeviceConfigurationCatalog::commandPayload('four-p-touch', 'walkTime', [

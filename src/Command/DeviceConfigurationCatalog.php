@@ -23,7 +23,7 @@ use Hub\Command\Configuration\Payload\VeepooPayloadBuilder;
 use Hub\Command\Configuration\Payload\VivistarPayloadBuilder;
 use Hub\Command\Configuration\Payload\WonlexPayloadBuilder;
 use Hub\Command\Configuration\Payload\ZayataPayloadBuilder;
-use Hub\Domain\Capability\FourPTouch\FourPTouchGenericHandler;
+use Hub\Domain\ProtocolRegistry;
 
 final class DeviceConfigurationCatalog
 {
@@ -205,26 +205,49 @@ final class DeviceConfigurationCatalog
         return null;
     }
 
-    /** A chave nativa de uma chave pública; é esta a tabela, e não há outra. */
+    /**
+     * A chave nativa de uma chave pública, pela definição que a declara. Uma capacidade
+     * repartida por várias definições -- a lista branca do 4P Touch -- fica com a pública.
+     */
     public static function nativeKey(string $protocol, string $key): string
     {
+        static $cache = [];
+        if (!isset($cache[$protocol])) {
+            $natives = [];
+            foreach (self::configsForProtocol($protocol) as $entry) {
+                if (isset($entry['capabilityKey'])) {
+                    $natives[(string)$entry['capabilityKey']][] = (string)$entry['key'];
+                }
+            }
+            $cache[$protocol] = array_map(static fn(array $keys): ?string => count($keys) === 1 ? $keys[0] : null, $natives);
+        }
+
         $key = trim($key);
-        if ($protocol === 'four-p-touch') {
-            return FourPTouchGenericHandler::publicKeyToNativeKey($key) ?? $key;
+
+        return $cache[$protocol][$key] ?? $key;
+    }
+
+    /**
+     * A chave genérica de cada chave nativa que não é já a genérica, de todos os protocolos.
+     *
+     * @return array<string, string>
+     */
+    public static function capabilityKeys(): array
+    {
+        static $map = null;
+        if ($map !== null) {
+            return $map;
         }
-        if ($key === 'alarm_clock') {
-            return match ($protocol) {
-                'vivistar-iw' => 'reminders',
-                'wonlex-json' => 'alarmClock',
-                default => $key,
-            };
+
+        $map = [];
+        foreach (ProtocolRegistry::protocolsWithConfigCatalog() as $protocol) {
+            foreach (self::configsForProtocol($protocol) as $entry) {
+                if (isset($entry['capabilityKey'])) {
+                    $map[(string)$entry['key']] = (string)$entry['capabilityKey'];
+                }
+            }
         }
-        if ($key === 'fall_detection') {
-            return $protocol === 'vivistar-iw' ? 'fallDetection' : $key;
-        }
-        if ($key === 'fall_sensitivity') {
-            return $protocol === 'vivistar-iw' ? 'fallSensitivity' : $key;
-        }
-        return $key;
+
+        return $map;
     }
 }

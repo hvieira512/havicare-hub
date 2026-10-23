@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Domain;
 
+use Hub\Command\DeviceConfigurationCatalog;
 use Hub\Domain\Capability\FourPTouch\FourPTouchGenericHandler;
 use Hub\Domain\Capability\CapabilityCatalog;
 use PHPUnit\Framework\TestCase;
@@ -190,15 +191,17 @@ final class CapabilityCatalogTest extends TestCase
         }
     }
 
-    public function testFourPTouchAliasesAreResolvedByTheDedicatedHelper(): void
+    public function testFourPTouchAliasesAreResolvedByTheDefinitions(): void
     {
-        self::assertSame('sos_contacts', FourPTouchGenericHandler::nativeKeyToGenericKey('sosContacts'));
-        self::assertSame('call_whitelist', FourPTouchGenericHandler::nativeKeyToGenericKey('whitelistGroup1'));
-        self::assertSame('whitelist_enabled', FourPTouchGenericHandler::nativeKeyToGenericKey('rejectUnknownCalls'));
-        self::assertSame('whitelist_enabled', FourPTouchGenericHandler::nativeKeyToGenericKey('whitelistSwitch'));
-        self::assertSame('alarm_clock', FourPTouchGenericHandler::nativeKeyToGenericKey('alarmClock'));
-        self::assertSame('alarmClock', FourPTouchGenericHandler::publicKeyToNativeKey('alarm_clock'));
-        self::assertSame('uploadInterval', FourPTouchGenericHandler::publicKeyToNativeKey('location_reporting_interval'));
+        self::assertSame('sos_contacts', CapabilityCatalog::mapConfigurationKey('sosContacts'));
+        self::assertSame('call_whitelist', CapabilityCatalog::mapConfigurationKey('whitelistGroup1'));
+        self::assertSame('whitelist_enabled', CapabilityCatalog::mapConfigurationKey('rejectUnknownCalls'));
+        self::assertSame('whitelist_enabled', CapabilityCatalog::mapConfigurationKey('whitelistSwitch'));
+        self::assertSame('alarm_clock', CapabilityCatalog::mapConfigurationKey('alarmClock'));
+        self::assertSame('alarmClock', DeviceConfigurationCatalog::nativeKey('four-p-touch', 'alarm_clock'));
+        self::assertSame('uploadInterval', DeviceConfigurationCatalog::nativeKey('four-p-touch', 'location_reporting_interval'));
+        // Os dois grupos da lista branca não fazem uma chave nativa só.
+        self::assertSame('call_whitelist', DeviceConfigurationCatalog::nativeKey('four-p-touch', 'call_whitelist'));
     }
 
     public function testFourPTouchDoNotDisturbCarriesTimeRanges(): void

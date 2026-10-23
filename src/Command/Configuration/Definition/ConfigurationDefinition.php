@@ -13,6 +13,7 @@ final class ConfigurationDefinition
      * @param array<string, mixed>|null $options
      * @param array{on: string, off: string}|null $actions os verbos de uma acção com dois sentidos
      * @param array<string, array{min: int, max?: int}>|null $bounds
+     * @param string|null $capability a chave genérica, quando não é a própria `key`
      * @return array<string, mixed>
      */
     public static function make(
@@ -30,6 +31,7 @@ final class ConfigurationDefinition
         ?string $verb = null,
         ?array $actions = null,
         ?array $bounds = null,
+        ?string $capability = null,
     ): array {
         // Transiente e acção são a mesma coisa: o que a `PATCH` recusa é o que a `/requests` aceita.
         return array_filter([
@@ -48,6 +50,8 @@ final class ConfigurationDefinition
             'verb' => $verb,
             'actions' => $actions,
             'bounds' => $bounds,
+            // Fica em último: é o campo que a API acrescenta a cada entrada do catálogo.
+            'capabilityKey' => $capability,
         ], static fn(mixed $value): bool => $value !== null);
     }
 }

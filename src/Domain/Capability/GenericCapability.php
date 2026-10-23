@@ -75,7 +75,7 @@ final class GenericCapability implements CapabilityContract
 
     public function fromNative(string $protocol, string $nativeKey, array $desired): mixed
     {
-        if ($nativeKey !== '' && FourPTouchGenericHandler::nativeKeyToGenericKey($nativeKey) !== null) {
+        if ($protocol === 'four-p-touch') {
             return $this->fourPTouch->fromNative($this->genericKey, $nativeKey, $desired);
         }
 
