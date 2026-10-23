@@ -402,7 +402,7 @@ Um evento sai quando a condição **começa**, e não enquanto dura:
 O estado vive em memória: um reinício do hub volta a anunciar o que estiver
 ativo. Quem consome a QoS 1 já tem de tolerar repetidos.
 
-#### Proposta: alarmes clínicos e o fim das condições
+#### Proposta: alarmes clínicos
 
 > **Por aprovar e por construir.** Nada desta subsecção está em vigor: as tabelas
 > acima continuam a ser o contrato. O desenho completo, com o inventário que o
@@ -410,38 +410,32 @@ ativo. Quem consome a QoS 1 já tem de tolerar repetidos.
 
 O hub passa a ser o único a decidir a gravidade, e continua a ser um
 normalizador: publica factos. Agrupar, escalar e fechar alertas é de quem
-consome.
+consome, e o fim de uma condição já está no que o hub publica hoje — a telemetria
+de volta aos limites, a fralda limpa, o estado `online`.
 
 **Limites por dispositivo.** `heart_rate_limits`, `blood_oxygen_limits`,
 `blood_pressure_limits`, `temperature_limits` e `breath_rate_limits`, escritos
 pelo `PATCH /api/devices/{imei}/configurations`. O hub aplica-os à telemetria; no
 radar, que alarma sozinho, traduz-os para o limiar dele.
 
-**O envelope fica como está**: nenhum campo novo. A `severity` falta só nos
-`{type}_cleared`. Os repetidos da QoS 1 reconhecem-se por dispositivo + `type` +
-`occurredAt`, mais o campo do `data` que distingue; dois factos reais do mesmo
-`type` no mesmo segundo juntam-se num, porque o `occurredAt` é ao segundo.
+**O envelope fica como está**: nenhum campo novo, nenhum evento de fim. Os
+repetidos da QoS 1 reconhecem-se por dispositivo + `type` + `occurredAt`, mais o
+campo do `data` que distingue; dois factos reais do mesmo `type` no mesmo segundo
+juntam-se num, porque o `occurredAt` é ao segundo.
 
-Uma gravidade maior do mesmo facto (SpO2 de `alert` para `alarm`) é mais um evento
-do mesmo `type`. Descer de nível não publica nada.
-
-**Que evento acaba qual.** O hub publica `{type}_cleared`, sem `severity`, sempre
-que uma condição que reportou deixa de ser verdade, e mais nada: não decide que um
-evento acaba outro. Os pares existem só onde o aparelho reporta o fim numa
-mensagem sua:
-
-| Este evento | Acaba | Com o mesmo campo do `data` |
-|---|---|---|
-| `device.connected` | `device.disconnected` | — |
-| `zone_entry` com `zone: geofence` | `zone_exit` com `zone: geofence` | — |
-| `reset` do NCS | `help_call` | `pagerId` |
-
-Um fim perdido na QoS 1 fica perdido, por agora.
+**A regra do hub.** Com `*_limits` configurados, o hub publica o evento de
+alarme — `heart_rate_high`, `blood_oxygen_low`, … — com a gravidade pelo nível, o
+valor e o limite no `data`, a partir de `confirmReadings` leituras seguidas fora,
+e **de novo a cada leitura confirmada fora**. A subida de alerta para alarme é a
+primeira repetição com `severity: alarm`. Uma leitura dentro dos limites sai só
+como a telemetria de sempre, e é por ela que quem consome vê que voltou. Onde o
+normal se vê, aparelho a aparelho, está no capítulo 26, secção 7 — e o dispensador
+não o mostra para as avarias, o ambiente e a chamada, que só existem como evento.
 
 **Vários do mesmo tipo.** Quando um dispositivo representa várias coisas, o que
 as distingue já está no `data`: `pagerId` no NCS, `personIndex` no radar,
 `gatewayId` no `proximity_alarm`, `fault` no `device_fault`, `slot` e `doseDate`
-nas doses. É por esses campos que quem consome casa um fim com o que ele acaba.
+nas doses. É por esses campos que quem consome os distingue.
 
 **O desligado atrás de um gateway.** O `device.disconnected` de um aparelho
 retransmitido por um gateway MOKO ou da Havicare leva `data.gatewayId`, o último
@@ -459,7 +453,7 @@ Regras de gravidade que mudam:
 | `device_state` | `alert` | `info` |
 | `medication_alarm_change` · `medication_intake` | `alert` numa dose falhada ou toma anormal | `info`; a dose falhada passa a `dose_missed` |
 | `device.disconnected` | sem `severity` | `alert`; `info` nos aparelhos que só se ligam para medir |
-| `device.connected` | sem `severity` | `info`; acaba o `device.disconnected` |
+| `device.connected` | sem `severity` | `info` |
 
 Tipos novos:
 
@@ -469,14 +463,12 @@ Tipos novos:
 | `blood_pressure_high` · `blood_pressure_low` | `systolicMmHg`, `diastolicMmHg`, `limitSystolicMmHg`, `limitDiastolicMmHg` | `alert` · `alarm` |
 | `temperature_high` · `temperature_low` | `bodyCelsius`, `limitCelsius`, `site` | `alert` · `alarm` |
 | `dose_missed` | `slot`, `scheduledAt`, `doseDate` | `alert` |
-| `{type}_cleared` | a leitura ou o estado que acabou a condição | — |
 
 A cerca passa a ser configuração do hub (`safe_zones`), e os bits de cerca da 4P
 Touch deixam de ser publicados.
 
-Nenhuma gravidade nem nenhum `type` que o hitCare lê muda. Os `{type}_cleared`
-são tipos novos, e a
-`severity` e o `data` nos `device.*` vão coordenados com ele (ver
+Nenhuma gravidade nem nenhum `type` que o hitCare lê muda. A `severity` e o
+`data` nos `device.*` vão coordenados com ele (ver
 [«Pendente do hitCare»](#pendente-do-hitcare) e a secção 10 do
 [capítulo 26](26-alarmes-clinicos.md#10-o-hitcare-e-a-compatibilidade)).
 
