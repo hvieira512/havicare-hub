@@ -634,14 +634,75 @@ alerta a exatamente uma condição: um alerta aberto e depois escalado a alarme
 são duas linhas na Havicare e **uma** condição, e um único fim diz que as duas
 acabaram.
 
-O `conditionKey`, onde existe, fica no `data` como informação: o `slot` e o dia da
-dose, o `fault` do dispensador, o `pagerId` do NCS. O `condition.id` torna-o
-dispensável para casar o fim com a abertura.
+Quando um dispositivo pode ter várias do mesmo `type` abertas ao mesmo tempo, cada
+uma tem o seu `subject` (abaixo) — a dose, a avaria, o pager. O `condition.id` é
+que casa o fim com a abertura; o `subject` diz a quem consome de quê é a condição.
+
+### O sujeito: `subject`
+
+Um dispositivo do hub representa às vezes vários emissores ou várias pessoas: o
+W812 do NCS serve vários pagers, o radar vê várias pessoas, a mesma pulseira
+passa por várias portas com alarme de proximidade, o dispensador tem nove doses e
+cinco avarias possíveis. Para o consumidor, «um alerta por dispositivo e `type`»
+juntava o quarto 15 à chamada do quarto 12.
+
+O envelope ganha, ao nível de topo, **`subject: { kind, id }`** — **ausente**
+quando o dispositivo é o único sujeito, que é o caso da maior parte dos eventos.
+É a chave de agrupamento de quem consome nos instantes (dispositivo, `type`,
+`subject`), e nas condições é informação: o `condition.id` já identifica cada uma.
+
+| `kind` | `id` | De onde vem | Em |
+|---|---|---|---|
+| `pager` | o `pagerId` | `payload.id` da Voerka | `help_call` e `reset` do NCS |
+| `person` | o `personIndex` | a trama `position` do radar | `fall`, `zone_entry`, `zone_exit` do radar |
+| `gateway` | o `gatewayId` | o gateway que ouviu | `proximity_alarm` |
+| `fault` | o `fault` | a TAG do dispensador | `device_fault` |
+| `dose` | `{slot}@{doseDate}`, por exemplo `"3@2026-10-23"` | o plano confirmado | `dose_missed`, `medication_alarm_change`, `medication_intake` |
+
+```json
+{ "type": "help_call", "severity": "alarm",
+  "subject": { "kind": "pager", "id": "123456" },
+  "data": { "pagerId": "123456" } }
+```
+
+O `person` é fraco: o radar re-identifica as pessoas, e o mesmo `personIndex`
+pode ser outra pessoa minutos depois, ou a mesma pessoa mudar de índice. Serve
+para não juntar duas quedas simultâneas; não serve para seguir alguém.
+
+**Os campos de origem ficam no `data`.** O hitCare lê o `data.pagerId`, e o
+`subject` é acrescento: nada do que já se lia muda de sítio. O `subject` é um
+conceito só — o `conditionKey` das versões anteriores desta proposta sai.
+
+### O desligado atrás de um gateway
+
+Um aparelho retransmitido — as pulseiras W6 e W6B e o sensor de fralda atrás de um
+MOKO, a Veepoo e os aparelhos de medição atrás do gateway da Havicare — dá-se por
+desligado quando nenhum gateway o ouve. Quando é o gateway que se cala, dez
+pulseiras dão dez `device.disconnected` vinte minutos depois, por uma causa só.
+
+O `device.disconnected` de um aparelho retransmitido passa a levar:
+
+| Campo | Quando | O que é |
+|---|---|---|
+| `data.gatewayId` | sempre, num aparelho retransmitido | O último gateway que o ouviu. Ouvido por vários, o último de todos |
+| `data.cause: "gateway_offline"` | quando esse gateway já está `offline` no momento em que o aparelho se dá por desligado | A queda é do gateway, e não do aparelho |
+
+```json
+{ "type": "device.disconnected", "severity": "alert",
+  "device": { "id": "d48c49f7909c", "supplier": "MOKO", "model": "W6B" },
+  "data": { "gatewayId": "c5e390f30bce", "cause": "gateway_offline" } }
+```
+
+Com isto, quem consome agrupa uma falha de gateway sem conhecer a topologia:
+os `device.disconnected` com o mesmo `gatewayId` e `cause: "gateway_offline"`
+pertencem ao `device.disconnected` desse gateway. Sem `cause`, o gateway estava
+de pé e o aparelho é que deixou de ser ouvido — saiu do alcance, ficou sem bateria
+—, e esse é um alerta por si.
 
 **Onde vive.** A condição é um registo do hub:
 
 - **No MySQL, a tabela `device_conditions`**, que é o registo: `id`, dispositivo,
-  `type`, `conditionKey`, empresa e licença de quando abriu, `openedAt`,
+  `type`, `subject`, empresa e licença de quando abriu, `openedAt`,
   `detectedAt`, `peakSeverity`, `clearedAt`, `reason`, e a prova de cada fase. É
   o que a API devolve e o que fica para auditoria; o histórico do Redis é
   limitado ([14](14-persistencia.md), secção 3) e
@@ -951,6 +1012,8 @@ Cada mudança, e o que pede a quem já consome:
 |---|---|---|
 | `eventId` em todos os eventos | todas as famílias | Acrescento ao envelope; ignorável |
 | Objeto `condition` nos eventos que são condições | todas | Acrescento ao envelope; ignorável |
+| `subject` no envelope, quando o dispositivo não é o único sujeito | NCS (`pager`), radar, gateways (`proximity_alarm`), dispensador | Acrescento; o `data.pagerId` que o hitCare lê fica onde está |
+| `device.disconnected` de um aparelho retransmitido ganha `data.gatewayId` e, com o gateway em baixo, `data.cause` | pulseiras e sensores de fralda do hitCare | Os eventos de ciclo de vida não levavam `data`: **coordenar**, junto com a linha seguinte |
 | `device.disconnected` e `device.connected` ganham `severity` e `condition` | todas, incluindo NCS, gateways e pulseiras do hitCare | Os eventos de ciclo de vida não levavam nada disto: **coordenar** com o hitCare |
 | Tipos novos `{type}_cleared` | todas; no hitCare, `check_required_cleared`, `change_required_cleared`, `low_battery_cleared` | Um consumidor que rejeite tipos desconhecidos parte: **coordenar**. O contrato congelado da fralda garante os `type` existentes, não a ausência de novos ([17](17-sensor-de-fralda.md#4-o-contrato-congelado)) |
 | O `change_required` vindo de `attention` vem acompanhado do fim do `check_required` | fralda | Um evento a mais com o mesmo `occurredAt`, de um tipo novo |
@@ -1018,3 +1081,27 @@ Duas posições da Havicare, por decidir — não estão adotadas neste desenho:
     leituras e limites; quem sabe do dono é quem publica, e é aí que fica a
     mudança de dono da secção 7 — a deteção não precisa de saber de quem é o
     dispositivo para acabar uma condição com `device_unassigned`.
+
+Uma pergunta de produto, que o código não decide:
+
+14. **Quem recebe um SOS de um dispositivo sem dono.** Um aparelho por associar
+    publica em `null/0` ([08](08-contrato-mqtt.md), secção 1), onde nenhum cliente
+    subscreve: o botão de uma pulseira registada mas ainda sem licença carrega-se
+    e ninguém sabe. Pode ficar assim, ir para a dashboard, ou para um destino da
+    Havicare.
+
+### Defeitos à parte
+
+Encontrados ao fazer a matriz de cenários. São correções de código, **sem mudança
+de contrato**, e cada uma espera o teu sim antes de se fazer; as que dependem do
+aparelho começam por um teste nele.
+
+| | Defeito | Onde | Correção proposta |
+|---|---|---|---|
+| a | O primeiro toque de uma W6B nova, ou o primeiro depois de 24 h sem toques, é tomado pela linha de base do contador e **não sai**, se a pulseira só anunciar a trama de botão depois de um toque | `src/Ingress/Mqtt/Gateway/RedisObservationStateStore.php:12,52-62`; `src/Ingress/Mqtt/Moko/BraceletNormalizer.php:101-105` | Primeiro um teste no aparelho: se a trama de botão é anunciada sempre, o defeito não existe. Se não, guardar o contador sem prazo, e publicar o primeiro toque visto |
+| b | Um `AL` da 4P Touch reenviado — sem resposta, ou depois de o relógio religar — leva a hora de chegada, e um SOS antigo parece novo | `src/Device/TelemetryEnvelope.php:40`; 4PTouch.html, Part I §4 | Usar a hora da trama, dentro de um limite de sanidade face ao relógio do hub |
+| c | Uma reentrega do Pulsar depois de uma falha a meio volta a publicar o `help_call` | `src/Ingress/Tuya/TuyaBridge.php:85-104` | Registar no Redis os `messageId` tratados, com prazo acima das duas horas de retenção da Tuya |
+| d | Um gateway atrasado que reporta um contador mais baixo inventa um toque da W6B, e o `GET`/`SET` do contador não é atómico | `src/Ingress/Mqtt/Moko/BraceletNormalizer.php:110-111`; `src/Ingress/Mqtt/Gateway/RedisObservationStateStore.php:52-62` | Só aceitar a subida, ou uma descida que seja reinício; a transição numa operação atómica |
+| e | O estado do radar, do dispensador e da bateria fraca vive em memória, e um reinício volta a anunciar o que estiver ativo | `src/Ingress/Mqtt/Qinglanst/ActiveDetections.php:15`; `src/Ingress/Tcp/Supplier/Zayata/PillDispenserTcpProtocol.php:83-104`; `src/Device/LowBatteryTransitions.php:13` | Passar o estado para o Redis — que é também onde as condições propostas vivem |
+| g | Reassociar um dispositivo mantém o estado ativo em memória: uma queda em curso não volta a sair para o dono novo | `src/Api/Services/DeviceService.php:512` só limpa o `status` retido | Esquecer o estado do dispositivo na reassociação |
+| h | O «wearing notice» da Vivistar (código `04`) é publicado como `device_removed`, mas pode querer dizer «posto» | `src/Device/FeatureNormalizer.php:371`; VIVISTAR.pdf p. 10 | Teste no aparelho, e corrigir o mapeamento se for o contrário |

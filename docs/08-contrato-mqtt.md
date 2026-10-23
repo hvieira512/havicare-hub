@@ -438,6 +438,26 @@ O fim tem `severity: info` e o `type` `{type}_cleared` — ou o par que já exis
 `zone_entry` da cerca, `device.connected`, `reset` do NCS, `medication_intake`
 com `result: "abnormal"`. Quem consome lê o `condition.phase`, e não o nome.
 
+**O sujeito.** O envelope ganha `subject: { kind, id }` ao nível de topo,
+ausente quando o dispositivo é o único sujeito. É a chave com que quem consome
+agrupa os instantes — (dispositivo, `type`, `subject`) —, e nas condições diz de
+quê é cada uma:
+
+| `kind` | `id` | Em |
+|---|---|---|
+| `pager` | o `pagerId` | `help_call` e `reset` do NCS |
+| `person` | o `personIndex` (o radar re-identifica pessoas) | `fall`, `zone_entry`, `zone_exit` do radar |
+| `gateway` | o `gatewayId` | `proximity_alarm` |
+| `fault` | o `fault` | `device_fault` |
+| `dose` | `{slot}@{doseDate}`, por exemplo `"3@2026-10-23"` | `dose_missed`, `medication_*` |
+
+Os campos de origem continuam no `data`: o `subject` é acrescento.
+
+**O desligado atrás de um gateway.** O `device.disconnected` de um aparelho
+retransmitido por um gateway MOKO ou da Havicare leva `data.gatewayId`, o último
+gateway que o ouviu, e `data.cause: "gateway_offline"` quando esse gateway já
+estava `offline`. Quem consome agrupa assim uma falha de gateway.
+
 **Canal novo `conditions`**, QoS 1 e retido, por dispositivo: as condições abertas
 agora (`open: [...]`, com `updatedAt` e `sequence`). Serve a ressincronização; o
 que acabou durante uma falha lê-se no `GET /api/devices/{imei}/conditions` e no
@@ -469,9 +489,9 @@ Tipos novos:
 A cerca passa a ser configuração do hub (`safe_zones`), e os bits de cerca da 4P
 Touch deixam de ser publicados.
 
-Nenhuma gravidade nem nenhum `type` que o hitCare lê muda. O `condition` e o
-`eventId` são acrescentos; o canal `conditions`, os `{type}_cleared` e a
-`severity` nos `device.*` tocam o NCS, a fralda, os gateways e as pulseiras, e vão
+Nenhuma gravidade nem nenhum `type` que o hitCare lê muda. O `condition`, o
+`subject` e o `eventId` são acrescentos; o canal `conditions`, os `{type}_cleared`,
+a `severity` nos `device.*` e o `data` do `device.disconnected` tocam o NCS, a fralda, os gateways e as pulseiras, e vão
 coordenados com ele (ver [«Pendente do hitCare»](#pendente-do-hitcare) e a
 secção 10 do [capítulo 26](26-alarmes-clinicos.md#10-o-hitcare-e-a-compatibilidade)).
 
