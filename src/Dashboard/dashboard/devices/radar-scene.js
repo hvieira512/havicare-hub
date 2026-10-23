@@ -1,4 +1,4 @@
-import { areaName, areaTypeStyle, postureStyle } from "../radar-style.js";
+import { areaName, areaTypeStyle, brandColor, postureStyle } from "../radar-style.js";
 import { fieldValue } from "../format.js";
 
 /**
@@ -122,7 +122,7 @@ function createPersonNode(peopleLayer, x, y, style, label) {
     const group = new Konva.Group({ x, y });
     const circle = new Konva.Circle({
         radius: 10,
-        fill: "#0d6efd22",
+        fill: `${style.color}22`,
         stroke: style.color,
         strokeWidth: 3,
     });
@@ -277,7 +277,7 @@ function drawRoom(state, layout) {
         fontFamily: "Font Awesome 6 Free",
         fontStyle: "900",
         fontSize: 18,
-        fill: "#20c997",
+        fill: brandColor(),
     });
     radarIcon.offsetX(radarIcon.width() / 2);
     radarIcon.offsetY(radarIcon.height() / 2);
@@ -290,7 +290,7 @@ function drawRoom(state, layout) {
         text: "Radar",
         fontSize: 11,
         fontFamily: "Poppins",
-        fill: "#20c997",
+        fill: brandColor(),
         fontStyle: "bold",
         align: "center",
         width: 40,

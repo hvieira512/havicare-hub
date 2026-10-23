@@ -63,7 +63,7 @@ function loadKonva() {
 function renderPeopleCount(count) {
     if (!els.radarMapPeopleCount) return;
 
-    const tone = count === 0 ? "secondary" : "success";
+    const tone = count === 0 ? "secondary" : "primary";
     els.radarMapPeopleCount.innerHTML = html`<span class="fw-semibold text-${tone}">${count}</span> <span class="text-secondary">${count === 1 ? "pessoa" : "pessoas"}</span>`;
 }
 
