@@ -4,6 +4,10 @@ import assert from "node:assert/strict";
 import { renderConfigInputs } from "../../src/Dashboard/dashboard/devices/config/index.js";
 import { refreshAlarmLine } from "../../src/Dashboard/dashboard/devices/config/alarm-fields.js";
 import { appendRepeatRow } from "../../src/Dashboard/dashboard/devices/config/row-editing.js";
+import {
+    handleDeviceConfigChange,
+    handleDeviceConfigInput,
+} from "../../src/Dashboard/dashboard/devices/config/handlers.js";
 import { configSection } from "./support/dom.js";
 
 /**
@@ -64,18 +68,18 @@ test("the closed row shows what was just typed, not what was there", () => {
     assert.equal(textOf(row, "trailing"), "21:15");
 });
 
-/** A escuta que refaz a linha fechada é do módulo, e não de quem desenha o campo. */
-test("typing in an open field rebuilds the closed row without anyone calling anything", () => {
+test("the panel's input and change handlers rebuild the closed row", () => {
     const section = configSection(renderConfigInputs, ALARM, { items: [{ time: "08:40", label: "Antigo" }] }, WONLEX_META);
-    document.body.appendChild(section);
-
     const [row] = rowsOf(section, "alarm_clock");
     const label = row.querySelector("[data-alarm-clock-field=\"label\"]");
-    label.value = "Novo";
-    label.dispatchEvent(new window.Event("input", { bubbles: true }));
 
+    label.value = "Novo";
+    handleDeviceConfigInput({ target: label });
     assert.equal(textOf(row, "title"), "Novo");
-    section.remove();
+
+    label.value = "Outro";
+    handleDeviceConfigChange({ target: label });
+    assert.equal(textOf(row, "title"), "Outro");
 });
 
 test("the add button says how many entries are already there", () => {
