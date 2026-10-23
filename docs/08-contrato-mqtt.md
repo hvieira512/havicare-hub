@@ -362,6 +362,11 @@ máscara de bits —, e nesse caso sai **um evento por bit**, com o mesmo
 `occurredAt`. A posição de um alarme de relógio vai à parte, como `location` no
 canal `telemetry` com `data.reportKind: "alarm"`.
 
+No 4P Touch, esse `occurredAt` é a hora da trama do alarme e não a da chegada: o
+relógio reenvia o alarme até ter resposta, e um reenvio chega com a hora em que
+disparou. Uma hora implausível — ilegível, no futuro ou com mais de 7 dias — dá
+lugar ao relógio do hub. Ver a [normalização](06-normalizacao.md#campo-occurredat).
+
 #### Entradas e saídas
 
 `zone` diz de onde: a divisão que o radar cobre, uma das áreas desenhadas na
