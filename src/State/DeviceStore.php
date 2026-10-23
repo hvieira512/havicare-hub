@@ -37,7 +37,13 @@ final class DeviceStore implements DeviceStoreContract
         $this->runtime = new DeviceRuntimeStore($redis, $this->limit);
         $this->projection = new DeviceConfigurationProjection();
         $this->events = new DeviceEventStore($redis, $this->limit);
-        $this->commands = new DeviceCommandStore($redis, $this->runtime, $this->limit, $this->projection);
+        $this->commands = new DeviceCommandStore(
+            $redis,
+            $this->runtime,
+            $this->limit,
+            $this->projection,
+            fn (string $protocol): bool => $this->tcpProtocols()->get($protocol)?->echoesReplyIdent() ?? true,
+        );
     }
 
     /**
@@ -211,12 +217,16 @@ final class DeviceStore implements DeviceStoreContract
     public function recordCommand(string $imei, string $id, array $record): void
     {
         if (!isset($record['ident'])) {
-            $this->tcpProtocols ??= new TcpProtocolRegistry();
-            $record = array_merge($record, $this->tcpProtocols->get((string)($record['protocol'] ?? ''))
+            $record = array_merge($record, $this->tcpProtocols()->get((string)($record['protocol'] ?? ''))
                 ?->downlinkCorrelation(DeviceCommandRecord::wireBytes($record)) ?? []);
         }
         $this->commands->recordCommand($imei, $id, $record);
         $this->updates->notify($imei);
+    }
+
+    private function tcpProtocols(): TcpProtocolRegistry
+    {
+        return $this->tcpProtocols ??= new TcpProtocolRegistry();
     }
 
     public function retryWaitingCommands(int $retryAfterSeconds, int $timeoutSeconds, int $maxAttempts, callable $dispatch): void

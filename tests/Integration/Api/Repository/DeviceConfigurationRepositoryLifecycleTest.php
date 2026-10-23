@@ -9,7 +9,7 @@ use Hub\State\DeviceStore;
 use Tests\Support\Doubles\InMemoryRedisClient;
 use Tests\Support\MysqlDashboardTestCase;
 
-final class DeviceConfigurationLifecycleRepositoryTest extends MysqlDashboardTestCase
+final class DeviceConfigurationRepositoryLifecycleTest extends MysqlDashboardTestCase
 {
     public function testNewRevisionSupersedesOldOperationAndOnlyCurrentAckConfirms(): void
     {
@@ -36,7 +36,7 @@ final class DeviceConfigurationLifecycleRepositoryTest extends MysqlDashboardTes
             'operationId' => $operationId,
         ];
 
-        $first = $db->configurationLifecycle->stage(
+        $first = $db->deviceConfigurations->stage(
             '861728087056333',
             'whitelist_enabled',
             ['enabled' => false],
@@ -44,10 +44,10 @@ final class DeviceConfigurationLifecycleRepositoryTest extends MysqlDashboardTes
             [$operation('op-one')],
         );
         self::assertSame(1, $first['revision']);
-        self::assertTrue($db->configurationLifecycle->isCurrentOperation('op-one'));
-        self::assertTrue($db->configurationLifecycle->updateOperation('op-one', 'acked'));
+        self::assertTrue($db->deviceConfigurations->isCurrentOperation('op-one'));
+        self::assertTrue($db->deviceConfigurations->updateOperation('op-one', 'acked'));
 
-        $second = $db->configurationLifecycle->stage(
+        $second = $db->deviceConfigurations->stage(
             '861728087056333',
             'whitelist_enabled',
             ['enabled' => true],
@@ -55,17 +55,17 @@ final class DeviceConfigurationLifecycleRepositoryTest extends MysqlDashboardTes
             [$operation('op-two')],
         );
         self::assertSame(2, $second['revision']);
-        self::assertFalse($db->configurationLifecycle->isCurrentOperation('op-one'));
-        self::assertFalse($db->configurationLifecycle->updateOperation('op-one', 'acked'));
+        self::assertFalse($db->deviceConfigurations->isCurrentOperation('op-one'));
+        self::assertFalse($db->deviceConfigurations->updateOperation('op-one', 'acked'));
         $oldStatus = $database->pdo()->query("
             SELECT delivery_status
             FROM device_configuration_operations
             WHERE operation_id = 'op-one'
         ")->fetchColumn();
         self::assertSame('acked', $oldStatus);
-        self::assertTrue($db->configurationLifecycle->updateOperation('op-two', 'acked'));
+        self::assertTrue($db->deviceConfigurations->updateOperation('op-two', 'acked'));
 
-        $current = $db->configurationLifecycle->currentForImei('861728087056333');
+        $current = $db->deviceConfigurations->currentForImei('861728087056333');
         self::assertCount(1, $current);
         self::assertSame('confirmed', $current[0]['sync_status']);
         self::assertSame(['enabled' => true], $current[0]['effective_payload']);
@@ -83,22 +83,22 @@ final class DeviceConfigurationLifecycleRepositoryTest extends MysqlDashboardTes
     {
         $db = ApiDataAccess::fromDatabase($this->createDashboardDatabase());
 
-        self::assertTrue($db->configurationLifecycle->recordRead('AD8A613B0493', 'fall_alarm', ['afterSeconds' => 20], 'qinglanst-radar'));
+        self::assertTrue($db->deviceConfigurations->recordRead('AD8A613B0493', 'fall_alarm', ['afterSeconds' => 20], 'qinglanst-radar'));
 
-        $current = $db->configurationLifecycle->currentForImei('AD8A613B0493');
+        $current = $db->deviceConfigurations->currentForImei('AD8A613B0493');
         self::assertSame('confirmed', $current[0]['sync_status']);
         self::assertSame(['afterSeconds' => 20], $current[0]['effective_payload']);
-        self::assertSame(['fall_alarm' => ['afterSeconds' => 20]], $db->configurationLifecycle->effectivePayloads('AD8A613B0493', ['fall_alarm']));
+        self::assertSame(['fall_alarm' => ['afterSeconds' => 20]], $db->deviceConfigurations->effectivePayloads('AD8A613B0493', ['fall_alarm']));
     }
 
     /** Ler o mesmo valor outra vez não cria revisão nova. */
     public function testReadingTheSameValueAgainChangesNothing(): void
     {
         $db = ApiDataAccess::fromDatabase($this->createDashboardDatabase());
-        $db->configurationLifecycle->recordRead('AD8A613B0493', 'fall_alarm', ['afterSeconds' => 20], 'qinglanst-radar');
+        $db->deviceConfigurations->recordRead('AD8A613B0493', 'fall_alarm', ['afterSeconds' => 20], 'qinglanst-radar');
 
-        self::assertFalse($db->configurationLifecycle->recordRead('AD8A613B0493', 'fall_alarm', ['afterSeconds' => 20], 'qinglanst-radar'));
-        self::assertSame(1, (int)$db->configurationLifecycle->currentForImei('AD8A613B0493')[0]['desired_revision']);
+        self::assertFalse($db->deviceConfigurations->recordRead('AD8A613B0493', 'fall_alarm', ['afterSeconds' => 20], 'qinglanst-radar'));
+        self::assertSame(1, (int)$db->deviceConfigurations->currentForImei('AD8A613B0493')[0]['desired_revision']);
     }
 
     /** Mudar o nome de um utilizador da balança não escreve nada nela, e vale logo. */
@@ -107,17 +107,17 @@ final class DeviceConfigurationLifecycleRepositoryTest extends MysqlDashboardTes
         $db = ApiDataAccess::fromDatabase($this->createDashboardDatabase());
         $users = ['items' => [['id' => 'u-1', 'name' => 'Ana']], 'onlineUserId' => 'u-1'];
 
-        $db->configurationLifecycle->stage('cfe908067329', 'scale_users', $users, [], []);
+        $db->deviceConfigurations->stage('cfe908067329', 'scale_users', $users, [], []);
 
-        self::assertSame(['scale_users' => $users], $db->configurationLifecycle->effectivePayloads('cfe908067329', ['scale_users']));
+        self::assertSame(['scale_users' => $users], $db->deviceConfigurations->effectivePayloads('cfe908067329', ['scale_users']));
     }
 
     /** Enquanto a alteração seguinte espera pelo aparelho, vale a que ele já tem. */
     public function testThePreviousValueHoldsWhileTheNextIsOnItsWay(): void
     {
         $db = ApiDataAccess::fromDatabase($this->createDashboardDatabase());
-        $db->configurationLifecycle->recordRead('AD8A613B0493', 'fall_alarm', ['afterSeconds' => 20], 'qinglanst-radar');
-        $db->configurationLifecycle->stage('AD8A613B0493', 'fall_alarm', ['afterSeconds' => 60], [[
+        $db->deviceConfigurations->recordRead('AD8A613B0493', 'fall_alarm', ['afterSeconds' => 20], 'qinglanst-radar');
+        $db->deviceConfigurations->stage('AD8A613B0493', 'fall_alarm', ['afterSeconds' => 60], [[
             'nativeKey' => 'fall_alarm',
             'protocol' => 'qinglanst-radar',
             'command' => 'fall_alarm',
@@ -132,14 +132,14 @@ final class DeviceConfigurationLifecycleRepositoryTest extends MysqlDashboardTes
             'confirmationMode' => 'execution_ack',
         ]]);
 
-        self::assertSame(['fall_alarm' => ['afterSeconds' => 20]], $db->configurationLifecycle->effectivePayloads('AD8A613B0493', ['fall_alarm']));
+        self::assertSame(['fall_alarm' => ['afterSeconds' => 20]], $db->deviceConfigurations->effectivePayloads('AD8A613B0493', ['fall_alarm']));
     }
 
     /** Uma alteração a caminho do aparelho não é apagada pelo que se leu antes de ela chegar. */
     public function testAReadDoesNotOverwriteAChangeOnItsWay(): void
     {
         $db = ApiDataAccess::fromDatabase($this->createDashboardDatabase());
-        $db->configurationLifecycle->stage('AD8A613B0493', 'fall_alarm', ['afterSeconds' => 60], [[
+        $db->deviceConfigurations->stage('AD8A613B0493', 'fall_alarm', ['afterSeconds' => 60], [[
             'nativeKey' => 'fall_alarm',
             'protocol' => 'qinglanst-radar',
             'command' => 'fall_alarm',
@@ -154,8 +154,8 @@ final class DeviceConfigurationLifecycleRepositoryTest extends MysqlDashboardTes
             'confirmationMode' => 'execution_ack',
         ]]);
 
-        self::assertFalse($db->configurationLifecycle->recordRead('AD8A613B0493', 'fall_alarm', ['afterSeconds' => 20], 'qinglanst-radar'));
-        self::assertSame(['afterSeconds' => 60], $db->configurationLifecycle->currentForImei('AD8A613B0493')[0]['desired_payload']);
+        self::assertFalse($db->deviceConfigurations->recordRead('AD8A613B0493', 'fall_alarm', ['afterSeconds' => 20], 'qinglanst-radar'));
+        self::assertSame(['afterSeconds' => 60], $db->deviceConfigurations->currentForImei('AD8A613B0493')[0]['desired_payload']);
     }
 
     /** Só o que o aparelho confirmou conta, e só das chaves pedidas. */
@@ -163,7 +163,7 @@ final class DeviceConfigurationLifecycleRepositoryTest extends MysqlDashboardTes
     {
         $db = ApiDataAccess::fromDatabase($this->createDashboardDatabase());
         $stage = static function (string $key, array $payload, string $operationId) use ($db): void {
-            $db->configurationLifecycle->stage('869243062262262', $key, $payload, [[
+            $db->deviceConfigurations->stage('869243062262262', $key, $payload, [[
                 'nativeKey' => $key,
                 'protocol' => 'zayata-m228',
                 'supplier' => 'Zayata',
@@ -187,12 +187,12 @@ final class DeviceConfigurationLifecycleRepositoryTest extends MysqlDashboardTes
         $stage('time_zone', ['timeZone' => 100], 'op-zone');
         $stage('medication_period', ['enabled' => true, 'startDate' => '2026-10-01', 'endDate' => ''], 'op-period');
         $stage('child_lock', ['enabled' => true], 'op-lock');
-        $db->configurationLifecycle->updateOperation('op-zone', 'acked');
-        $db->configurationLifecycle->updateOperation('op-lock', 'acked');
+        $db->deviceConfigurations->updateOperation('op-zone', 'acked');
+        $db->deviceConfigurations->updateOperation('op-lock', 'acked');
 
         self::assertSame(
             ['time_zone' => ['timeZone' => 100]],
-            $db->configurationLifecycle->effectivePayloads('869243062262262', ['time_zone', 'medication_period']),
+            $db->deviceConfigurations->effectivePayloads('869243062262262', ['time_zone', 'medication_period']),
         );
     }
 
@@ -200,7 +200,7 @@ final class DeviceConfigurationLifecycleRepositoryTest extends MysqlDashboardTes
     {
         $database = $this->createDashboardDatabase();
         $db = ApiDataAccess::fromDatabase($database);
-        $db->configurationLifecycle->stage(
+        $db->deviceConfigurations->stage(
             '861728087056333',
             'auto_vitals_interval',
             ['enabled' => true, 'intervalMinutes' => 15],
@@ -226,12 +226,12 @@ final class DeviceConfigurationLifecycleRepositoryTest extends MysqlDashboardTes
             ]],
         );
 
-        self::assertTrue($db->configurationLifecycle->updateOperation(
+        self::assertTrue($db->deviceConfigurations->updateOperation(
             'op-failed',
             'failed',
             'retry_exhausted',
         ));
-        $current = $db->configurationLifecycle->currentForImei('861728087056333')[0];
+        $current = $db->deviceConfigurations->currentForImei('861728087056333')[0];
         self::assertSame('failed', $current['sync_status']);
         self::assertNull($current['effective_payload']);
         self::assertSame('retry_exhausted', $current['operations'][0]['error_code']);
@@ -251,7 +251,7 @@ final class DeviceConfigurationLifecycleRepositoryTest extends MysqlDashboardTes
             'voiceMimeType' => 'audio/mpeg',
         ];
 
-        $db->configurationLifecycle->stage(
+        $db->deviceConfigurations->stage(
             '861728087056333',
             'medication_reminders',
             $desired,
@@ -277,7 +277,7 @@ final class DeviceConfigurationLifecycleRepositoryTest extends MysqlDashboardTes
             ]],
         );
 
-        $history = $db->configurationLifecycle->currentForImei('861728087056333')[0]['desired_payload'];
+        $history = $db->deviceConfigurations->currentForImei('861728087056333')[0]['desired_payload'];
         self::assertArrayNotHasKey('voiceData', $history);
         self::assertTrue($history['voiceDataAvailable']);
         self::assertSame(strlen($audio), $history['voiceDataBytes']);
@@ -294,7 +294,7 @@ final class DeviceConfigurationLifecycleRepositoryTest extends MysqlDashboardTes
         $db = ApiDataAccess::fromDatabase($database);
         $desired = ['voiceData' => base64_encode(str_repeat('a', 3000)), 'reminderText' => 'X'];
 
-        $db->configurationLifecycle->stage(
+        $db->deviceConfigurations->stage(
             '861728087056333',
             'medication_reminders',
             $desired,
@@ -319,9 +319,9 @@ final class DeviceConfigurationLifecycleRepositoryTest extends MysqlDashboardTes
                 'label' => 'Aviso de medicação',
             ]],
         );
-        self::assertTrue($db->configurationLifecycle->updateOperation('op-pills', 'acked'));
+        self::assertTrue($db->deviceConfigurations->updateOperation('op-pills', 'acked'));
 
-        $effective = $db->configurationLifecycle->currentForImei('861728087056333')[0]['effective_payload'];
+        $effective = $db->deviceConfigurations->currentForImei('861728087056333')[0]['effective_payload'];
         self::assertArrayNotHasKey('voiceData', $effective);
         self::assertTrue($effective['voiceDataAvailable']);
     }
@@ -331,10 +331,10 @@ final class DeviceConfigurationLifecycleRepositoryTest extends MysqlDashboardTes
     {
         $db = ApiDataAccess::fromDatabase($this->createDashboardDatabase());
         $settled = [];
-        $db->configurationLifecycle->announceOutcomesTo(static function (array $change) use (&$settled): void {
+        $db->deviceConfigurations->announceOutcomesTo(static function (array $change) use (&$settled): void {
             $settled[] = [$change['configKey'], $change['status'], $change['effective'], $change['error'], $change['desiredRevision']];
         });
-        $stage = static fn (string $operationId, bool $enabled, string $mode = 'execution_ack') => $db->configurationLifecycle->stage(
+        $stage = static fn (string $operationId, bool $enabled, string $mode = 'execution_ack') => $db->deviceConfigurations->stage(
             '861728087056333',
             'whitelist_enabled',
             ['enabled' => $enabled],
@@ -343,14 +343,14 @@ final class DeviceConfigurationLifecycleRepositoryTest extends MysqlDashboardTes
         );
 
         $stage('op-one', true);
-        $db->configurationLifecycle->updateOperation('op-one', 'waiting');
-        $db->configurationLifecycle->updateOperation('op-one', 'acked');
-        $db->configurationLifecycle->updateOperation('op-one', 'acked');
+        $db->deviceConfigurations->updateOperation('op-one', 'waiting');
+        $db->deviceConfigurations->updateOperation('op-one', 'acked');
+        $db->deviceConfigurations->updateOperation('op-one', 'acked');
         $stage('op-two', false);
-        $db->configurationLifecycle->updateOperation('op-two', 'failed', 'device_rejected');
+        $db->deviceConfigurations->updateOperation('op-two', 'failed', 'device_rejected');
         $stage('op-three', false, 'ack_only');
-        $db->configurationLifecycle->updateOperation('op-three', 'acked');
-        $db->configurationLifecycle->stage('cfe908067329', 'scale_users', ['items' => []], [], []);
+        $db->deviceConfigurations->updateOperation('op-three', 'acked');
+        $db->deviceConfigurations->stage('cfe908067329', 'scale_users', ['items' => []], [], []);
 
         self::assertSame([
             ['whitelist_enabled', 'confirmed', ['enabled' => true], '', 1],
@@ -367,10 +367,10 @@ final class DeviceConfigurationLifecycleRepositoryTest extends MysqlDashboardTes
         $store = new DeviceStore(new InMemoryRedisClient());
         $store->setDataAccess($db);
         $settled = [];
-        $db->configurationLifecycle->announceOutcomesTo(static function (array $change) use (&$settled): void {
+        $db->deviceConfigurations->announceOutcomesTo(static function (array $change) use (&$settled): void {
             $settled[] = [$change['status'], $change['error'], $change['confirmedAt'] !== ''];
         });
-        $db->configurationLifecycle->stage(
+        $db->deviceConfigurations->stage(
             'cfe908067329',
             'weight_unit',
             ['unit' => 'kg'],
@@ -388,14 +388,14 @@ final class DeviceConfigurationLifecycleRepositoryTest extends MysqlDashboardTes
     {
         $db = ApiDataAccess::fromDatabase($this->createDashboardDatabase());
         $confirmedAt = [];
-        $db->configurationLifecycle->announceOutcomesTo(static function (array $change) use (&$confirmedAt): void {
+        $db->deviceConfigurations->announceOutcomesTo(static function (array $change) use (&$confirmedAt): void {
             $confirmedAt[] = $change['confirmedAt'];
         });
 
-        $db->configurationLifecycle->stage('cfe908067329', 'scale_users', ['items' => []], [], []);
+        $db->deviceConfigurations->stage('cfe908067329', 'scale_users', ['items' => []], [], []);
 
         self::assertSame(
-            $db->configurationLifecycle->currentForImei('cfe908067329')[0]['confirmed_at'],
+            $db->deviceConfigurations->currentForImei('cfe908067329')[0]['confirmed_at'],
             $confirmedAt[0],
         );
     }
@@ -409,12 +409,12 @@ final class DeviceConfigurationLifecycleRepositoryTest extends MysqlDashboardTes
         $store->setDataAccess($db);
         $store->deviceSeen($imei, ['deviceType' => 'watch', 'online' => '1']);
         $settled = [];
-        $db->configurationLifecycle->announceOutcomesTo(static function (array $change) use (&$settled): void {
+        $db->deviceConfigurations->announceOutcomesTo(static function (array $change) use (&$settled): void {
             $settled[] = $change['status'];
         });
         $contacts = ['items' => [['name' => 'Hugo', 'phone' => '+351938854803']]];
         $operation = ['operationId' => 'op-phbx2', 'nativeKey' => 'phonebook', 'nativeType' => 'PHBX2', 'protocol' => 'four-p-touch', 'confirmationMode' => 'execution_ack'];
-        $staged = $db->configurationLifecycle->stage(
+        $staged = $db->deviceConfigurations->stage(
             $imei,
             'phonebook',
             $contacts,
@@ -435,7 +435,7 @@ final class DeviceConfigurationLifecycleRepositoryTest extends MysqlDashboardTes
             }
         }
 
-        self::assertSame('confirmed', $db->configurationLifecycle->currentForImei($imei)[0]['sync_status']);
+        self::assertSame('confirmed', $db->deviceConfigurations->currentForImei($imei)[0]['sync_status']);
         self::assertSame(['failed', 'confirmed'], $settled);
     }
 }

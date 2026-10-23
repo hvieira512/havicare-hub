@@ -40,7 +40,7 @@ final class MedicationNamesTest extends MysqlDashboardTestCase
         $first = $api->updateConfigurations(self::IMEI, ['configurations' => [
             'medication_reminders' => $this->plan('Metformina', '08:00'),
         ]]);
-        $db->configurationLifecycle->updateOperation((string)$first['results'][0]['operations'][0]['lastCommandId'], 'acked');
+        $db->deviceConfigurations->updateOperation((string)$first['results'][0]['operations'][0]['lastCommandId'], 'acked');
 
         $response = $api->updateConfigurations(self::IMEI, ['configurations' => [
             'medication_reminders' => $this->plan('Atorvastatina', '08:00'),

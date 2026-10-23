@@ -6,37 +6,32 @@ namespace Hub\Infrastructure\Persistence\Repository;
 
 use Hub\Domain\GatewayDeviceLinkLookup;
 use Hub\Infrastructure\Persistence\TimestampFormatter;
+use Hub\Support\TtlCache;
 use PDO;
 
 final class GatewayDeviceLinkRepository implements GatewayDeviceLinkLookup
 {
-    // Teto do cache. A chave é o par gateway|aparelho, limitado pelo inventário, mas o teto
-    // fecha a porta a um crescimento patológico num processo de longa vida.
-    private const MAX_CACHED = 10000;
+    private TtlCache $authorizationCache;
 
-    /** @var array<string, array{enabled: bool, loadedAt: int}> */
-    private array $authorizationCache = [];
-
-    public function __construct(private PDO $pdo, private int $cacheTtlSeconds = 5)
+    public function __construct(private PDO $pdo, int $cacheTtlSeconds = 5)
     {
-        $this->cacheTtlSeconds = max(0, $this->cacheTtlSeconds);
+        $this->authorizationCache = new TtlCache($cacheTtlSeconds);
     }
 
     public function isEnabled(string $gatewayDeviceKey, string $linkedDeviceKey): bool
     {
-        $cacheKey = $gatewayDeviceKey . ':' . $linkedDeviceKey;
-        $cached = $this->authorizationCache[$cacheKey] ?? null;
-        if (is_array($cached) && time() - $cached['loadedAt'] <= $this->cacheTtlSeconds) {
-            return $cached['enabled'];
-        }
+        return $this->authorizationCache->remember(
+            $gatewayDeviceKey . ':' . $linkedDeviceKey,
+            fn (): bool => $this->loadEnabled($gatewayDeviceKey, $linkedDeviceKey),
+        );
+    }
+
+    private function loadEnabled(string $gatewayDeviceKey, string $linkedDeviceKey): bool
+    {
         $stmt = $this->pdo->prepare('SELECT enabled FROM gateway_device_links WHERE gateway_device_key = ? AND linked_device_key = ?');
         $stmt->execute([$gatewayDeviceKey, $linkedDeviceKey]);
-        $enabled = (int)($stmt->fetchColumn() ?: 0) === 1;
-        if (!isset($this->authorizationCache[$cacheKey]) && count($this->authorizationCache) >= self::MAX_CACHED) {
-            unset($this->authorizationCache[array_key_first($this->authorizationCache)]);
-        }
-        $this->authorizationCache[$cacheKey] = ['enabled' => $enabled, 'loadedAt' => time()];
-        return $enabled;
+
+        return (int)($stmt->fetchColumn() ?: 0) === 1;
     }
 
     public function upsert(string $gatewayDeviceKey, string $linkedDeviceKey): void
@@ -47,14 +42,14 @@ final class GatewayDeviceLinkRepository implements GatewayDeviceLinkLookup
             ON DUPLICATE KEY UPDATE enabled = 1, updated_at = CURRENT_TIMESTAMP
         ');
         $stmt->execute([$gatewayDeviceKey, $linkedDeviceKey]);
-        unset($this->authorizationCache[$gatewayDeviceKey . ':' . $linkedDeviceKey]);
+        $this->authorizationCache->forget($gatewayDeviceKey . ':' . $linkedDeviceKey);
     }
 
     public function delete(string $gatewayDeviceKey, string $linkedDeviceKey): void
     {
         $stmt = $this->pdo->prepare('DELETE FROM gateway_device_links WHERE gateway_device_key = ? AND linked_device_key = ?');
         $stmt->execute([$gatewayDeviceKey, $linkedDeviceKey]);
-        unset($this->authorizationCache[$gatewayDeviceKey . ':' . $linkedDeviceKey]);
+        $this->authorizationCache->forget($gatewayDeviceKey . ':' . $linkedDeviceKey);
     }
 
     /** @return list<array<string, mixed>> */

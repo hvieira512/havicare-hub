@@ -74,6 +74,12 @@ abstract class TcpProtocol
         return [];
     }
 
+    /** Se a resposta ecoa o ident do downlink; quando não, vale a do mesmo tipo que estiver pendente. */
+    public function echoesReplyIdent(): bool
+    {
+        return true;
+    }
+
     /** @return array{nativeType?: string, protocol?: string, ident?: string|int}|null */
     public function commandMetadata(string $bytes): ?array
     {

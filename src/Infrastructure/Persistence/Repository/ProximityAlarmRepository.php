@@ -6,6 +6,7 @@ namespace Hub\Infrastructure\Persistence\Repository;
 
 use Hub\Domain\ProximityAlarm;
 use Hub\Domain\ProximityAlarmLookup;
+use Hub\Support\TtlCache;
 use PDO;
 
 /**
@@ -14,23 +15,21 @@ use PDO;
  */
 final class ProximityAlarmRepository implements ProximityAlarmLookup
 {
-    private const MAX_CACHED = 10000;
+    private TtlCache $cache;
 
-    /** @var array<string, array{settings: array<string, mixed>, loadedAt: int}> */
-    private array $cache = [];
-
-    public function __construct(private PDO $pdo, private int $cacheTtlSeconds = 5)
+    public function __construct(private PDO $pdo, int $cacheTtlSeconds = 5)
     {
-        $this->cacheTtlSeconds = max(0, $this->cacheTtlSeconds);
+        $this->cache = new TtlCache($cacheTtlSeconds);
     }
 
     public function forGateway(string $gatewayKey): array
     {
-        $cached = $this->cache[$gatewayKey] ?? null;
-        if (is_array($cached) && time() - $cached['loadedAt'] <= $this->cacheTtlSeconds) {
-            return $cached['settings'];
-        }
+        return $this->cache->remember($gatewayKey, fn (): array => $this->load($gatewayKey));
+    }
 
+    /** @return array<string, mixed> */
+    private function load(string $gatewayKey): array
+    {
         $stmt = $this->pdo->prepare('
             SELECT desired_payload
             FROM device_configurations
@@ -40,12 +39,6 @@ final class ProximityAlarmRepository implements ProximityAlarmLookup
         $payload = json_decode((string)$stmt->fetchColumn(), true);
 
         // Sem linha, o alarme está desligado.
-        $settings = (is_array($payload) ? $payload : []) + ProximityAlarm::defaults();
-        if (!isset($this->cache[$gatewayKey]) && count($this->cache) >= self::MAX_CACHED) {
-            unset($this->cache[array_key_first($this->cache)]);
-        }
-        $this->cache[$gatewayKey] = ['settings' => $settings, 'loadedAt' => time()];
-
-        return $settings;
+        return (is_array($payload) ? $payload : []) + ProximityAlarm::defaults();
     }
 }

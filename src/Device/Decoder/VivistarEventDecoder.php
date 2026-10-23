@@ -69,7 +69,6 @@ final class VivistarEventDecoder
             'mnc' => DeviceEventDecoder::stringField($fields[4] ?? null),
             'lac' => $firstBase['lac'] ?? null,
             'cellId' => $firstBase['cellId'] ?? null,
-            'gsmSignal' => $firstBase['gsmSignal'] ?? null,
             'accuracyMeters' => null,
             'baseStations' => $baseStations,
             'wifi' => $wifi,
@@ -77,7 +76,7 @@ final class VivistarEventDecoder
     }
 
     /**
-     * @return array<int, array{lac?: string, cellId?: string, gsmSignal?: int}>
+     * @return array<int, array{lac?: string, cellId?: string, signalStrengthDbm?: int}>
      */
     private static function parseBaseStations(string $field): array
     {
@@ -88,12 +87,10 @@ final class VivistarEventDecoder
                 continue;
             }
 
-            $rawSignal = self::intField($parts[2] ?? null);
             $stations[] = array_filter([
                 'lac' => $parts[0] !== '' ? $parts[0] : null,
                 'cellId' => $parts[1] !== '' ? $parts[1] : null,
-                'gsmSignal' => self::legacySignalStrength($rawSignal),
-                'signalStrengthDbm' => self::signalDbm($rawSignal),
+                'signalStrengthDbm' => self::signalDbm(self::intField($parts[2] ?? null)),
             ], static fn (mixed $value): bool => $value !== null && $value !== '');
         }
 
@@ -101,7 +98,7 @@ final class VivistarEventDecoder
     }
 
     /**
-     * @return array<int, array{label?: string, mac?: string, gsmSignal?: int}>
+     * @return array<int, array{label?: string, mac?: string, signalStrengthDbm?: int}>
      */
     private static function parseWifi(string $field): array
     {
@@ -112,21 +109,14 @@ final class VivistarEventDecoder
                 continue;
             }
 
-            $rawSignal = self::intField($parts[2] ?? null);
             $wifi[] = array_filter([
                 'label' => $parts[0] !== '' ? $parts[0] : null,
                 'mac' => $parts[1] !== '' ? $parts[1] : null,
-                'gsmSignal' => self::legacySignalStrength($rawSignal),
-                'signalStrengthDbm' => self::signalDbm($rawSignal),
+                'signalStrengthDbm' => self::signalDbm(self::intField($parts[2] ?? null)),
             ], static fn (mixed $value): bool => $value !== null && $value !== '');
         }
 
         return $wifi;
-    }
-
-    private static function legacySignalStrength(?int $value): ?int
-    {
-        return $value === null ? null : max(0, 150 - abs($value));
     }
 
     private static function signalDbm(?int $value): ?int

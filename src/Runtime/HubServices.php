@@ -85,7 +85,7 @@ final class HubServices
 
         $lifecycleEvents = new LifecycleEvents($mqttBridge, $whitelist, $commercialModelResolver);
         $deviceStore->announceCommandsTo($lifecycleEvents->command(...));
-        $dataAccess->configurationLifecycle->announceOutcomesTo($lifecycleEvents->configuration(...));
+        $dataAccess->deviceConfigurations->announceOutcomesTo($lifecycleEvents->configuration(...));
 
         $locationEnricher = LocationEnricherFactory::create(
             $config['location_resolution'],
@@ -101,7 +101,7 @@ final class HubServices
         );
         $qinglanstCommands = new QinglanstCloudCommands();
         $radarState = new RadarStateAbsorber(
-            $dataAccess->configurationLifecycle,
+            $dataAccess->deviceConfigurations,
             $qinglanstCommands,
             $dataAccess->whitelist,
             $mqttBridge,
@@ -146,7 +146,7 @@ final class HubServices
             locationTelemetryEnricher: $locationEnricher,
             denylist: $denylist,
             firmwareUpgrades: new FirmwareUpgradeStore($redis),
-            effectiveConfiguration: static fn (string $imei): array => $dataAccess->configurationLifecycle
+            effectiveConfiguration: static fn (string $imei): array => $dataAccess->deviceConfigurations
                 ->effectivePayloads($imei, [...MedicationRunout::CONFIGURATION_KEYS, ...Liveness::CONFIGURATION_KEYS]),
             // Na volta seguinte do ciclo: quem pôs na fila ainda vai gravar o registo do comando.
             downlinkQueued: static fn (string $imei) => Loop::futureTick(

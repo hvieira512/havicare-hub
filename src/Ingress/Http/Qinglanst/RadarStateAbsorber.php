@@ -6,7 +6,7 @@ namespace Hub\Ingress\Http\Qinglanst;
 
 use Hub\Device\HubMqttBridge;
 use Hub\Domain\DeviceMetadata;
-use Hub\Infrastructure\Persistence\Repository\DeviceConfigurationLifecycleRepository;
+use Hub\Infrastructure\Persistence\Repository\DeviceConfigurationRepository;
 use Hub\Infrastructure\Persistence\Repository\WhitelistRepository;
 use Hub\State\DeviceStoreContract;
 use Hub\Device\TelemetryEnvelope;
@@ -20,7 +20,7 @@ final class RadarStateAbsorber
     private const PROTOCOL = 'qinglanst-radar';
 
     public function __construct(
-        private readonly DeviceConfigurationLifecycleRepository $lifecycle,
+        private readonly DeviceConfigurationRepository $lifecycle,
         private readonly QinglanstCloudCommands $commands,
         private readonly WhitelistRepository $whitelist,
         private readonly HubMqttBridge $mqtt,

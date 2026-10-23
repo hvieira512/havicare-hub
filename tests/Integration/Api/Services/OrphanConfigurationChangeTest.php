@@ -43,7 +43,7 @@ final class OrphanConfigurationChangeTest extends MysqlDashboardTestCase
     private function stageFailed(ApiDataAccess $db, string $key, string $nativeKey, array $payload): void
     {
         $operationId = 'op-' . $key;
-        $db->configurationLifecycle->stage(
+        $db->deviceConfigurations->stage(
             self::IMEI,
             $key,
             $payload,
@@ -68,14 +68,14 @@ final class OrphanConfigurationChangeTest extends MysqlDashboardTestCase
                 'label' => $key,
             ]],
         );
-        $db->configurationLifecycle->updateOperation($operationId, 'failed', 'retry_exhausted');
+        $db->deviceConfigurations->updateOperation($operationId, 'failed', 'retry_exhausted');
     }
 
     /** @return array{effectiveConfigurations:array<string,mixed>,configurationSync:array<string,mixed>} */
     private function present(ApiDataAccess $db): array
     {
         $presenter = new ConfigurationLifecyclePresenter(
-            $db->configurationLifecycle,
+            $db->deviceConfigurations,
             new DeviceCapabilityPresenter(new CapabilityRegistry(), $db),
             new ConfigurationSyncStatus(),
         );

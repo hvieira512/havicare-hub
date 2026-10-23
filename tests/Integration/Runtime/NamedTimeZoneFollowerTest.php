@@ -51,7 +51,7 @@ final class NamedTimeZoneFollowerTest extends DashboardHttpTestCase
 
         $follower = new NamedTimeZoneFollower(
             new DeviceService($store, new Whitelist($db->whitelist), $hub, $db),
-            $db->configurationLifecycle,
+            $db->deviceConfigurations,
             static fn (): array => [self::IMEI],
         );
 
@@ -59,7 +59,7 @@ final class NamedTimeZoneFollowerTest extends DashboardHttpTestCase
 
         // O fuso foi escrito na outra estação do ano, com o outro desvio.
         $otherSeason = $now === 100 ? '2026-01-15 12:00:00' : '2026-07-15 12:00:00';
-        $pdo = (new \ReflectionProperty($db->configurationLifecycle, 'pdo'))->getValue($db->configurationLifecycle);
+        $pdo = (new \ReflectionProperty($db->deviceConfigurations, 'pdo'))->getValue($db->deviceConfigurations);
         $pdo->prepare("
             UPDATE device_configuration_changes SET created_at = ?
             WHERE imei = ? AND config_key = 'time_zone' AND superseded_at IS NULL

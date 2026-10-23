@@ -22,6 +22,8 @@ final class DeviceCommandStore
         private DeviceRuntimeStore $runtime,
         private int $limit = 100,
         private ?DeviceConfigurationProjection $projection = null,
+        /** @var (\Closure(string): bool)|null diz se o protocolo ecoa o ident na resposta */
+        private ?\Closure $echoesReplyIdent = null,
     ) {
         $this->limit = max(1, $this->limit);
     }
@@ -297,7 +299,7 @@ final class DeviceCommandStore
         string $error = '',
     ): void {
         $uncorrelatedMatch = null;
-        $wonlexSemanticMatch = null;
+        $semanticMatch = null;
 
         foreach ($this->commands($imei) as $command) {
             if (!in_array((string)($command['status'] ?? ''), ['waiting'], true)) {
@@ -314,20 +316,19 @@ final class DeviceCommandStore
                 return;
             }
 
-            if ($commandIdent === null || ($ident === null && ($command['protocol'] ?? '') !== 'wonlex-json')) {
+            $echoes = $this->echoesReplyIdent === null || ($this->echoesReplyIdent)((string)($command['protocol'] ?? ''));
+            if ($commandIdent === null || ($ident === null && $echoes)) {
                 $uncorrelatedMatch ??= $command;
                 continue;
             }
 
-            // Alguns firmwares Wonlex geram um ident novo no `w:reply` e no `w:update` em vez de ecoarem o
-            // do downlink: vale o ident exacto, e depois o pendente mais recente que espera esta resposta.
-            if (($command['protocol'] ?? '') === 'wonlex-json') {
-                $wonlexSemanticMatch ??= $command;
-                continue;
+            // Sem eco do ident, vale o pendente mais recente que espera esta resposta.
+            if (!$echoes) {
+                $semanticMatch ??= $command;
             }
         }
 
-        $command = $uncorrelatedMatch ?? $wonlexSemanticMatch;
+        $command = $uncorrelatedMatch ?? $semanticMatch;
         if (is_array($command)) {
             $this->completeCommandReply($imei, $command, $replyNativeType, $ident, $ref, $accepted, $error);
         }

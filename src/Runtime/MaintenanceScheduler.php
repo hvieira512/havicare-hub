@@ -69,7 +69,7 @@ final class MaintenanceScheduler
                 try {
                     $timeZones ??= new NamedTimeZoneFollower(
                         new DeviceService($store, $services->whitelist, $hubServer, $services->dataAccess),
-                        $services->dataAccess->configurationLifecycle,
+                        $services->dataAccess->deviceConfigurations,
                         static fn (): array => $store->onlineDeviceImeis(),
                     );
                     foreach ($timeZones->tick() as $imei) {
