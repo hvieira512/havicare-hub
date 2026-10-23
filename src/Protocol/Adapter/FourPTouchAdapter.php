@@ -48,7 +48,7 @@ class FourPTouchAdapter implements DeviceAdapterInterface
 
         $this->enrichData($type, $data['fields'], $data);
 
-        return [
+        $decoded = [
             'type' => $type,
             'ident' => $frame['deviceId'],
             'ref' => 'w:update',
@@ -56,6 +56,33 @@ class FourPTouchAdapter implements DeviceAdapterInterface
             'data' => $data,
             'timestamp' => (int) round(microtime(true) * 1000),
         ];
+
+        // O relógio reenvia o alarme até ter resposta; o instante é o da trama, não o da chegada.
+        $occurredAt = $this->isAlarmType($type) ? self::frameTime($data['fields']) : null;
+        if ($occurredAt !== null) {
+            $decoded['occurredAt'] = $occurredAt;
+        }
+
+        return $decoded;
+    }
+
+    /**
+     * A data e a hora UTC da trama (`ddmmyy`, `hhmmss`), ou `null` quando não são plausíveis:
+     * mais de 5 minutos no futuro, ou mais de 7 dias atrás — um relógio sem hora acertada
+     * arranca numa data de fábrica, e um alarme por entregar não fica tanto tempo na fila.
+     *
+     * @param list<string> $fields
+     */
+    private static function frameTime(array $fields): ?string
+    {
+        $stamp = ($fields[0] ?? '') . ($fields[1] ?? '');
+        $at = \DateTimeImmutable::createFromFormat('!dmyHis', $stamp, new \DateTimeZone('UTC'));
+        if ($at === false || $at->format('dmyHis') !== $stamp) {
+            return null;
+        }
+
+        $age = time() - $at->getTimestamp();
+        return $age < -300 || $age > 7 * 86400 ? null : $at->format('Y-m-d\TH:i:s\Z');
     }
 
     public function encodeOutgoing(array $payload, array $context = []): string

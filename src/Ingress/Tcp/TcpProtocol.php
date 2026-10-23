@@ -39,6 +39,9 @@ abstract class TcpProtocol
                 (string)$event['nativeType'],
                 $event['value'],
             );
+            if (is_string($decoded['occurredAt'] ?? null)) {
+                $payload['occurredAt'] = $decoded['occurredAt'];
+            }
             if (is_array($event['extra'] ?? null) && $event['extra'] !== []) {
                 $payload['extra'] = $event['extra'];
             }

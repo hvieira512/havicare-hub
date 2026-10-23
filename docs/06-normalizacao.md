@@ -75,7 +75,7 @@ e `source`, como um `device.connected`, que só leva a identidade.
 | Campo | Notas |
 |---|---|
 | `type` | O nome da capacidade. A secção 3 lista as reconhecidas pelo `FeatureNormalizer` e as dos ingestores MQTT |
-| `occurredAt` | UTC, RFC 3339, **ao segundo**. É o relógio do **hub** no momento de publicar, não o do aparelho |
+| `occurredAt` | UTC, RFC 3339, **ao segundo**. Em regra é o relógio do **hub** no momento de publicar; as exceções estão abaixo |
 | `device.id` | Identidade canónica — a mesma que vai no tópico |
 | `device.supplier` · `device.model` | O que a whitelist diz. Omitidos se vazios |
 | `device.commercialName` | Do catálogo de modelos. Omitido quando o modelo não está lá |
@@ -92,6 +92,18 @@ transportam data, e um relógio que esteve sem cobertura transmite lotes com
 registos antigos. O instante indicado pelo dispositivo, quando existe, fica na
 mensagem original do canal `raw`; se vier a ser necessário na forma normalizada,
 promove-se a um campo próprio do `data`.
+
+Há três exceções, em que o `occurredAt` é o relógio do aparelho:
+
+- **Tuya:** o `time` de cada propriedade que a cloud manda.
+- **Memória dos aparelhos de medição:** uma pesagem ou uma tensão lida do
+  histórico leva o instante da medição, com `fromHistory: true`.
+- **Alarmes do 4P Touch:** tudo o que sai de uma trama `AL`, `AL_WCDMA` ou
+  `AL_LTE` — os eventos, a `location` e a `battery` — leva a data e a hora da trama, que é UTC. O relógio
+  reenvia o alarme até ter resposta, também depois de se religar, e um SOS
+  reenviado horas depois não pode parecer novo. Uma hora ilegível, mais de 5
+  minutos no futuro ou com mais de 7 dias — um relógio sem hora acertada arranca
+  numa data de fábrica — dá lugar ao relógio do hub.
 
 Um instante promovido ao `data` sai na mesma forma do `occurredAt` — UTC, RFC
 3339, ao segundo — e é o relógio do aparelho e não o do hub. É o caso do
