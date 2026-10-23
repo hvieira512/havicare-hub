@@ -101,6 +101,95 @@ final class CapabilityCatalogTest extends TestCase
         self::assertNull(CapabilityCatalog::mapConfigurationKey('deviceConfig'));
     }
 
+    /** Cada chave que o mapeamento aceita, com o nome genérico em que cai. */
+    public function testConfigurationKeyMappingIsFrozen(): void
+    {
+        $expected = [
+            'familyNumber' => 'phonebook',
+            'SOSNumber' => 'sos_contacts',
+            'wonlexLowPower' => 'low_battery_alert',
+            'wonlexFallWarnSwitch' => 'fall_detection',
+            'fallDetection' => 'fall_detection',
+            'wonlexSOSSwitch' => 'sos_sms_alert',
+            'wonlexBloodOxygenWarn' => 'blood_oxygen_alert',
+            'wonlexTemperatureExceedRemind' => 'temperature_high_alert',
+            'wonlexTemperatureBelowRemind' => 'temperature_low_alert',
+            'wonlexBPEarlyWarning' => 'blood_pressure_alert',
+            'wonlexHeartRateHighRemind' => 'heart_rate_high_alert',
+            'wonlexHeartRateLowRemind' => 'heart_rate_low_alert',
+            'autoHealthMeasurement' => 'auto_vitals_interval',
+            'fallSensitivity' => 'fall_sensitivity',
+            'wonlexHeartRateInterval' => 'heart_rate_measurement_interval',
+            'wonlexBPInterval' => 'blood_pressure_measurement_interval',
+            'wonlexBOInterval' => 'blood_oxygen_measurement_interval',
+            'wonlexBodyTemperatureInterval' => 'temperature_measurement_interval',
+            'wonlexBreatheInterval' => 'breath_rate_measurement_interval',
+            'wonlexECGInterval' => 'ecg_measurement_interval',
+            'wonlexHRVInterval' => 'hrv_measurement_interval',
+            'wonlexPPGInterval' => 'ppg_measurement_interval',
+            'wonlexRRInterval' => 'rr_interval_measurement_interval',
+            'wonlexContinuousHRSwitch' => 'heart_rate_continuous',
+            'wonlexContinuousBOCheck' => 'blood_oxygen_continuous',
+            'wonlexPPGBPTrend' => 'blood_pressure_trend',
+            'wonlexContinuousTempSwitch' => 'temperature_continuous',
+            'wonlexStepTarget' => 'step_goal',
+            'wonlexSleepIntervalOrSwitch' => 'sleep_monitoring',
+            'wonlexStepInterval' => 'step_reporting_interval',
+            'locationInterval' => 'location_reporting_interval',
+            'workingMode' => 'working_mode',
+            'wonlexCallInLimitSwitch' => 'whitelist_enabled',
+            'rejectUnknownCalls' => 'whitelist_enabled',
+            'whitelistSwitch' => 'whitelist_enabled',
+            'callInRestriction' => 'whitelist_enabled',
+            'factoryResetCommand' => 'reset_device',
+            'restartCommand' => 'restart_device',
+            'powerOffCommand' => 'power_off',
+            'findDeviceCommand' => 'find_device',
+            'pushMessage' => 'push_message',
+            ' familyNumber ' => 'phonebook',
+            'unknownNativeKey' => null,
+            '' => null,
+        ];
+        $identity = [
+            'alarm_clock', 'phonebook', 'call_whitelist', 'whitelist_enabled', 'diaper_sensitivity', 'proximity_alert',
+            'heart_rate_continuous', 'blood_pressure_trend', 'temperature_continuous', 'hrv_continuous',
+            'blood_sugar_continuous', 'blood_lipids_continuous', 'stress_continuous', 'sleep_monitoring',
+            'blood_oxygen_alert', 'blood_oxygen_window', 'heart_rate_alert', 'skin_tone', 'personal_info', 'find_device',
+            'medication_reminders', 'medication_period', 'early_dispense', 'missed_dispense', 'child_lock',
+            'emergency_call', 'date_format', 'time_format', 'auto_clock', 'key_tone', 'retrieval_warning',
+            'retrieval_timeout', 'loaded_cells', 'alarm_volume', 'alarm_ringtone', 'do_not_disturb', 'device_language',
+            'time_zone', 'sync_configuration', 'dispense_now', 'calibrate_clock', 'mute_alarm', 'reset_tray',
+            'restart_device', 'heart_rate_measurement', 'impedance_measurement', 'weight_unit', 'select_scale_user',
+            'scale_users', 'read_scale_history', 'read_blood_pressure_history', 'vital_sign_sensitivity', 'working_mode',
+            'breath_rate_alert', 'weak_vital_signs_alarm', 'fall_alarm', 'sitting_on_floor_alarm', 'radar_installation',
+            'detection_boundary', 'radar_areas', 'measure_boundary', 'read_device_state', 'reset_device',
+        ];
+        foreach ($identity as $key) {
+            $expected[$key] = $key;
+        }
+
+        $actual = [];
+        foreach (array_keys($expected) as $key) {
+            $actual[$key] = CapabilityCatalog::mapConfigurationKey((string)$key);
+        }
+
+        self::assertSame($expected, $actual);
+    }
+
+    public function testTelemetryFeatureMappingIsFrozen(): void
+    {
+        $accepted = [
+            'heart_rate', 'blood_pressure', 'blood_oxygen', 'temperature', 'breath_rate', 'location', 'sleep', 'ecg',
+            'hrv', 'ppg', 'rr_interval', 'battery', 'activity', 'blood_sugar', 'firmware_version', 'device_status',
+        ];
+        foreach ($accepted as $feature) {
+            self::assertSame($feature, CapabilityCatalog::mapTelemetryFeature($feature));
+        }
+        foreach (['body_composition', 'stress', 'sync_configuration', 'unknown'] as $feature) {
+            self::assertNull(CapabilityCatalog::mapTelemetryFeature($feature), $feature);
+        }
+    }
+
     public function testFourPTouchAliasesAreResolvedByTheDedicatedHelper(): void
     {
         self::assertSame('sos_contacts', FourPTouchGenericHandler::nativeKeyToGenericKey('sosContacts'));
