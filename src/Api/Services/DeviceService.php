@@ -511,6 +511,7 @@ class DeviceService
             || $previousDeviceType !== $deviceType
         ) {
             $this->hub->clearRetainedStatus($previousCompany, $previousLicenseId, $previousDeviceType, $imei);
+            $this->store->runtime->forgetActiveAlarms($imei);
         }
 
         $deviceId = $this->directory->normalizeDeviceId($newImei, $supplier, $model, $deviceType, $deviceId);

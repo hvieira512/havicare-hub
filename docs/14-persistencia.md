@@ -288,7 +288,9 @@ prazo, o aparelho calado volta a anunciar o que trouxer:
 | Dispensador | `help_call`, que o heartbeat não repete | 10 min |
 | Bateria fraca | `low_battery` | 24 h: só apaga com uma carga, que chega como leitura |
 
-O hash inteiro expira ao fim de 24 h sem escrita.
+O hash inteiro expira ao fim de 24 h sem escrita. Mudar o dono do aparelho, na
+associação ou na edição, apaga-o: o dono novo nunca recebeu o que está ativo, e a
+trama seguinte publica-o no tópico dele. Apagar o aparelho também o leva.
 
 ## 4. Duas instâncias no mesmo Redis
 

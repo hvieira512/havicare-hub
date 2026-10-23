@@ -402,7 +402,8 @@ Um evento sai quando a condição **começa**, e não enquanto dura:
 O que já saiu fica no [Redis](14-persistencia.md#alarmes-que-duram), por
 aparelho: um reinício do hub não volta a anunciar o que continua ativo. Cada
 entrada tem prazo e renova-se com a repetição, e um aparelho calado para lá dele
-volta a anunciar o que trouxer.
+volta a anunciar o que trouxer. Mudar o dono do aparelho esquece-as, e o que
+estiver ativo sai de novo, no tópico do dono novo.
 
 ## 5. `status`
 
