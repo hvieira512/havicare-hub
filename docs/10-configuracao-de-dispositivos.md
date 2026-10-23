@@ -483,6 +483,6 @@ em porta.
 | `src/Command/DeviceConfigurationCatalog.php` | As definições nativas, por fabricante |
 | `src/Command/Configuration/Payload/*.php` | Construir o corpo de cada comando |
 | `src/Api/Services/DeviceConfigurationUpdateService.php` | O `PATCH`: validar, traduzir, criar operações |
-| `src/Api/Repository/DeviceConfigurationLifecycleRepository.php` | As três tabelas e a derivação do estado |
+| `src/Infrastructure/Persistence/Repository/DeviceConfigurationRepository.php` | As três tabelas e a derivação do estado |
 | `src/Api/Services/ConfigurationSyncStatus.php` | Desejado contra reportado |
 | `src/Domain/Capability/AlarmClock/*.php` | A capacidade `alarm_clock`, por fabricante |

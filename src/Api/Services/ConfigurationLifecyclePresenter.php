@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Hub\Api\Services;
 
-use Hub\Infrastructure\Persistence\Repository\DeviceConfigurationLifecycleRepository;
+use Hub\Infrastructure\Persistence\Repository\DeviceConfigurationRepository;
 use Hub\Domain\Capability\CapabilityCatalog;
 
 /**
@@ -14,7 +14,7 @@ use Hub\Domain\Capability\CapabilityCatalog;
 final class ConfigurationLifecyclePresenter
 {
     public function __construct(
-        private readonly DeviceConfigurationLifecycleRepository $lifecycle,
+        private readonly DeviceConfigurationRepository $lifecycle,
         private readonly DeviceCapabilityPresenter $capabilities,
         private readonly ConfigurationSyncStatus $configurationSync,
     ) {

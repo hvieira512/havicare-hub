@@ -65,7 +65,7 @@ class DeviceService
         $this->configurationSync = new ConfigurationSyncStatus();
         $this->directory = new DeviceDirectory($this->store, $this->whitelist, $this->db);
         $this->lifecyclePresenter = new ConfigurationLifecyclePresenter(
-            $this->db->configurationLifecycle,
+            $this->db->deviceConfigurations,
             $this->capabilities,
             $this->configurationSync,
         );

@@ -56,7 +56,7 @@ final class StoredTimeZoneTest extends MysqlDashboardTestCase
             'type' => 'device_config',
             'data' => ['settings' => ['time_zone' => ['timeZone' => 999]]],
         ]);
-        $db->configurationLifecycle->stage(self::IMEI, 'time_zone', ['timeZone' => 'Europe/Lisbon'], [[
+        $db->deviceConfigurations->stage(self::IMEI, 'time_zone', ['timeZone' => 'Europe/Lisbon'], [[
             'nativeKey' => 'time_zone',
             'protocol' => 'zayata-m228',
             'supplier' => 'Zayata',

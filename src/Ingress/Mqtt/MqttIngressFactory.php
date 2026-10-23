@@ -109,7 +109,7 @@ final class MqttIngressFactory
                 ...$common,
                 queue: $services->downlinkQueue,
                 topicFilter: $topicFilter,
-                scaleUsers: static fn (string $imei): ?array => $services->dataAccess->configurationLifecycle
+                scaleUsers: static fn (string $imei): ?array => $services->dataAccess->deviceConfigurations
                     ->effectivePayloads($imei, ['scale_users'])['scale_users'] ?? null,
                 onlineUsers: new ScaleOnlineUsers($services->redis),
                 historySeen: new RecentMeasurementKeys($services->redis, 'hub:lefu:history-seen', 500),

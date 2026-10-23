@@ -78,8 +78,8 @@ final class DeviceConfigurationProjection
         if ($this->db === null) {
             return;
         }
-        if ($commandId !== '' && $this->db->configurationLifecycle->isCurrentOperation($commandId)) {
-            $this->db->configurationLifecycle->updateOperation($commandId, $status, $error);
+        if ($commandId !== '' && $this->db->deviceConfigurations->isCurrentOperation($commandId)) {
+            $this->db->deviceConfigurations->updateOperation($commandId, $status, $error);
             return;
         }
         if ($commandId === '') {
@@ -90,11 +90,11 @@ final class DeviceConfigurationProjection
     /** Acrescenta uma operação a uma alteração ainda em curso; devolve se ela a aceitou. */
     public function addOperation(string $changeId, string $operationId, string $nativeKey, string $nativeType, string $protocol): bool
     {
-        return $this->db?->configurationLifecycle->addOperation($changeId, $operationId, $nativeKey, $nativeType, $protocol) ?? false;
+        return $this->db?->deviceConfigurations->addOperation($changeId, $operationId, $nativeKey, $nativeType, $protocol) ?? false;
     }
 
     public function isCurrentOperation(string $operationId): bool
     {
-        return $this->db === null || $this->db->configurationLifecycle->isCurrentOperation($operationId);
+        return $this->db === null || $this->db->deviceConfigurations->isCurrentOperation($operationId);
     }
 }

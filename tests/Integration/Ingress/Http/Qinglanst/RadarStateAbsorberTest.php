@@ -36,7 +36,7 @@ final class RadarStateAbsorberTest extends MysqlDashboardTestCase
 
         self::assertSame(
             ['fall_alarm' => ['afterSeconds' => 20], 'heart_rate_alert' => ['minBpm' => 50, 'maxBpm' => 90]],
-            $db->configurationLifecycle->effectivePayloads(self::IMEI, ['fall_alarm', 'heart_rate_alert']),
+            $db->deviceConfigurations->effectivePayloads(self::IMEI, ['fall_alarm', 'heart_rate_alert']),
         );
         self::assertSame(['connectivity', 'tilt', 'firmware_version'], array_column(array_column($mqtt->telemetry, 'payload'), 'type'));
         self::assertSame('HC2', $mqtt->telemetry[0]['payload']['device']['model']);
@@ -46,14 +46,14 @@ final class RadarStateAbsorberTest extends MysqlDashboardTestCase
     public function testTheAreaNameGivenInTheHubSurvivesARead(): void
     {
         [$db, , $absorber] = $this->absorber();
-        $db->configurationLifecycle->recordRead(self::IMEI, 'radar_areas', ['items' => [
+        $db->deviceConfigurations->recordRead(self::IMEI, 'radar_areas', ['items' => [
             ['key' => 3, 'type' => 'alarm_area', 'name' => 'WC', 'xMinDm' => -31, 'yMinDm' => 1, 'xMaxDm' => -25, 'yMaxDm' => 4],
         ]], 'qinglanst-radar');
 
         $absorber->absorb(self::IMEI, self::PROPS);
 
         self::assertSame([3 => 'WC'], $absorber->areaNames(self::IMEI));
-        self::assertSame('WC', $db->configurationLifecycle->effectivePayloads(self::IMEI, ['radar_areas'])['radar_areas']['items'][0]['name']);
+        self::assertSame('WC', $db->deviceConfigurations->effectivePayloads(self::IMEI, ['radar_areas'])['radar_areas']['items'][0]['name']);
     }
 
     /** @return array{0: ApiDataAccess, 1: RecordingHubMqttBridge, 2: RadarStateAbsorber} */
@@ -66,7 +66,7 @@ final class RadarStateAbsorberTest extends MysqlDashboardTestCase
         $mqtt = new RecordingHubMqttBridge();
 
         return [$db, $mqtt, new RadarStateAbsorber(
-            $db->configurationLifecycle,
+            $db->deviceConfigurations,
             new QinglanstCloudCommands(),
             $db->whitelist,
             $mqtt,

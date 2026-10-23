@@ -270,7 +270,7 @@ final class DeviceFeatureRequestService
     private function storedTimeZone(string $imei): ?int
     {
         // Uma zona com nome é a regra, e vale pelo desvio de agora: o reportado pode ser o da outra estação.
-        $named = $this->db->configurationLifecycle->namedTimeZones($imei)[0]['zone'] ?? null;
+        $named = $this->db->deviceConfigurations->namedTimeZones($imei)[0]['zone'] ?? null;
         if ($named !== null) {
             return TimeZoneOffset::hhmm($named, new \DateTimeImmutable());
         }

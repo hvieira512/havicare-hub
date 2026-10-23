@@ -62,7 +62,7 @@ final class DeviceConfigurationUpdateService
                 $currentByKey[$normalizedKey] = $row;
             }
         }
-        $desiredByKey = $this->db->configurationLifecycle->desiredPayloads($imei);
+        $desiredByKey = $this->db->deviceConfigurations->desiredPayloads($imei);
         if ($protocol === 'wonlex-json' && array_key_exists('phonebook', $configurations)) {
             $phonebook = ['phonebook' => $configurations['phonebook']];
             unset($configurations['phonebook']);
@@ -246,7 +246,7 @@ final class DeviceConfigurationUpdateService
             }
 
             if ($nativeRows !== []) {
-                $staged = $this->db->configurationLifecycle->stage(
+                $staged = $this->db->deviceConfigurations->stage(
                     $imei,
                     $genericKey,
                     $payload,
@@ -284,7 +284,7 @@ final class DeviceConfigurationUpdateService
         string $supplier,
         string $model,
     ): array {
-        $staged = $this->db->configurationLifecycle->stage($imei, $genericKey, $payload, [[
+        $staged = $this->db->deviceConfigurations->stage($imei, $genericKey, $payload, [[
             'nativeKey' => $genericKey,
             'protocol' => $protocol,
             'supplier' => $supplier,
@@ -388,7 +388,7 @@ final class DeviceConfigurationUpdateService
     private function dispatchOperation(string $imei, array $operation): array
     {
         $id = (string)$operation['operationId'];
-        if (!$this->db->configurationLifecycle->isCurrentOperation($id)) {
+        if (!$this->db->deviceConfigurations->isCurrentOperation($id)) {
             return ['nativeKey' => $operation['nativeKey'], 'command' => $operation['nativeType'], 'deliveryStatus' => 'superseded', 'lastCommandId' => $id];
         }
         $status = $this->hub->submitDownlink($imei, (string)$operation['bytes'], [
@@ -401,7 +401,7 @@ final class DeviceConfigurationUpdateService
         ]);
         $status = $status === 'sent' ? 'waiting' : $status;
         $error = in_array($status, ['dropped', 'failed'], true) ? 'delivery_failed' : '';
-        $this->db->configurationLifecycle->updateOperation($id, $status, $error);
+        $this->db->deviceConfigurations->updateOperation($id, $status, $error);
         $now = gmdate('Y-m-d\TH:i:s\Z');
         $record = [
             'status' => $status,

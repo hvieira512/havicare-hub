@@ -8,7 +8,7 @@ use Closure;
 use DateTimeImmutable;
 use Hub\Api\Services\DeviceService;
 use Hub\Domain\Capability\TimeZoneOffset;
-use Hub\Infrastructure\Persistence\Repository\DeviceConfigurationLifecycleRepository;
+use Hub\Infrastructure\Persistence\Repository\DeviceConfigurationRepository;
 
 /**
  * Os aparelhos com fuso de zona guardam um desvio fixo: quando a hora muda, recebem o desvio
@@ -19,7 +19,7 @@ final class NamedTimeZoneFollower
     /** @param Closure(): list<string> $onlineImeis */
     public function __construct(
         private DeviceService $devices,
-        private DeviceConfigurationLifecycleRepository $configurations,
+        private DeviceConfigurationRepository $configurations,
         private Closure $onlineImeis,
     ) {
     }
