@@ -7,20 +7,25 @@
 ## Âmbito
 
 O hub passa a ser o **único** sítio que decide se um acontecimento é `alarm`,
-`alert` ou `info`. A Havicare deixa de classificar: guarda a `severity` como vem e
-aplica quatro regras, iguais para qualquer `type`:
+`alert` ou `info`. O hub publica **factos**: que uma condição começou, que ficou
+mais grave, que acabou. O que quem consome faz com eles é decisão de quem consome.
+
+A Havicare, que é o primeiro consumidor, já disse o que fará — guarda a
+`severity` como vem e, sem classificar nada:
 
 | Chega | A Havicare |
 |---|---|
 | `alarm` | Abre sempre um alerta novo |
-| `alert` | Abre um alerta novo, a menos que já haja um aberto do mesmo `type` no dispositivo |
+| `alert` | Abre um alerta novo, a menos que já haja um aberto da mesma condição |
 | `info` | Só histórico |
-| um evento com `data.clears` | Fecha o alerta aberto desse `type` no dispositivo |
+| o fim de uma condição | Fecha o alerta que ligou a essa condição |
 
-Para isso, cada medição clínica tem de chegar ao contrato com um limiar decidido
-num sítio só, e cada condição que pode acabar tem de ter um evento que a feche. O
+Isto é da Havicare, e não do contrato: outro consumidor pode escalar de outra
+maneira, ou não fechar nada sozinho. O que o contrato garante é que cada medição
+clínica chega com um limiar decidido num sítio só, que cada condição tem uma
+identidade do princípio ao fim, e que o fim dela é publicado como facto. O
 capítulo faz o inventário do que cada aparelho mede e do que já alarma sozinho, e
-propõe as configurações, os eventos, a persistência e o fecho.
+propõe as configurações, os eventos, a persistência e o ciclo de vida.
 
 ## 1. A regra
 
@@ -67,7 +72,7 @@ pela secção e pela página, o HTML da 4P Touch pela secção.
 | `blood_oxygen` | Sim: `bloodOxygenWarn` | Sim: `blood_oxygen_alert` | **Não** | Regra do hub |
 | `temperature` | Sim: `TemperatureExceedRemind`, `TemperatureBelowRemind` | Sim: `temperature_high_alert`, `temperature_low_alert` | **Não** | Regra do hub |
 | `breath_rate` | Não | — | — | Regra do hub |
-| `blood_sugar`, `ecg`, `hrv`, `ppg`, `rr_interval`, `sleep`, `activity` | Não | — | — | Sem limiar (secção 8) |
+| `blood_sugar`, `ecg`, `hrv`, `ppg`, `rr_interval`, `sleep`, `activity` | Não | — | — | Sem limiar (secção 9) |
 | queda | `FallWarnSwitch` | Sim: `fall_detection` | **Não** | Indisponível: não há trama nem telemetria de onde a tirar |
 
 Evidência: as definições estão no `deviceConfig` (Wonlex.pdf, p. 33–34: `BPEarlyWarning`,
@@ -91,9 +96,9 @@ na ficha, o valor é uma percentagem.
 | `blood_oxygen` | Não: «SPO2 data rating set on your server» | — | O servidor responde ao `oxygen` com `1` normal, `0` anormal, `2` erro | Regra do hub |
 | `temperature` | A ficha dá ≥ 37,20 °C como alta, sem comando | **Não** | Não: `temp=0` e `temp=1` são sentinelas de medição falhada | Regra do hub |
 | queda | Sim | Sim: `fall_detection`, `fall_sensitivity` | Sim, bit 21 | **Nativo** (como hoje) |
-| cerca | Bits 18 e 19 | **Não**: o protocolo não tem comando de cerca | Sim | Regra do hub (`safe_zones`, secção 7) |
+| cerca | Bits 18 e 19 | **Não**: o protocolo não tem comando de cerca | Sim | Regra do hub (`safe_zones`, secção 4) |
 | relógio retirado | Sim | Sim: `remove_watch_alarm` | Sim, bit 20 | Nativo (como hoje) |
-| sem movimento | Bit 4, estado e não alarme | Não | Só como estado | Fora deste capítulo (secção 8) |
+| sem movimento | Bit 4, estado e não alarme | Não | Só como estado | Fora deste capítulo (secção 9) |
 
 Evidência: 4PTouch.html, «III. Heart Rate and Blood Pressure protocol», ponto 3
 (`bphrt`) e ponto 4 (`oxygen`, com a nota «HR data rating set on your server»,
@@ -115,7 +120,7 @@ moving state», 18–19 cerca, 20 retirado, 21 queda, 22 frequência anormal). N
 | `blood_pressure` (PPG) | Não | — | — | Regra do hub, desligada por omissão |
 | `blood_oxygen` | Não | — | — | Regra do hub |
 | `temperature` (VL16P, L08 Pro) | Não | — | — | Regra do hub |
-| `blood_sugar` | Não | — | — | Sem limiar (secção 8) |
+| `blood_sugar` | Não | — | — | Sem limiar (secção 9) |
 | queda | Sim | Sim: `fall_detection`, `fall_sensitivity` | Sim, `AP10` estado `06` | **Nativo** (como hoje) |
 
 Evidência: VIVISTAR.pdf, p. 11–12 (`AP49` frequência, `APHT` frequência e tensão,
@@ -150,7 +155,7 @@ eventos HTTP. No hub: `src/Ingress/Mqtt/Qinglanst/PayloadDecoder.php:43-62,177-1
 Duas coisas do fabricante que pesam nesta proposta:
 
 - **O radar diz quando volta ao normal.** O `hbstatics` sai a cada minuto com
-  alguém na cama, e um minuto normal traz o estado `00`. O fecho de uma condição
+  alguém na cama, e um minuto normal traz o estado `00`. O fim de uma condição
   nativa tira-se daí (secção 7).
 - **A ficha desaconselha alarmar de imediato o que vem por minuto**, salvo os
   sinais vitais fracos (p. 11), e diz da apneia que menos de cinco por hora é
@@ -173,7 +178,7 @@ alarma — e o hub também não, para não duplicar.
 | `temperature` | O firmware anuncia «过高过低提醒» (lembrete de alta e baixa) | Não pela interface do SDK | **Não** | Regra do hub |
 | `blood_pressure` (PPG) | Não | — | — | Regra do hub, desligada por omissão |
 | `breath_rate` | Não | — | — | Regra do hub |
-| `blood_sugar`, `blood_lipids`, `uric_acid`, `stress`, `hrv`, `ecg`, `rr_interval`, `sleep`, `sleep_quality`, `sleep_apnea`, `cardiac_load`, `met`, `activity`, `steps`, `body_composition` | Não | — | — | Sem limiar (secção 8) |
+| `blood_sugar`, `blood_lipids`, `uric_acid`, `stress`, `hrv`, `ecg`, `rr_interval`, `sleep`, `sleep_quality`, `sleep_apnea`, `cardiac_load`, `met`, `activity`, `steps`, `body_composition` | Não | — | — | Sem limiar (secção 9) |
 
 Evidência: SDK uni-app oficial (`HBandSDK/uni-appSDK`,
 `docs/VeepooUniAppSDK使用文档.md`), §9.16.2 «心率报警功能 (type=20)»: só ler, ligar
@@ -190,7 +195,7 @@ sinais vitais. Botão, bateria, movimento e proximidade.
 
 | Protocolo | Aparelho | Medições | Limite nativo | Decisão |
 |---|---|---|---|---|
-| `joytech-bp`, `joytech-bp-ecg` | Tensiómetros HC-6292B e HC-6679B | `blood_pressure`, `heart_rate`, `ecg` (6679B) | Não. Só a bandeira de batimento irregular, fixa | Regra do hub para a tensão e a frequência; o `irregularHeartbeat` fica na telemetria (secção 8) |
+| `joytech-bp`, `joytech-bp-ecg` | Tensiómetros HC-6292B e HC-6679B | `blood_pressure`, `heart_rate`, `ecg` (6679B) | Não. Só a bandeira de batimento irregular, fixa | Regra do hub para a tensão e a frequência; o `irregularHeartbeat` fica na telemetria (secção 9) |
 | `joytech-et` | Termómetro HC-3018B | `temperature` (ouvido, testa) | Não | Regra do hub |
 | `joytech-spo2` | Oxímetro HC-101 | `blood_oxygen`, `heart_rate` | Não | Regra do hub |
 | `lefu-torre` | Balanças CF632 e CF621 | `weight`, `body_composition`, `heart_rate` (elétrodos) | Não | Regra do hub para a frequência; o peso sem limiar |
@@ -214,7 +219,7 @@ Microlife WatchBP tem deteção de fibrilhação auricular, mas não entra no hu
 | Leitura | O que o inventário diz |
 |---|---|
 | Vivistar não tem sinais vitais | **Tem**: frequência, tensão, SpO2, glicemia e, no VL16P e no L08 Pro, temperatura. Sem limites nativos: regra do hub |
-| Radar não manda «de volta ao normal» | **Manda**: o `hbstatics` de cada minuto traz o estado normal. O fecho deriva-se dele |
+| Radar não manda «de volta ao normal» | **Manda**: o `hbstatics` de cada minuto traz o estado normal. O fim deriva-se dele |
 | Radar nativo para a apneia | Nativo **fixo**: não se configura. Fica como tipo próprio, e o fabricante desaconselha alarme imediato |
 | Wonlex, Veepoo, 4P Touch, aparelhos de medição | Confirma-se: regra do hub. A 4P Touch tem ainda a cerca, que também passa a regra do hub |
 | — | O tensiómetro JoyTech tem uma deteção nativa fixa que a leitura não menciona: o batimento irregular |
@@ -329,6 +334,58 @@ nada na cloud: o hub deixa de publicar os eventos dessa família.
 Isto obriga a que o «viaja ou não» seja decidido pela capacidade **e** pelo
 protocolo, e não só pela capacidade (`HubAppliedCapability`), como hoje.
 
+### O contrato da escrita
+
+**Valores por omissão.** Os da tabela acima, e são os que o `GET
+/api/devices/{imei}` devolve em `capabilities.alarms.{key}.value` enquanto nada
+foi guardado, com os limites e as unidades no `_meta`, como as outras
+configurações.
+
+**Validação.** Uma escrita recusada responde `400 invalid_config`, com a chave da
+configuração e o motivo campo a campo no `fields`
+([capítulo 09](09-api.md#erros)):
+
+```json
+{
+  "error": {
+    "code": "invalid_config",
+    "message": "Invalid configuration for heart_rate_limits",
+    "fields": {
+      "heart_rate_limits.alertHighBpm": ["Must be greater than alertLowBpm."],
+      "heart_rate_limits.clearMarginBpm": ["This value should be between 0 and 20."]
+    }
+  }
+}
+```
+
+As regras: cada número dentro dos limites da tabela; a ordem
+`alarmLow ≤ alertLow < alertHigh ≤ alarmHigh` entre os que não são `null`; a
+margem menor do que a distância entre o limite de alerta e o lado oposto; e, no
+radar, os campos que ele não declara recusados em vez de ignorados.
+
+**A confirmação.** É o ciclo de configuração que já existe
+([capítulo 10](10-configuracao-de-dispositivos.md), secção 3),
+sem estados novos:
+
+| Aparelho | Estado da alteração | `device.configuration.*` |
+|---|---|---|
+| Regra do hub | `confirmed` logo | `confirmed`, com o `effective` e a `desiredRevision` |
+| Radar | `pending_delivery` → `awaiting_ack` → `confirmed` ou `failed`, como a de qualquer configuração da cloud | `confirmed` ou `failed` |
+
+**O que vale enquanto está pendente.** A revisão **efetiva**, inteira: até o radar
+confirmar, o hub dá a gravidade pelos limites de alarme da revisão anterior, e
+não pelos novos — uma mesma condição nunca é avaliada com metade de uma revisão e
+metade de outra. Uma alteração que falha deixa a revisão anterior em vigor. Na
+regra do hub a revisão nova vale a partir da leitura seguinte (a configuração lê-se
+com cache de 5 s, como a do `proximity_alert`).
+
+**Mudar os limites com uma condição aberta.** O hub reavalia as condições abertas
+contra a última leitura com a revisão nova. Se ela já cabe no intervalo, com a
+margem, a condição acaba com `reason: "limits_changed"`; se não cabe, continua.
+Uma mudança de limites **nunca abre nem escala** uma condição: isso pede uma
+leitura, e não uma escrita na API. Desligar (`enabled: false`) acaba as abertas
+com `reason: "limits_disabled"`.
+
 **Os avisos de pulso ficam como estão.** O `heart_rate_high_alert` e os outros da
 Wonlex, e o `heart_rate_alert` e o `blood_oxygen_alert` da Veepoo, só vibram o
 pulso de quem usa o aparelho. Não são alarmes e não chegam ao hub; continuam a ser
@@ -373,9 +430,8 @@ O `limit*` é o limite configurado que a leitura passou. Quem consome lê-o do
 evento e nunca precisa de saber os limites — é a mesma regra do `alertIndex` da
 fralda.
 
-O `source` dos eventos que o hub fabrica é o da leitura que os disparou, com
-`evaluatedBy: "hub"`; os nativos levam `evaluatedBy: "device"`. A Havicare não
-precisa dele; serve a quem audita de onde veio um alarme.
+O `source` dos eventos que o hub fabrica é o da leitura que os disparou. Quem
+decidiu — o hub ou o aparelho — vai na prova da condição (secção 7).
 
 **Os vitais fracos sobem a `alarm`** porque é o alarme a que o fabricante chama
 *sudden death* (`suddenDeathSwitch`): dez minutos sem batimento com alguém na
@@ -383,23 +439,16 @@ cama de monitorização, e o único estado de minuto que a ficha manda alarmar l
 **A apneia desce a `alert`** pela nota da ficha. Se a Havicare quiser alarmar
 apneias repetidas, o caminho é uma contagem por hora no hub, e não o episódio.
 
-### Escalar
-
-Uma condição aberta como `alert` que passa ao nível de `alarm` publica o mesmo
-`type` outra vez, com `severity: alarm` — a Havicare abre um alerta novo, que é o
-que um alarme pede. Descer de `alarm` para `alert` não publica nada; a condição
-continua aberta até ao fecho.
-
 ### Os outros que mudam
 
 | `type` | Hoje | Proposta |
 |---|---|---|
 | `device_state` | `alert` | **`info`**. O desligar e a reposição de fábrica da Wonlex são factos; o que pede alguém é o aparelho calado, e esse é o `device.disconnected` que vem logo a seguir. Alertar nos dois era duplicar |
 | `medication_alarm_change` | `alert` numa dose falhada | **`info`** sempre. A dose falhada passa a ser o `dose_missed` |
-| `medication_intake` | `alert` com `abnormal` ou `missed` | **`info`** sempre. O `abnormal` — a toma depois de a dose ter sido dada como falhada ([19](19-dispensador-de-comprimidos.md)) — fecha o `dose_missed` |
+| `medication_intake` | `alert` com `abnormal` ou `missed` | **`info`** sempre. O `abnormal` — a toma depois de a dose ter sido dada como falhada ([19](19-dispensador-de-comprimidos.md)) — acaba o `dose_missed` |
 | `dose_missed` | — | **Novo**, `alert`: `slot`, `scheduledAt`, `doseDate`. Um por dose, quando ela é dada como falhada pela primeira via que chegar: a mudança do alarme para `missed`, `timed_out` ou `retrieval_timed_out`, ou a toma com `result: "missed"`. Hoje a mesma dose dá dois alertas |
 | `device.disconnected` | sem `severity` | **`alert`** nos aparelhos contínuos; **`info`** nos que só se ligam para medir (balança, tensiómetro, termómetro, oxímetro), que se desligam no fim de cada medição |
-| `device.connected` | sem `severity` | **`info`**, e fecha o `device.disconnected` |
+| `device.connected` | sem `severity` | **`info`**, e diz que acabou o `device.disconnected` |
 
 ## 6. Persistência e histerese
 
@@ -415,100 +464,462 @@ Na regra do hub:
   oxímetro, balança): cada medição é feita de propósito, e o próprio aparelho já
   estabilizou o valor. **2 nos relógios e na Veepoo**, cujo sensor ótico dá falsos
   baixos com o pulso mexido.
-- **Fecha** com uma leitura dentro do intervalo de alerta por pelo menos a
+- **Acaba** com uma leitura dentro do intervalo de alerta por pelo menos a
   margem — numa frequência alta com limite 110 e margem 5, a 105 ou menos. Entre
   105 e 110 a condição continua aberta e não sai nada. A margem é o que impede uma
-  frequência a oscilar sobre o limite de abrir e fechar a cada leitura.
+  frequência a oscilar sobre o limite de abrir e acabar a cada leitura.
 - **Sem leitura não é normal.** Um aparelho que deixa de medir, ou que se desliga,
-  não fecha a condição. Fica aberta até chegar uma leitura que a feche.
+  não acaba a condição. Fica aberta até chegar uma leitura que a acabe.
 - **Só contam as leituras novas.** Uma leitura com `fromHistory: true`, ou com o
-  `occurredAt` mais de 30 minutos atrás à chegada, não abre nem fecha nada — é
+  `occurredAt` mais de 30 minutos atrás à chegada, não abre nem acaba nada — é
   a memória do aparelho a ser descarregada, e uma condição aberta por ela já
   passou.
 - **Uma leitura falhada não conta**: a temperatura abaixo do `minValidCelsius`, os
   zeros que alguns aparelhos mandam por «sem leitura».
 
-O estado das condições abertas fica no Redis, e não em memória como o
-`ActiveDetections` do radar: um reinício do hub não pode voltar a abrir um
-alarme que a Havicare já tem — com `alarm`, abria-o outra vez — nem perder o fecho
-de uma que estava aberta.
+Onde vive o estado das condições está na secção 7: não fica em memória como o
+`ActiveDetections` do radar, porque um reinício do hub não pode voltar a abrir uma
+condição que já estava aberta nem perder o fim de uma.
 
-## 7. O fecho
+### Repetir a medição
 
-### Um campo: `data.clears`
+A especificação clínica do Ricardo diz outra coisa: abaixo do limite, pedir uma
+medição de repetição, e se ao fim de 5 minutos persistir, criar o alerta. Nos
+aparelhos que aceitam pedidos de medição (os relógios e a Veepoo) isso substitui
+o `confirmReadings`: a confirmação deixa de esperar pela leitura periódica
+seguinte, que pode vir daqui a uma hora.
 
-Todo o evento que fecha uma condição leva `data.clears` com o `type` que fecha.
-A Havicare não precisa de conhecer pares: casa pelo campo.
+É comportamento automático do hub — um comando que ninguém pediu — e por isso
+**fica por decidir pelo Hugo** (pergunta 6). Se for aprovado, proponho:
 
-Quando o mesmo dispositivo pode ter várias condições do mesmo `type` abertas ao
-mesmo tempo, os dois eventos levam também **`data.conditionKey`**, e a Havicare
-casa pelo `type` e pela chave. Sem chave, é uma condição por `type` e dispositivo.
-São três casos: as doses (`{doseDate}/{slot}`), as avarias do dispensador (o
-`fault`) e as chamadas do NCS (o `pagerId`, porque um NCS serve vários
-botões).
+- **Um estado interno, `confirming`, que não se publica.** Uma leitura por
+  confirmar ainda não é uma condição. Publicá-la obrigava quem consome a desenhar
+  um estado que se resolve sozinho em minutos, e o consumidor que ignorasse o
+  estado alarmava com uma leitura só — o contrário do que a confirmação pretende.
+- **Abre com a leitura de repetição fora do intervalo**, com o `occurredAt` da
+  primeira, para o tempo não se perder, e as duas leituras na prova, com
+  `confirmation: "repeated"`.
+- **Sem resposta em 5 minutos, abre na mesma**, com `confirmation:
+  "unavailable"`. Uma SpO2 de 85 num relógio que não responde ao pedido não pode
+  ficar calada: na dúvida, falha para o lado do alarme.
+- **A repetição dentro do intervalo** descarta a primeira sem publicar nada.
 
-### Tipos próprios para fechar, e não o mesmo `type`
+## 7. O ciclo de vida de uma condição
 
-A Havicare propôs que um fecho do mesmo tipo leve `clears` com o seu próprio
-`type`. **Proponho o contrário: o fecho tem sempre um `type` seu.** Quem filtra pelo
-`type` sem conhecer o `clears` — o hitCare, um painel, um consumidor antigo —
-leria um `heart_rate_high` que fecha como um que abre, e alarmava no fim da
-condição. Um tipo novo é ignorado por quem não o conhece, que é a falha segura.
+Uma **condição** é um estado da pessoa ou do aparelho que começa e acaba — a SpO2
+baixa, a fralda por mudar, o relógio calado. Um **instante** é um acontecimento
+que não acaba porque nunca durou — a queda, o botão de ajuda. Os dois saem no
+canal `events`; só a condição leva o objeto `condition`.
 
-Os fechos novos chamam-se `{type}_cleared`, com `severity: info`, a leitura que
-fechou e o `clears`:
+### Um exemplo completo
+
+Um relógio 4P Touch, com `blood_oxygen_limits` por omissão (alerta abaixo de 94,
+alarme abaixo de 90, `confirmReadings` 2), mede de 15 em 15 minutos durante a
+noite. Leituras: 96, 92, 91, 88, 87, 89, 93, 96.
+
+**1. Abre** — a segunda leitura abaixo de 94 confirma a primeira:
 
 ```json
-{ "type": "heart_rate_high_cleared", "severity": "info",
-  "data": { "bpm": 96, "clears": "heart_rate_high" } }
+{
+  "eventId": "0f9d6c1e-6a52-4d1b-9a0e-2b7d3c1f4a10",
+  "type": "blood_oxygen_low",
+  "severity": "alert",
+  "occurredAt": "2026-10-23T02:15:00Z",
+  "device": { "id": "861265061009822", "supplier": "4P Touch", "model": "D41" },
+  "condition": {
+    "version": 1,
+    "id": "5b1e2a7c-3d4f-4c8a-9e61-7f0b2c9d8e31",
+    "type": "blood_oxygen_low",
+    "phase": "opened",
+    "sequence": 41,
+    "openedAt": "2026-10-23T02:15:00Z",
+    "detectedAt": "2026-10-23T02:30:04Z",
+    "evidence": {
+      "evaluatedBy": "hub",
+      "readings": [
+        { "occurredAt": "2026-10-23T02:15:00Z", "spo2Percent": 92 },
+        { "occurredAt": "2026-10-23T02:30:00Z", "spo2Percent": 91 }
+      ],
+      "readingCount": 2,
+      "limit": { "field": "alertBelowPercent", "value": 94 },
+      "limits": {
+        "key": "blood_oxygen_limits",
+        "revision": 3,
+        "values": { "enabled": true, "alarmBelowPercent": 90, "alertBelowPercent": 94, "confirmReadings": 2, "clearMarginPercent": 1 }
+      }
+    }
+  },
+  "data": { "spo2Percent": 91, "limitPercent": 94 },
+  "source": { "protocol": "four-p-touch", "nativeType": "oxygen" }
+}
 ```
 
-Um nome por condição, e não um `heart_rate_normal` por família: uma frequência que
-salta de 130 para 45 entre duas leituras fecha o `heart_rate_high` e abre o
-`heart_rate_low`, e chamar «normal» a 45 seria mentir.
+**2. Escala** — 88 e 87 confirmam o nível de alarme. Mesmo `condition.id`:
 
-Os pares que já existem ficam com os nomes que têm e ganham o campo.
+```json
+{
+  "eventId": "7c3a9e20-1b4d-4f6e-8a2c-5d9b0e1f3a42",
+  "type": "blood_oxygen_low",
+  "severity": "alarm",
+  "occurredAt": "2026-10-23T02:45:00Z",
+  "device": { "id": "861265061009822", "supplier": "4P Touch", "model": "D41" },
+  "condition": {
+    "version": 1,
+    "id": "5b1e2a7c-3d4f-4c8a-9e61-7f0b2c9d8e31",
+    "type": "blood_oxygen_low",
+    "phase": "escalated",
+    "sequence": 42,
+    "openedAt": "2026-10-23T02:15:00Z",
+    "detectedAt": "2026-10-23T03:00:03Z",
+    "evidence": {
+      "evaluatedBy": "hub",
+      "readings": [
+        { "occurredAt": "2026-10-23T02:45:00Z", "spo2Percent": 88 },
+        { "occurredAt": "2026-10-23T03:00:00Z", "spo2Percent": 87 }
+      ],
+      "readingCount": 2,
+      "limit": { "field": "alarmBelowPercent", "value": 90 },
+      "limits": { "key": "blood_oxygen_limits", "revision": 3, "values": { "…": "…" } }
+    }
+  },
+  "data": { "spo2Percent": 87, "limitPercent": 90 },
+  "source": { "protocol": "four-p-touch", "nativeType": "oxygen" }
+}
+```
 
-### Cada condição e o seu fecho
+O 89 que vem a seguir volta ao nível de alerta, e **não sai nada** (ver «Descer
+de nível»). O 93 também não: continua abaixo do limite de alerta.
 
-| Abre | Fecha | Como o hub sabe |
+**3. Acaba** — 96 está no intervalo com a margem (≥ 95):
+
+```json
+{
+  "eventId": "e2b47d91-0c3f-4a8e-b615-9f2d7a0c4e58",
+  "type": "blood_oxygen_low_cleared",
+  "severity": "info",
+  "occurredAt": "2026-10-23T03:45:00Z",
+  "device": { "id": "861265061009822", "supplier": "4P Touch", "model": "D41" },
+  "condition": {
+    "version": 1,
+    "id": "5b1e2a7c-3d4f-4c8a-9e61-7f0b2c9d8e31",
+    "type": "blood_oxygen_low",
+    "phase": "cleared",
+    "sequence": 43,
+    "openedAt": "2026-10-23T02:15:00Z",
+    "detectedAt": "2026-10-23T03:45:04Z",
+    "clearedAt": "2026-10-23T03:45:00Z",
+    "reason": "normal_reading",
+    "peakSeverity": "alarm",
+    "evidence": {
+      "evaluatedBy": "hub",
+      "readings": [ { "occurredAt": "2026-10-23T03:45:00Z", "spo2Percent": 96 } ],
+      "readingCount": 1,
+      "limit": { "field": "alertBelowPercent", "value": 94, "clearMargin": 1 },
+      "limits": { "key": "blood_oxygen_limits", "revision": 3, "values": { "…": "…" } }
+    }
+  },
+  "data": { "spo2Percent": 96 },
+  "source": { "protocol": "four-p-touch", "nativeType": "oxygen" }
+}
+```
+
+E o canal `conditions` do dispositivo, retido, passou de uma condição aberta a
+nenhuma (ver «Ressincronizar»).
+
+### Identidade: `condition.id`
+
+Cada condição recebe um UUID quando abre, e todos os eventos dela — a abertura,
+cada escalada, o fim — levam o mesmo. É por ele que quem consome liga o seu
+alerta a exatamente uma condição: um alerta aberto e depois escalado a alarme
+são duas linhas na Havicare e **uma** condição, e um único fim diz que as duas
+acabaram.
+
+O `conditionKey`, onde existe, fica no `data` como informação: o `slot` e o dia da
+dose, o `fault` do dispensador, o `pagerId` do NCS. O `condition.id` torna-o
+dispensável para casar o fim com a abertura.
+
+**Onde vive.** A condição é um registo do hub:
+
+- **No MySQL, a tabela `device_conditions`**, que é o registo: `id`, dispositivo,
+  `type`, `conditionKey`, empresa e licença de quando abriu, `openedAt`,
+  `detectedAt`, `peakSeverity`, `clearedAt`, `reason`, e a prova de cada fase. É
+  o que a API devolve e o que fica para auditoria; o histórico do Redis é
+  limitado ([14](14-persistencia.md), secção 3) e
+  não serve de arquivo.
+- **No Redis, as abertas** (`hub:conditions:{deviceKey}`, com o prefixo da
+  instância), que é o que a ingestão consulta a cada leitura sem ir à base de
+  dados. Reconstrói-se da tabela ao arrancar.
+
+Um reinício do hub não abre de novo o que já estava aberto, nem perde o fim: a
+condição continua com o mesmo `id`.
+
+### A fase: `condition.phase`
+
+| `phase` | Quer dizer | `severity` | `type` do envelope |
+|---|---|---|---|
+| `opened` | A condição começou | a do nível confirmado | o da condição |
+| `escalated` | Passou ao nível de alarme | `alarm` | o da condição |
+| `cleared` | Acabou | `info` | `{type}_cleared`, ou o par que já existe |
+
+Quem consome lê a fase, e nunca a tira do nome do `type`. Os `{type}_cleared`
+ficam por quem filtra pelo `type` sem conhecer o `condition` — o hitCare, um
+painel, um consumidor antigo: com o mesmo `type` na abertura e no fim, esse
+consumidor leria o fim de uma frequência alta como mais uma frequência alta. Um
+tipo novo é ignorado por quem não o conhece, que é a falha segura.
+
+O `data.clears` da versão anterior desta proposta **sai**: o `condition.type` diz
+o mesmo, e dois campos a dizer a mesma coisa acabam por discordar.
+
+**Descer de nível não publica nada.** Uma condição escalada a alarme que volta ao
+nível de alerta continua aberta, e o `peakSeverity` continua `alarm`. Três razões:
+
+- **O alarme já chamou alguém.** Uma fase `deescalated` convidava quem consome a
+  baixar ou fechar o alarme antes de alguém ter ido ver, e um alarme fechado sem
+  ninguém ter visto a pessoa é o pior desfecho possível.
+- **Os limites de alarme não têm margem.** Uma SpO2 a oscilar entre 89 e 90
+  escalava e desescalava a cada leitura — o ruído que a margem existe para evitar
+  no fim da condição.
+- **O que se quer saber está no fim.** O `peakSeverity` e as leituras dizem quão
+  grave foi; o nível do momento lê-se na telemetria.
+
+### Instantes e condições
+
+Um evento **sem** objeto `condition` é um instante: não terá fim publicado, e
+quem o fecha é quem foi ver. A ausência é a regra única, e não uma fase
+`instant` — uma fase só para dizer «não há fases» convidava a procurar por um
+`id` a que nunca vai chegar nada.
+
+| Condições | Instantes |
+|---|---|
+| `heart_rate_high` · `heart_rate_low` | `help_call` (fora do NCS) |
+| `breath_rate_high` · `breath_rate_low` | `fall` |
+| `blood_oxygen_low` | `proximity_alarm` |
+| `blood_pressure_high` · `blood_pressure_low` | `apnea` |
+| `temperature_high` · `temperature_low` | `heart_rate_abnormal` |
+| `weak_vital_signs` | `device_removed` |
+| `zone_exit` com `zone: geofence` | `zone_entry` e `zone_exit` de divisão ou área |
+| `check_required` · `change_required` | `low_battery` do MKGW4, que só manda o alarme |
+| `low_battery` (onde o aparelho apaga a bandeira) | `device_state` |
+| `device_fault` · `storage_environment` | `medication_alarm_change` |
+| `dose_missed` | `medication_intake` (salvo o `abnormal`, que é o fim de um `dose_missed`) |
+| `help_call` do NCS | `reset` (salvo quando é o fim de um `help_call`) |
+| `device.disconnected` | os outros `device.*` |
+
+O mesmo `type` pode ser condição num aparelho e instante noutro — o `help_call`
+do NCS acaba com o `reset`, o do relógio não acaba nunca. É exatamente por isso
+que quem consome lê o `condition`, e não o `type`.
+
+### O fim e o motivo: `condition.reason`
+
+Todo o fim leva `reason`:
+
+| `reason` | Quando | O que acontece à condição |
 |---|---|---|
-| `heart_rate_high` · `heart_rate_low` (radar) | `heart_rate_high_cleared` · `heart_rate_low_cleared` | O `hbstatics` seguinte com a frequência no estado normal (`00`). O indefinido (`11`) não abre nem fecha |
-| `breath_rate_high` · `breath_rate_low` (radar) | `breath_rate_high_cleared` · `breath_rate_low_cleared` | Idem, com a respiração. Uma apneia não fecha uma hipopneia |
-| `weak_vital_signs` | `weak_vital_signs_cleared` | Os vitais no estado normal |
-| as condições da regra do hub | `{type}_cleared` | A leitura dentro do intervalo, com a margem (secção 6) |
-| `zone_exit` com `zone: geofence` | `zone_entry` com `zone: geofence` e `clears: "zone_exit"` | `safe_zones` |
-| `device.disconnected` | `device.connected` com `data.clears: "device.disconnected"` | O ciclo de vida de hoje |
-| `check_required` | `change_required` com `clears: "check_required"`, ou `check_required_cleared` | A fralda passa a muda, ou a limpa |
-| `change_required` | `change_required_cleared` | O `diaper_condition` volta a `clean` |
-| `low_battery` | `low_battery_cleared` | A bandeira apaga (`LowBatteryTransitions`), onde o aparelho a apaga; no MKGW4, que só manda o alarme, não há fecho |
-| `device_fault` | `device_fault_cleared`, com o `fault` como chave | O dispensador dá a avaria por apagada |
-| `storage_environment` | `storage_environment_cleared` | Idem |
-| `dose_missed` | `medication_intake` com `result: "abnormal"`, `clears: "dose_missed"` e a chave da dose | A toma tardia do mesmo `slot` e `doseDate` |
-| `help_call` (NCS) | `reset` com `clears: "help_call"` e o `pagerId` como chave | O `key` 0, 1 ou 2 da Voerka |
+| `normal_reading` | Uma leitura de volta ao intervalo, com a margem (regra do hub), ou o estado normal que o aparelho reporta (o minuto normal do radar, a fralda limpa, a posição dentro da cerca) | Acaba |
+| `device_resolved` | O próprio aparelho dá a condição por acabada: a bandeira de bateria apaga, a avaria ou o ambiente do dispensador apagam, o `reset` do NCS | Acaba |
+| `dose_taken` | A toma tardia (`abnormal`) da mesma dose | Acaba |
+| `device_reconnected` | O fim do `device.disconnected` | Acaba |
+| `superseded` | Outra condição tomou o lugar desta: a frequência que salta de alta para baixa entre duas leituras, a fralda que passa de `check_required` a `change_required`. Leva `supersededBy` com o `id` da nova | Acaba; a nova abre no mesmo instante |
+| `limits_changed` | Os limites mudaram e a última leitura já cabe no intervalo novo | Acaba |
+| `limits_disabled` | A família foi desligada (`enabled: false`) | Acaba |
+| `device_unassigned` | O dispositivo saiu do dono — removida a empresa e a licença, ou mudado para outro cliente ou outra licença | Acaba **no tópico do dono antigo** |
+| `device_deleted` | O dispositivo foi apagado | Acaba, antes de o dispositivo desaparecer |
 
-O `change_required` que vem de `attention` fecha o `check_required` no mesmo
-evento: uma fralda, um alerta. O `data.clears` convive com a abertura — o
-`change_required` é `alarm` e abre o seu, e ao mesmo tempo fecha o anterior.
+**A mudança de dono.** As condições são do dono que as tinha. Ao reassociar, o
+hub publica o fim de cada condição aberta no tópico do dono antigo, com
+`device_unassigned`, e só depois apaga o retido do `conditions` dele com a
+mensagem de comprimento zero, como faz ao `status`. O fim não diz para onde o
+dispositivo foi: isso é do cliente novo. O dono novo começa sem nenhuma condição
+aberta, e se a pessoa continuar fora do intervalo a condição abre de novo, com
+`id` novo, pelas leituras que chegarem já com ele — o `confirmReadings` conta do
+princípio.
 
-**O que não tem fecho** é o que acontece num instante: `help_call` fora do NCS,
-`fall`, `proximity_alarm`, `apnea`, `heart_rate_abnormal`, `device_removed`. Quem o
-fecha é quem foi ver. O `device_removed` da 4P Touch podia fechar-se pelo bit 3
-do estado («watch state»), mas a ficha não diz o que o bit quer dizer em cada
-valor, e fica por confirmar no aparelho.
+**Sem leitura não há fim.** Um aparelho calado não acaba uma condição: falta
+de leitura não é leitura normal. Não existe um motivo `no_reading`; se o Hugo
+quiser o radar fora da cama a acabar a condição (pergunta 7), é esse o motivo que
+entra.
 
-### Os pontos da Havicare
+### Datas e prova
+
+| Campo | O que é |
+|---|---|
+| `occurredAt` (envelope) | Na abertura, a primeira leitura fora do intervalo; na escalada, a primeira no nível de alarme; no fim, a leitura que a acabou, ou o instante do que a acabou (a reassociação, a escrita dos limites) |
+| `condition.openedAt` | O `occurredAt` da abertura, repetido em todas as fases |
+| `condition.detectedAt` | Quando o hub decidiu esta fase. A diferença para o `occurredAt` é o tempo da confirmação |
+| `condition.clearedAt` | Só no fim: igual ao `occurredAt` dele |
+| `condition.evidence.evaluatedBy` | `hub` ou `device` — quem aplicou o limite |
+| `condition.evidence.readings` | As leituras que decidiram esta fase, cada uma com o seu `occurredAt` e o valor com o nome da telemetria; no radar, a média do minuto |
+| `condition.evidence.readingCount` | Quantas foram |
+| `condition.evidence.limit` | O campo do limite que se passou e o valor dele; no fim, também a margem |
+| `condition.evidence.limits` | A chave, a revisão **efetiva** e os valores todos da configuração em vigor quando esta fase foi decidida |
+| `condition.evidence.confirmation` | Só com a repetição de medição: `repeated` ou `unavailable` |
+
+A revisão e os valores vão inteiros, e não só a revisão: uma auditoria — e o MDR,
+se o hub entrar no âmbito dele — precisa de saber com que regra se decidiu, sem
+depender de a configuração antiga ainda estar guardada.
+
+Nas condições que não vêm de leituras (`device.disconnected`, `dose_missed`,
+`device_fault`), a `evidence` leva só o `evaluatedBy` e o que o aparelho mandou.
+
+### Duplicados e ordem
+
+**Cada publicação leva `eventId`**, um UUID, no envelope de todos os eventos do
+canal `events`, e não só nos das condições. A entrega QoS 1 repete a mesma
+publicação com o mesmo `eventId`: é a chave de de-duplicação. Um evento com um
+`eventId` já visto ignora-se.
+
+**O `condition.sequence`** conta as fases de todas as condições do dispositivo,
+sempre a subir. É o que ordena um evento contra outro e contra a fotografia do
+canal `conditions`.
+
+**Fora de ordem.** O MQTT não garante a ordem depois de uma reentrega, e quem
+consome trata a condição como uma máquina de estados que só anda para a frente:
+
+- **Um fim que chega antes da abertura** regista a condição como acabada, com o
+  `id`. A abertura que chega depois encontra-a acabada e não abre nada.
+- **Uma escalada que chega antes da abertura** abre a condição já no nível de
+  alarme; a abertura que chega depois só preenche o que faltava.
+- **Uma fase com `sequence` menor do que a última que se aplicou à mesma
+  condição** não muda o estado.
+
+### Ressincronizar
+
+Um consumidor que esteve em baixo perdeu fases. Dois caminhos, com papéis
+diferentes:
+
+**O canal `conditions`, retido, por dispositivo** — o estado de agora:
+
+```text
+havicare-hub/hitcare/1001/watch/861265061009822/conditions
+```
+
+```json
+{
+  "updatedAt": "2026-10-23T02:30:04Z",
+  "sequence": 41,
+  "device": { "id": "861265061009822", "supplier": "4P Touch", "model": "D41" },
+  "open": [
+    {
+      "id": "5b1e2a7c-3d4f-4c8a-9e61-7f0b2c9d8e31",
+      "type": "blood_oxygen_low",
+      "severity": "alert",
+      "openedAt": "2026-10-23T02:15:00Z",
+      "detectedAt": "2026-10-23T02:30:04Z",
+      "data": { "spo2Percent": 91, "limitPercent": 94 }
+    }
+  ]
+}
+```
+
+QoS 1 e retido, como o `status`, e republicado a cada fase de qualquer condição do
+dispositivo. Sem condições abertas é `open: []`, e não a mensagem vazia — essa
+fica para a mudança de dono, como no `status`. O `severity` é o mais alto a que a
+condição chegou. Quem subscreve recebe a fotografia de todos os dispositivos mal
+liga, sem pedir nada.
+
+**A API** — o que aconteceu no intervalo:
+
+```http
+GET /api/devices/{imei}/conditions?state=open
+GET /api/devices/{imei}/conditions?state=all&since=2026-10-22T00:00:00Z
+GET /api/conditions?state=open
+GET /api/conditions/{id}
+```
+
+A mesma forma dos objetos do `open`, mais o `clearedAt`, o `reason`, o
+`peakSeverity` e a prova de cada fase. O `/api/conditions` traz as das licenças
+que o token vê, para uma reconciliação inteira de uma vez. O MQTT não tem
+histórico, e é por aqui que um consumidor sabe **como** acabou uma condição de
+que só viu a abertura.
+
+**Reconciliar depois de uma falha:**
+
+1. Ao voltar, ler o `conditions` retido de cada dispositivo (chega sozinho com a
+   subscrição), ou o `GET /api/conditions?state=open`.
+2. Uma condição aberta na fotografia e desconhecida do consumidor abre-se, com o
+   `openedAt` e a gravidade dela.
+3. Uma condição aberta no consumidor e ausente da fotografia acabou entretanto:
+   o `GET /api/conditions/{id}` diz quando e porquê.
+4. Os eventos que chegarem durante a reconciliação aplicam-se pela regra de
+   ordem: uma fase com `sequence` menor ou igual à da fotografia já está nela.
+
+Um canal novo muda a lista de canais que o contrato garante. Quem subscreve com
+`#` passa a receber mais um; ver a secção 10.
+
+### A versão: `condition.version`
+
+O objeto `condition` leva `version`, hoje `1`. Sobe só quando uma mudança parte
+quem o lê — um campo que muda de sentido, uma fase que desaparece; acrescentar um
+campo ou um `reason` novo não a sobe, e quem consome ignora o que não conhece.
+
+O hub já teve um `schemaVersion` no envelope e tirou-o
+([08](08-contrato-mqtt.md#sobre-o-schemaversion)): era escrito e nunca lido, e
+seguia o produtor e não o canal. Este é diferente em duas coisas, que são as
+condições para valer a pena: vale só para o objeto `condition`, com um dono só,
+e a Havicare compromete-se a lê-lo. Se ninguém o ler, tem o mesmo destino.
+
+### Cada condição e o seu fim
+
+| Condição | O fim | `reason` | Como o hub sabe |
+|---|---|---|---|
+| `heart_rate_high` · `heart_rate_low` (radar) | `heart_rate_high_cleared` · `heart_rate_low_cleared` | `normal_reading` | O `hbstatics` seguinte com a frequência no estado normal (`00`). O indefinido (`11`) não abre nem acaba |
+| `breath_rate_high` · `breath_rate_low` (radar) | `breath_rate_high_cleared` · `breath_rate_low_cleared` | `normal_reading` | Idem, com a respiração. Uma apneia não acaba uma hipopneia |
+| `weak_vital_signs` | `weak_vital_signs_cleared` | `normal_reading` | Os vitais no estado normal |
+| as condições da regra do hub | `{type}_cleared` | `normal_reading`, `superseded` | A leitura dentro do intervalo, com a margem (secção 6) |
+| `zone_exit` com `zone: geofence` | `zone_entry` com `zone: geofence` | `normal_reading` | `safe_zones` |
+| `device.disconnected` | `device.connected` | `device_reconnected` | O ciclo de vida de hoje |
+| `check_required` | `change_required` (o `cleared` desta e a abertura da outra são dois eventos), ou `check_required_cleared` | `superseded`, `normal_reading` | A fralda passa a muda, ou fica limpa |
+| `change_required` | `change_required_cleared` | `normal_reading` | O `diaper_condition` volta a `clean` |
+| `low_battery` | `low_battery_cleared` | `device_resolved` | A bandeira apaga (`LowBatteryTransitions`) |
+| `device_fault` | `device_fault_cleared` | `device_resolved` | O dispensador dá a avaria por apagada |
+| `storage_environment` | `storage_environment_cleared` | `device_resolved` | Idem |
+| `dose_missed` | `medication_intake` com `result: "abnormal"` | `dose_taken` | A toma tardia do mesmo `slot` e `doseDate` |
+| `help_call` (NCS) | `reset` | `device_resolved` | O `key` 0, 1 ou 2 da Voerka, com o mesmo `pagerId` |
+
+A todas se juntam os motivos que não dependem do aparelho: `limits_changed` e
+`limits_disabled` nas de sinais vitais, `device_unassigned` e `device_deleted` em
+todas.
+
+**A fralda: um alerta, e não dois.** Quando a fralda passa de `attention` a
+`change_required`, saem dois eventos com o mesmo `occurredAt`: o fim do
+`check_required` com `reason: "superseded"` e `supersededBy`, e a abertura do
+`change_required`. São dois porque são duas condições, cada uma com o seu `id`;
+o `supersededBy` diz a quem consome que a segunda continua a primeira.
+
+O `device_removed` da 4P Touch podia acabar pelo bit 3 do estado («watch state»),
+mas a ficha não diz o que o bit quer dizer em cada valor, e fica instante até se
+confirmar no aparelho.
+
+## 8. Os pontos da Havicare
+
+Da primeira revisão:
 
 | | Proposta da Havicare | Aqui |
 |---|---|---|
-| a | `device.disconnected` com `alert`, fechado pelo `device.connected` | **Adotado**, com `info` nos aparelhos que se desligam a cada medição |
-| b | Um campo, `data.clears`, em todo o fecho | **Adotado**, com a `conditionKey` onde há várias do mesmo tipo. **Recusado** o fecho com o mesmo `type` da abertura |
+| a | `device.disconnected` com `alert`, acabado pelo `device.connected` | **Adotado**, com `info` nos aparelhos que se desligam a cada medição |
+| b | Um campo, `data.clears`, em todo o fim | **Substituído** pelo objeto `condition`, que diz o mesmo com o `type`, o `id` e a fase. **Recusado** o fim com o mesmo `type` da abertura |
 | c | `device_state` da Wonlex a `info` | **Adotado** |
-| d | `change_required` fecha o `check_required` | **Adotado** |
-| — | `dose_missed` por dose, fechado pela toma tardia | **Adotado**, com o `abnormal` — e não o `late` — como fecho: no M228 o `late` é a toma depois do aviso e antes de a dose falhar |
+| d | `change_required` acaba o `check_required` | **Adotado**, como `superseded` |
+| — | `dose_missed` por dose, acabado pela toma tardia | **Adotado**, com o `abnormal` — e não o `late` — como fim: no M228 o `late` é a toma depois do aviso e antes de a dose falhar |
 | — | Cercas como configuração do hub, com `zone_exit` e `zone_entry` | **Adotado** (`safe_zones`) |
 
-## 8. O que não leva limiar
+Da segunda:
+
+| | Pedido | Aqui |
+|---|---|---|
+| 0 | O fim é um facto, e não uma ordem | **Adotado** em todo o capítulo |
+| 1 | `conditionId` estável | **Adotado** como `condition.id`, guardado na `device_conditions` e no Redis |
+| 2 | Fase explícita | **Adotado** (`opened`, `escalated`, `cleared`); descer de nível **não publica nada** |
+| 3 | Instantes marcados | **Adotado** pela ausência do `condition`, e não por uma fase `instant` |
+| 4 | Motivo em todo o fim | **Adotado**, com a mudança de dono a acabar no tópico do dono antigo |
+| 5 | Ressincronização | **As duas**: o canal retido `conditions` para o estado de agora, a API para o histórico |
+| 6 | Duplicados e ordem | `eventId` em todos os eventos, `condition.sequence` por dispositivo |
+| 7 | Datas e prova | **Adotado**, com a configuração inteira em vigor e não só a revisão |
+| 8 | Contrato da configuração | **Adotado**, sem estados novos; vale a revisão efetiva inteira |
+| 9 | Repetir a medição | Desenhado, **por decidir** pelo Hugo (pergunta 6) |
+| 10 | Versão | **Adotado** só no objeto `condition`, pelas razões da secção 7 |
+
+## 9. O que não leva limiar
 
 Um limiar só faz sentido quando uma leitura isolada pede alguém. Estas não:
 
@@ -528,56 +939,82 @@ Ficam de fora, por não serem sinais vitais, mas com o mesmo desenho à espera: 
 **inatividade** (o bit 4 da 4P Touch e o evento 9 do radar, que só chega pelo
 *push* HTTP) e a **saída da cama** do radar.
 
-## 9. O hitCare
+
+## 10. O hitCare e a compatibilidade
 
 O hitCare lê hoje o NCS, os sensores de fralda, os gateways e as pulseiras
 ([«Pendente do hitCare»](08-contrato-mqtt.md#pendente-do-hitcare)). **Nenhuma
-gravidade nem nenhum `type` que ele lê muda.** O que toca nessas famílias é
-acrescento, e mesmo assim vai coordenado:
+gravidade nem nenhum `type` que ele lê muda**, e nada do que ele lê hoje desaparece.
+Cada mudança, e o que pede a quem já consome:
 
-| O quê | Família |
-|---|---|
-| `reset` ganha `data.clears` e `data.conditionKey` | NCS |
-| `change_required` ganha `data.clears`; tipos novos `check_required_cleared` e `change_required_cleared` | sensor de fralda |
-| `device.disconnected` ganha `severity`; `device.connected` ganha `severity` e `data`, que os eventos de ciclo de vida não tinham | todas |
-| tipo novo `low_battery_cleared` | pulseiras, gateways |
+| Mudança | Onde | Para quem já consome |
+|---|---|---|
+| `eventId` em todos os eventos | todas as famílias | Acrescento ao envelope; ignorável |
+| Objeto `condition` nos eventos que são condições | todas | Acrescento ao envelope; ignorável |
+| `device.disconnected` e `device.connected` ganham `severity` e `condition` | todas, incluindo NCS, gateways e pulseiras do hitCare | Os eventos de ciclo de vida não levavam nada disto: **coordenar** com o hitCare |
+| Tipos novos `{type}_cleared` | todas; no hitCare, `check_required_cleared`, `change_required_cleared`, `low_battery_cleared` | Um consumidor que rejeite tipos desconhecidos parte: **coordenar**. O contrato congelado da fralda garante os `type` existentes, não a ausência de novos ([17](17-sensor-de-fralda.md#4-o-contrato-congelado)) |
+| O `change_required` vindo de `attention` vem acompanhado do fim do `check_required` | fralda | Um evento a mais com o mesmo `occurredAt`, de um tipo novo |
+| O `reset` do NCS que acaba um `help_call` leva `condition` | NCS | Acrescento; o `type` e o `data` ficam iguais |
+| Canal novo `conditions`, retido | todas | Quem subscreve com `#` num dispositivo passa a receber mais um canal, e um payload que não conhece: **coordenar** |
+| Gravidades que mudam (`apnea`, `weak_vital_signs`, `device_state`, `medication_*`, a frequência do radar) | radar, Wonlex, dispensador | Nenhuma destas famílias é do hitCare |
+| Os bits de cerca da 4P Touch deixam de sair | relógios 4P Touch | Não é do hitCare |
+| `heart_rate_alert` e `breath_rate_alert` do radar dão lugar a `*_limits` | API do radar | Quebra quem os escreve (pergunta 8) |
 
-O contrato da fralda já admite campos novos no `data` sem aviso
-([17](17-sensor-de-fralda.md#4-o-contrato-congelado)); tipos novos e o `data` num
-evento de ciclo de vida não estão cobertos por essa garantia.
+A Havicare não tem clientes, e muda pela via mais limpa; o que toca o hitCare entra
+na tabela «Pendente do hitCare» do contrato no dia em que for construído, com o
+comentário `hitcare:` no código.
 
-## 10. Perguntas em aberto
+## 11. Perguntas em aberto
 
 1. **Desligar com alerta e as ligações que oscilam.** Um relógio que fecha o
-   socket e volta em segundos abre e fecha um alerta na Havicare de cada vez.
-   Proposta: num socket fechado, o `device.disconnected` espera 60 s por uma nova
-   ligação antes de sair. Muda o que o evento quer dizer hoje.
+   socket e volta em segundos abre e acaba uma condição de cada vez. Proposta:
+   num socket fechado, o `device.disconnected` espera 60 s por uma nova ligação
+   antes de sair. Muda o que o evento quer dizer hoje.
 2. **Os avisos de pulso acompanham os limites?** Com `heart_rate_limits` escrito,
    o hub podia escrever também o aviso da Wonlex e da Veepoo com os mesmos valores,
-   para o pulso vibrar quando a Havicare alerta. Mais comandos, e um aviso que
-   deixa de ser configurável à parte.
+   para o pulso vibrar quando há alerta. Mais comandos, e um aviso que deixa de
+   ser configurável à parte.
 3. **A resposta ao `oxygen` da 4P Touch.** O servidor diz ao relógio se a SpO2 é
    normal. Responder `0` abaixo do limite de alerta põe o relógio a mostrá-lo.
 4. **A apneia a `alert` e os vitais fracos a `alarm`**, contra o que está hoje.
    E, para a apneia, se se quer uma contagem por hora no hub.
 5. **Os valores por omissão** da tensão (alerta a 160/100, sem diastólica baixa) e
    da respiração (9 e 24, sem nível de alarme), que mudam os da Havicare.
-6. **A confirmação também no alarme?** Hoje proposta igual para os dois níveis.
-   Uma SpO2 de 85 num relógio espera pela segunda leitura, que pode vir daqui a uma
-   hora. A alternativa é o hub pedir ele próprio uma medição de confirmação — um
-   comportamento automático, que só entra com o teu acordo.
+6. **Repetir a medição** (secção 6). Recomendo que sim nos aparelhos que aceitam
+   pedidos, com o estado `confirming` por publicar e a abertura na mesma ao fim de
+   5 minutos sem resposta — mas é o hub a mandar comandos sozinho, e isso é
+   decisão tua. Sem ela, fica o `confirmReadings`, e uma SpO2 de 85 num relógio
+   espera pela leitura periódica seguinte.
 7. **O radar fora da cama.** Uma frequência alta aberta e a pessoa que se levanta:
    o `hbstatics` para e a condição fica aberta até à noite seguinte. Proposta:
-   fica, porque sem leitura não é normal. A alternativa é fechar com um motivo
-   (`reason: "no_reading"`).
+   fica, porque sem leitura não é normal. A alternativa é acabar com
+   `reason: "no_reading"`.
 8. **Os `heart_rate_alert` e `breath_rate_alert` do radar saem.** Quem os escreve
    hoje (as licenças CVP, emeis e CBS na radarconsole) passa a escrever os
    `*_limits`. Confirmar que nenhum cliente além da Havicare os usa.
-9. **A `conditionKey`** é um acrescento à regra da Havicare (casar pelo `type` e
-   pela chave). Sem ela, uma toma tardia da dose das 8:00 fechava a dose falhada
-   das 20:00.
-10. **O `irregularHeartbeat`** do tensiómetro: fica na telemetria, ou passa a
-    evento `alert`?
-11. **Atraso dos blocos da Veepoo.** A SpO2 e a frequência da Veepoo chegam nos
+9. **O `irregularHeartbeat`** do tensiómetro: fica na telemetria, ou passa a
+   evento `alert`?
+10. **Atraso dos blocos da Veepoo.** A SpO2 e a frequência da Veepoo chegam nos
     blocos de cinco minutos que o gateway relê. Os 30 minutos de idade máxima
     supõem que a releitura é mais frequente do que isso; falta medir.
+11. **O MDR.** A prova leva a configuração inteira para servir uma auditoria. Se o
+    hub entrar no âmbito do MDR como parte de um dispositivo médico, a tabela
+    `device_conditions` passa a registo com retenção definida, e isso é uma
+    decisão que não é técnica.
+
+Duas posições da Havicare, por decidir — não estão adotadas neste desenho:
+
+12. **Todas as regras do hub desligadas por omissão** (`enabled: false`), ligadas
+    pela Havicare dispositivo a dispositivo, pelo plano de monitorização do
+    cliente. A favor: nada alarma sem alguém ter decidido vigiar aquela pessoa.
+    Contra: um dispositivo registado sem plano mede SpO2 de 85 e fica calado, e o
+    hitCare, que não tem plano nenhum, nunca receberia um alarme clínico. A minha
+    leitura: ligadas por omissão nos aparelhos de medição, que alguém usou de
+    propósito; a decisão dos relógios e da pulseira é tua.
+13. **A deteção como módulo à parte no hub**, que só lê dados normalizados e não
+    sabe de clientes, planos nem horários; as **medições em falta** (uma leitura
+    agendada que não chegou) ficam na Havicare, que é quem conhece o horário do
+    plano. A minha leitura: concordo com as duas metades. O módulo decide sobre
+    leituras e limites; quem sabe do dono é quem publica, e é aí que fica a
+    mudança de dono da secção 7 — a deteção não precisa de saber de quem é o
+    dispositivo para acabar uma condição com `device_unassigned`.
