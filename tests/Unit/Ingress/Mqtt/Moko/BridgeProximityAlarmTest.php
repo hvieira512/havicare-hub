@@ -126,7 +126,7 @@ final class BridgeProximityAlarmTest extends TestCase
         $this->walkPast([-50, -50, -50]);
 
         self::assertSame([], $this->alarms());
-        self::assertArrayHasKey(self::GATEWAY, $this->store->proximityAlarmCandidates(self::BRACELET));
+        self::assertArrayHasKey(self::GATEWAY, $this->store->runtime->proximityAlarmCandidates(self::BRACELET));
     }
 
     public function testADiaperSensorRaisesItToo(): void

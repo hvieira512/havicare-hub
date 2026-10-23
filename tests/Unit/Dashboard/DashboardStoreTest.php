@@ -16,19 +16,19 @@ final class DashboardStoreTest extends TestCase
         $redis = new InMemoryRedisClient();
         $store = new DeviceStore($redis);
 
-        $store->registerDevice('861265061009822', 'Vivistar', 'VIVISTAR-CARE');
+        $store->runtime->registerDevice('861265061009822', 'Vivistar', 'VIVISTAR-CARE');
         $store->append('861265061009822', 'raw', ['payload' => 'IWAP00']);
         $store->append('861265061009822', 'telemetry', ['type' => 'heartbeat']);
         $store->append('861265061009822', 'events', ['type' => 'fall']);
         $store->recordCommand('861265061009822', 'cmd-1', ['status' => 'waiting']);
 
-        self::assertCount(1, $store->devices());
+        self::assertCount(1, $store->runtime->devices());
         self::assertNotSame([], $store->recent('861265061009822', 'raw'));
         self::assertNotSame([], $store->commands('861265061009822'));
 
         $store->deleteDevice('861265061009822');
 
-        self::assertSame([], $store->devices());
+        self::assertSame([], $store->runtime->devices());
         self::assertSame([], $store->recent('861265061009822', 'raw'));
         self::assertSame([], $store->recent('861265061009822', 'telemetry'));
         self::assertSame([], $store->recent('861265061009822', 'events'));
@@ -49,7 +49,7 @@ final class DashboardStoreTest extends TestCase
     {
         $redis = new InMemoryRedisClient();
         $store = new DeviceStore($redis);
-        $store->registerDevice('861265061009822', 'Vivistar', 'VIVISTAR-CARE');
+        $store->runtime->registerDevice('861265061009822', 'Vivistar', 'VIVISTAR-CARE');
 
         // Sem `sentAt`, nada mais o tiraria de "à espera".
         $store->recordCommand('861265061009822', 'cmd-1', [
@@ -66,7 +66,7 @@ final class DashboardStoreTest extends TestCase
     public function testAnExpiredCommandReplacesThePreviousReason(): void
     {
         $store = new DeviceStore(new InMemoryRedisClient());
-        $store->registerDevice('861265061009822', 'Vivistar', 'VIVISTAR-CARE');
+        $store->runtime->registerDevice('861265061009822', 'Vivistar', 'VIVISTAR-CARE');
         $store->recordCommand('861265061009822', 'cmd-1', [
             'status' => 'waiting',
             'sentAt' => gmdate('Y-m-d\\TH:i:s\\Z', time() - 7200),
@@ -85,7 +85,7 @@ final class DashboardStoreTest extends TestCase
     {
         $redis = new InMemoryRedisClient();
         $store = new DeviceStore($redis);
-        $store->registerDevice('861265061009822', 'Vivistar', 'VIVISTAR-CARE');
+        $store->runtime->registerDevice('861265061009822', 'Vivistar', 'VIVISTAR-CARE');
 
         // A varredura de repetição salta o que não é repetível: é a expiração que o leva a um
         // estado final.
@@ -104,7 +104,7 @@ final class DashboardStoreTest extends TestCase
     {
         $redis = new InMemoryRedisClient();
         $store = new DeviceStore($redis);
-        $store->registerDevice('861265061009822', 'Vivistar', 'VIVISTAR-CARE');
+        $store->runtime->registerDevice('861265061009822', 'Vivistar', 'VIVISTAR-CARE');
 
         // Em fila e repetível quer dizer "à espera de o dispositivo voltar", o que é
         // deliberado e tem de sobreviver à varredura.
@@ -123,7 +123,7 @@ final class DashboardStoreTest extends TestCase
     {
         $redis = new InMemoryRedisClient();
         $store = new DeviceStore($redis);
-        $store->registerDevice('861265061009822', 'Vivistar', 'VIVISTAR-CARE');
+        $store->runtime->registerDevice('861265061009822', 'Vivistar', 'VIVISTAR-CARE');
 
         $store->recordCommand('861265061009822', 'cmd-1', [
             'status' => 'waiting',
@@ -139,7 +139,7 @@ final class DashboardStoreTest extends TestCase
     {
         $redis = new InMemoryRedisClient();
         $store = new DeviceStore($redis, limit: 2);
-        $store->registerDevice('861265061009822', 'Vivistar', 'VIVISTAR-CARE');
+        $store->runtime->registerDevice('861265061009822', 'Vivistar', 'VIVISTAR-CARE');
 
         $store->recordCommand('861265061009822', 'cmd-1', ['status' => 'waiting']);
         $store->recordCommand('861265061009822', 'cmd-2', ['status' => 'waiting']);
@@ -154,7 +154,7 @@ final class DashboardStoreTest extends TestCase
     {
         $redis = new InMemoryRedisClient();
         $store = new DeviceStore($redis);
-        $store->registerDevice('868705080304962', 'Wonlex', 'HW20PRO');
+        $store->runtime->registerDevice('868705080304962', 'Wonlex', 'HW20PRO');
         $wireBytes = "\xfc\xaf\x00\x05hello";
         $store->recordCommand('868705080304962', 'cmd-wonlex', [
             'status' => 'waiting',
@@ -184,7 +184,7 @@ final class DashboardStoreTest extends TestCase
     {
         $store = new DeviceStore(new InMemoryRedisClient());
         $imei = '868705080304962';
-        $store->registerDevice($imei, 'Wonlex', 'HW20PRO');
+        $store->runtime->registerDevice($imei, 'Wonlex', 'HW20PRO');
 
         $first = DeviceCommandCatalog::buildDownlink('wonlex-json', $imei, 'dnHeartRate', [], ['ident' => 111111]);
         $second = DeviceCommandCatalog::buildDownlink('wonlex-json', $imei, 'dnHeartRate', [], ['ident' => 222222]);
@@ -210,7 +210,7 @@ final class DashboardStoreTest extends TestCase
     {
         $store = new DeviceStore(new InMemoryRedisClient());
         $imei = '868705080304962';
-        $store->registerDevice($imei, 'Wonlex', 'HW20PRO');
+        $store->runtime->registerDevice($imei, 'Wonlex', 'HW20PRO');
 
         $bytes = DeviceCommandCatalog::buildDownlink('wonlex-json', $imei, 'dnBO', [], ['ident' => 220365]);
         $store->recordCommand($imei, 'blood-oxygen', [
@@ -235,7 +235,7 @@ final class DashboardStoreTest extends TestCase
     {
         $store = new DeviceStore(new InMemoryRedisClient());
         $imei = '868705080304962';
-        $store->registerDevice($imei, 'Wonlex', 'HW20PRO');
+        $store->runtime->registerDevice($imei, 'Wonlex', 'HW20PRO');
 
         $bytes = DeviceCommandCatalog::buildDownlink('wonlex-json', $imei, 'dnBO', [], ['ident' => 220365]);
         $store->recordCommand($imei, 'blood-oxygen', [
@@ -265,7 +265,7 @@ final class DashboardStoreTest extends TestCase
     {
         $store = new DeviceStore(new InMemoryRedisClient());
         $imei = '864504816144000';
-        $store->registerDevice($imei, '4P Touch', 'D46', deviceId: '4504816144');
+        $store->runtime->registerDevice($imei, '4P Touch', 'D46', deviceId: '4504816144');
         $store->recordCommand($imei, 'lsset-command', [
             'status' => 'waiting',
             'protocol' => 'four-p-touch',
@@ -286,7 +286,7 @@ final class DashboardStoreTest extends TestCase
     {
         $store = new DeviceStore(new InMemoryRedisClient());
         $imei = '351266770073676';
-        $store->registerDevice($imei, '4P Touch', 'Y6M', deviceId: '6677007367');
+        $store->runtime->registerDevice($imei, '4P Touch', 'Y6M', deviceId: '6677007367');
         $store->recordCommand($imei, 'take-pills-command', [
             'status' => 'waiting',
             'protocol' => 'four-p-touch',
@@ -307,7 +307,7 @@ final class DashboardStoreTest extends TestCase
     {
         $redis = new InMemoryRedisClient();
         $store = new DeviceStore($redis);
-        $store->registerDevice('861728087743062', '4P Touch', 'D41');
+        $store->runtime->registerDevice('861728087743062', '4P Touch', 'D41');
         $store->recordCommand('861728087743062', 'cmd-queued', [
             'status' => 'queued',
             'retryable' => true,
@@ -330,7 +330,7 @@ final class DashboardStoreTest extends TestCase
     {
         $redis = new InMemoryRedisClient();
         $store = new DeviceStore($redis);
-        $store->registerDevice('861728087743062', '4P Touch', 'D41');
+        $store->runtime->registerDevice('861728087743062', '4P Touch', 'D41');
         $store->recordCommand('861728087743062', 'cmd-queued', [
             'status' => 'queued',
             'retryable' => true,

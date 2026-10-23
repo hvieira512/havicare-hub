@@ -49,7 +49,7 @@ final class JoyTechThermometerBridgeTest extends TestCase
         $this->now += 200;
         IngressFixtures::relay($bridge, self::TOPIC, self::frame(self::CLOCK_REQUEST));
 
-        self::assertSame([], $store->expireStaleDevices());
+        self::assertSame([], $store->runtime->expireStaleDevices());
     }
 
     /** O aparelho pede a hora 4 vezes por segundo e só mede depois de a ter: responde-se ao primeiro. */

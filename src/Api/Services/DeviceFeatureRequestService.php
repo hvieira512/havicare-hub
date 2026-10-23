@@ -12,6 +12,7 @@ use Hub\Command\DeviceCommandCatalog;
 use Hub\Command\DeviceConfigurationCatalog;
 use Hub\Domain\Capability\CapabilityCatalog;
 use Hub\State\DeviceCommandLog;
+use Hub\State\DeviceCommandStore;
 use Hub\State\DeviceCommandRecord;
 use Hub\Device\DeviceHubServer;
 use Hub\Domain\Capability\CapabilityRegistry;
@@ -26,6 +27,7 @@ final class DeviceFeatureRequestService
 {
     public function __construct(
         private DeviceCommandLog $store,
+        private DeviceCommandStore $commands,
         private DeviceHubServer $hub,
         private ApiDataAccess $db,
         private CapabilityRegistry $capabilityRegistry,
@@ -241,7 +243,7 @@ final class DeviceFeatureRequestService
         $waveforms = ['ecg', 'hrv', 'ppg', 'rr_interval'];
         $isWaveform = in_array($feature, $waveforms, true);
 
-        foreach ($this->store->commands($imei) as $command) {
+        foreach ($this->commands->commands($imei) as $command) {
             if (!in_array((string)($command['status'] ?? ''), ['queued', 'waiting'], true)) {
                 continue;
             }
@@ -342,7 +344,7 @@ final class DeviceFeatureRequestService
     /** @return array<string, mixed> */
     public function commandStatus(string $id, ?ApiAuthContext $auth = null): array
     {
-        $result = $this->store->findCommand($id);
+        $result = $this->commands->findCommand($id);
         if ($result === null) {
             return ApiError::commandNotFound()->toArray();
         }

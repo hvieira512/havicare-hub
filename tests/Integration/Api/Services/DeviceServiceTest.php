@@ -9,19 +9,20 @@ use Hub\Api\Request\DeviceWriteRequest;
 use Hub\Api\Auth\ApiAuthContext;
 use Hub\Api\Services\DeviceService;
 use Hub\Infrastructure\Persistence\Repository\ApiDataAccess;
-use Hub\State\DeviceStoreContract;
+use Hub\State\DeviceStore;
+use Hub\State\RedisKeys;
 use Hub\Device\DeviceHubServer;
 use Hub\Domain\DeviceMetadata;
 use Hub\Registry\Whitelist;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\MockObject\Stub;
+use Tests\Support\Doubles\InMemoryRedisClient;
 use Tests\Support\MysqlDashboardTestCase;
 
 final class DeviceServiceTest extends MysqlDashboardTestCase
 {
     private DeviceService $service;
-    /** @var DeviceStoreContract&MockObject */
-    private DeviceStoreContract $store;
+    private InMemoryRedisClient $redis;
     /** @var Whitelist&MockObject */
     private Whitelist $whitelist;
     /** @var DeviceHubServer&Stub */
@@ -33,15 +34,14 @@ final class DeviceServiceTest extends MysqlDashboardTestCase
     {
         parent::setUp();
 
-        // Mock e não stub: as duas prendem o argumento com `with()`, que é do mock.
-        $this->store = $this->createMock(DeviceStoreContract::class);
-
+        $this->redis = new InMemoryRedisClient();
+        // Mock e não stub: prende o argumento com `with()`, que é do mock.
         $this->whitelist = $this->createMock(Whitelist::class);
         $this->hub = $this->createStub(DeviceHubServer::class);
         $this->db = ApiDataAccess::fromDatabase($this->createDashboardDatabase());
 
         $this->service = new DeviceService(
-            $this->store,
+            new DeviceStore($this->redis),
             $this->whitelist,
             $this->hub,
             $this->db
@@ -75,7 +75,7 @@ final class DeviceServiceTest extends MysqlDashboardTestCase
         $supplierId = $this->db->suppliers->create('Wonlex');
         $this->db->models->add($supplierId, 'Y20', 'Y20', 'watch');
         $this->modelId = (int)($this->db->models->find('Wonlex', 'Y20')['id'] ?? 0);
-        $this->store->method('device')->with($imei)->willReturn([
+        $this->redis->hmset(RedisKeys::device($imei), [
             'imei' => $imei, 'supplier' => 'Wonlex', 'model' => 'Y20', 'protocol' => 'wonlex-json',
             'company' => 'hitcare', 'licenseId' => '1001',
         ]);
@@ -125,13 +125,11 @@ final class DeviceServiceTest extends MysqlDashboardTestCase
         $this->db->models->add($supplierId, 'L08 Pro', 'L08 Pro', 'watch');
 
         $writes = [];
-        $this->store->method('registerDevice')->willReturnCallback(
-            static function () use (&$writes): void {
-                $writes[] = 'redis';
-            }
-        );
         $this->whitelist->method('register')->willReturnCallback(
-            static function () use (&$writes): void {
+            function () use (&$writes): void {
+                if ($this->redis->hgetall(RedisKeys::device('861265061009877')) !== []) {
+                    $writes[] = 'redis';
+                }
                 $writes[] = 'sql';
             }
         );
@@ -153,7 +151,7 @@ final class DeviceServiceTest extends MysqlDashboardTestCase
         $supplierId = $this->db->suppliers->create($supplier);
         $this->db->models->add($supplierId, $model, $model, 'watch');
         $this->modelId = (int)($this->db->models->find($supplier, $model)['id'] ?? 0);
-        $this->store->method('device')->with($imei)->willReturn([
+        $this->redis->hmset(RedisKeys::device($imei), [
             'imei' => $imei,
             'supplier' => $supplier,
             'model' => $model,

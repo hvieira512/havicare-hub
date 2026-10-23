@@ -7,9 +7,10 @@ namespace Tests\Integration\Api\Services;
 use Hub\Api\Request\DeviceWriteRequest;
 use Hub\Infrastructure\Persistence\Repository\ApiDataAccess;
 use Hub\Api\Services\DeviceService;
-use Hub\State\DeviceStoreContract;
+use Hub\State\DeviceStore;
 use Hub\Device\DeviceHubServer;
 use Hub\Registry\Whitelist;
+use Tests\Support\Doubles\InMemoryRedisClient;
 use Tests\Support\MysqlDashboardTestCase;
 
 /** O IMEI é a chave por onde as ligações e a planta apontam: renomeá-lo leva-as com ele. */
@@ -30,7 +31,7 @@ final class DeviceImeiRenameTest extends MysqlDashboardTestCase
         $db->radarLayouts->store($radar, $this->layout(), '2026-10-02 12:00:00');
 
         $service = new DeviceService(
-            $this->createStub(DeviceStoreContract::class),
+            new DeviceStore(new InMemoryRedisClient()),
             $whitelist,
             $this->createStub(DeviceHubServer::class),
             $db,

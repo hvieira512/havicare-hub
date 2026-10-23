@@ -29,15 +29,6 @@ interface DeviceReportStore
      */
     public function deviceAsleep(string $imei, bool $asleep): bool;
 
-    /**
-     * Dá por desligado quem se calou para lá do que o protocolo dele aguenta, só do tipo pedido
-     * quando há um.
-     *
-     * @param (\Closure(string): bool)|null $hasSession diz quem tem ligação própria, que decide por si
-     * @return list<string> os que estavam ligados
-     */
-    public function expireStaleDevices(?string $deviceType = null, ?\Closure $hasSession = null): array;
-
     /** @param array<string, mixed> $payload */
     public function append(string $imei, string $list, array $payload): void;
 

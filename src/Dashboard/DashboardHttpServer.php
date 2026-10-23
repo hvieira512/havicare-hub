@@ -108,7 +108,7 @@ final class DashboardHttpServer
     public function warmUp(): void
     {
         foreach ($this->whitelist->all() as $imei => $metadata) {
-            $this->store->registerDevice(
+            $this->store->runtime->registerDevice(
                 (string)$imei,
                 $metadata->supplier,
                 $metadata->model,

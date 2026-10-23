@@ -14,7 +14,8 @@ use Hub\Ingress\Http\Qinglanst\LayoutParser;
 use Hub\Ingress\Http\Qinglanst\QinglanstApiClient;
 use Hub\Ingress\Http\Qinglanst\RadarLayoutSync;
 use Hub\Registry\Whitelist;
-use Hub\State\DeviceStoreContract;
+use Hub\State\DeviceStore;
+use Tests\Support\Doubles\InMemoryRedisClient;
 use Tests\Support\MysqlDashboardTestCase;
 
 /**
@@ -37,7 +38,7 @@ final class DeviceTenantScopeTest extends MysqlDashboardTestCase
         $this->db = ApiDataAccess::fromDatabase($this->createDashboardDatabase());
         $this->whitelist = new Whitelist($this->db->whitelist);
         $this->devices = new DeviceService(
-            $this->createStub(DeviceStoreContract::class),
+            new DeviceStore(new InMemoryRedisClient()),
             $this->whitelist,
             $this->createStub(DeviceHubServer::class),
             $this->db,

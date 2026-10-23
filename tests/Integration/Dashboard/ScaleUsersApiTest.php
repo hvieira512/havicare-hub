@@ -22,7 +22,7 @@ final class ScaleUsersApiTest extends DashboardHttpTestCase
         });
         [$server, $db, $store] = $this->makeServerWithDatabase($hub);
         $db->whitelist->register(self::SCALE, 'Unique Scales', 'HC-CF632BLE', 'scale', 1001, '', '', 'hitcare');
-        $store->registerDevice(self::SCALE, 'Unique Scales', 'HC-CF632BLE', 'scale', 1001, '', '', 'hitcare');
+        $store->runtime->registerDevice(self::SCALE, 'Unique Scales', 'HC-CF632BLE', 'scale', 1001, '', '', 'hitcare');
         $model = $db->models->find('Unique Scales', 'HC-CF632BLE');
         self::assertIsArray($model);
         $db->modelCapabilities->replaceForModelId((int)$model['id'], ['scale_users']);

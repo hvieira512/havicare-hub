@@ -10,7 +10,8 @@ use Hub\Api\Services\ModelService;
 use Hub\Device\DeviceHubServer;
 use Hub\Infrastructure\Persistence\Repository\ApiDataAccess;
 use Hub\Registry\Whitelist;
-use Hub\State\DeviceStoreContract;
+use Hub\State\DeviceStore;
+use Tests\Support\Doubles\InMemoryRedisClient;
 use Tests\Support\MysqlDashboardTestCase;
 
 /** Apagar o que não existe diz que não existe, em todos os recursos, e não responde como um apagar certo. */
@@ -20,7 +21,7 @@ final class DeleteOfSomethingAbsentTest extends MysqlDashboardTestCase
     {
         $db = ApiDataAccess::fromDatabase($this->createDashboardDatabase());
         $service = new DeviceService(
-            $this->createStub(DeviceStoreContract::class),
+            new DeviceStore(new InMemoryRedisClient()),
             new Whitelist($db->whitelist),
             $this->createStub(DeviceHubServer::class),
             $db,

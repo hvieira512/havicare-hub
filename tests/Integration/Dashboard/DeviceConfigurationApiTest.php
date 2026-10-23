@@ -62,7 +62,7 @@ final class DeviceConfigurationApiTest extends MysqlDashboardTestCase
 
         self::assertIsArray($model);
         $db->modelCapabilities->replaceForModelId((int)$model['id'], ['whitelist_enabled']);
-        $store->registerDevice('637507597567372', '4P Touch', 'D46', 'watch', 1, '', '7597567372', 'havicare');
+        $store->runtime->registerDevice('637507597567372', '4P Touch', 'D46', 'watch', 1, '', '7597567372', 'havicare');
 
         $disabled = $api->updateConfigurations('637507597567372', [
             'configurations' => [
@@ -97,7 +97,7 @@ final class DeviceConfigurationApiTest extends MysqlDashboardTestCase
         [$api, $db, $store] = $this->makeApi();
         $model = $db->models->find('4P Touch', 'D46');
         self::assertIsArray($model);
-        $store->registerDevice('861728087060467', '4P Touch', 'D46', 'watch', 1001, '', '', 'hitcare');
+        $store->runtime->registerDevice('861728087060467', '4P Touch', 'D46', 'watch', 1001, '', '', 'hitcare');
         $db->modelCapabilities->replaceForModelId((int)$model['id'], ['sos_contacts']);
 
         $response = $api->updateConfigurations('861728087060467', [
@@ -122,7 +122,7 @@ final class DeviceConfigurationApiTest extends MysqlDashboardTestCase
         [$api, $db, $store] = $this->makeApi(hub: $hub);
         $model = $db->models->find('4P Touch', 'D46');
         self::assertIsArray($model);
-        $store->registerDevice('861728087060467', '4P Touch', 'D46', 'watch', 1001, '', '', 'hitcare');
+        $store->runtime->registerDevice('861728087060467', '4P Touch', 'D46', 'watch', 1001, '', '', 'hitcare');
         $db->modelCapabilities->replaceForModelId((int)$model['id'], ['monitor_number']);
 
         $response = $api->updateConfigurations('861728087060467', [
@@ -204,7 +204,7 @@ final class DeviceConfigurationApiTest extends MysqlDashboardTestCase
 
         self::assertIsArray($model);
         $db->modelCapabilities->replaceForModelId((int)$model['id'], ['medication_reminders']);
-        $store->registerDevice('868017032159118', '4P Touch', 'D46', 'watch', 1001, '', '', 'hitcare');
+        $store->runtime->registerDevice('868017032159118', '4P Touch', 'D46', 'watch', 1001, '', '', 'hitcare');
         ConfigurationFixtures::desired(
             $db,
             '868017032159118',
@@ -250,7 +250,7 @@ final class DeviceConfigurationApiTest extends MysqlDashboardTestCase
 
         self::assertIsArray($model);
         $db->modelCapabilities->replaceForModelId((int)$model['id'], ['phonebook']);
-        $store->registerDevice('868017032159118', '4P Touch', 'D46', 'watch', 1001, '', '', 'hitcare');
+        $store->runtime->registerDevice('868017032159118', '4P Touch', 'D46', 'watch', 1001, '', '', 'hitcare');
 
         $response = $api->updateConfigurations('868017032159118', [
             'configurations' => [
@@ -286,7 +286,7 @@ final class DeviceConfigurationApiTest extends MysqlDashboardTestCase
 
         self::assertIsArray($model);
         $db->modelCapabilities->replaceForModelId((int)$model['id'], ['phonebook']);
-        $store->registerDevice('868017032159118', '4P Touch', 'D46', 'watch', 1001, '', '', 'hitcare');
+        $store->runtime->registerDevice('868017032159118', '4P Touch', 'D46', 'watch', 1001, '', '', 'hitcare');
 
         $response = $api->updateConfigurations('868017032159118', [
             'configurations' => [
@@ -317,7 +317,7 @@ final class DeviceConfigurationApiTest extends MysqlDashboardTestCase
 
         self::assertIsArray($model);
         $db->modelCapabilities->replaceForModelId((int)$model['id'], ['sos_contacts']);
-        $store->registerDevice('868017032159118', '4P Touch', 'D46', 'watch', 1001, '', '', 'hitcare');
+        $store->runtime->registerDevice('868017032159118', '4P Touch', 'D46', 'watch', 1001, '', '', 'hitcare');
 
         $initial = $api->updateConfigurations('868017032159118', [
             'configurations' => [
@@ -456,7 +456,7 @@ final class DeviceConfigurationApiTest extends MysqlDashboardTestCase
 
         self::assertIsArray($model);
         $db->modelCapabilities->replaceForModelId((int)$model['id'], ['call_whitelist']);
-        $store->registerDevice('637507597567372', '4P Touch', 'D46', 'watch', 0, '', '7597567372', 'hitcare');
+        $store->runtime->registerDevice('637507597567372', '4P Touch', 'D46', 'watch', 0, '', '7597567372', 'hitcare');
 
         $response = $api->updateConfigurations('637507597567372', [
             'configurations' => [
@@ -669,7 +669,7 @@ final class DeviceConfigurationApiTest extends MysqlDashboardTestCase
         $db->modelCapabilities->replaceForModelId((int)$model['id'], [...$requestableFeatures, ...$nonRequestableFeatures]);
         // O que se pode pedir é decisão por modelo, no `model_capabilities.is_requestable`.
         $db->modelCapabilities->replaceTelemetryRequestabilityForModelId((int)$model['id'], $requestableFeatures);
-        $store->registerDevice($imei, 'Wonlex', 'HW20PRO');
+        $store->runtime->registerDevice($imei, 'Wonlex', 'HW20PRO');
 
         $detail = $api->show($imei, null, '');
         foreach ($requestableFeatures as $feature) {

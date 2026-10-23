@@ -140,9 +140,9 @@ final class DashboardApiTenancyTest extends DashboardHttpTestCase
     {
         foreach ([['1001', '2002'], [1001, 2002]] as [$mine, $theirs]) {
             [$server, $db, $store] = $this->makeServerWithDatabase();
-            $store->registerDevice('861265061009866', 'Vivistar', 'L08 Pro', 'watch', $mine, '', '', 'hitcare');
+            $store->runtime->registerDevice('861265061009866', 'Vivistar', 'L08 Pro', 'watch', $mine, '', '', 'hitcare');
             $db->whitelist->register('861265061009866', 'Vivistar', 'L08 Pro', 'watch', $mine, '', '', 'hitcare');
-            $store->registerDevice('861265061009877', 'Vivistar', 'L08 Pro', 'watch', $theirs, '', '', 'otherCare');
+            $store->runtime->registerDevice('861265061009877', 'Vivistar', 'L08 Pro', 'watch', $theirs, '', '', 'otherCare');
             $db->whitelist->register('861265061009877', 'Vivistar', 'L08 Pro', 'watch', $theirs, '', '', 'otherCare');
 
             $token = $this->loginToken($server, 'tenant', 'tenant-secret');
@@ -188,7 +188,7 @@ final class DashboardApiTenancyTest extends DashboardHttpTestCase
     public function testDeviceWithoutALicenseIsInvisibleToATenantClient(): void
     {
         [$server, $db, $store] = $this->makeServerWithDatabase();
-        $store->registerDevice('861265061009888', 'Vivistar', 'L08 Pro', 'watch', 0, '', '', 'null');
+        $store->runtime->registerDevice('861265061009888', 'Vivistar', 'L08 Pro', 'watch', 0, '', '', 'null');
         $db->whitelist->register('861265061009888', 'Vivistar', 'L08 Pro', 'watch', 0, '', '', 'null');
         $token = $this->loginToken($server, 'tenant', 'tenant-secret');
 
@@ -209,7 +209,7 @@ final class DashboardApiTenancyTest extends DashboardHttpTestCase
         $db->licenses->create($hitcareId, 3003, 'hitcare-second-license');
 
         // A mesma empresa do cliente, e uma licença que ele não tem.
-        $store->registerDevice('861265061009899', 'Vivistar', 'L08 Pro', 'watch', 3003, '', '', 'hitcare');
+        $store->runtime->registerDevice('861265061009899', 'Vivistar', 'L08 Pro', 'watch', 3003, '', '', 'hitcare');
         $db->whitelist->register('861265061009899', 'Vivistar', 'L08 Pro', 'watch', 3003, '', '', 'hitcare');
 
         $token = $this->loginToken($server, 'tenant', 'tenant-secret');
@@ -232,7 +232,7 @@ final class DashboardApiTenancyTest extends DashboardHttpTestCase
     public function testTenantClientCannotAccessSameLicenseNumberFromAnotherCompany(): void
     {
         [$server, $db, $store] = $this->makeServerWithDatabase();
-        $store->registerDevice('861265061009855', 'Vivistar', 'L08 Pro', 'watch', 1001, '', '', 'otherCare');
+        $store->runtime->registerDevice('861265061009855', 'Vivistar', 'L08 Pro', 'watch', 1001, '', '', 'otherCare');
         $db->whitelist->register('861265061009822', 'Vivistar', 'L08 Pro', 'watch', 1001, '', '', 'hitcare');
         $db->whitelist->register('861265061009855', 'Vivistar', 'L08 Pro', 'watch', 1001, '', '', 'otherCare');
         $token = $this->loginToken($server, 'tenant', 'tenant-secret');

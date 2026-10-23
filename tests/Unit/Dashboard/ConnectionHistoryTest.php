@@ -76,10 +76,10 @@ final class ConnectionHistoryTest extends TestCase
         $this->rewindLastSeen(self::IMEI, 3600);
         $this->rewindLastSeen('861265061009822', 3600);
 
-        self::assertSame([self::IMEI], $this->store->expireStaleDevices('radar'));
-        self::assertSame([], $this->store->expireStaleDevices('radar'));
-        self::assertFalse($this->store->device(self::IMEI)['online']);
-        self::assertTrue($this->store->device('861265061009822')['online']);
+        self::assertSame([self::IMEI], $this->store->runtime->expireStaleDevices('radar'));
+        self::assertSame([], $this->store->runtime->expireStaleDevices('radar'));
+        self::assertFalse($this->store->runtime->device(self::IMEI)['online']);
+        self::assertTrue($this->store->runtime->device('861265061009822')['online']);
     }
 
     /** @return list<string> */

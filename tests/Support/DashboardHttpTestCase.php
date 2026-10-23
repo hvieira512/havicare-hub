@@ -101,9 +101,9 @@ abstract class DashboardHttpTestCase extends MysqlDashboardTestCase
         $db->whitelist->register('861265061009844', 'Vivistar', 'L08 Pro', 'watch', 0, '', '', 'null');
         $store = new DeviceStore($redis);
         $store->setDataAccess($db);
-        $store->registerDevice('861265061009822', 'Vivistar', 'L08 Pro', 'watch', 1001, '', '', 'hitcare');
-        $store->registerDevice('861265061009833', 'Vivistar', 'L08 Pro', 'watch', 2002, '', '', 'otherCare');
-        $store->registerDevice('861265061009844', 'Vivistar', 'L08 Pro', 'watch', 0, '', '', 'null');
+        $store->runtime->registerDevice('861265061009822', 'Vivistar', 'L08 Pro', 'watch', 1001, '', '', 'hitcare');
+        $store->runtime->registerDevice('861265061009833', 'Vivistar', 'L08 Pro', 'watch', 2002, '', '', 'otherCare');
+        $store->runtime->registerDevice('861265061009844', 'Vivistar', 'L08 Pro', 'watch', 0, '', '', 'null');
 
         if ($hub === null) {
             $hub = $this->createMock(\Hub\Device\DeviceHubServer::class);
