@@ -213,9 +213,22 @@ Cada tipo de dispositivo exige um mecanismo distinto:
 
 | Dispositivo | Mecanismo | Fundamento |
 |---|---|---|
-| **W6B** | Contador cumulativo; o acionamento é registado apenas quando o valor se altera | A trama transporta contador |
+| **W6B** | Contador cumulativo, guardado por pulseira e modo; só uma subida é acionamento, e conta a diferença | A trama transporta contador |
 | **W6** | Janela temporal de 35 s por modo | A trama não transporta contador e repete-se durante 30 s |
 | **Fralda** | Transição de estado | O que releva é a mudança de condição, não a repetição |
+
+Na W6B o contador guardado é um só por pulseira, e todos os gateways que a
+captam o atualizam. Por isso uma descida quase nunca é um toque: é um gateway
+atrasado — um MKGW4 a despejar o lote — que viu o valor de antes. Essa descida
+ignora-se e não se guarda. A exceção é o reinício (troca de bateria), que põe os
+contadores a zero: um valor até **3** com o guardado mais de 3 acima conta-se
+como toques desde zero. Por exemplo, 37 e depois 1 é um toque; 71 e depois 70 é
+nada. Um reinício só visto depois do quarto toque, ou um gateway mais de três
+toques atrasado, ficam fora da regra. A primeira observação estabelece a linha
+de base e não publica.
+
+A leitura, a decisão e a escrita fazem-se num só script Lua no Redis: dois
+gateways a entregar o mesmo valor novo ao mesmo tempo publicam um `help_call` só.
 
 Na fralda, a sensibilidade configurada entra no **valor** guardado e não na
 chave — assim, mudar a configuração conta como uma transição e o estado é

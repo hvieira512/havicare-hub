@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Support\Doubles;
 
 use Hub\Ingress\Mqtt\Gateway\ObservationStateStore;
+use Hub\Ingress\Mqtt\Gateway\RedisObservationStateStore;
 
 final class ArrayObservationStateStore implements ObservationStateStore
 {
@@ -14,6 +15,8 @@ final class ArrayObservationStateStore implements ObservationStateStore
     private array $published = [];
     /** @var array<string, string> */
     private array $conditions = [];
+    /** @var array<string, int> */
+    private array $counters = [];
 
     public function acceptObservation(string $deviceKey, string $fingerprint, int $ttlSeconds): bool
     {
@@ -47,5 +50,20 @@ final class ArrayObservationStateStore implements ObservationStateStore
             return null;
         }
         return ['previous' => $known ? $previous : null];
+    }
+
+    public function advanceCounter(string $deviceKey, int $count): ?int
+    {
+        $stored = $this->counters[$deviceKey] ?? null;
+        $resetMax = RedisObservationStateStore::COUNTER_RESET_MAX;
+        $reset = $stored !== null && $count <= $resetMax && $stored - $count > $resetMax;
+        if ($stored !== null && $count <= $stored && !$reset) {
+            return null;
+        }
+        $this->counters[$deviceKey] = $count;
+        if ($stored === null) {
+            return null;
+        }
+        return $reset ? 0 : $stored;
     }
 }

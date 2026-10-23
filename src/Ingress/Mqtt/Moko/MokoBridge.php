@@ -404,17 +404,13 @@ final class MokoBridge extends MqttBridgeBase implements DispatchesQueued
         }
         $this->relay->recordRaw($device, $gateway, 'moko-w6b', $observation);
 
-        $previousTriggerCount = null;
-        if (isset($decoded['alarm']['pressMode'], $decoded['alarm']['triggerCount'])) {
-            $transition = $this->state->transitionCondition(
+        // O contador é cumulativo: vê-lo pela primeira vez não é um toque.
+        $previousTriggerCount = isset($decoded['alarm']['pressMode'], $decoded['alarm']['triggerCount'])
+            ? $this->state->advanceCounter(
                 $deviceKey . ':press:' . $decoded['alarm']['pressMode'],
-                (string)$decoded['alarm']['triggerCount'],
-            );
-            // O contador é cumulativo: vê-lo pela primeira vez não é um toque.
-            $previousTriggerCount = $transition === null || $transition['previous'] === null
-                ? null
-                : (int)$transition['previous'];
-        }
+                (int)$decoded['alarm']['triggerCount'],
+            )
+            : null;
 
         $normalized = $this->braceletNormalizer->normalize(
             $decoded,

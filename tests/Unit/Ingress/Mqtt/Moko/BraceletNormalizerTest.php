@@ -100,18 +100,18 @@ final class BraceletNormalizerTest extends TestCase
         self::assertSame(4, $result['events'][0]['data']['presses']);
     }
 
-    public function testACounterResetIsOnePressRatherThanANegativeDelta(): void
+    /** Se uma descida é reinício decide-o quem guarda o contador, que passa zero. */
+    public function testALowerCounterIsNotAPress(): void
     {
-        // Trocar a bateria reinicia o aparelho e põe os contadores a zero.
         $result = (new BraceletNormalizer())->normalize(
-            $this->decoded('single', 1),
+            $this->decoded('single', 39),
             self::DEVICE,
             'd48c49f7909c',
             'moko-w6b',
             previousTriggerCount: 40,
         );
 
-        self::assertSame(1, $result['events'][0]['data']['presses']);
+        self::assertSame([], $result['events']);
     }
 
     public function testInactivityIsNotAHelpCall(): void

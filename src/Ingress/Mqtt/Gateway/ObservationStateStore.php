@@ -26,4 +26,11 @@ interface ObservationStateStore
      * @return array{previous: ?string}|null
      */
     public function transitionCondition(string $deviceKey, string $condition): ?array;
+
+    /**
+     * Avança um contador cumulativo e devolve o valor de onde se contam os toques novos: o
+     * anterior quando sobe, zero num reinício. Null na primeira observação, quando não mexe, e
+     * quando desce sem ser reinício.
+     */
+    public function advanceCounter(string $deviceKey, int $count): ?int;
 }
