@@ -138,6 +138,65 @@ final class BridgeW6bTest extends TestCase
         self::assertSame('long', $this->forBracelet($mqtt->events)[0]['payload']['data']['pressType']);
     }
 
+    /** Um MKGW4 despeja o lote atrasado: o contador que fica para trás não é toque. */
+    public function testALaggingGatewayReportingALowerCounterPublishesNothing(): void
+    {
+        $mqtt = new RecordingHubMqttBridge();
+        $bridge = $this->bridge($mqtt);
+
+        $this->deliver($bridge, $this->scanPayload(['trigger_count' => 69]));
+        $this->deliver($bridge, $this->scanPayload(['trigger_count' => 71]));
+        $this->deliver($bridge, $this->scanPayload(['trigger_count' => 70], self::GATEWAY2), self::GATEWAY2);
+        $this->deliver($bridge, $this->scanPayload(['trigger_count' => 71]));
+
+        $events = $this->forBracelet($mqtt->events);
+        self::assertCount(1, $events);
+        self::assertSame(2, $events[0]['payload']['data']['presses']);
+    }
+
+    /** Um gateway só vê o contador descer se a pulseira reiniciou, mesmo com toques perdidos pelo meio. */
+    public function testACounterGoingBackOnTheSameGatewayIsAReboot(): void
+    {
+        $mqtt = new RecordingHubMqttBridge();
+        $bridge = $this->bridge($mqtt);
+
+        $this->deliver($bridge, $this->scanPayload(['trigger_count' => 37]));
+        $this->deliver($bridge, $this->scanPayload(['trigger_count' => 4]));
+        $this->deliver($bridge, $this->scanPayload(['trigger_count' => 5]));
+
+        $events = $this->forBracelet($mqtt->events);
+        self::assertSame([4, 1], array_map(static fn(array $e): int => $e['payload']['data']['presses'], $events));
+    }
+
+    /** Um gateway sem valor anterior não distingue reinício de atraso: só a descida no outro o revela. */
+    public function testARebootFirstSeenByANewGatewayWaitsForADropOnAGatewayThatKnewTheOldValue(): void
+    {
+        $mqtt = new RecordingHubMqttBridge();
+        $bridge = $this->bridge($mqtt);
+
+        $this->deliver($bridge, $this->scanPayload(['trigger_count' => 37]));
+        $this->deliver($bridge, $this->scanPayload(['trigger_count' => 4], self::GATEWAY2), self::GATEWAY2);
+        self::assertSame([], $this->forBracelet($mqtt->events));
+
+        $this->deliver($bridge, $this->scanPayload(['trigger_count' => 5]));
+        $events = $this->forBracelet($mqtt->events);
+        self::assertSame([5], array_map(static fn(array $e): int => $e['payload']['data']['presses'], $events));
+    }
+
+    /** O contador a zero depois de um reinício ainda não é toque. */
+    public function testARebootToZeroPublishesNothingButResetsTheMark(): void
+    {
+        $mqtt = new RecordingHubMqttBridge();
+        $bridge = $this->bridge($mqtt);
+
+        $this->deliver($bridge, $this->scanPayload(['trigger_count' => 37]));
+        $this->deliver($bridge, $this->scanPayload(['trigger_count' => 0]));
+        $this->deliver($bridge, $this->scanPayload(['trigger_count' => 1]));
+
+        $events = $this->forBracelet($mqtt->events);
+        self::assertSame([1], array_map(static fn(array $e): int => $e['payload']['data']['presses'], $events));
+    }
+
     public function testAnUnlinkedBraceletIsIgnored(): void
     {
         $mqtt = new RecordingHubMqttBridge();

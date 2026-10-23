@@ -14,6 +14,10 @@ final class ArrayObservationStateStore implements ObservationStateStore
     private array $published = [];
     /** @var array<string, string> */
     private array $conditions = [];
+    /** @var array<string, int> */
+    private array $counters = [];
+    /** @var array<string, array<string, int>> */
+    private array $counterByGateway = [];
 
     public function acceptObservation(string $deviceKey, string $fingerprint, int $ttlSeconds): bool
     {
@@ -47,5 +51,22 @@ final class ArrayObservationStateStore implements ObservationStateStore
             return null;
         }
         return ['previous' => $known ? $previous : null];
+    }
+
+    public function advanceCounter(string $deviceKey, string $observedBy, int $count): ?int
+    {
+        $mark = $this->counters[$deviceKey] ?? null;
+        $last = $this->counterByGateway[$deviceKey][$observedBy] ?? null;
+        $from = null;
+        if ($mark === null || $count > $mark) {
+            $this->counters[$deviceKey] = $count;
+            $from = $mark;
+        } elseif ($count < $mark && $last !== null && $count < $last) {
+            $this->counters[$deviceKey] = $count;
+            $this->counterByGateway[$deviceKey] = [];
+            $from = 0;
+        }
+        $this->counterByGateway[$deviceKey][$observedBy] = $count;
+        return $from;
     }
 }

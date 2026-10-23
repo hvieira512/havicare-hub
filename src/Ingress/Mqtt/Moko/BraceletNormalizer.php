@@ -23,7 +23,7 @@ final class BraceletNormalizer
      * @param array<string, mixed> $decoded
      * @param array<string, mixed> $device
      * @param 'moko-w6'|'moko-w6b' $protocol
-     * @param int|null $previousTriggerCount da W6B; null enquanto se estabelece a referência
+     * @param int|null $previousTriggerCount da W6B, zero depois de um reinício; null quando não há toque
      * @return array{telemetry: array<string, array<string, mixed>>, events: list<array<string, mixed>>}
      */
     public function normalize(
@@ -100,15 +100,14 @@ final class BraceletNormalizer
 
         // O primeiro avistamento só estabelece a linha de base do contador.
         $triggerCount = (int)$alarm['triggerCount'];
-        if ($previousTriggerCount === null || $triggerCount === $previousTriggerCount) {
+        if ($previousTriggerCount === null || $triggerCount <= $previousTriggerCount) {
             return [];
         }
 
         return [$envelope('help_call', [
             'pressType' => $pressMode,
             'triggerCount' => $triggerCount,
-            // Um reinício põe os contadores a zero: uma descida também é toque.
-            'presses' => $triggerCount > $previousTriggerCount ? $triggerCount - $previousTriggerCount : 1,
+            'presses' => $triggerCount - $previousTriggerCount,
         ])];
     }
 }

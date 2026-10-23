@@ -213,9 +213,31 @@ Cada tipo de dispositivo exige um mecanismo distinto:
 
 | Dispositivo | Mecanismo | Fundamento |
 |---|---|---|
-| **W6B** | Contador cumulativo; o acionamento é registado apenas quando o valor se altera | A trama transporta contador |
+| **W6B** | Contador cumulativo por pulseira e modo; uma subida é acionamento, e uma descida só quando o mesmo gateway a vê | A trama transporta contador |
 | **W6** | Janela temporal de 35 s por modo | A trama não transporta contador e repete-se durante 30 s |
 | **Fralda** | Transição de estado | O que releva é a mudança de condição, não a repetição |
+
+Na W6B guardam-se duas coisas por pulseira e modo: a **marca**, o maior valor
+visto por qualquer gateway, e o **último valor de cada gateway**. Um gateway
+sozinho nunca vê o contador descer, a não ser que a pulseira tenha reiniciado
+(troca de bateria); uma descida só em relação a outro gateway é atraso — um
+MKGW4 a despejar o lote.
+
+| Valor recebido | Decisão |
+|---|---|
+| Acima da marca | `help_call` com `presses` = a diferença; passa a ser a marca |
+| Igual à marca | nada |
+| Abaixo da marca e abaixo do último deste gateway | reinício: `presses` = o valor (zero não publica), e a marca recomeça nele |
+| Abaixo da marca, e este gateway nunca reportou ou não desceu | atraso: ignora-se |
+
+Por exemplo, com a marca a 37 vinda do gateway A: A reporta 4 → quatro toques,
+mesmo que os três primeiros tenham escapado a todos os gateways. Um B que nunca
+tinha reportado e diz 4 não se distingue de um B atrasado, e fica ignorado até A
+mostrar a descida. A regra erra para o lado de publicar: perder um SOS é pior do
+que um a mais. A primeira observação estabelece a linha de base e não publica.
+
+A leitura, a decisão e a escrita fazem-se num só script Lua no Redis: dois
+gateways a entregar o mesmo valor novo ao mesmo tempo publicam um `help_call` só.
 
 Na fralda, a sensibilidade configurada entra no **valor** guardado e não na
 chave — assim, mudar a configuração conta como uma transição e o estado é
