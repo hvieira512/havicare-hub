@@ -74,7 +74,8 @@ test("an unanswered request does not make up a value", () => {
     });
 
     assert.equal(row.sub, "");
-    assert.match(row.expanded, /À espera de AP76/);
+    assert.match(row.expanded, /À espera da resposta do dispositivo/);
+    assert.doesNotMatch(row.expanded, /AP76/);
 });
 
 /** Uma leitura anterior ao pedido é de outra resposta, e não desta. */

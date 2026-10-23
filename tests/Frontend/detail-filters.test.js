@@ -6,6 +6,7 @@ import { cacheElements } from "../../src/Dashboard/dashboard/dom.js";
 const { state, resetDetailFiltersDraft, selectImei, updateDetailFiltersDraft } =
     await import("../../src/Dashboard/dashboard/state.js");
 const {
+    allDetailItems,
     applyDetailRange,
     applyDetailType,
     clearDetailFilters,
@@ -294,5 +295,42 @@ describe("device switch", () => {
             [...els.detailFilterType.options].map((option) => option.value),
             ["all", "presence"],
         );
+    });
+});
+
+/** Um tipo sem nome na dashboard não aparece pelo código do fabricante: junta-se em «Outros». */
+describe("unnamed types", () => {
+    beforeEach(() => {
+        cacheElements(els);
+        initDetailFilters();
+        state.selectedImei = "ccc333";
+        state.detailFilters = { from: "", to: "", type: "all", severity: "all", q: "" };
+        state.detailFiltersDraft = { ...state.detailFilters };
+        state.selectedDetail = {
+            recent: {
+                telemetry: [
+                    { type: "heart_rate", seq: 1, occurredAt: "2026-10-01T09:00:00Z", data: {} },
+                    { type: "AP49", nativeType: "AP49", seq: 2, occurredAt: "2026-10-01T09:01:00Z", data: {} },
+                    { nativeType: "manufacturer_data", seq: 3, occurredAt: "2026-10-01T09:02:00Z", data: {} },
+                ],
+                events: [],
+                commands: [],
+                connection: [],
+            },
+        };
+    });
+
+    test("the type selector offers one Outros instead of vendor codes", () => {
+        populateDetailFilterTypes();
+        const options = [...els.detailFilterType.options];
+
+        assert.deepEqual(options.map((option) => option.value), ["all", "heart_rate", "outros"]);
+        assert.equal(options.at(-1).textContent, "Outros");
+    });
+
+    test("choosing Outros shows every unnamed reading", () => {
+        state.detailFilters = { ...state.detailFilters, type: "outros" };
+
+        assert.equal(filterDetailItems(allDetailItems()).length, 2);
     });
 });

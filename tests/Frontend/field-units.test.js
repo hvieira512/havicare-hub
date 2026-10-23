@@ -53,3 +53,11 @@ test("configuration fields carry their unit in the name", () => {
     assert.equal(fieldUnit("intervalSeconds"), "s");
     assert.equal(fieldUnit("targetMinutes"), "min");
 });
+
+test("a card's main value writes decimals with the Portuguese comma", async () => {
+    const { uplinkCardContent } = await import("../../src/Dashboard/dashboard/components/cards/telemetry.js");
+
+    assert.equal(String(uplinkCardContent("weight", { weightKg: 96.1 }).value), "96,1 kg");
+    assert.equal(String(uplinkCardContent("temperature", { bodyCelsius: 36.5 }).value), "36,5 °C");
+    assert.equal(String(uplinkCardContent("body_impedance", { impedance50KhzOhm: 425.2 }).value), "425,2 Ω");
+});

@@ -7,7 +7,7 @@ import { fieldValue } from "../../src/Dashboard/dashboard/format.js";
 /** Cada cartão lê o campo do contrato, que traz a unidade no nome. */
 test("the bracelet cards read the named quantities", () => {
     assert.equal(cardContent("hrv", { hrvMilliseconds: 42 }).value, "42 ms");
-    assert.equal(cardContent("met", { met: 0.9 }).value, "0.9 MET");
+    assert.equal(cardContent("met", { met: 0.9 }).value, "0,9 MET");
     assert.equal(cardContent("stress", { stressScore: 33 }).value, "33");
     assert.equal(cardContent("cardiac_load", { cardiacLoad: 7 }).value, "7");
     assert.equal(cardContent("steps", { steps: 37, periodSeconds: 300 }).value, "37 passos");

@@ -1,5 +1,6 @@
 import { stateBadge } from "../../../components/state-badge.js";
 import { html } from "../../../html.js";
+import { formatNumber } from "../../../format.js";
 import { state } from "../../../state.js";
 import { nextUid } from "./shared.js";
 
@@ -30,7 +31,7 @@ function meta(user) {
         years ? `${years} anos` : "",
         SEX[user.sex]?.toLowerCase() ?? "",
         user.heightCm ? `${user.heightCm} cm` : "",
-        user.weightKg || user.weightKg === 0 ? `${user.weightKg} kg` : "",
+        user.weightKg || user.weightKg === 0 ? `${formatNumber(user.weightKg)} kg` : "",
         user.athlete ? "atleta" : "",
     ].filter(Boolean).join(" · ");
 }

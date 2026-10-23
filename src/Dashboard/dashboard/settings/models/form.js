@@ -253,7 +253,7 @@ async function refreshTemplate() {
     }
 
     els.modelWizardTemplateSummary.textContent =
-        "A carregar template de capacidades do fornecedor.";
+        "A carregar as capacidades predefinidas do fornecedor.";
 
     const response = await ensureModelTemplate(supplier.id, deviceType);
     if (response.error) {

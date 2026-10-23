@@ -1,4 +1,4 @@
-import { displayPersonIndex, fieldLabel, fieldValue, timeOnly } from "../../format.js";
+import { displayPersonIndex, fieldLabel, fieldValue, formatNumber, timeOnly } from "../../format.js";
 import { fallLabel, zoneLabel } from "../../domain.js";
 import { html } from "../../html.js";
 import { compactDetails, joinMarkup } from "./shared.js";
@@ -20,6 +20,9 @@ import {
 } from "./radar.js";
 import { capabilityLabel } from "../../capability-catalog.js";
 import { countLabel, valueLabel } from "../../i18n.js";
+
+/** Um número com a vírgula decimal portuguesa; o «-» de quando falta fica como está. */
+const num = (value) => (value === null || value === undefined || value === "" || value === "-" ? "-" : formatNumber(Number(value)));
 
 /** O ícone e o tom de cada capacidade: `[ícone, tom]`. */
 const CARD_STYLE = {
@@ -176,30 +179,30 @@ const UPLINK_CARD_RENDERERS = {
         details: radarVitalsMinuteStatsDetails(data),
     }),
     heart_rate: (data) => ({
-        value: `${data.bpm ?? "-"} bpm`,
+        value: `${num(data.bpm)} bpm`,
     }),
     blood_pressure: (data) => ({
-        value: `${data.systolicMmHg ?? "-"} / ${data.diastolicMmHg ?? "-"} mmHg`,
+        value: `${num(data.systolicMmHg)} / ${num(data.diastolicMmHg)} mmHg`,
         details: compactDetails(data, ["irregularHeartbeat", "memoryGroup", "fromHistory"]),
     }),
     blood_oxygen: (data) => ({
         value: `${data.spo2Percent ?? "-"}%`,
     }),
     blood_sugar: (data) => ({
-        value: `${data.glucoseMgDl ?? "-"} mg/dL`,
+        value: `${num(data.glucoseMgDl)} mg/dL`,
     }),
     // Nem toda a leitura traz a corporal: há aparelhos que só amostram a superfície.
     temperature: (data) => ({
         value:
             data.bodyCelsius != null
-                ? `${data.bodyCelsius} °C`
+                ? `${num(data.bodyCelsius)} °C`
                 : data.surfaceCelsius != null
-                    ? `${data.surfaceCelsius} °C na pele`
+                    ? `${num(data.surfaceCelsius)} °C na pele`
                     : "-",
         details: compactDetails(data, ["site"]),
     }),
     ambient_temperature: (data) => ({
-        value: data.environmentCelsius != null ? `${data.environmentCelsius} °C` : "-",
+        value: data.environmentCelsius != null ? `${num(data.environmentCelsius)} °C` : "-",
     }),
     ambient_humidity: (data) => ({
         value: data.humidityPercent != null ? `${data.humidityPercent}%` : "-",
@@ -257,7 +260,7 @@ const UPLINK_CARD_RENDERERS = {
     }),
     // Equivalentes metabólicos: 1 é o gasto em repouso, e por isso o número vale por si.
     met: (data) => ({
-        value: data?.met != null ? `${data.met} MET` : capabilityLabel("met"),
+        value: data?.met != null ? `${num(data.met)} MET` : capabilityLabel("met"),
     }),
     cardiac_load: (data) => ({
         value: data?.cardiacLoad != null ? `${data.cardiacLoad}` : capabilityLabel("cardiac_load"),
@@ -275,7 +278,7 @@ const UPLINK_CARD_RENDERERS = {
     blood_lipids: (data) => ({
         value:
             data?.totalCholesterolMmolPerL != null
-                ? `${data.totalCholesterolMmolPerL} mmol/L`
+                ? `${num(data.totalCholesterolMmolPerL)} mmol/L`
                 : capabilityLabel("blood_lipids"),
         details: compactDetails(data, [
             "triglyceridesMmolPerL",
@@ -293,26 +296,26 @@ const UPLINK_CARD_RENDERERS = {
             capabilityLabel("wear_state"),
     }),
     weight: (data) => ({
-        value: data?.weightKg != null ? `${data.weightKg} kg` : capabilityLabel("weight"),
+        value: data?.weightKg != null ? `${num(data.weightKg)} kg` : capabilityLabel("weight"),
         details: compactDetails({ ...data, scaleUserId: scaleUserName(data?.scaleUserId) }, ["scaleUserId", "fromHistory"]),
     }),
     body_impedance: (data) => ({
-        value: data?.impedance50KhzOhm != null ? `${data.impedance50KhzOhm} Ω` : capabilityLabel("body_impedance"),
+        value: data?.impedance50KhzOhm != null ? `${num(data.impedance50KhzOhm)} Ω` : capabilityLabel("body_impedance"),
         details: compactDetails(data, ["impedance100KhzOhm"]),
     }),
     body_impedance_channel: (data) => ({
-        value: data?.impedanceOhm != null ? `Canal ${data.channel} · ${data.impedanceOhm} Ω` : capabilityLabel("body_impedance_channel"),
+        value: data?.impedanceOhm != null ? `Canal ${data.channel} · ${num(data.impedanceOhm)} Ω` : capabilityLabel("body_impedance_channel"),
     }),
     weighing_status: (data) => ({
         value: data?.shuttingDown
             ? "A desligar"
             : [valueLabel("heartRatePhase", data?.heartRatePhase), valueLabel("impedancePhase", data?.impedancePhase), valueLabel("weightPhase", data?.weightPhase)]
                     .find(Boolean) ?? capabilityLabel("weighing_status"),
-        details: data?.weightKg ? `${data.weightKg} kg` : "",
+        details: data?.weightKg ? `${num(data.weightKg)} kg` : "",
     }),
     // O IMC é o número que resume a medição; o resto cabe nos detalhes, com uma casa como na app.
     body_composition: (data) => ({
-        value: data?.bmi != null ? `${data.bmi} IMC` : capabilityLabel("body_composition"),
+        value: data?.bmi != null ? `${num(data.bmi)} IMC` : capabilityLabel("body_composition"),
         details: compactDetails(oneDecimal(data), [
             "bodyFatPercent",
             "fatMassKg",
@@ -403,7 +406,7 @@ const UPLINK_CARD_RENDERERS = {
     // A frequência que o exame apurou, que não é a do sensor ótico; sem ela, o tamanho do lote.
     ecg: (data) => ({
         value: data?.heartRateBpm != null
-            ? `${data.heartRateBpm} bpm`
+            ? `${num(data.heartRateBpm)} bpm`
             : sampleCount(data),
         details: compactDetails(
             { ...data, sampleCount: sampleTotal(data) || null },
@@ -413,11 +416,11 @@ const UPLINK_CARD_RENDERERS = {
     hrv: (data) => ({
         value:
             data?.hrvMilliseconds != null
-                ? `${data.hrvMilliseconds} ms`
+                ? `${num(data.hrvMilliseconds)} ms`
                 : capabilityLabel("hrv"),
     }),
     breath_rate: (data) => ({
-        value: `${data.breathsPerMinute ?? "-"} rpm`,
+        value: `${num(data.breathsPerMinute)} rpm`,
     }),
     ppg: (data) => ({
         value: sampleCount(data),
@@ -438,7 +441,7 @@ const UPLINK_CARD_RENDERERS = {
     motion: (data) => ({
         value:
             data?.magnitudeMg != null
-                ? `${data.magnitudeMg} mg`
+                ? `${num(data.magnitudeMg)} mg`
                 : capabilityLabel("motion"),
         details: compactDetails(data, ["xMg", "yMg", "zMg"]),
     }),
@@ -527,7 +530,7 @@ function rrIntervalValue(data) {
         intervals.reduce((sum, value) => sum + value, 0) / intervals.length,
     );
 
-    return `${intervals.length} × ${mean} ms`;
+    return `${intervals.length} × ${num(mean)} ms`;
 }
 
 /** Os cinco degraus que o Font Awesome free desenha. Sem percentagem, nenhum deles mente. */

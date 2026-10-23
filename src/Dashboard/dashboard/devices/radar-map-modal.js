@@ -215,11 +215,14 @@ function currentPeople() {
     return Array.isArray(people) ? people : [];
 }
 
+/** As medidas da divisão com uma casa decimal, à portuguesa. */
+const METERS = new Intl.NumberFormat("pt-PT", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+
 function subtitle(imei, layout) {
     if (!layout?.room) return imei;
 
-    const width = ((layout.room.xMaxDm - layout.room.xMinDm) / 10).toFixed(1);
-    const height = ((layout.room.yMaxDm - layout.room.yMinDm) / 10).toFixed(1);
+    const width = METERS.format((layout.room.xMaxDm - layout.room.xMinDm) / 10);
+    const height = METERS.format((layout.room.yMaxDm - layout.room.yMinDm) / 10);
 
     return `${imei} · ${width} × ${height} m · sincronizado ${when(layout.fetchedAt)}`;
 }

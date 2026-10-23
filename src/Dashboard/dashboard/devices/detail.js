@@ -628,7 +628,7 @@ function plainText(markup) {
 function expectedReplies(command) {
     return Array.isArray(command.expectedReplyTypes) &&
         command.expectedReplyTypes.length
-        ? `À espera de ${command.expectedReplyTypes.join(", ")}`
+        ? "À espera da resposta do dispositivo"
         : "";
 }
 

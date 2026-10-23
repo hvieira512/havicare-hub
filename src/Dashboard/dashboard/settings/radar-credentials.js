@@ -92,10 +92,10 @@ export function radarCredentialsEditorRow(license) {
                 </div>
                 ${secretField("radarRowPassword", "password", "Palavra-passe", stored?.hasPassword)}
                 <div class="col-12 col-sm-6">
-                    <label class="section-label" for="radarRowAppId">App ID</label>
+                    <label class="section-label" for="radarRowAppId">ID da aplicação</label>
                     <input type="text" class="form-control form-control-sm" id="radarRowAppId" data-field="appId" value="${stored?.appId || ""}" autocomplete="off">
                 </div>
-                ${secretField("radarRowAppSecret", "appSecret", "App secret", stored?.hasAppSecret)}
+                ${secretField("radarRowAppSecret", "appSecret", "Segredo da aplicação", stored?.hasAppSecret)}
             </div>
             <div id="radarCheckResult" class="small mt-3 d-none" role="status"></div>
             <div class="d-flex align-items-center flex-wrap gap-2 mt-3">

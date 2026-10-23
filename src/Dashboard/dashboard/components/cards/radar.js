@@ -1,4 +1,4 @@
-import { displayPersonIndex, fieldValue } from "../../format.js";
+import { displayPersonIndex, fieldValue, formatNumber } from "../../format.js";
 import { postureStyle } from "../../radar-style.js";
 import { html } from "../../html.js";
 import { compactDetails, joinMarkup } from "./shared.js";
@@ -102,7 +102,6 @@ export function radarVitalsMinuteStatsDetails(data) {
 }
 
 function dataPointValue(value) {
-    return value === undefined || value === null || value === ""
-        ? "-"
-        : String(value);
+    if (value === undefined || value === null || value === "") return "-";
+    return typeof value === "number" ? formatNumber(value) : String(value);
 }

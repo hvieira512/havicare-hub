@@ -1,4 +1,5 @@
 import { capabilityLabel } from "../capability-catalog.js";
+import { UNTRANSLATED } from "../i18n.js";
 import { rowPayload, when } from "../format.js";
 import { html } from "../html.js";
 import { els, renderInto } from "../dom.js";
@@ -154,7 +155,7 @@ function detailFilterTypesFromItems(items) {
         new Set(
             items
                 .map((item) => detailItemType(item))
-                .filter((type) => type && type !== "outros"),
+                .filter(Boolean),
         ),
     ).sort((left, right) =>
         String(telemetryFilterLabel(left)).localeCompare(
@@ -169,9 +170,8 @@ function detailItemType(item) {
     if (item._source === "command" && p.feature) return p.feature;
     const mapped = DETAIL_ITEM_TYPES[p.type];
     if (mapped) return mapped(p);
-    if (p.nativeType) return p.nativeType;
-    if (p.type && p.type !== "telemetry") return p.type;
-    return "outros";
+    // Um tipo sem nome na dashboard não se mostra pelo código do fabricante.
+    return p.type && p.type !== "telemetry" && capabilityLabel(p.type) !== UNTRANSLATED ? p.type : "outros";
 }
 
 function itemTime(item) {
@@ -213,7 +213,7 @@ function filterTypeOption(type) {
 }
 
 function telemetryFilterLabel(type) {
-    return capabilityLabel(type) || type;
+    return type === "outros" ? "Outros" : capabilityLabel(type);
 }
 
 /** O rascunho manda mesmo vazio, daí o `??` e não o `||`: um campo apagado é uma escolha. */
