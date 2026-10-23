@@ -40,8 +40,13 @@ wss://mqe.tuyaeu.com:8285/ws/v2/consumer/persistent/{accessId}/out/event/{subscr
   tratada. Uma trama que não se lê confirma-se e larga-se, porque voltaria para
   sempre. Uma falha do hub (Redis ou base de dados em baixo) não confirma, e o
   Pulsar volta a entregar a mensagem três segundos depois; à quinta entrega
-  falhada, larga-se com erro no log. Quem consome pode por isso receber um
-  `help_call` repetido, como em qualquer canal QoS 1.
+  falhada, larga-se com erro no log.
+- **Reentregas:** o `messageId` de cada mensagem já publicada fica no Redis
+  (`hub:tuya:handled:{messageId}`) durante **três horas**, uma a mais do que a
+  retenção da Tuya. Uma reentrega dessa mensagem confirma-se sem publicar nada,
+  e o `help_call` não se repete. Marca-se só depois de o alarme sair: uma falha
+  antes disso volta a ser tratada por inteiro. Com o Redis em baixo não se sabe
+  o que já saiu, e publica-se — um `help_call` repetido em vez de um perdido.
 - **Ligação perdida:** volta a ligar sozinha, de 1 a 60 segundos de espera. Um
   `ping` a cada 30 segundos mantém-na aberta, e sem nada do servidor durante 90
   segundos fecha-se e volta a abrir.

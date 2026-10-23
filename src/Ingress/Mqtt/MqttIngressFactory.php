@@ -166,6 +166,7 @@ final class MqttIngressFactory
             $services->commercialModelResolver,
             $services->denylist,
             $loop,
+            $services->redis,
         );
     }
 
