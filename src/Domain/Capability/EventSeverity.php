@@ -24,12 +24,13 @@ final class EventSeverity
         'breath_rate_low' => self::ALERT,
         'weak_vital_signs' => self::ALERT,
         'device_removed' => self::ALERT,
-        'low_battery' => self::ALERT,
         'check_required' => self::ALERT,
         'device_fault' => self::ALERT,
         'storage_environment' => self::ALERT,
         'device_state' => self::ALERT,
         'reset' => self::INFO,
+        // Carregar é manutenção: o que deixa a pessoa sem proteção é o desligado.
+        'low_battery' => self::INFO,
     ];
 
     /** Os limites da frequência cardíaca abaixo e acima dos quais o alerta passa a alarme. */

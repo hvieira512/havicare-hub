@@ -40,6 +40,7 @@ final class EventSeverityTest extends TestCase
             'left the room' => ['zone_exit', ['zone' => 'room'], 'info'],
             'entered the door' => ['zone_entry', ['zone' => 'area', 'areaId' => 2, 'areaName' => 'Porta', 'areaType' => 'door'], 'info'],
             'help call reset' => ['reset', [], 'info'],
+            'low battery is maintenance' => ['low_battery', ['percent' => 12], 'info'],
             'missed dose' => ['medication_alarm_change', ['slot' => 3, 'state' => 'missed'], 'alert'],
             'dose taken' => ['medication_alarm_change', ['slot' => 3, 'state' => 'taken'], 'info'],
             'abnormal intake' => ['medication_intake', ['result' => 'abnormal'], 'alert'],

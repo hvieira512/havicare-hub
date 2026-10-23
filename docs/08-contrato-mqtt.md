@@ -308,7 +308,7 @@ eventos guardados no histórico da dashboard levam-na igual.
 | `weak_vital_signs` | — | radar | `alert` |
 | `zone_entry` · `zone_exit` | `zone` (`room` · `area` · `geofence`), `personIndex`, `areaId`, `areaName`, `areaType` | radar, relógio 4P Touch | `alert` a sair da cerca; `info` o resto |
 | `device_removed` | — | relógio | `alert` |
-| `low_battery` | `percent` ou `voltageMv`, quando há | relógios, pulseira Veepoo, dispensador, MKGW4 | `alert` |
+| `low_battery` | `percent` ou `voltageMv`, quando há | relógios, pulseira Veepoo, dispensador, MKGW4 | `info`: carregar é manutenção, e a falta de proteção é o `device.disconnected` |
 | `change_required` | `previousState` | sensor de fralda | `alarm` |
 | `check_required` | `previousState` | sensor de fralda | `alert` |
 | `device_fault` | `fault` | dispensador | `alert` |

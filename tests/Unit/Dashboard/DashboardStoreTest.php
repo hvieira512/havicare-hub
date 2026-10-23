@@ -40,7 +40,7 @@ final class DashboardStoreTest extends TestCase
     {
         $store = new DeviceStore(new InMemoryRedisClient());
 
-        $store->append('861265061009822', 'events', ['type' => 'low_battery', 'data' => []]);
+        $store->append('861265061009822', 'events', ['type' => 'device_removed', 'data' => []]);
 
         self::assertSame('alert', $store->recent('861265061009822', 'events')[0]['severity'] ?? null);
     }
