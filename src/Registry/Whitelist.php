@@ -9,6 +9,14 @@ use Hub\Infrastructure\Persistence\Repository\WhitelistRepository;
 
 class Whitelist
 {
+    /** O tipo de aparelho em que um protocolo procura o alias; um frame não se autentica como outro tipo. */
+    private const ALIAS_DEVICE_TYPES = [
+        'four-p-touch' => 'watch',
+        'ncs' => 'ncs',
+        'qinglanst-radar' => 'radar',
+        'qinglanst' => 'radar',
+    ];
+
     /** @var array<string, DeviceMetadata> */
     private array $devices = [];
     private int $databaseCacheLoadedAt = 0;
@@ -128,7 +136,6 @@ class Whitelist
 
         return true;
     }
-
     /**
      * Devolve um array, e não um `DeviceMetadata`, porque acrescenta o `imei` -- que é a chave
      * do mapa, não um campo da entrada.
@@ -143,65 +150,22 @@ class Whitelist
         }
 
         $alias = trim($ident !== '' ? $ident : $imei);
-        if ($alias === '') {
+        $deviceType = self::ALIAS_DEVICE_TYPES[$protocol] ?? null;
+        if ($alias === '' || $deviceType === null) {
             return null;
         }
 
-        if ($protocol === 'four-p-touch') {
-            // Restringe ao tipo, como os ramos `ncs` e `radar`: o `deviceId` de um 4P Touch deduz-se do
-            // IMEI, e um frame de relógio não se pode autenticar como o radar ou NCS do mesmo alias.
-            if ($this->db !== null) {
-                return $this->resolvedDatabaseAlias($this->db->findByDeviceId($alias, 'watch'));
+        if ($this->db !== null) {
+            return $this->resolvedDatabaseAlias($this->db->findByDeviceId($alias, $deviceType));
+        }
+        foreach ($this->devices as $canonicalImei => $metadata) {
+            if ($metadata->deviceType !== $deviceType) {
+                continue;
             }
-            foreach ($this->devices as $canonicalImei => $metadata) {
-                if ($metadata->deviceType !== 'watch') {
-                    continue;
-                }
-
-                if ($metadata->deviceId !== $alias) {
-                    continue;
-                }
-
+            // O radar também se anuncia pelo próprio IMEI.
+            if ($metadata->deviceId === $alias || ($deviceType === 'radar' && $canonicalImei === $alias)) {
                 return ['imei' => $canonicalImei] + $metadata->toArray();
             }
-
-            return null;
-        }
-
-        if ($protocol === 'ncs') {
-            if ($this->db !== null) {
-                return $this->resolvedDatabaseAlias($this->db->findByDeviceId($alias, 'ncs'));
-            }
-            foreach ($this->devices as $canonicalImei => $metadata) {
-                if ($metadata->deviceType !== 'ncs') {
-                    continue;
-                }
-
-                if ($metadata->deviceId !== $alias) {
-                    continue;
-                }
-
-                return ['imei' => $canonicalImei] + $metadata->toArray();
-            }
-
-            return null;
-        }
-
-        if ($protocol === 'qinglanst-radar' || $protocol === 'qinglanst') {
-            if ($this->db !== null) {
-                return $this->resolvedDatabaseAlias($this->db->findByDeviceId($alias, 'radar'));
-            }
-            foreach ($this->devices as $canonicalImei => $metadata) {
-                if ($metadata->deviceType !== 'radar') {
-                    continue;
-                }
-
-                if ($canonicalImei === $alias || $metadata->deviceId === $alias) {
-                    return ['imei' => $canonicalImei] + $metadata->toArray();
-                }
-            }
-
-            return null;
         }
 
         return null;
