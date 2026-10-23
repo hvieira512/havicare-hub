@@ -402,46 +402,44 @@ Um evento sai quando a condição **começa**, e não enquanto dura:
 O estado vive em memória: um reinício do hub volta a anunciar o que estiver
 ativo. Quem consome a QoS 1 já tem de tolerar repetidos.
 
-#### Proposta: alarmes clínicos e o ciclo de vida das condições
+#### Proposta: alarmes clínicos e o fim das condições
 
 > **Por aprovar e por construir.** Nada desta subsecção está em vigor: as tabelas
 > acima continuam a ser o contrato. O desenho completo, com o inventário que o
-> justifica e um exemplo inteiro, está no [capítulo 26](26-alarmes-clinicos.md).
+> justifica e um exemplo, está no [capítulo 26](26-alarmes-clinicos.md).
 
-O hub passa a ser o único a decidir a gravidade, e publica factos: que uma
-condição começou, que ficou mais grave, que acabou. O que quem consome faz com
-eles é decisão dele.
+O hub passa a ser o único a decidir a gravidade, e continua a ser um
+normalizador: publica factos. Agrupar, escalar e fechar alertas é de quem
+consome.
 
 **Limites por dispositivo.** `heart_rate_limits`, `blood_oxygen_limits`,
 `blood_pressure_limits`, `temperature_limits` e `breath_rate_limits`, escritos
 pelo `PATCH /api/devices/{imei}/configurations`. O hub aplica-os à telemetria; no
 radar, que alarma sozinho, traduz-os para o limiar dele.
 
-**O envelope** ganha, em todos os eventos de `events`, um `eventId` (UUID por
-publicação, a chave de de-duplicação da QoS 1). Os eventos que são **condições**
-ganham o objeto `condition`; os **instantes** não o levam, e nunca terão fim
-publicado.
+**O envelope** dos eventos de `events`:
 
-| Campo de `condition` | O que é |
+| Campo | O que é |
 |---|---|
-| `version` | `1`; sobe só numa mudança que parta quem o lê |
-| `id` | UUID da condição, o mesmo na abertura, nas escaladas e no fim |
-| `type` | O `type` da condição — no fim, o do que acabou |
-| `phase` | `opened` · `escalated` · `cleared`. Descer de nível não publica nada |
-| `sequence` | Contador das fases do dispositivo, sempre a subir |
-| `openedAt` · `detectedAt` · `clearedAt` | A primeira leitura fora · quando o hub decidiu a fase · o fim |
-| `reason` | Só no fim: `normal_reading` · `device_resolved` · `dose_taken` · `device_reconnected` · `superseded` (com `supersededBy`) · `limits_changed` · `limits_disabled` · `device_unassigned` · `device_deleted` |
-| `peakSeverity` | Só no fim: a mais alta a que chegou |
-| `evidence` | `evaluatedBy` (`hub` · `device`), `readings`, `readingCount`, `limit` e a configuração `limits` em vigor (chave, revisão, valores) |
+| `eventId` | UUID por publicação: a chave para ignorar os repetidos da QoS 1 |
+| `type`, `occurredAt`, `device`, `data` | Como hoje |
+| `severity` | `alarm` · `alert` · `info`, do facto. **Ausente** num `{type}_cleared` |
+| `subject` | `{ kind, id }`, só quando um dispositivo representa várias coisas |
+| `clears` | O `type` que o evento acaba, só nos que acabam alguma coisa |
 
-O fim tem `severity: info` e o `type` `{type}_cleared` — ou o par que já existe:
-`zone_entry` da cerca, `device.connected`, `reset` do NCS, `medication_intake`
-com `result: "abnormal"`. Quem consome lê o `condition.phase`, e não o nome.
+Uma gravidade maior do mesmo facto (SpO2 de `alert` para `alarm`) é mais um evento
+do mesmo `type`. Descer de nível não publica nada.
 
-**O sujeito.** O envelope ganha `subject: { kind, id }` ao nível de topo,
-ausente quando o dispositivo é o único sujeito. É a chave com que quem consome
-agrupa os instantes — (dispositivo, `type`, `subject`) —, e nas condições diz de
-quê é cada uma:
+**O fim.** Os fins novos têm tipo próprio, `{type}_cleared`, com `clears` e sem
+`severity`. Os pares que já existem guardam o nome e ganham o `clears`:
+`device.connected` acaba o `device.disconnected`; o `zone_entry` da cerca, o
+`zone_exit`; o `reset` do NCS, o `help_call` do mesmo `subject`; o
+`medication_intake` com `result: "abnormal"`, o `dose_missed` da mesma dose. Um
+fim só sai depois de ter saído o que ele acaba. Um fim perdido na QoS 1 fica
+perdido, por agora.
+
+**O sujeito.** `subject: { kind, id }`, ausente quando o dispositivo é o único
+sujeito:
 
 | `kind` | `id` | Em |
 |---|---|---|
@@ -451,17 +449,12 @@ quê é cada uma:
 | `fault` | o `fault` | `device_fault` |
 | `dose` | `{slot}@{doseDate}`, por exemplo `"3@2026-10-23"` | `dose_missed`, `medication_*` |
 
-Os campos de origem continuam no `data`: o `subject` é acrescento.
+Os campos de origem continuam no `data`.
 
 **O desligado atrás de um gateway.** O `device.disconnected` de um aparelho
 retransmitido por um gateway MOKO ou da Havicare leva `data.gatewayId`, o último
 gateway que o ouviu, e `data.cause: "gateway_offline"` quando esse gateway já
-estava `offline`. Quem consome agrupa assim uma falha de gateway.
-
-**Canal novo `conditions`**, QoS 1 e retido, por dispositivo: as condições abertas
-agora (`open: [...]`, com `updatedAt` e `sequence`). Serve a ressincronização; o
-que acabou durante uma falha lê-se no `GET /api/devices/{imei}/conditions` e no
-`GET /api/conditions`.
+estava `offline`.
 
 Regras de gravidade que mudam:
 
@@ -473,8 +466,8 @@ Regras de gravidade que mudam:
 | `weak_vital_signs` | `alert` | `alarm` |
 | `device_state` | `alert` | `info` |
 | `medication_alarm_change` · `medication_intake` | `alert` numa dose falhada ou toma anormal | `info`; a dose falhada passa a `dose_missed` |
-| `device.disconnected` | sem `severity` | `alert`, condição; `info` nos aparelhos que só se ligam para medir |
-| `device.connected` | sem `severity` | `info`, e é o fim do `device.disconnected` |
+| `device.disconnected` | sem `severity` | `alert`; `info` nos aparelhos que só se ligam para medir |
+| `device.connected` | sem `severity` | `info`, com `clears: "device.disconnected"` |
 
 Tipos novos:
 
@@ -484,16 +477,16 @@ Tipos novos:
 | `blood_pressure_high` · `blood_pressure_low` | `systolicMmHg`, `diastolicMmHg`, `limitSystolicMmHg`, `limitDiastolicMmHg` | `alert` · `alarm` |
 | `temperature_high` · `temperature_low` | `bodyCelsius`, `limitCelsius`, `site` | `alert` · `alarm` |
 | `dose_missed` | `slot`, `scheduledAt`, `doseDate` | `alert` |
-| `{type}_cleared` | a leitura que acabou a condição | `info` |
+| `{type}_cleared` | a leitura ou o estado que acabou a condição | — |
 
 A cerca passa a ser configuração do hub (`safe_zones`), e os bits de cerca da 4P
 Touch deixam de ser publicados.
 
-Nenhuma gravidade nem nenhum `type` que o hitCare lê muda. O `condition`, o
-`subject` e o `eventId` são acrescentos; o canal `conditions`, os `{type}_cleared`,
-a `severity` nos `device.*` e o `data` do `device.disconnected` tocam o NCS, a fralda, os gateways e as pulseiras, e vão
-coordenados com ele (ver [«Pendente do hitCare»](#pendente-do-hitcare) e a
-secção 10 do [capítulo 26](26-alarmes-clinicos.md#10-o-hitcare-e-a-compatibilidade)).
+Nenhuma gravidade nem nenhum `type` que o hitCare lê muda. O `eventId`, o
+`clears` e o `subject` são acrescentos; os `{type}_cleared` são tipos novos, e a
+`severity` e o `data` nos `device.*` vão coordenados com ele (ver
+[«Pendente do hitCare»](#pendente-do-hitcare) e a secção 10 do
+[capítulo 26](26-alarmes-clinicos.md#10-o-hitcare-e-a-compatibilidade)).
 
 ## 5. `status`
 
