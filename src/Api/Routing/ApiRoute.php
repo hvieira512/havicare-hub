@@ -37,6 +37,7 @@ final class ApiRoute
         private array|\Closure $groups = [],
         private bool $coerceStrings = false,
         private array $codeByField = [],
+        private bool $revalidated = false,
     ) {
         $this->regex = $this->compilePattern($pattern);
     }
@@ -49,6 +50,12 @@ final class ApiRoute
     public function pattern(): string
     {
         return $this->pattern;
+    }
+
+    /** Só catálogos levam ETag: o estado de um dispositivo muda de segundos a segundos. */
+    public function revalidated(): bool
+    {
+        return $this->revalidated;
     }
 
     /** `null`, `self::JSON_BODY` ou `self::FORM_BODY`. */

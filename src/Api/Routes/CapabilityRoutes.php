@@ -11,6 +11,6 @@ return static function (
 ): array {
     return [
         new ApiRoute('GET', '/api/capabilities', static fn(array $params, ServerRequestInterface $request): array
-            => $capabilities->list((string)$request->getUri()->getQuery())),
+            => $capabilities->list((string)$request->getUri()->getQuery()), revalidated: true),
     ];
 };

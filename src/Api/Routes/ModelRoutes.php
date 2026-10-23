@@ -13,20 +13,21 @@ return static function (
 ): array {
     return [
         new ApiRoute('GET', '/api/models', static fn(array $params, ServerRequestInterface $request): array
-            => $models->list((string)$request->getUri()->getQuery(), RequestContext::baseUrl($request))),
+            => $models->list((string)$request->getUri()->getQuery(), RequestContext::baseUrl($request)), revalidated: true),
         new ApiRoute('GET', '/api/suppliers', static fn(array $params, ServerRequestInterface $request): array
-            => $models->suppliers((string)$request->getUri()->getQuery())),
-        new ApiRoute('GET', '/api/device-types/suppliers', static fn(): array => $models->filters()),
+            => $models->suppliers((string)$request->getUri()->getQuery()), revalidated: true),
+        new ApiRoute('GET', '/api/device-types/suppliers', static fn(): array => $models->filters(), revalidated: true),
         new ApiRoute(
             'GET',
             '/api/device-types/suppliers/models',
             static fn(array $params, ServerRequestInterface $request): array
                 => $models->deviceTypeSuppliersModels(RequestContext::baseUrl($request)),
+            revalidated: true,
         ),
         new ApiRoute('GET', '/api/models/template', static fn(array $params, ServerRequestInterface $request): array
-            => $models->template((string)$request->getUri()->getQuery())),
+            => $models->template((string)$request->getUri()->getQuery()), revalidated: true),
         new ApiRoute('GET', '/api/models/{id:\d+}', static fn(array $params, ServerRequestInterface $request): array
-            => $models->show((int)$params['id'], RequestContext::baseUrl($request))),
+            => $models->show((int)$params['id'], RequestContext::baseUrl($request)), revalidated: true),
         // O modelo chega em JSON ou em `multipart/form-data`, porque traz a imagem com ele, e no
         // multipart tudo é texto: daí o `coerceStrings`.
         new ApiRoute(

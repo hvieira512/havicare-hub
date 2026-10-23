@@ -178,8 +178,8 @@ final class DeviceHubMqttContractTest extends TestCase
         $store = new DeviceStore(new InMemoryRedisClient());
         $hub = new DeviceHubServer($this->whitelist, new ContractRecordingHubMqttBridge(), downlinkQueue: $queue, deviceStore: $store, downlinkQueueTtlSeconds: 300);
         $adapter = new WonlexAdapter();
-        foreach (['c-push' => [], 'c-hr' => ['upHeartRate']] as $id => $replies) {
-            $bytes = $adapter->encodeOutgoing(['type' => $id === 'c-push' ? 'dnPushMessage' : 'dnHeartRate', 'ident' => 1, 'ref' => 's:down', 'imei' => '868705080300697', 'data' => []]);
+        foreach (['c-notice' => [], 'c-hr' => ['upHeartRate']] as $id => $replies) {
+            $bytes = $adapter->encodeOutgoing(['type' => $id === 'c-notice' ? 'dnNoReply' : 'dnHeartRate', 'ident' => 1, 'ref' => 's:down', 'imei' => '868705080300697', 'data' => []]);
             $store->recordCommand('868705080300697', $id, ['status' => 'queued', 'expectedReplyTypes' => $replies, 'nextRetryAt' => '2000-01-01T00:00:00Z']);
             $hub->queueDownlink('868705080300697', $bytes, ['id' => $id]);
         }
@@ -188,7 +188,7 @@ final class DeviceHubMqttContractTest extends TestCase
         $hub->onOpen($connection);
         $hub->onMessage($connection, $adapter->encodeOutgoing(['type' => 'login', 'imei' => '868705080300697', 'data' => ['deviceModel' => 'IGNORED']]));
 
-        self::assertSame('sent', $store->findCommand('c-push')['command']['status'] ?? null);
+        self::assertSame('sent', $store->findCommand('c-notice')['command']['status'] ?? null);
         self::assertSame('waiting', $store->findCommand('c-hr')['command']['status'] ?? null);
         self::assertGreaterThan(time(), strtotime((string)($store->findCommand('c-hr')['command']['nextRetryAt'] ?? '')));
     }

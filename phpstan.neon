@@ -13,7 +13,8 @@ parameters:
         - bin
         - tests
         - simulator
-    tmpDir: var/phpstan
+    # Fora do bind mount: no macOS os workers paralelos falham a renomear a cache lá dentro.
+    tmpDir: /tmp/phpstan
 
     ignoreErrors:
         # Uma asserção sobre um valor que o analisador já conhece é o que um teste faz: a

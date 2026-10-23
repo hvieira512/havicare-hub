@@ -9,8 +9,8 @@ return static function (
     ProtocolService $protocols,
 ): array {
     return [
-        new ApiRoute('GET', '/api/protocols', static fn(): array => $protocols->list()),
+        new ApiRoute('GET', '/api/protocols', static fn(): array => $protocols->list(), revalidated: true),
         new ApiRoute('GET', '/api/protocols/{protocol}/config-catalog', static fn(array $params): array
-            => $protocols->configCatalog($params)),
+            => $protocols->configCatalog($params), revalidated: true),
     ];
 };

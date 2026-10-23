@@ -24,22 +24,6 @@ use React\Promise\PromiseInterface;
 
 final class ApiKernel
 {
-    // Só catálogos: o estado de ligação de um dispositivo muda de segundos a segundos e é
-    // precisamente o que a dashboard existe para mostrar.
-    private const REVALIDATED_ROUTES = [
-        '/api/models',
-        '/api/models/{id:\d+}',
-        '/api/models/template',
-        '/api/capabilities',
-        '/api/device-types/suppliers/models',
-        '/api/device-types/suppliers',
-        '/api/protocols',
-        '/api/protocols/{protocol}/config-catalog',
-        '/api/suppliers',
-        '/api/companies',
-        '/api/licenses',
-    ];
-
     private ApiRouter $router;
 
     public function __construct(
@@ -91,12 +75,12 @@ final class ApiKernel
             // e bloqueá-lo pára a ingestão TCP e o MQTT.
             if ($response instanceof PromiseInterface) {
                 return $response->then(
-                    fn(Response $resolved): Response => $this->revalidatedCatalogResponse($request, $resolved, $method, $routePattern),
+                    fn(Response $resolved): Response => $this->revalidatedCatalogResponse($request, $resolved, $method, $match),
                     static fn(mixed $error): Response => $fail($error instanceof \Throwable ? $error : new \RuntimeException((string)$error)),
                 );
             }
 
-            return $this->revalidatedCatalogResponse($request, $response, $method, $routePattern);
+            return $this->revalidatedCatalogResponse($request, $response, $method, $match);
         } catch (\Throwable $e) {
             return $fail($e);
         }
@@ -252,17 +236,20 @@ final class ApiKernel
 
     // O `ETag` sai do corpo já serializado, e fica no kernel porque é a resposta da rota que
     // decide, não o pedido.
+    /**
+     * @param array{route: ApiRoute, parameters: array<string, string>}|null $match
+     */
     private function revalidatedCatalogResponse(
         ServerRequestInterface $request,
         Response $response,
         string $method,
-        ?string $routePattern
+        ?array $match
     ): Response {
         if (
             $method !== 'GET'
             || $response->getStatusCode() !== 200
-            || $routePattern === null
-            || !in_array($routePattern, self::REVALIDATED_ROUTES, true)
+            || $match === null
+            || !$match['route']->revalidated()
         ) {
             return $response;
         }

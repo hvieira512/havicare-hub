@@ -12,7 +12,7 @@ return static function (
 ): array {
     return [
         new ApiRoute('GET', '/api/companies', static fn(array $params, ServerRequestInterface $request): array
-            => $company->list((string)$request->getUri()->getQuery())),
+            => $company->list((string)$request->getUri()->getQuery()), revalidated: true),
         new ApiRoute(
             'POST',
             '/api/companies',
