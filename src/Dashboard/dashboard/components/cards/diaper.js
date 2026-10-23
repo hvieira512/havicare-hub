@@ -16,18 +16,6 @@ function diaperRequiredChannels(data, channelCount) {
     return Number.isFinite(required) && required > 0 ? required : channelCount;
 }
 
-// Espelha o `DiaperSensitivity::cleanMaxDelta`: a divisão por 4 tem de ser igual dos dois
-// lados, senão a tira pinta de âmbar um canal que o cartão ao lado conta como seco.
-function diaperDampDelta(wetDelta) {
-    return Math.floor(wetDelta / 4) + 1;
-}
-
-function diaperMoistureBand(delta, wetDelta) {
-    if (delta >= wetDelta) return "wet";
-    if (delta >= diaperDampDelta(wetDelta)) return "damp";
-    return "dry";
-}
-
 export function diaperMoistureBody(data) {
     const channels = Array.isArray(data?.channels) ? data.channels : [];
     if (channels.length === 0) {
@@ -44,7 +32,8 @@ export function diaperMoistureBody(data) {
             // As bases diferem uma ordem de grandeza entre canais: só o delta é comparável.
             const delta = Math.max(0, Number(channel?.delta ?? 0) || 0);
             const index = channel?.index ?? position + 1;
-            const band = diaperMoistureBand(delta, wetDelta);
+            // O estado vem do hub; as leituras de antes dele não pintam.
+            const band = channel?.state ?? "dry";
             const height = Math.min(100, (delta / scaleDelta) * 100);
             const tooltip = `Canal ${index} · delta ${delta} (base ${channel?.baseline ?? "-"}, leitura ${channel?.value ?? "-"})`;
 
