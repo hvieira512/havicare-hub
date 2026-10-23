@@ -21,6 +21,7 @@ use Hub\Ingress\Tuya\TuyaBridge;
 use Hub\Mqtt\BrokerSettings;
 use Hub\Mqtt\ConnectionFactory;
 use Hub\Runtime\HubServices;
+use Hub\State\ActiveAlarms;
 use React\EventLoop\LoopInterface;
 
 /**
@@ -104,6 +105,7 @@ final class MqttIngressFactory
                 downlinks: $services->downlinkQueue,
                 state: new RedisObservationStateStore($services->redis),
                 topicFilter: $topicFilter,
+                alarms: new ActiveAlarms($services->redis),
             ),
             new LefuTorreBridge(
                 ...$common,
@@ -203,6 +205,7 @@ final class MqttIngressFactory
                 // ponytail: uma leitura à base por entrada ou saída de área; com cache se o ritmo subir.
                 layouts: static fn (string $imei): ?array => $services->dataAccess->radarLayouts->findByImei($imei),
                 onMessage: static fn (string $imei) => $services->qinglanstCloudDownlinks->dispatchPending($imei),
+                alarms: new ActiveAlarms($services->redis),
             ),
         );
     }

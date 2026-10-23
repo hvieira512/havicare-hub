@@ -30,6 +30,11 @@ final class RedisKeys
         return self::PREFIX . "sighting:{$imei}";
     }
 
+    public static function activeAlarms(string $imei): string
+    {
+        return self::PREFIX . "device:{$imei}:active-alarms";
+    }
+
     public static function proximityAlarmCandidate(string $imei): string
     {
         return self::PREFIX . "proximity-alarm-candidate:{$imei}";

@@ -12,6 +12,7 @@ use Hub\Domain\Liveness;
 use Hub\Domain\ProtocolRegistry;
 use Hub\Log\Logger;
 use Hub\Location\LocationTelemetryEnricherContract;
+use Hub\State\ActiveAlarms;
 use Hub\State\DeviceStoreContract;
 use Hub\Protocol\AdapterRegistry;
 use Hub\Registry\Denylist;
@@ -54,6 +55,7 @@ class DeviceHubServer
         ?\Closure $effectiveConfiguration = null,
         private readonly ?\Closure $downlinkQueued = null,
         ?\Closure $clock = null,
+        ActiveAlarms $alarms = new ActiveAlarms(),
     ) {
         $this->effectiveConfiguration = $effectiveConfiguration;
         $this->whitelist = $whitelist;
@@ -68,11 +70,12 @@ class DeviceHubServer
             $adapters,
             fn (DeviceSession $session): array => $this->wonlexState($session),
             $firmwareUpgrades,
+            $alarms,
         );
         $this->downlinkQueue = $downlinkQueue;
         $this->downlinkQueueTtlSeconds = max(1, $downlinkQueueTtlSeconds);
         $this->locationTelemetryEnricher = $locationTelemetryEnricher;
-        $this->lowBattery = new LowBatteryTransitions();
+        $this->lowBattery = new LowBatteryTransitions($alarms);
     }
 
     public function onOpen(ConnectionInterface $conn): void

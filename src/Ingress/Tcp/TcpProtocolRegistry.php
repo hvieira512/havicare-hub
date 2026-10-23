@@ -11,6 +11,7 @@ use Hub\Ingress\Tcp\Supplier\FourPTouch\FourPTouchTcpProtocol;
 use Hub\Ingress\Tcp\Supplier\Vivistar\VivistarTcpProtocol;
 use Hub\Ingress\Tcp\Supplier\Wonlex\WonlexTcpProtocol;
 use Hub\Ingress\Tcp\Supplier\Zayata\PillDispenserTcpProtocol;
+use Hub\State\ActiveAlarms;
 
 /**
  * Os protocolos que entram pelo socket TCP do hub, indexados pelo nome do protocolo.
@@ -26,6 +27,7 @@ final class TcpProtocolRegistry
         ?AdapterRegistry $adapters = null,
         ?callable $wonlexStateProvider = null,
         ?FirmwareUpgradeStore $firmwareUpgrades = null,
+        ActiveAlarms $alarms = new ActiveAlarms(),
     ) {
         $adapters ??= new AdapterRegistry();
         $eventDecoder = new DeviceEventDecoder();
@@ -41,6 +43,7 @@ final class TcpProtocolRegistry
             $adapters->require('zayata-m228'),
             $eventDecoder,
             $firmwareUpgrades,
+            $alarms,
         ));
     }
 

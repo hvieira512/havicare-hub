@@ -335,7 +335,10 @@ usam. A `help_call` é a mesma chave do NCS e da pulseira.
 uma avaria do prato chegou a ficar acesa dias. A avaria, a chamada de ajuda e o
 ambiente fora da gama saem quando acendem, e só voltam a sair depois de o
 aparelho os dar por apagados — com a TAG a zero. Um pacote que não traz a TAG
-não diz nada, e não a apaga.
+não diz nada, e não a apaga. O que está aceso fica no
+[Redis](14-persistencia.md#alarmes-que-duram) e sobrevive a um reinício: o
+heartbeat renova a avaria e o ambiente por 150 s, o silêncio com que o aparelho
+se dá por desligado, e a chamada, que o heartbeat não traz, vale 10 minutos.
 
 **As respostas.** Registo, heartbeat, evento e notificação são confirmados com o
 mesmo tipo mais o bit alto (`0x81`–`0x84`), corpo vazio e estado `0x00`, ecoando

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Hub\Device;
 
+use Hub\State\ActiveAlarms;
+
 /**
  * Deriva o `low_battery` dos aparelhos que repetem a bandeira em cada leitura: sai quando ela
  * acende, e volta a poder sair depois de ela apagar. O alarme que o próprio aparelho dispara
@@ -11,10 +13,17 @@ namespace Hub\Device;
  */
 final class LowBatteryTransitions
 {
-    // ponytail: em memória, por processo; um reinício repete o alerta uma vez, e quem consome a
-    // QoS 1 já tolera repetidos. Passar para o Redis se isso deixar de ser aceitável.
-    /** @var array<string, bool> */
-    private array $low = [];
+    private const FIELD = 'low_battery';
+
+    /**
+     * A bateria fraca só apaga com uma carga, que chega como leitura com a bandeira em baixo; um
+     * dia sem a bandeira acesa e fraca outra vez já merece novo aviso.
+     */
+    private const TTL_SECONDS = 86400;
+
+    public function __construct(private readonly ActiveAlarms $alarms = new ActiveAlarms())
+    {
+    }
 
     /**
      * @param array<string, mixed> $event o envelope que acabou de sair
@@ -24,7 +33,7 @@ final class LowBatteryTransitions
     {
         $type = $event['type'] ?? null;
         if ($type === 'low_battery') {
-            $this->low[$deviceKey] = true;
+            $this->alarms->set($deviceKey, self::FIELD, '1', self::TTL_SECONDS);
             return null;
         }
 
@@ -33,8 +42,10 @@ final class LowBatteryTransitions
             return null;
         }
 
-        $wasLow = $this->low[$deviceKey] ?? false;
-        $this->low[$deviceKey] = $flag;
+        $wasLow = $this->alarms->get($deviceKey, self::FIELD) !== null;
+        if ($flag || $wasLow) {
+            $this->alarms->set($deviceKey, self::FIELD, $flag ? '1' : null, self::TTL_SECONDS);
+        }
         if (!$flag || $wasLow) {
             return null;
         }
@@ -49,6 +60,6 @@ final class LowBatteryTransitions
 
     public function forget(string $deviceKey): void
     {
-        unset($this->low[$deviceKey]);
+        $this->alarms->set($deviceKey, self::FIELD, null, 0);
     }
 }

@@ -144,7 +144,7 @@ O `MaintenanceScheduler` mantém dois temporizadores de 10 segundos:
 | Camada | Conteúdo | Sobrevive a reinício |
 |---|---|---|
 | **MySQL** | Whitelist, catálogo de modelos e capacidades, empresas e licenças, utilizadores, configurações de dispositivo, mapa de rádio, notificações | sim |
-| **Redis** | Presença, histórico recente (100 entradas por lista), tokens da API, fila de downlink, estado de observação BLE, cache de localização | parcialmente; as chaves com TTL expiram |
+| **Redis** | Presença, histórico recente (100 entradas por lista), alarmes que duram já anunciados, tokens da API, fila de downlink, estado de observação BLE, cache de localização | parcialmente; as chaves com TTL expiram |
 | **Memória do processo** | Ligações TCP abertas, gateways online, janelas de proximidade | não |
 
 Não existe tabela de telemetria. O histórico mantido limita-se às últimas 100

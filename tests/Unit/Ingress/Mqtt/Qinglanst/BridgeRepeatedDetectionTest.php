@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace Tests\Unit\Ingress\Mqtt\Qinglanst;
 
 use Hub\Ingress\Mqtt\Qinglanst\QinglanstBridge;
+use Hub\State\ActiveAlarms;
 use PHPUnit\Framework\TestCase;
 use Tests\Support\Doubles\FakeMqttSubscriber;
+use Tests\Support\Doubles\InMemoryRedisClient;
 use Tests\Support\Doubles\IngressFixtures;
 use Tests\Support\Doubles\RecordingHubMqttBridge;
 
@@ -24,6 +26,20 @@ final class BridgeRepeatedDetectionTest extends TestCase
         foreach ([2, 2, 2, 2] as $posture) {
             $bridge->handleReceivedMessage(self::topic(), self::message('position', self::person($posture)));
         }
+
+        self::assertSame(['fall'], array_column($mqtt->events, 'type'));
+    }
+
+    /** O que já saiu fica no Redis: o hub que arranca não volta a anunciar a queda que continua. */
+    public function testAFallStillActiveAfterARestartIsNotAnnouncedAgain(): void
+    {
+        $redis = new InMemoryRedisClient();
+        $mqtt = new RecordingHubMqttBridge();
+
+        $this->bridge($mqtt, alarms: new ActiveAlarms($redis))
+            ->handleReceivedMessage(self::topic(), self::message('position', self::person(2)));
+        $this->bridge($mqtt, alarms: new ActiveAlarms($redis))
+            ->handleReceivedMessage(self::topic(), self::message('position', self::person(2)));
 
         self::assertSame(['fall'], array_column($mqtt->events, 'type'));
     }
@@ -128,7 +144,7 @@ final class BridgeRepeatedDetectionTest extends TestCase
         self::assertSame([self::RADAR], $heard);
     }
 
-    private function bridge(RecordingHubMqttBridge $mqtt, ?\Closure $layouts = null): QinglanstBridge
+    private function bridge(RecordingHubMqttBridge $mqtt, ?\Closure $layouts = null, ActiveAlarms $alarms = new ActiveAlarms()): QinglanstBridge
     {
         return new QinglanstBridge(
             new FakeMqttSubscriber(),
@@ -137,6 +153,7 @@ final class BridgeRepeatedDetectionTest extends TestCase
             ]),
             $mqtt,
             layouts: $layouts,
+            alarms: $alarms,
         );
     }
 

@@ -7,7 +7,9 @@ namespace Tests\Unit\Hub;
 use Hub\Device\DeviceEventDecoder;
 use Hub\Ingress\Tcp\Supplier\Zayata\PillDispenserTcpProtocol;
 use Hub\Protocol\Adapter\PillDispenserAdapter;
+use Hub\State\ActiveAlarms;
 use PHPUnit\Framework\TestCase;
+use Tests\Support\Doubles\InMemoryRedisClient;
 use Tests\Support\Doubles\PillDispenserFixtures;
 
 /** O heartbeat do M228 repete as TAGs de estado a cada minuto, e uma condição que dura dá um evento só quando começa. */
@@ -26,6 +28,19 @@ final class PillDispenserRepeatedConditionsTest extends TestCase
             ...$this->conditions($protocol, [self::FAULT_TRAY => 1]),
             ...$this->conditions($protocol, [self::FAULT_TRAY => 1]),
             ...$this->conditions($protocol, [self::FAULT_TRAY => 1]),
+        ];
+
+        self::assertSame(['device_fault:tray_reset'], $types);
+    }
+
+    /** O que já saiu fica no Redis: o hub que arranca não volta a anunciar a avaria acesa. */
+    public function testAFaultStillOnAfterARestartIsNotRaisedAgain(): void
+    {
+        $redis = new InMemoryRedisClient();
+
+        $types = [
+            ...$this->conditions($this->protocol(new ActiveAlarms($redis)), [self::FAULT_TRAY => 1]),
+            ...$this->conditions($this->protocol(new ActiveAlarms($redis)), [self::FAULT_TRAY => 1]),
         ];
 
         self::assertSame(['device_fault:tray_reset'], $types);
@@ -102,8 +117,8 @@ final class PillDispenserRepeatedConditionsTest extends TestCase
         return $types;
     }
 
-    private function protocol(): PillDispenserTcpProtocol
+    private function protocol(ActiveAlarms $alarms = new ActiveAlarms()): PillDispenserTcpProtocol
     {
-        return new PillDispenserTcpProtocol(new PillDispenserAdapter(), new DeviceEventDecoder());
+        return new PillDispenserTcpProtocol(new PillDispenserAdapter(), new DeviceEventDecoder(), alarms: $alarms);
     }
 }

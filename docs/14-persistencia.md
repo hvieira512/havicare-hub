@@ -229,7 +229,7 @@ começava com 26 dispositivos lá dentro.
 
 | Prefixo | Guarda | Expira? |
 |---|---|---|
-| `hub:dashboard` | Presença, metadados em execução, histórico, comandos, avistamentos | não — mas limitado |
+| `hub:dashboard` | Presença, metadados em execução, histórico, comandos, avistamentos, alarmes que duram | não — mas limitado; os alarmes que duram, sim |
 | `hub:api-tokens` | Os dois tipos de token | sim, é o TTL que os valida |
 | `hub:downlink` | A fila de comandos por entregar | sim, 300 s |
 | `hub:moko` | De-duplicação, refrescamento e transições de estado BLE | parcialmente |
@@ -269,6 +269,27 @@ pela mesma medida, tudo o que o ecrã mostra em directo. As únicas escritas que
 podem amostrar sem custo visível são as que não passam pelo notificador — o
 `raw`, e a marca de "vi este aparelho".
 
+### Alarmes que duram
+
+Os aparelhos que repetem uma condição enquanto ela dura — a queda do radar, a
+avaria do dispensador, a bandeira de bateria fraca — só a
+[anunciam quando começa](08-contrato-mqtt.md#o-que-dura-sai-uma-vez). O que já
+saiu fica num hash por aparelho, `hub:dashboard:device:{imei}:active-alarms`, um
+campo por detecção ou condição, e por isso um reinício do hub não o volta a
+anunciar.
+
+Cada campo leva o seu prazo no próprio valor, e a repetição renova-o. Passado o
+prazo, o aparelho calado volta a anunciar o que trouxer:
+
+| Quem | Campo | Prazo |
+|---|---|---|
+| Radar | o tipo de trama (`position`, `hbstatics`) | 150 s, o silêncio com que se dá por desligado |
+| Dispensador | a condição (`device_fault:…`, `storage_environment`) | 150 s, idem |
+| Dispensador | `help_call`, que o heartbeat não repete | 10 min |
+| Bateria fraca | `low_battery` | 24 h: só apaga com uma carga, que chega como leitura |
+
+O hash inteiro expira ao fim de 24 h sem escrita.
+
 ## 4. Duas instâncias no mesmo Redis
 
 A raiz `hub:` **já é partilhada** com o reencaminhador, que é outra aplicação e
@@ -292,7 +313,7 @@ dashboards seriam partilhadas.
 | | Sobrevive? |
 |---|---|
 | MySQL | tudo |
-| `hub:dashboard` | sim — não tem TTL |
+| `hub:dashboard` | sim — não tem TTL, menos os alarmes que duram, cada um no seu prazo |
 | `hub:moko:last` e `:condition` | sim, por ausência deliberada de TTL |
 | `hub:api-tokens`, `hub:downlink`, `hub:location:*`, `hub:moko:dedupe` | conforme o TTL |
 | Ligações TCP abertas, gateways online, janelas de proximidade | **não**, por residirem em memória do processo |

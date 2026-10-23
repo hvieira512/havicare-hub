@@ -8,6 +8,7 @@ use Hub\Device\CommercialModelResolver;
 use Hub\Device\DeviceDescriptor;
 use Hub\Device\HubMqttBridge;
 use Hub\Device\LowBatteryTransitions;
+use Hub\State\ActiveAlarms;
 use Hub\Device\RedisPendingDownlinkQueue;
 use Hub\Device\TelemetryEnvelope;
 use Hub\Domain\GatewayDeviceLinkLookup;
@@ -93,6 +94,7 @@ final class VeepooBridge extends GattBridge
         ?callable $clock = null,
         ?CommercialModelResolver $commercialModelResolver = null,
         ?Denylist $denylist = null,
+        ActiveAlarms $alarms = new ActiveAlarms(),
     ) {
         parent::__construct(
             $whitelist,
@@ -106,7 +108,7 @@ final class VeepooBridge extends GattBridge
             $denylist,
         );
         $this->normalizer = new DailyBlockNormalizer();
-        $this->lowBattery = new LowBatteryTransitions();
+        $this->lowBattery = new LowBatteryTransitions($alarms);
         $this->downlinkDispatcher = new DownlinkDispatcher(
             $downlinks,
             $mqttBridge,
