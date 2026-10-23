@@ -13,7 +13,8 @@ que o hub publica hoje — a telemetria de volta aos limites, a fralda limpa, o
 estado `online` —, e quem consome, que escreveu os limites, decide quando o seu
 alerta acabou. Agrupar, escalar e fechar alertas é ciclo de vida, e vive em quem
 consome: outro cliente pode querer outro; o que a Havicare faz está na secção 7,
-como escolha dela.
+como escolha dela. Uma lista de «aparelhos para carregar» é também de quem consome,
+a partir da telemetria `battery` (`percent`, `lowBattery`, `charging`).
 
 O que o contrato garante é que cada medição clínica chega com um limiar decidido
 num sítio só. O capítulo faz o inventário do que cada aparelho mede e do que já
@@ -440,6 +441,7 @@ apneias repetidas, o caminho é uma contagem por hora no hub, e não o episódio
 | `type` | Hoje | Proposta |
 |---|---|---|
 | `device_state` | `alert` | **`info`**. O desligar e a reposição de fábrica da Wonlex são factos; o que pede alguém é o aparelho calado, e esse é o `device.disconnected` que vem logo a seguir. Alertar nos dois era duplicar |
+| `low_battery` | `alert` | **`info`** em todos os que o publicam — relógios Wonlex, 4P Touch e Vivistar, pulseira Veepoo, dispensador e MKGW4 (a pulseira Tuya só manda a percentagem, e não o publica). Bateria fraca é manutenção: com cem relógios carregados todos os dias, um alerta por relógio é ruído. A perda de proteção a sério é o aparelho calado, e essa é o `device.disconnected` |
 | `medication_alarm_change` | `alert` numa dose falhada | **`info`** sempre. A dose falhada passa a ser o `dose_missed` |
 | `medication_intake` | `alert` com `abnormal` ou `missed` | **`info`** sempre. O `abnormal` é a toma depois de a dose ter sido dada como falhada ([19](19-dispensador-de-comprimidos.md)) |
 | `dose_missed` | — | **Novo**, `alert`: `slot`, `scheduledAt`, `doseDate`. Um por dose, quando ela é dada como falhada pela primeira via que chegar: a mudança do alarme para `missed`, `timed_out` ou `retrieval_timed_out`, ou a toma com `result: "missed"`. Hoje a mesma dose dá dois alertas |
@@ -565,9 +567,9 @@ Verificado no código, condição a condição:
 | `temperature_*` | `temperature.bodyCelsius` | relógios, Veepoo, termómetro | `WonlexEventDecoder.php:26`, `FourPTouchEventDecoder.php:31-33`; [24](24-termometro.md) |
 | `breath_rate_*` (regra do hub) | `breath_rate.breathsPerMinute` | Wonlex, Veepoo | `WonlexEventDecoder.php:27` |
 | `heart_rate_*`, `breath_rate_*`, `weak_vital_signs`, `apnea` (radar) | `vitals_minute_stats.heartRateStatus`, `breathingStatus`, `vitalSignsStatus` a `normal`, com as médias `avgHeartRateBpm` e `avgBreathsPerMinute`, a cada minuto; e `heart_rate`/`breath_rate` a cada segundo | radar | O minuto sai **sempre** como telemetria, normal ou não (`src/Ingress/Mqtt/Qinglanst/MessageNormalizer.php:216-218`), e a ponte publica toda a telemetria sem estrangular (`QinglanstBridge.php:184-186`). Os valores por segundo só saem acima de zero (`MessageNormalizer.php:136-160`) |
-| `low_battery` | `battery.lowBattery: false` | 4P Touch (bit 0 do estado), Veepoo, dispensador | `src/Protocol/Adapter/FourPTouchAdapter.php:253`, `src/Ingress/Mqtt/Veepoo/VeepooBridge.php:302`, `src/Device/Decoder/PillDispenserEventDecoder.php:310` |
-| `low_battery` | **Nenhuma bandeira a `false`**: só o `percent` (e o `charging`) | Wonlex — o `lowBattery` é `true` ou falta, nunca `false` | `src/Device/FeatureNormalizer.php:164-170` |
-| `low_battery` | Só o `percent` ou o `voltageMv` | Vivistar, MKGW4, W6/W6B, Tuya | [06](06-normalizacao.md), «A bateria, campo a campo» |
+| `low_battery` (`info`) | `battery.lowBattery: false` | 4P Touch (bit 0 do estado), Veepoo, dispensador | `src/Protocol/Adapter/FourPTouchAdapter.php:253`, `src/Ingress/Mqtt/Veepoo/VeepooBridge.php:302`, `src/Device/Decoder/PillDispenserEventDecoder.php:310` |
+| `low_battery` (`info`) | **Nenhuma bandeira a `false`**: só o `percent` (e o `charging`) | Wonlex — o `lowBattery` é `true` ou falta, nunca `false` | `src/Device/FeatureNormalizer.php:164-170` |
+| `low_battery` (`info`) | Só o `percent` ou o `voltageMv` | Vivistar, MKGW4, W6/W6B, Tuya | [06](06-normalizacao.md), «A bateria, campo a campo» |
 | `check_required`, `change_required` | `diaper_condition.state: clean` | sensor de fralda | `src/Ingress/Mqtt/Monit/MonitNormalizer.php:80`; sai por gateway a cada mudança ou de 60 em 60 s (`RelayPublisher.php:129`, `MokoGatewayOptions.php:15`) |
 | `device.disconnected` | `status` `online` (retido) e `device.connected` | todos | [08](08-contrato-mqtt.md) §5 |
 | `zone_exit` da cerca (`safe_zones`) | `location` com a posição | relógios | [06](06-normalizacao.md) §4 |
@@ -581,8 +583,9 @@ normalizado. A forma mais pequena de o dar é uma telemetria com o estado das
 condições que o heartbeat já traz — por exemplo `device_faults` com
 `{ fault: bool, … }`, `storageOutOfRange` e `helpCall` —, publicada a cada
 heartbeat como as outras leituras; a alternativa é aceitar que esses alertas se
-fecham à mão. A **bateria da Wonlex** só dá o `percent`: quem consome tem de
-escolher um valor para dar a bateria por recuperada.
+fecham à mão. A bateria fraca passa a `info`, e uma lista de «aparelhos para
+carregar» constrói-a quem consome a partir do `battery`; na Wonlex, que só dá o
+`percent`, com um valor escolhido por ele.
 
 ### O que a Havicare faz com isto
 
@@ -697,6 +700,7 @@ Cada mudança, e o que pede a quem já consome:
 | `device.disconnected` de um aparelho retransmitido ganha `data.gatewayId` e, com o gateway em baixo, `data.cause` | pulseiras e sensores de fralda do hitCare | Os eventos de ciclo de vida não levavam `data`: **coordenar**, junto com a linha seguinte |
 | `device.disconnected` e `device.connected` ganham `severity` | todas, incluindo NCS, gateways e pulseiras do hitCare | Os eventos de ciclo de vida não a levavam: **coordenar** com o hitCare |
 | Gravidades que mudam (`apnea`, `weak_vital_signs`, `device_state`, `medication_*`, a frequência do radar) | radar, Wonlex, dispensador | Nenhuma destas famílias é do hitCare |
+| `low_battery` passa de `alert` a `info` | relógios, Veepoo, dispensador, MKGW4 | O hitCare não lê o `low_battery` em lado nenhum: o `hitcare-hub-client` encaminha das pulseiras o `battery`, o `motion`, o `help_call` e o `proximity_alarm`, e o módulo de gateways do hitCare só lê o `status` e o `device.connected`/`device.disconnected` (`modulos/gateways/ingest.php`). Verificado por pesquisa nos dois repositórios |
 | Os bits de cerca da 4P Touch deixam de sair | relógios 4P Touch | Não é do hitCare |
 | `heart_rate_alert` e `breath_rate_alert` do radar dão lugar a `*_limits` | API do radar | Quebra quem os escreve (pergunta 8) |
 | Eventos de alarme repetidos a cada leitura confirmada fora dos limites | relógios, Veepoo, aparelhos de medição | Tipos novos ou de famílias que não são do hitCare |
@@ -755,9 +759,21 @@ Duas posições da Havicare, por decidir — não estão adotadas neste desenho:
     publicação no tópico do dono certo — a deteção não precisa de saber de quem é
     o dispositivo.
 
+Sobre a bateria:
+
+13. **Retirar o evento `low_battery`**, a favor do `battery.lowBattery` na
+    telemetria de todos os aparelhos que o reportam. É uma mudança de contrato:
+    antes, confirmar quem lê o evento hoje. O hitCare não o lê (secção 10); a
+    dashboard do hub conhece-o (`pt-PT.json`, `components/cards/telemetry.js`), e
+    falta confirmar a Havicare.
+14. **A pulseira Tuya demora cerca de 16 h a dar-se por desligada** (dois
+    despertares de 8 h falhados, [21](21-pulseira-sos-wifi.md) §3). É um problema
+    da deteção de ligação, a resolver aí, e não uma razão para um alerta de
+    bateria.
+
 Uma pergunta de produto, que o código não decide:
 
-13. **Quem recebe um SOS de um dispositivo sem dono.** Um aparelho por associar
+15. **Quem recebe um SOS de um dispositivo sem dono.** Um aparelho por associar
     publica em `null/0` ([08](08-contrato-mqtt.md), secção 1), onde nenhum cliente
     subscreve: o botão de uma pulseira registada mas ainda sem licença carrega-se
     e ninguém sabe. Pode ficar assim, ir para a dashboard, ou para um destino da

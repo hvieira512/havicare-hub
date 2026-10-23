@@ -451,6 +451,7 @@ Regras de gravidade que mudam:
 | `apnea` | `alarm` | `alert` |
 | `weak_vital_signs` | `alert` | `alarm` |
 | `device_state` | `alert` | `info` |
+| `low_battery` | `alert` | `info`, em todos os que o publicam: bateria fraca é manutenção, e a perda de proteção é o `device.disconnected` |
 | `medication_alarm_change` · `medication_intake` | `alert` numa dose falhada ou toma anormal | `info`; a dose falhada passa a `dose_missed` |
 | `device.disconnected` | sem `severity` | `alert`; `info` nos aparelhos que só se ligam para medir |
 | `device.connected` | sem `severity` | `info` |
