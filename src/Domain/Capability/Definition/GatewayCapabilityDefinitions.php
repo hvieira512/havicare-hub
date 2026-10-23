@@ -38,6 +38,10 @@ final class GatewayCapabilityDefinitions extends CapabilityDefinitions
                 ],
             ],
             'alarms' => [
+                // O hub decide o alarme sobre o sinal que o gateway ouve, e não sai downlink nenhum.
+                'hubSetting' => [
+                    'proximity_alert',
+                ],
                 'event' => [
                     'low_battery',
                 ],

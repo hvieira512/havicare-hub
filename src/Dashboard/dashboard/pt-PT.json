@@ -114,6 +114,8 @@
         "ppg_measurement_interval": "Intervalo de medição da PPG",
         "presence": "Presença",
         "proximity": "Proximidade",
+        "proximity_alarm": "Alarme de proximidade",
+        "proximity_alert": "Alarme de proximidade",
         "push_message": "Enviar mensagem ao relógio",
         "radar_areas": "Áreas",
         "radar_installation": "Montagem e altura",
@@ -515,6 +517,23 @@
             "fields": {
                 "systolicMmHg": "Sistólica máxima",
                 "diastolicMmHg": "Diastólica máxima"
+            }
+        },
+        "proximity_alert": {
+            "help": "Quando um dispositivo ligado a este gateway chega perto dele, o hub dá o alarme.",
+            "fields": {
+                "mode": "Modo",
+                "devices": "Quem dispara",
+                "triggerDbm": "Dispara a partir de",
+                "minSamples": "Leituras mín.",
+                "cooldownSeconds": "Não repetir"
+            },
+            "options": {
+                "mode": {
+                    "off": "Desligado",
+                    "calibrating": "A calibrar",
+                    "active": "Ativo"
+                }
             }
         }
     },

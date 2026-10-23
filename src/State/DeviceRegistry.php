@@ -50,4 +50,7 @@ interface DeviceRegistry
 
     /** @return array<string, array<string, mixed>> chave do gateway => avistamento */
     public function gatewaySightings(string $deviceKey): array;
+
+    /** @return array<string, string> chave do gateway => instante ISO */
+    public function proximityAlarmCandidates(string $deviceKey): array;
 }

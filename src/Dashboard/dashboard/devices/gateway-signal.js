@@ -64,6 +64,12 @@ export function signalMeter(signal) {
     return html`<span class="signal-meter d-inline-flex align-items-end flex-shrink-0 text-${band.tone}" data-bs-toggle="tooltip" data-bs-trigger="hover focus" data-bs-placement="top" data-bs-title="${title}" aria-label="${title}" role="img" tabindex="0">${bars}</span>`;
 }
 
+/** Com o gateway a calibrar, o par que teria dado o alarme no último minuto. */
+function wouldFire(linked, now = Date.now()) {
+    const at = Date.parse(String(linked.proximityAlarmCandidateAt || ""));
+    return Number.isFinite(at) && now - at <= SIGNAL_MAX_AGE_SECONDS * 1000;
+}
+
 /** Uma linha por ligação; as nunca ouvidas ficam com um travessão, que a ausência é informação. */
 export function gatewaySignalRows(linkedDevices) {
     if (!linkedDevices.length) return "";
@@ -75,7 +81,10 @@ export function gatewaySignalRows(linkedDevices) {
             const model = String(linked.model || "");
             return html`<li class="d-flex justify-content-between align-items-center gap-2">
                 <span class="min-w-0 text-truncate font-monospace" title="${key}">${key}${model ? html` <span class="text-secondary">${model}</span>` : ""}</span>
-                ${signalMeter(linkSignal(linked))}
+                <span class="d-flex align-items-center gap-2 flex-shrink-0">
+                    ${wouldFire(linked) ? html`<span class="badge text-bg-warning">Dispararia</span>` : ""}
+                    ${signalMeter(linkSignal(linked))}
+                </span>
             </li>`;
         })}</ul>`;
 }

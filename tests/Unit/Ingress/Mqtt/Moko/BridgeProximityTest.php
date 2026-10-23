@@ -13,7 +13,7 @@ use Tests\Support\Doubles\InMemoryRedisClient;
 use Tests\Support\Doubles\IngressFixtures;
 use Tests\Support\Doubles\RecordingHubMqttBridge;
 
-/** Uma mensagem por avistamento e por gateway (`docs/05-gateways-ble.md` §5): o hub reporta o sinal, limiares e alarmes são do cliente. */
+/** Uma mensagem por avistamento e por gateway (`docs/05-gateways-ble.md` §5): o hub reporta o sinal; o alarme está no `BridgeProximityAlarmTest`. */
 final class BridgeProximityTest extends TestCase
 {
     private const GATEWAY = 'd48c49f7909c';

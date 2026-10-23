@@ -132,3 +132,18 @@ test("every link gets a row, heard or not", () => {
 test("no linked devices renders nothing at all", () => {
     assert.equal(gatewaySignalRows([]), "");
 });
+
+test("a device that would fire a calibrating gateway carries the mark", () => {
+    const html = gatewaySignalRows([
+        link("fbd87c59ba8b", "W6B", { proximityAlarmCandidateAt: new Date().toISOString() }),
+        link("fa05c2c70fc6", "W6", { proximityAlarmCandidateAt: null }),
+    ]);
+
+    assert.equal(html.match(/Dispararia/g)?.length, 1);
+});
+
+test("the mark fades with the signal, after the same minute", () => {
+    const old = new Date(Date.now() - 61_000).toISOString();
+
+    assert.doesNotMatch(gatewaySignalRows([link("fbd87c59ba8b", "W6B", { proximityAlarmCandidateAt: old })]), /Dispararia/);
+});

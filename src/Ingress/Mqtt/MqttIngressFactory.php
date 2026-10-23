@@ -140,6 +140,7 @@ final class MqttIngressFactory
                 MokoGatewayOptions::fromConfig(
                     $config['gateway'],
                     $services->dataAccess->diaperSensitivity,
+                    $services->dataAccess->proximityAlarm,
                 ),
                 denylist: $services->denylist,
                 relays: $relays,

@@ -167,6 +167,17 @@ final class DeviceRuntimeStore
         return $sightings;
     }
 
+    public function recordProximityAlarmCandidate(string $deviceKey, string $gatewayKey): void
+    {
+        $this->redis->hset(RedisKeys::proximityAlarmCandidate($deviceKey), $gatewayKey, gmdate('Y-m-d\\TH:i:s\\Z'));
+    }
+
+    /** @return array<string, string> chave do gateway => instante ISO */
+    public function proximityAlarmCandidates(string $deviceKey): array
+    {
+        return array_map('strval', $this->redis->hgetall(RedisKeys::proximityAlarmCandidate($deviceKey)) ?: []);
+    }
+
     /** Devolve se estava ligado. */
     public function deviceOffline(string $imei): bool
     {

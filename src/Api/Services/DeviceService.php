@@ -227,7 +227,8 @@ class DeviceService
                 ? $this->db->modelCapabilities->enabledFeaturesForModelId((int)($modelRow['id'] ?? 0))
                 : CapabilityCatalog::keysForProtocol($protocol),
             'linkedDevices' => $this->withGatewaySightings(
-                $this->db->gatewayDeviceLinks->forDevice($imei)
+                $this->db->gatewayDeviceLinks->forDevice($imei),
+                $baseUrl,
             ),
         ]);
     }
@@ -239,15 +240,17 @@ class DeviceService
     }
 
     /**
-     * O último sinal de cada ligação. O avistamento é guardado contra o dispositivo
+     * O último sinal de cada ligação, a fotografia do modelo, e quando o par dispararia com o
+     * gateway a calibrar. O avistamento é guardado contra o dispositivo
      * retransmitido, e as duas colunas resolvem-no dos dois lados.
      *
      * @param list<array<string, mixed>> $links
      * @return list<array<string, mixed>>
      */
-    private function withGatewaySightings(array $links): array
+    private function withGatewaySightings(array $links, string $baseUrl): array
     {
         $byDevice = [];
+        $candidates = [];
         foreach ($links as $index => $link) {
             $relayedKey = (string)($link['linkedDeviceKey'] ?? '');
             $gatewayKey = (string)($link['gatewayDeviceKey'] ?? '');
@@ -262,6 +265,12 @@ class DeviceService
                     'signalSeenAt' => (string)($sighting['lastSeenAt'] ?? ''),
                 ];
             }
+            $candidates[$relayedKey] ??= $this->store->proximityAlarmCandidates($relayedKey);
+            $links[$index]['proximityAlarmCandidateAt'] = $candidates[$relayedKey][$gatewayKey] ?? null;
+            $links[$index]['image'] = $this->modelImage(
+                $this->directory->modelForSupplierAndName((string)($link['supplier'] ?? ''), (string)($link['model'] ?? '')),
+                $baseUrl,
+            );
         }
 
         return $links;

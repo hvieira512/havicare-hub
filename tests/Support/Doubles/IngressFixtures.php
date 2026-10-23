@@ -91,7 +91,7 @@ final class IngressFixtures
     }
 
     /** Constrói a mensagem de scan BLE do gateway que leva um anúncio MECS-PRO. */
-    public static function monitScan(string $gateway, string $sensor, string $condition, int $battery = 80): string
+    public static function monitScan(string $gateway, string $sensor, string $condition, int $battery = 80, int $rssi = -83): string
     {
         return json_encode([
             'msg_id' => 3070,
@@ -99,7 +99,7 @@ final class IngressFixtures
             'data' => [[
                 'adv_data' => self::monitAdvertisement($sensor, $condition, $battery),
                 'rsp_data' => '0f094d4f4e4954204d4543532050524f',
-                'type_code' => 10, 'type' => 'other', 'rssi' => -83,
+                'type_code' => 10, 'type' => 'other', 'rssi' => $rssi,
                 'connectable' => 0, 'mac' => $sensor,
             ]],
         ], JSON_THROW_ON_ERROR);

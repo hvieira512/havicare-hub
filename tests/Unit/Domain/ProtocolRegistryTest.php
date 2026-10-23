@@ -29,7 +29,7 @@ final class ProtocolRegistryTest extends TestCase
 
     public function testOnlyProtocolsWithConfigCatalogAreReturnedInTheHelper(): void
     {
-        self::assertNotContains('moko-mkgw3', ProtocolRegistry::protocolsWithConfigCatalog());
+        self::assertNotContains('havicare-ble-gateway', ProtocolRegistry::protocolsWithConfigCatalog());
         // O MONIT tem catálogo sem ter downlink: o flag diz se há o que configurar, e não se a
         // alteração viaja.
         self::assertContains('monit-mecs-pro-ble', ProtocolRegistry::protocolsWithConfigCatalog());

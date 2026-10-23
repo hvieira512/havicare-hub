@@ -155,15 +155,15 @@ final class ReferenceCatalogTest extends MysqlDashboardTestCase
 
         // O MKGW3 é alimentado por PoE e não tem GPS; o MKGW4 tem bateria e localiza-se.
         self::assertSame(
-            ['connectivity'],
+            ['connectivity', 'proximity_alert'],
             $db->modelCapabilities->enabledFeaturesForModelId((int)$mkgw3['id'])
         );
         self::assertSame(
-            ['battery', 'connectivity', 'location', 'low_battery'],
+            ['battery', 'connectivity', 'location', 'low_battery', 'proximity_alert'],
             $db->modelCapabilities->enabledFeaturesForModelId((int)$mkgw4['id'])
         );
         self::assertSame(
-            ['battery', 'change_required', 'check_required', 'diaper_condition', 'diaper_moisture', 'diaper_moisture_level', 'diaper_sensitivity', 'proximity'],
+            ['battery', 'change_required', 'check_required', 'diaper_condition', 'diaper_moisture', 'diaper_moisture_level', 'diaper_sensitivity', 'proximity', 'proximity_alarm'],
             $db->modelCapabilities->enabledFeaturesForModelId((int)$sensor['id'])
         );
     }

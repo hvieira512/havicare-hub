@@ -8,6 +8,7 @@ use Hub\Device\RedisPendingDownlinkQueue;
 use Hub\Device\CommercialModelResolver;
 use Hub\Infrastructure\Persistence\Repository\ApiDataAccess;
 use Hub\Infrastructure\Persistence\Repository\DiaperSensitivityRepository;
+use Hub\Infrastructure\Persistence\Repository\ProximityAlarmRepository;
 use Hub\Infrastructure\Persistence\Repository\GatewayDeviceLinkRepository;
 use Hub\Ingress\Mqtt\MqttIngressFactory;
 use Hub\Mqtt\BrokerSettings;
@@ -95,6 +96,10 @@ final class MqttIngressFactoryTest extends TestCase
         $dataAccess->getProperty('diaperSensitivity')->setValue(
             $data,
             (new \ReflectionClass(DiaperSensitivityRepository::class))->newInstanceWithoutConstructor(),
+        );
+        $dataAccess->getProperty('proximityAlarm')->setValue(
+            $data,
+            (new \ReflectionClass(ProximityAlarmRepository::class))->newInstanceWithoutConstructor(),
         );
 
         $redis = new InMemoryRedisClient();

@@ -63,14 +63,14 @@ final class ProtocolRegistry
             'moko-mkgw3' => [
                 'label' => 'MOKO',
                 'deviceType' => 'gateway',
-                'supportsConfigCatalog' => false,
+                'supportsConfigCatalog' => true,
             ],
             'moko-mkgw4' => [
                 'label' => 'MOKO MKGW4',
                 'supplier' => 'MOKO',
                 'models' => ['mkgw4'],
                 'deviceType' => 'gateway',
-                'supportsConfigCatalog' => false,
+                'supportsConfigCatalog' => true,
             ],
             // `true`: o sensor não aceita downlink mas tem configurações, e quem decide se algo viaja é a
             // capacidade, pelo `CapabilityRegistry::travelsToDevice`.

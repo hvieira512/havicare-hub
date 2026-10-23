@@ -24,6 +24,7 @@ final class EventSeverityTest extends TestCase
     {
         return [
             'help call' => ['help_call', [], 'alarm'],
+            'proximity alarm' => ['proximity_alarm', ['gatewayId' => 'c5e390f30bce', 'rssiDbm' => -49], 'alarm'],
             'confirmed fall' => ['fall', ['confirmed' => true, 'posture' => 'lying_down'], 'alarm'],
             'watch fall' => ['fall', ['confirmed' => true], 'alarm'],
             'suspected fall' => ['fall', ['confirmed' => false, 'posture' => 'lying_down'], 'alert'],

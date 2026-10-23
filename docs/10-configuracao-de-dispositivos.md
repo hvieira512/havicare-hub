@@ -424,18 +424,53 @@ dizerem-se iguais.
 > alterá-los, portanto é limitação do SDK e não do aparelho. Não foi perseguida
 > porque estes lembretes não alteram nenhuma medição.
 
-## 6. Sensibilidade do sensor de fralda
+## 6. Configurações que o hub aplica
 
-O único caso em que uma configuração **não viaja para o aparelho**. O sensor
-MONIT não aceita comandos; a sensibilidade é aplicada pelo hub, do lado de cá, ao
-interpretar os canais de humidade.
+Duas configurações **não viajam para o aparelho**: mudam uma regra da ingestão,
+são confirmadas logo, e ficam na mesma tabela das outras. Quem decide se algo
+viaja é cada capacidade (`HubAppliedCapability`), não o protocolo inteiro — é por
+isso que o MONIT e os gateways MOKO declaram catálogo de configuração sem
+aceitarem downlink.
 
-É por isso que o protocolo `monit-mecs-pro-ble` declara suportar catálogo de
-configuração apesar de não aceitar downlink. Quem decide se algo viaja é cada
-capacidade, não o protocolo inteiro.
+### Sensibilidade do sensor de fralda
 
-Os dois parâmetros, os três perfis e a forma como entram na derivação do estado
-estão no [capítulo do sensor de fralda](17-sensor-de-fralda.md).
+O sensor MONIT não aceita comandos; a sensibilidade é aplicada pelo hub ao
+interpretar os canais de humidade. Os dois parâmetros, os três perfis e a forma
+como entram na derivação do estado estão no [capítulo do sensor de
+fralda](17-sensor-de-fralda.md).
+
+### Alarme de proximidade do gateway
+
+`proximity_alert`, nos gateways MOKO (`moko-mkgw3`, `moko-mkgw4`). Diz quando um
+dispositivo que o gateway retransmite, perto dele, dá o evento
+[`proximity_alarm`](08-contrato-mqtt.md#os-tipos). O hub não sabe onde o gateway
+está — uma porta, a entrada de um prédio, um teto — e por isso o alarme não fala
+em porta.
+
+| Campo | Valores | Por omissão |
+|---|---|---|
+| `mode` | `off` · `calibrating` · `active` | `off` |
+| `devices` | `"all"` ou a lista de identificadores, dos ligados ao gateway | `"all"` |
+| `triggerDbm` | −100 a −30 | −58 |
+| `minSamples` | 1 a 10 | 3 |
+| `cooldownSeconds` | 0 a 3600 | 60 |
+
+- **Dispara** quando o máximo da janela do `ProximityTracker` chega ao
+  `triggerDbm`, com pelo menos `minSamples` leituras. O máximo e não a mediana:
+  uma passagem rápida dá uma ou duas leituras fortes, e o ruído quase só atenua
+  ([capítulo dos gateways](05-gateways-ble.md#5-proximidade--quem-ouviu-quem)).
+- **Uma vez por par** (dispositivo, gateway) em cada `cooldownSeconds`: quem fica
+  parado ao pé do gateway não dá um alarme por segundo. A contagem vive na memória
+  do processo, e um reinício recomeça-a.
+- **`calibrating`** avalia igual mas não publica nada: marca o avistamento, e a
+  dashboard mostra «Dispararia» ao lado do dispositivo na página do gateway
+  durante um minuto. Serve para passar junto ao gateway e acertar o limiar no
+  sítio onde ele está.
+- **Quem pode disparar** são só os dispositivos ligados ao gateway, que têm a
+  mesma empresa e licença. Com uma lista, só esses; um dispositivo ligado depois
+  entra em `"all"` sozinho e fica fora da lista até ser escolhido.
+- A configuração lê-se na ingestão com cache de 5 s, que é quanto demora uma
+  alteração pela API a valer.
 
 ## Implementação
 

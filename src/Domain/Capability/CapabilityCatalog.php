@@ -395,6 +395,7 @@ final class CapabilityCatalog
             // A chave nativa é a genérica: não há comando nativo de que esta seja tradução,
             // porque o hub aplica-a sozinho.
             'diaper_sensitivity' => 'diaper_sensitivity',
+            'proximity_alert' => 'proximity_alert',
             // O dispensador declara as definições já pela chave genérica; o nativo é o
             // `command`, que é o que monta a trama.
             'medication_reminders',

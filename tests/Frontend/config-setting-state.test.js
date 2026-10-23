@@ -95,3 +95,10 @@ test("an edited interval shows both ends that were there", () => {
 
     assert.match(section.querySelector(".config-when-changed").textContent, /era 50–90\s+bpm/);
 });
+
+/** Uma configuração que o hub aplica não vai a lado nenhum: fica por guardar. */
+test("a setting the hub applies is waiting to be saved, not sent", () => {
+    const section = sectionOf({ ...INTERVAL, command: "" }, null, false);
+
+    assert.equal(section.querySelector("[data-config-summary]").textContent.trim(), "por guardar pela primeira vez");
+});

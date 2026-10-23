@@ -35,7 +35,7 @@ import {
     wizardProgressHtml,
     wizardTrailHtml,
 } from "../components/wizard-cards.js";
-import { gatewayCardMarkup } from "./gateway-links-ui.js";
+import { deviceCheckCard } from "./device-check-card.js";
 import { eligibleGateways, normalizeKey } from "./gateway-links.js";
 import {
     ensureDeviceTypeSuppliersModelsLoaded,
@@ -310,7 +310,7 @@ function renderIdentity(answers) {
                     ${gateways.length
                         ? gateways
                                 .map((gateway) =>
-                                    gatewayCardMarkup(
+                                    deviceCheckCard(
                                         gateway,
                                         (answers.gateways || []).includes(normalizeKey(gateway.imei)),
                                     ),

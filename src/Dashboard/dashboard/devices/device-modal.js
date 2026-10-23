@@ -214,6 +214,7 @@ export async function editDevice(imei, supplier, model) {
             detail.linkedDevices || [],
         );
         state.deviceModal.linkedGatewayKeys = linkedGatewayKeys;
+        state.deviceModal.linkedDevices = detail.linkedDevices || [];
         state.deviceModal.selectedGatewayKeys = linkedGatewayKeys;
         await refreshGatewayOptions(linkedGatewayKeys);
         if (superseded()) return;

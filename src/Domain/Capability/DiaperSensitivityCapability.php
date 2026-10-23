@@ -10,7 +10,7 @@ use Hub\Domain\DiaperSensitivity;
  * A sensibilidade dos alertas de um medidor de fraldas, `{pollutionRange, pollutionValue}`, sem
  * downlink: muda a regra com que o `Moko\MokoBridge` lê. Os limiares estão no `DiaperSensitivity`.
  */
-final class DiaperSensitivityCapability implements CapabilityContract, CapabilityInputSanitizer
+final class DiaperSensitivityCapability implements CapabilityContract, CapabilityInputSanitizer, HubAppliedCapability
 {
     use CapabilityHelpers;
 

@@ -263,11 +263,12 @@ A janela e a mediana existem para remover essa oscilação. Ficam do lado do hub
 porque a correção é sobre o sinal, e sobre o sinal o hub é a única camada com
 todas as amostras.
 
-**A divisão de responsabilidade é deliberada.** O hub normaliza e publica
-fielmente o sinal entre cada dispositivo e cada gateway que o ouve. O alarme —
-os limiares, o que conta como «à porta», quem é avisado — pertence a quem
-integra. O hub não tem opinião sobre perigo, e as janelas e contagens são
-argumentos do `ProximityTracker`, não configuração exposta.
+O hub publica fielmente o sinal entre cada dispositivo e cada gateway que o
+ouve, e as janelas e contagens são argumentos do `ProximityTracker`, não
+configuração exposta. Sobre esse sinal, um gateway pode ter o **alarme de
+proximidade** ligado: o hub dá o `proximity_alarm` quando um dispositivo chega
+perto dele. Os limiares são do gateway, porque dependem de onde ele está, e estão
+no [capítulo da configuração](10-configuracao-de-dispositivos.md#alarme-de-proximidade-do-gateway).
 
 **Avistamentos não reclamados:** quando nenhum descodificador sabe ler uma
 trama, mas o MAC pertence a um dispositivo registado e ligado ao gateway, o RSSI

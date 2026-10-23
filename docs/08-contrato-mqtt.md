@@ -298,6 +298,7 @@ eventos guardados no histórico da dashboard levam-na igual.
 | `type` | `data` | Quem o publica | `severity` |
 |---|---|---|---|
 | `help_call` | `pressType` (pulseira), `pagerId` (NCS); vazio no relógio e no dispensador | relógio Vivistar e 4P Touch (SOS), pulseira, NCS, dispensador | `alarm` |
+| `proximity_alarm` | `gatewayId`, `rssiDbm` (o máximo da janela), `window` (`maxDbm`, `medianDbm`, `minDbm`, `samples`) | o hub, para uma pulseira ou sensor de fralda perto de um gateway com o [alarme de proximidade](10-configuracao-de-dispositivos.md#alarme-de-proximidade-do-gateway) ativo; o `source` traz o `protocol` do dispositivo e o `gatewayId` | `alarm` |
 | `fall` | `confirmed`, `posture` (`lying_down` · `sitting_on_ground`, a enumeração da `presence` do radar), `personIndex` | relógio Vivistar e 4P Touch, radar | `alarm`; `alert` com `confirmed: false` |
 | `heart_rate_high` | `bpm`, quando há | radar | `alarm` acima de 160 bpm, `alert` abaixo ou sem valor |
 | `heart_rate_low` | `bpm`, quando há | radar | `alarm` abaixo de 20 bpm, `alert` acima ou sem valor |

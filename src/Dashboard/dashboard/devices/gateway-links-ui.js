@@ -6,12 +6,12 @@ import {
 import { allPages } from "../api/http.js";
 import { apiError } from "../dialogs.js";
 import { esc } from "../format.js";
-import { html } from "../html.js";
 import { state } from "../state.js";
 import { linksToGateway, normalizeDeviceType } from "../domain.js";
 import { eligibleGateways, gatewayLinkChanges, normalizeKey } from "./gateway-links.js";
 import { disposeTooltips, refreshTooltips } from "../tooltips.js";
-import { linkSignal, signalMeter } from "./gateway-signal.js";
+import { linkSignal } from "./gateway-signal.js";
+import { deviceCheckCard } from "./device-check-card.js";
 import { els } from "../dom.js";
 
 /** O escolhedor de gateways do modal do dispositivo: com que gateways um sensor pode falar. */
@@ -71,32 +71,6 @@ function setGatewayLinksDisabled(disabled) {
     }
 }
 
-const GATEWAY_THUMB_PLACEHOLDER = html`<svg class="gateway-card-thumb-icon text-secondary" viewBox="0 0 24 24" fill="none"
-    stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-    <rect x="2.5" y="13.5" width="19" height="7" rx="1.75"></rect>
-    <path d="M6 17h.01M9.5 17h5"></path>
-    <path d="M12 10.5v-7M8.75 6.75 12 3.5l3.25 3.25"></path>
-</svg>`;
-
-export function gatewayCardMarkup(gateway, checked, signal = null) {
-    const key = normalizeKey(gateway.imei);
-    const model = String(gateway.model || "").trim();
-    const image = String(gateway.image || "").trim();
-    const thumb = image
-        ? html`<img class="object-fit-contain" src="${image}" alt="" loading="lazy" decoding="async">`
-        : GATEWAY_THUMB_PLACEHOLDER;
-
-    return html`<label class="gateway-card d-flex align-items-center m-0 py-2">
-        <input class="form-check-input gateway-card-check flex-shrink-0 m-0" type="checkbox" data-gateway-key="${key}"${checked ? " checked" : ""}>
-        <span class="gateway-card-thumb d-flex align-items-center justify-content-center flex-shrink-0 overflow-hidden rounded-3">${thumb}</span>
-        <span class="min-w-0">
-            <span class="d-block fw-semibold text-truncate lh-sm">${key}</span>
-            <span class="gateway-card-model d-block text-secondary text-truncate lh-sm">${model || "Modelo desconhecido"}</span>
-        </span>
-        ${signalMeter(signal)}
-    </label>`;
-}
-
 /** Os sinais vêm das ligações do dispositivo escolhido: a editar outro, não há sinal. */
 function signalsForEditedDevice() {
     const editing = normalizeKey(els.deviceImei?.value);
@@ -130,7 +104,7 @@ function renderGatewayOptions(gateways = [], selectedKeys = [], emptyText = "") 
         list.innerHTML = gateways
             .map((gateway) => {
                 const key = normalizeKey(gateway.imei);
-                return gatewayCardMarkup(
+                return deviceCheckCard(
                     gateway,
                     selected.has(key),
                     signals.get(key) || null,

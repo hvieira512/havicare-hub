@@ -5,6 +5,8 @@ import { optionLabel } from "../../../i18n.js";
 import { addAlarmButton, alarmClockRow, readAlarmRows, RECURRENCES } from "../alarm-fields.js";
 import { boolValue } from "../normalizers.js";
 import { contactsInput } from "./generic.js";
+import { deviceCheckCard } from "../../device-check-card.js";
+import { linkSignal } from "../../gateway-signal.js";
 import {
     boundedNumber,
     choiceField,
@@ -49,6 +51,56 @@ function diaperSensitivityInput(entry, desired, meta) {
             ${profiles.length === 0 ? "" : html`<div class="btn-group w-100 mb-2" role="radiogroup" aria-label="${entryText(entry, meta).label}">${profiles}</div>`}
             <div class="row g-2">${number("pollutionRange")}${number("pollutionValue")}</div>
             <div class="form-text">Muda só como o hub lê o sensor; vale a partir da leitura seguinte.</div>
+        </div>`;
+}
+
+/** O limiar arrasta-se entre «Longe» e «Perto», ou escreve-se o dBm exacto; os dois são o mesmo campo. */
+function proximityAlarmInput(entry, desired, meta) {
+    const bounds = meta.bounds ?? {};
+    const [min, max] = bounds.triggerDbm ?? [-100, -30];
+    const linked = meta.linkedDevices ?? [];
+    const chosen = Array.isArray(desired.devices) ? desired.devices.map(String) : [];
+    const scope = desired.devices === "all" || desired.devices === undefined ? "all" : "chosen";
+    const label = (field) => entryFieldLabel(entry, meta, field);
+    const trigger = String(desired.triggerDbm ?? "");
+    const timing = (name, unit) => field(label(name), numberField(name, desired[name] ?? "", {
+        min: bounds[name]?.[0] ?? 0,
+        max: bounds[name]?.[1] ?? "",
+        unit,
+    }), { cls: "col-6" });
+
+    return html`
+        <div class="vstack gap-3 proximity-alarm">
+            ${choiceField({ field: "mode", value: desired.mode, options: fieldChoices(entry, meta, "mode"), label: label("mode") })}
+            <div>
+                <div class="form-label">${label("devices")}</div>
+                ${choiceField({
+                    field: "devicesScope",
+                    value: scope,
+                    options: [
+                        { value: "all", label: `Todos (${linked.length})` },
+                        { value: "chosen", label: "Escolhidos" },
+                    ],
+                    label: label("devices"),
+                })}
+                <div class="proximity-alarm-picker gateway-picker d-grid gap-2 mt-2">
+                    ${linked.length === 0
+                        ? html`<p class="gateway-picker-empty mb-0 small text-secondary">Nenhum dispositivo ligado a este gateway.</p>`
+                        : linked.map((device) => deviceCheckCard(device, chosen.includes(String(device.deviceKey)), linkSignal(device), "devices"))}
+                </div>
+            </div>
+            <div data-twin-fields>
+                <div class="d-flex justify-content-between align-items-center gap-2 mb-1">
+                    <label class="form-label mb-0">${label("triggerDbm")}</label>
+                    ${numberField("triggerDbm", trigger, { min, max, unit: "dBm", cls: "flex-nowrap w-auto" })}
+                </div>
+                <input class="form-range" type="range" min="${min}" max="${max}" step="1" data-config-field="triggerDbm" value="${trigger}" aria-label="${label("triggerDbm")}">
+                <div class="d-flex justify-content-between small text-secondary"><span>Longe</span><span>Perto</span></div>
+            </div>
+            <div class="row g-2">
+                ${timing("minSamples", "")}
+                ${timing("cooldownSeconds", "s")}
+            </div>
         </div>`;
 }
 
@@ -167,6 +219,18 @@ function alarmClockInput(entry, desired, meta = {}) {
 }
 
 export const INPUTS = {
+    proximityAlarm: {
+        render: proximityAlarmInput,
+        read: (section) => ({
+            mode: readChoice(section, "mode"),
+            devices: readChoice(section, "devicesScope") === "all"
+                ? "all"
+                : [...section.querySelectorAll("[data-config-field=\"devices\"]:checked")].map((input) => input.value),
+            triggerDbm: readNumber(section, "triggerDbm"),
+            minSamples: readNumber(section, "minSamples"),
+            cooldownSeconds: readNumber(section, "cooldownSeconds"),
+        }),
+    },
     diaperSensitivity: {
         render: diaperSensitivityInput,
         read: (section) => ({

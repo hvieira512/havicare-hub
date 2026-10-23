@@ -21,6 +21,8 @@ export function blankDeviceModal(overrides = {}) {
         simNumber: "",
         deviceId: "",
         linkedGatewayKeys: [],
+        // As ligações do detalhe, com fotografia e sinal: o alarme de proximidade escolhe delas.
+        linkedDevices: [],
         selectedGatewayKeys: [],
         supplier: "",
         model: "",

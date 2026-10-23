@@ -18,6 +18,7 @@ import {
     when,
 } from "../format.js";
 import { html } from "../html.js";
+import { optionLabel } from "../i18n.js";
 import { joinMarkup } from "../components/cards/shared.js";
 import { els, renderInto } from "../dom.js";
 import { capabilityLabel } from "../capability-catalog.js";
@@ -31,7 +32,7 @@ import {
     requestCardShell,
     statusBadge,
 } from "../components/cards/request.js";
-import { fallSummaryCard, helpCallSummaryCard } from "./event-summary-cards.js";
+import { fallSummaryCard, helpCallSummaryCard, proximityAlarmSummaryCard } from "./event-summary-cards.js";
 import { onRadarPresence } from "./radar-map-modal.js";
 import { activityTable } from "./activity-table.js";
 import { protocolHelpCallPressModes } from "./config/protocol-catalog.js";
@@ -229,6 +230,15 @@ function renderSelectedDeviceSummary(device, deviceModel, linkedDevices = []) {
             wide: true,
         });
     }
+    // O que o gateway vigia; desligado não se diz, que é o normal.
+    const proximityAlert = state.selectedDetail?.capabilities?.alarms?.proximity_alert?.value;
+    if (proximityAlert && proximityAlert.mode !== "off") {
+        facts.push({
+            label: capabilityLabel("proximity_alert"),
+            value: `${optionLabel("proximity_alert", "", "mode", proximityAlert.mode)} · dispara a partir de ${proximityAlert.triggerDbm} dBm`,
+            wide: true,
+        });
+    }
 
     // O render corre a cada mensagem do stream: o `<img>` só se refaz quando a imagem muda.
     const previewKey = image || "__none__";
@@ -403,6 +413,7 @@ function renderRequestCards(
         protocolHelpCallPressModes(state.selectedDetail?.model?.protocol || ""),
     );
     const falls = fallSummaryCard(events);
+    const proximityAlarms = proximityAlarmSummaryCard(events);
 
     disposeTooltips(els.requestGrid);
 
@@ -420,7 +431,7 @@ function renderRequestCards(
                 .join("")
         : "";
     // Sem nada para mostrar, a secção não existe.
-    const grid = falls + helpCalls + cards;
+    const grid = proximityAlarms + falls + helpCalls + cards;
     els.requestCardsCard?.classList.toggle("d-none", grid === "");
     if (renderInto(els.requestGrid, grid, disposeTooltips)) refreshTooltips(els.requestGrid);
 }

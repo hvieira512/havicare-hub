@@ -121,3 +121,25 @@ test("reset returns the fields to the value they had", () => {
     assert.equal(fieldOf(root, "step_goal").value, "8000");
     assert.deepEqual(changedConfigEntries(pane(root)), {});
 });
+
+test("a section the hub applies by itself saves instead of sending", () => {
+    const host = document.createElement("div");
+    host.appendChild(parseFragment(renderDeviceConfigurationRoot({
+        protocol: "monit-mecs-pro-ble",
+        catalog: [{ ...setting("diaper_sensitivity", "pollutionRange"), command: "" }],
+        capabilityCatalog: [{ key: "diaper_sensitivity", section: "health", sectionLabel: "Saúde", isConfigurable: true }],
+        configurations: { diaper_sensitivity: { pollutionRange: 4 } },
+        capabilities: {},
+    })));
+    document.body.replaceChildren(host);
+    captureConfigPristine(host);
+    syncConfigCounts(host);
+
+    assert.match(pane(host).querySelector("[data-action=\"saveConfigPane\"]").textContent, /Guardar/);
+    assert.doesNotMatch(pane(host).querySelector("[data-action=\"saveConfigPane\"]").textContent, /dispositivo/);
+
+    fieldOf(host, "diaper_sensitivity").value = "5";
+    syncConfigCounts(host);
+
+    assert.match(pane(host).querySelector("[data-config-pane-status]").textContent, /1 alteração por guardar/);
+});

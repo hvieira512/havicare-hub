@@ -53,6 +53,7 @@ final class CapabilityRegistry
         $this->register(new SwitchCapability('sos_sms_alert', ['wonlex-json' => 'wonlexSOSSwitch', 'four-p-touch' => 'sosSmsAlerts']));
         $this->register(new MedicationRemindersCapability());
         $this->register(new DiaperSensitivityCapability());
+        $this->register(new ProximityAlarmCapability());
     }
 
     public function register(CapabilityContract $capability): void
@@ -83,10 +84,10 @@ final class CapabilityRegistry
             ?? ($this->generic[$genericKey] ??= new GenericCapability($genericKey, $this->fourPTouchGeneric));
     }
 
-    /** Se a alteração viaja para o dispositivo: só a sensibilidade das fraldas o hub aplica sozinho. */
+    /** Se a alteração viaja para o dispositivo, ou se o hub a aplica sozinho. */
     public function travelsToDevice(string $genericKey): bool
     {
-        return !($this->contract($genericKey) instanceof DiaperSensitivityCapability);
+        return !($this->contract($genericKey) instanceof HubAppliedCapability);
     }
 
     public function supportsProtocol(string $genericKey, string $protocol): bool

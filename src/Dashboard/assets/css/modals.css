@@ -80,6 +80,11 @@
     max-height: 18rem;
 }
 
+/* Com «Todos» a lista não escolhe nada, e esconde-se; o `!important` vence o do `d-grid`. */
+.proximity-alarm:has([data-config-field="devicesScope"][value="all"]:checked) .proximity-alarm-picker {
+    display: none !important;
+}
+
 /* A linha toda da grelha: o Bootstrap não tem utilitário de `grid-column`. */
 .gateway-picker-empty {
     grid-column: 1 / -1;

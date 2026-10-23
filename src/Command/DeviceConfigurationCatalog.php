@@ -7,6 +7,7 @@ namespace Hub\Command;
 use Hub\Command\Configuration\Definition\FourPTouchConfigurationDefinitions;
 use Hub\Command\Configuration\Definition\JoyTechConfigurationDefinitions;
 use Hub\Command\Configuration\Definition\LefuTorreConfigurationDefinitions;
+use Hub\Command\Configuration\Definition\MokoGatewayConfigurationDefinitions;
 use Hub\Command\Configuration\Definition\MonitConfigurationDefinitions;
 use Hub\Command\Configuration\Definition\QinglanstConfigurationDefinitions;
 use Hub\Command\Configuration\Definition\VeepooConfigurationDefinitions;
@@ -41,6 +42,7 @@ final class DeviceConfigurationCatalog
             'vivistar-iw' => VivistarConfigurationDefinitions::all(),
             'four-p-touch' => FourPTouchConfigurationDefinitions::all(),
             'monit-mecs-pro-ble' => MonitConfigurationDefinitions::all(),
+            'moko-mkgw3', 'moko-mkgw4' => MokoGatewayConfigurationDefinitions::all(),
             'veepoo-ble' => VeepooConfigurationDefinitions::all(),
             'zayata-m228' => ZayataConfigurationDefinitions::all(),
             'lefu-torre' => LefuTorreConfigurationDefinitions::all(),

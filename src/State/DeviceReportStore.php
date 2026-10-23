@@ -47,6 +47,9 @@ interface DeviceReportStore
      */
     public function recordGatewaySighting(string $deviceKey, string $gatewayKey, ?int $rssiDbm): void;
 
+    /** A última vez que o par teria dado o alarme de proximidade, com o gateway a calibrar. */
+    public function recordProximityAlarmCandidate(string $deviceKey, string $gatewayKey): void;
+
     /** O dono fica vazio para os protocolos que não o sabem: as duas juntas ou nenhuma. */
     public function recordRejectedDevice(
         string $imei,

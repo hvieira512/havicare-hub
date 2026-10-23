@@ -78,6 +78,7 @@ final class MokoBridge extends MqttBridgeBase implements DispatchesQueued
             $options->telemetryRefreshSeconds,
             $options->rawHistorySampleSeconds,
             $clock,
+            $options->proximityAlarm,
         );
         $this->gateways = new GatewayPresence($mqttBridge, $deviceStore);
         $this->messageDecoder = new MokoMessageDecoder();

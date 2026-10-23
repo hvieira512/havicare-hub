@@ -160,7 +160,9 @@ export async function saveDeviceConfigurations(container) {
         state.deviceModal.configurationSync = result.configurationSync || state.deviceModal.configurationSync;
         state.deviceModal.capabilities = result.capabilities || state.deviceModal.capabilities;
         // O aviso agregado aponta para a pastilha de cada cartão: a entrega pode nem ter começado.
-        toast("success", "Alterações guardadas no Hub. A entrega ao dispositivo aparece em cada cartão.");
+        toast("success", "configHubApplied" in container.dataset
+            ? "Alterações guardadas no Hub."
+            : "Alterações guardadas no Hub. A entrega ao dispositivo aparece em cada cartão.");
     } catch (error) {
         toast("error", error instanceof Error ? error.message : "Não foi possível enviar as alterações");
     } finally {
@@ -464,6 +466,7 @@ export function renderDeviceConfigurationModal() {
         configurations: state.deviceModal.configurations,
         configurationSync: state.deviceModal.configurationSync,
         capabilities: state.deviceModal.capabilities,
+        linkedDevices: state.deviceModal.linkedDevices,
         uiByKey: state.deviceModal.configUi,
         actionDeliveries: state.deviceModal.actionDeliveries,
         activeCategory: state.deviceModal.activeCategory,
@@ -477,12 +480,12 @@ export function renderDeviceConfigurationModal() {
 }
 
 /** Conta edições por submeter, não entregas; as nunca gravadas à parte, que viajam sem lhes tocarem. */
-function paneStatusLabel(pending, edited) {
+function paneStatusLabel(pending, edited, verb = "enviar") {
     if (pending === 0) return "";
     if (edited === 0) {
-        return `${countLabel(pending, "definição", "definições")} no valor padrão, por enviar`;
+        return `${countLabel(pending, "definição", "definições")} no valor padrão, por ${verb}`;
     }
-    return `${countLabel(edited, "alteração", "alterações")} por enviar`;
+    return `${countLabel(edited, "alteração", "alterações")} por ${verb}`;
 }
 
 /** O separador, a linha de cada secção e o rodapé saem das mesmas leituras, para não discordarem. */
@@ -515,7 +518,7 @@ function countConfigChanges(root) {
 
         const status = pane.querySelector("[data-config-pane-status]");
         if (status) {
-            status.textContent = paneStatusLabel(pending, edited);
+            status.textContent = paneStatusLabel(pending, edited, "configHubApplied" in pane.dataset ? "guardar" : "enviar");
             status.classList.toggle("text-warning-emphasis", edited > 0);
             status.classList.toggle("text-secondary", edited === 0);
         }

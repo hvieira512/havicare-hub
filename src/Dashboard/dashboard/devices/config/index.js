@@ -46,6 +46,7 @@ export function renderDeviceConfigurationRoot(context) {
         uiByKey = {},
         actionDeliveries = {},
         sectionOpen = false,
+        linkedDevices = [],
     } = context;
     if (!protocol) {
         return emptyPanel(
@@ -71,7 +72,7 @@ export function renderDeviceConfigurationRoot(context) {
                 ${groups
                     .map(
                         (group) => `
-                    <div class="tab-pane fade ${group.key === currentCategory ? "show active" : ""}" data-config-pane="${esc(group.key)}">
+                    <div class="tab-pane fade ${group.key === currentCategory ? "show active" : ""}" data-config-pane="${esc(group.key)}"${appliedByHub(group.entries) ? " data-config-hub-applied" : ""}>
                         ${sectionBack(group)}
                         ${configRuns(group.entries).map((run) => {
                             if (run.grouped) {
@@ -101,10 +102,11 @@ export function renderDeviceConfigurationRoot(context) {
                                     stored,
                                     delivery,
                                     rowsByKey,
+                                    linkedDevices,
                                 );
                             }).join("");
                         }).join("")}
-                        ${sectionFooter()}
+                        ${sectionFooter(appliedByHub(group.entries))}
                     </div>
                 `,
                     )
@@ -141,13 +143,22 @@ function sectionBack(group) {
 }
 
 /** Nasce desligado; o painel acende-o contando o alterado. */
-function sectionFooter() {
+/** Uma secção só de configurações sem comando nativo: o hub aplica-as, e nada viaja. */
+function appliedByHub(entries) {
+    return entries.length > 0 && entries.every((entry) =>
+        String(entry.command || "") === "" && entry.transient !== true && entry.requestOnly !== true);
+}
+
+function sectionFooter(hubApplied = false) {
+    const verb = hubApplied
+        ? "Guardar"
+        : `<span class="d-lg-none">Enviar</span><span class="d-none d-lg-inline">Enviar ao dispositivo</span>`;
     return `
         <div class="config-section-footer position-sticky bottom-0 mt-auto d-flex align-items-center justify-content-between gap-2 flex-wrap border-top bg-body">
             <span class="small text-secondary flex-grow-1 min-w-0 lh-sm" data-config-pane-status></span>
             <span class="d-flex gap-2 flex-shrink-0">
                 <button type="button" class="btn btn-outline-secondary" data-action="resetConfigPane" disabled>Repor</button>
-                <button type="button" class="btn btn-primary" data-action="saveConfigPane" data-config-phase="idle" disabled><span class="d-lg-none">Enviar</span><span class="d-none d-lg-inline">Enviar ao dispositivo</span></button>
+                <button type="button" class="btn btn-primary" data-action="saveConfigPane" data-config-phase="idle" disabled>${verb}</button>
             </span>
         </div>`;
 }
@@ -209,11 +220,12 @@ function unitGroup(control, entry, protocol) {
 }
 
 function previousValueSummary(entry, desired, isStored, protocol) {
-    if (!isStored) return "por enviar pela primeira vez";
+    const verb = appliedByHub([entry]) ? "guardar" : "enviar";
+    if (!isStored) return `por ${verb} pela primeira vez`;
 
     const value = desired?.[entry.fields?.[0] || ""];
     const unit = unitLabel(entry, protocol);
-    if (typeof value !== "number" || unit === "") return "alterada e por enviar";
+    if (typeof value !== "number" || unit === "") return `alterada e por ${verb}`;
 
     const upper = entry.input === "valueRange" ? desired?.[entry.fields?.[1] || ""] : undefined;
     return typeof upper === "number" ? `era ${value}–${upper} ${unit}` : `era ${value} ${unit}`;
@@ -314,6 +326,7 @@ export function renderConfigSection(
     stored = null,
     delivery = null,
     relatedConfigurations = {},
+    linkedDevices = [],
 ) {
     const capability = capabilityForEntry(entry, capabilities);
     const desired = normalizeDesired(row, capability);
@@ -321,6 +334,7 @@ export function renderConfigSection(
         ...(capability?._meta || {}),
         protocol,
         phonebookContacts: relatedConfigurations.phonebook || [],
+        linkedDevices,
     };
     const text = configText(entry.capabilityKey, protocol);
     const verbs = configActionVerbs(entry);

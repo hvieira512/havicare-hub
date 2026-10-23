@@ -16,6 +16,7 @@ final class EventSeverity
 
     private const BY_TYPE = [
         'help_call' => self::ALARM,
+        'proximity_alarm' => self::ALARM,
         'apnea' => self::ALARM,
         'change_required' => self::ALARM,
         'heart_rate_abnormal' => self::ALERT,

@@ -53,6 +53,7 @@ const CARD_STYLE = {
     firmware_version: ["fa-microchip", "secondary"],
     tilt: ["fa-ruler-combined", "secondary"],
     proximity: ["fa-tower-broadcast", "info"],
+    proximity_alarm: ["fa-person-walking-arrow-right", "danger"],
     presence: ["fa-location-crosshairs", "success"],
     ecg: ["fa-wave-square", "danger"],
     hrv: ["fa-chart-line", "danger"],
@@ -426,6 +427,14 @@ const UPLINK_CARD_RENDERERS = {
         value: rrIntervalValue(data),
     }),
     help_call: (data) => helpCallContent(data),
+    // O máximo da janela é o que fez disparar; o gateway diz onde.
+    proximity_alarm: (data) => ({
+        value: `${data?.rssiDbm ?? "-"} dBm`,
+        details: joinMarkup([
+            html`gateway ${String(data?.gatewayId || "")}`,
+            html`${countLabel(Number(data?.window?.samples) || 0, "leitura", "leituras")}`,
+        ]),
+    }),
     motion: (data) => ({
         value:
             data?.magnitudeMg != null

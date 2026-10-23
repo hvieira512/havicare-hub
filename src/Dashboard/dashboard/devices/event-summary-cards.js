@@ -89,6 +89,33 @@ export function helpCallSummaryCard(events = [], pressModes = []) {
 </div>`;
 }
 
+/** O último alarme de proximidade, do histórico, com o gateway que o deu. */
+export function proximityAlarmSummaryCard(events) {
+    const latest = (Array.isArray(events) ? events : [])
+        .map(rowPayload)
+        .filter((payload) => String(payload?.type || "") === "proximity_alarm")
+        .sort((a, b) => eventTime(b) - eventTime(a))[0];
+    if (latest === undefined) {
+        return "";
+    }
+
+    const occurredAt = latest.occurredAt || latest.recordedAt || "";
+
+    return html`<div class="telemetry-card-wide min-w-0">
+<div class="card h-100 border-danger">
+<div class="card-body d-flex align-items-center gap-3 min-w-0">
+<div class="bg-danger bg-opacity-10 rounded-3 d-flex align-items-center justify-content-center text-danger" style="width:36px;height:36px;flex-shrink:0;">
+<i class="fa-solid fa-person-walking-arrow-right"></i>
+</div>
+<div class="min-w-0 flex-grow-1">
+<div class="fw-bold text-danger">Último alarme de proximidade</div>
+<div class="small text-body-secondary text-truncate" title="${when(occurredAt)}">${ago(occurredAt)} · gateway ${String(latest?.data?.gatewayId || "")}</div>
+</div>
+</div>
+</div>
+</div>`;
+}
+
 /** A última queda do radar, do histórico: só aparece se houve. */
 export function fallSummaryCard(events) {
     const falls = (Array.isArray(events) ? events : [])

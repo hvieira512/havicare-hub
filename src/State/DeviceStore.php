@@ -136,6 +136,17 @@ final class DeviceStore implements DeviceStoreContract
         return $this->runtime->gatewaySightings($deviceKey);
     }
 
+    public function recordProximityAlarmCandidate(string $deviceKey, string $gatewayKey): void
+    {
+        $this->runtime->recordProximityAlarmCandidate($deviceKey, $gatewayKey);
+    }
+
+    /** @return array<string, string> */
+    public function proximityAlarmCandidates(string $deviceKey): array
+    {
+        return $this->runtime->proximityAlarmCandidates($deviceKey);
+    }
+
     public function deviceOffline(string $imei): bool
     {
         return $this->runtime->deviceOffline($imei);
