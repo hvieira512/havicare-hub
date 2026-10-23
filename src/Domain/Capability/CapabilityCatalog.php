@@ -6,7 +6,6 @@ namespace Hub\Domain\Capability;
 
 use Hub\Command\DeviceCommandCatalog;
 use Hub\Command\DeviceConfigurationCatalog;
-use Hub\Domain\Capability\FourPTouch\FourPTouchGenericHandler;
 use Hub\Domain\Capability\Definition\NcsCapabilityDefinitions;
 use Hub\Domain\Capability\Definition\RadarCapabilityDefinitions;
 use Hub\Domain\Capability\Definition\ScaleCapabilityDefinitions;
@@ -321,53 +320,12 @@ final class CapabilityCatalog
     {
         $key = trim($key);
 
-        $fourPTouch = FourPTouchGenericHandler::nativeKeyToGenericKey($key);
-        if ($fourPTouch !== null) {
-            return $fourPTouch;
-        }
+        // Sem definição em nenhum catálogo, mas ainda nomes aceites do interruptor da lista branca.
+        $aliases = ['whitelistSwitch' => 'whitelist_enabled', 'callInRestriction' => 'whitelist_enabled'];
 
-        return match ($key) {
-            'familyNumber' => 'phonebook',
-            'SOSNumber' => 'sos_contacts',
-            'wonlexLowPower' => 'low_battery_alert',
-            'wonlexFallWarnSwitch', 'fallDetection' => 'fall_detection',
-            'wonlexSOSSwitch' => 'sos_sms_alert',
-            'wonlexBloodOxygenWarn' => 'blood_oxygen_alert',
-            'wonlexTemperatureExceedRemind' => 'temperature_high_alert',
-            'wonlexTemperatureBelowRemind' => 'temperature_low_alert',
-            'wonlexBPEarlyWarning' => 'blood_pressure_alert',
-            'wonlexHeartRateHighRemind' => 'heart_rate_high_alert',
-            'wonlexHeartRateLowRemind' => 'heart_rate_low_alert',
-            'autoHealthMeasurement' => 'auto_vitals_interval',
-            'fallSensitivity' => 'fall_sensitivity',
-            'wonlexHeartRateInterval' => 'heart_rate_measurement_interval',
-            'wonlexBPInterval' => 'blood_pressure_measurement_interval',
-            'wonlexBOInterval' => 'blood_oxygen_measurement_interval',
-            'wonlexBodyTemperatureInterval' => 'temperature_measurement_interval',
-            'wonlexBreatheInterval' => 'breath_rate_measurement_interval',
-            'wonlexECGInterval' => 'ecg_measurement_interval',
-            'wonlexHRVInterval' => 'hrv_measurement_interval',
-            'wonlexPPGInterval' => 'ppg_measurement_interval',
-            'wonlexRRInterval' => 'rr_interval_measurement_interval',
-            'wonlexContinuousHRSwitch' => 'heart_rate_continuous',
-            'wonlexContinuousBOCheck' => 'blood_oxygen_continuous',
-            'wonlexPPGBPTrend' => 'blood_pressure_trend',
-            'wonlexContinuousTempSwitch' => 'temperature_continuous',
-            'wonlexStepTarget' => 'step_goal',
-            'wonlexSleepIntervalOrSwitch' => 'sleep_monitoring',
-            'wonlexStepInterval' => 'step_reporting_interval',
-            'locationInterval' => 'location_reporting_interval',
-            'workingMode' => 'working_mode',
-            'wonlexCallInLimitSwitch', 'rejectUnknownCalls', 'whitelistSwitch', 'callInRestriction' => 'whitelist_enabled',
-            'factoryResetCommand' => 'reset_device',
-            'restartCommand' => 'restart_device',
-            'powerOffCommand' => 'power_off',
-            'findDeviceCommand' => 'find_device',
-            'pushMessage' => 'push_message',
-            // Os protocolos que declaram pela chave genérica -- veepoo, dispensador, balança, radar --
-            // não precisam de tradução.
-            default => self::isCatalogKey($key) ? $key : null,
-        };
+        return DeviceConfigurationCatalog::capabilityKeys()[$key]
+            ?? $aliases[$key]
+            ?? (self::isCatalogKey($key) ? $key : null);
     }
 
     private static function isCatalogKey(string $key): bool
