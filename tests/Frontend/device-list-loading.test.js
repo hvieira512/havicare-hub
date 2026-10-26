@@ -83,8 +83,8 @@ test("a late device response does not overwrite the one chosen after it", async 
 });
 
 /**
- * Cada filtro e cada página da lista recarregam o dispositivo escolhido. Rasgar o SSE para o
- * reabrir a seguir perde o que ele já entregou, e o `recent` só chega por ali.
+ * Escolher outra vez o mesmo dispositivo relê-o. Rasgar o SSE para o reabrir a seguir perde o
+ * que ele já entregou, e o `recent` só chega por ali.
  */
 test("reloading the same device does not reopen the stream", async () => {
     const fetches = installDeferredFetch();
@@ -176,4 +176,22 @@ test("if the read fails the selector stays open", async () => {
     await chosen;
 
     assert.equal(hidden, 0);
+});
+
+/** O poll e o stream mantêm o escolhido fresco; mudar de página não o relê nem apaga o rascunho dos filtros. */
+test("changing page does not refetch the selected device nor clear the filter draft", async () => {
+    const fetches = installDeferredFetch();
+    selectImei("aaa111");
+    const first = loadDevice("aaa111");
+    await fetches.respond("/api/devices/aaa111", detailFor("aaa111"));
+    await first;
+    state.detailFiltersDraft = { ...state.detailFiltersDraft, from: "2026-10-01T00:00" };
+
+    setDeviceListPage(2);
+    const listing = loadSummary();
+    await fetches.respond("page=2", pageResponse(2));
+    await listing;
+
+    assert.equal(fetches.pending.filter((entry) => entry.url === "/api/devices/aaa111").length, 0);
+    assert.equal(state.detailFiltersDraft.from, "2026-10-01T00:00");
 });

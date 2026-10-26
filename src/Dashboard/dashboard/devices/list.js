@@ -99,11 +99,7 @@ async function fetchSummary() {
         state.summary.devicePagination.limit || state.deviceListPageSize;
     setDeviceListPage(state.summary.devicePagination.page);
     renderDeviceSelector();
-    if (state.selectedImei) {
-        await loadDevice(state.selectedImei);
-    } else {
-        renderSelectionDetail();
-    }
+    renderSelectionDetail();
 }
 
 function flattenDeviceTypeSuppliersModels(groups = []) {
