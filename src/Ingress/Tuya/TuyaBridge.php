@@ -163,7 +163,6 @@ final class TuyaBridge implements MqttIngress
             'company' => $company,
             'protocol' => self::PROTOCOL,
             'transport' => 'pulsar',
-            'online' => '1',
         ]) ?? false;
         if ($cameOnline) {
             $this->connections->announce($deviceId, $device, true);

@@ -140,8 +140,6 @@ final class CapabilityCatalogTest extends TestCase
             'workingMode' => 'working_mode',
             'wonlexCallInLimitSwitch' => 'whitelist_enabled',
             'rejectUnknownCalls' => 'whitelist_enabled',
-            'whitelistSwitch' => 'whitelist_enabled',
-            'callInRestriction' => 'whitelist_enabled',
             'factoryResetCommand' => 'reset_device',
             'restartCommand' => 'restart_device',
             'powerOffCommand' => 'power_off',
@@ -196,7 +194,6 @@ final class CapabilityCatalogTest extends TestCase
         self::assertSame('sos_contacts', CapabilityCatalog::mapConfigurationKey('sosContacts'));
         self::assertSame('call_whitelist', CapabilityCatalog::mapConfigurationKey('whitelistGroup1'));
         self::assertSame('whitelist_enabled', CapabilityCatalog::mapConfigurationKey('rejectUnknownCalls'));
-        self::assertSame('whitelist_enabled', CapabilityCatalog::mapConfigurationKey('whitelistSwitch'));
         self::assertSame('alarm_clock', CapabilityCatalog::mapConfigurationKey('alarmClock'));
         self::assertSame('alarmClock', DeviceConfigurationCatalog::nativeKey('four-p-touch', 'alarm_clock'));
         self::assertSame('uploadInterval', DeviceConfigurationCatalog::nativeKey('four-p-touch', 'location_reporting_interval'));

@@ -125,7 +125,7 @@ final class ProtocolRegistrationCompletenessTest extends TestCase
         $registry = new CapabilityRegistry();
         $checked = 0;
 
-        foreach (CapabilityCatalog::keys() as $key) {
+        foreach (array_unique(array_column(CapabilityCatalog::definitions(), 'key')) as $key) {
             $contract = $registry->get($key);
             if ($contract === null) {
                 // As capacidades simples são tratadas genericamente pelos metadados do
@@ -149,8 +149,9 @@ final class ProtocolRegistrationCompletenessTest extends TestCase
     public function testEveryDeclaredConfigurationReachesItsCapabilityContract(): void
     {
         $registry = new CapabilityRegistry();
-        $porLigar = [];
-        $verificadas = 0;
+        $unwired = [];
+        $renamed = [];
+        $checked = 0;
 
         foreach (array_keys(ProtocolRegistry::all()) as $protocol) {
             foreach (DeviceConfigurationCatalog::configsForProtocol($protocol) as $entry) {
@@ -167,22 +168,27 @@ final class ProtocolRegistrationCompletenessTest extends TestCase
                     continue;
                 }
 
-                $verificadas++;
+                $checked++;
                 try {
-                    $registry->toNative(
+                    $native = $registry->toNative(
                         $protocol,
                         $genericKey,
                         ConfigurationInputDefaults::forEntry($entry),
                     );
+                    // A chave nativa que sai tem de ser a da definição: renomeá-la num sítio só não pode passar.
+                    if (is_array($native) && $native !== [] && !array_key_exists($nativeKey, $native)) {
+                        $renamed[] = "{$protocol} / {$genericKey}: " . implode(', ', array_keys($native)) . " em vez de {$nativeKey}";
+                    }
                 } catch (\Throwable $e) {
                     if (str_starts_with($e->getMessage(), 'Unsupported')) {
-                        $porLigar[] = "{$protocol} / {$genericKey}: {$e->getMessage()}";
+                        $unwired[] = "{$protocol} / {$genericKey}: {$e->getMessage()}";
                     }
                 }
             }
         }
 
-        self::assertGreaterThan(0, $verificadas, 'Nenhuma configuração foi verificada -- a varredura falhou.');
-        self::assertSame([], $porLigar);
+        self::assertGreaterThan(0, $checked, 'Nenhuma configuração foi verificada -- a varredura falhou.');
+        self::assertSame([], $unwired);
+        self::assertSame([], $renamed);
     }
 }

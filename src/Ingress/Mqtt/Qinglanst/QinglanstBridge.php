@@ -174,7 +174,6 @@ final class QinglanstBridge extends MqttBridgeBase
                 'company' => $company,
                 'protocol' => 'qinglanst-radar',
                 'transport' => 'mqtt',
-                'online' => '1',
             ]);
             if ($cameOnline) {
                 $this->connections->announce($deviceKey, $device, true);

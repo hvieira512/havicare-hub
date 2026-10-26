@@ -52,7 +52,6 @@ final class BraceletPresence
             'company' => (string)($device['company'] ?? 'null'),
             'protocol' => $this->protocol,
             'transport' => 'ble_gateway',
-            'online' => '1',
         ] + ($gatewayKey === '' ? [] : ['gatewayId' => $gatewayKey]));
 
         // O estado é retido e vale a cada anúncio; o acontecimento só sai na transição.

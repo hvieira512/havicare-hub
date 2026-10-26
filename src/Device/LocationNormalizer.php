@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Hub\Device;
 
+use Hub\Support\Values;
+
 /** A capacidade `location`: GPS, células e pontos WiFi reduzidos à mesma forma. */
 final class LocationNormalizer
 {
@@ -43,10 +45,10 @@ final class LocationNormalizer
                 )
         );
         $firstBaseStation = $baseStations[0] ?? [];
-        $lat = FeatureNormalizer::float($payload['lat'] ?? $payload['latitude'] ?? $gps['lat'] ?? $gps['latitude'] ?? null);
-        $lon = FeatureNormalizer::float($payload['lon'] ?? $payload['lng'] ?? $payload['longitude'] ?? $gps['lon'] ?? $gps['lng'] ?? $gps['longitude'] ?? null);
+        $lat = Values::float($payload['lat'] ?? $payload['latitude'] ?? $gps['lat'] ?? $gps['latitude'] ?? null);
+        $lon = Values::float($payload['lon'] ?? $payload['lng'] ?? $payload['longitude'] ?? $gps['lon'] ?? $gps['lng'] ?? $gps['longitude'] ?? null);
         $gpsValid = isset($payload['gpsValid']) ? (bool)$payload['gpsValid'] : null;
-        $satelliteCount = FeatureNormalizer::int($payload['satellites'] ?? $payload['satelliteCount'] ?? $gps['satelliteNum'] ?? null);
+        $satelliteCount = Values::int($payload['satellites'] ?? $payload['satelliteCount'] ?? $gps['satelliteNum'] ?? null);
         if ($gpsValid !== true && $lat === 0.0 && $lon === 0.0) {
             $lat = null;
             $lon = null;
@@ -62,15 +64,15 @@ final class LocationNormalizer
             'radioType' => $radioType,
             'coordinateSystem' => self::normalizeCoordinateSystem($payload['coordinateSystem'] ?? $gps['Type'] ?? null),
             'reportKind' => self::normalizeReportKind($payload['reportKind'] ?? null),
-            'speedKmh' => FeatureNormalizer::float($payload['speed'] ?? $payload['speedKmh'] ?? $gps['speed'] ?? null),
-            'headingDegrees' => FeatureNormalizer::float($payload['direction'] ?? $payload['heading'] ?? $gps['direction'] ?? null),
-            'altitudeMeters' => FeatureNormalizer::float($payload['altitude'] ?? $payload['altitudeMeters'] ?? $gps['height'] ?? null),
+            'speedKmh' => Values::float($payload['speed'] ?? $payload['speedKmh'] ?? $gps['speed'] ?? null),
+            'headingDegrees' => Values::float($payload['direction'] ?? $payload['heading'] ?? $gps['direction'] ?? null),
+            'altitudeMeters' => Values::float($payload['altitude'] ?? $payload['altitudeMeters'] ?? $gps['height'] ?? null),
             'satelliteCount' => $satelliteCount,
             'mcc' => $mcc ?? FeatureNormalizer::stringOrNull($firstBaseStation['mcc'] ?? null),
             'mnc' => $mnc ?? FeatureNormalizer::stringOrNull($firstBaseStation['mnc'] ?? null),
             'lac' => FeatureNormalizer::stringOrNull($payload['lac'] ?? $gps['lac'] ?? $firstBaseStation['lac'] ?? null),
             'cellId' => FeatureNormalizer::stringOrNull($payload['cellId'] ?? $gps['cellId'] ?? $gps['ci'] ?? $firstBaseStation['ci'] ?? $firstBaseStation['cellId'] ?? null),
-            'accuracyMeters' => FeatureNormalizer::float($payload['accuracy'] ?? $payload['accuracyMeters'] ?? null),
+            'accuracyMeters' => Values::float($payload['accuracy'] ?? $payload['accuracyMeters'] ?? null),
         ], static fn (mixed $value): bool => $value !== null && $value !== '');
 
         $meaningfulLocation = array_diff_key($location, ['hasCoordinates' => true]);
@@ -176,9 +178,9 @@ final class LocationNormalizer
                     $station['signalStrengthDbm'] ?? $station['signalDbm'] ?? $station['rssiDbm'] ?? null,
                     $station['gsmSignal'] ?? $station['rxlev'] ?? null,
                 ),
-                'sid' => FeatureNormalizer::int($station['sid'] ?? $station['systemId'] ?? null),
-                'nid' => FeatureNormalizer::int($station['nid'] ?? $station['networkId'] ?? null),
-                'bid' => FeatureNormalizer::int($station['bid'] ?? $station['baseStationId'] ?? null),
+                'sid' => Values::int($station['sid'] ?? $station['systemId'] ?? null),
+                'nid' => Values::int($station['nid'] ?? $station['networkId'] ?? null),
+                'bid' => Values::int($station['bid'] ?? $station['baseStationId'] ?? null),
             ], static fn (mixed $value): bool => $value !== null && $value !== '');
 
             if ($entry !== []) {
@@ -208,8 +210,8 @@ final class LocationNormalizer
                     $point['signalStrengthDbm'] ?? $point['signalDbm'] ?? null,
                     $point['signal'] ?? $point['rssi'] ?? null,
                 ),
-                'channel' => FeatureNormalizer::int($point['channel'] ?? null),
-                'frequencyMhz' => FeatureNormalizer::int($point['frequencyMhz'] ?? $point['frequency'] ?? null),
+                'channel' => Values::int($point['channel'] ?? null),
+                'frequencyMhz' => Values::int($point['frequencyMhz'] ?? $point['frequency'] ?? null),
             ], static fn (mixed $value): bool => $value !== null && $value !== '');
 
             if ($entry !== []) {
@@ -259,12 +261,12 @@ final class LocationNormalizer
 
     private static function normalizeDbm(mixed $explicit, mixed $legacy): ?int
     {
-        $value = FeatureNormalizer::int($explicit);
+        $value = Values::int($explicit);
         if ($value !== null) {
             return $value < 0 ? $value : null;
         }
 
-        $value = FeatureNormalizer::int($legacy);
+        $value = Values::int($legacy);
         return $value !== null && $value < 0 ? $value : null;
     }
 

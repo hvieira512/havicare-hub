@@ -117,7 +117,7 @@ final class RelayPublisher
         $cameOnline = $this->deviceStore?->deviceSeen($deviceKey, [
             'supplier' => (string)$device['supplier'], 'model' => (string)$device['model'],
             'deviceType' => $deviceType, 'licenseId' => $licenseId, 'company' => $company,
-            'protocol' => $protocol, 'transport' => 'ble_gateway', 'online' => '1', 'gatewayId' => (string)$gateway['imei'],
+            'protocol' => $protocol, 'transport' => 'ble_gateway', 'gatewayId' => (string)$gateway['imei'],
         ]);
         // Desligado dá-o a manutenção do hub, quando nenhum gateway o ouve durante o prazo.
         if ($cameOnline === true) {

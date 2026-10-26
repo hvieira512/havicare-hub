@@ -103,7 +103,6 @@ final class NcsBridge extends MqttBridgeBase
             'company' => $company,
             'protocol' => 'voerka-ncs',
             'transport' => 'mqtt',
-            'online' => '1',
         ]);
         $this->deviceStore?->append($deviceKey, 'raw', array_merge($normalized['raw'], [
             'deviceType' => $deviceType,

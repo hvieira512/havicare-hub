@@ -145,20 +145,9 @@ final class GenericCapability implements CapabilityContract
         return trim((string)$entry['key']);
     }
 
-    /**
-     * A linha do catálogo do protocolo que corresponde a esta chave genérica.
-     *
-     * @return array<string, mixed>|null
-     */
+    /** @return array<string, mixed>|null */
     private function findConfigEntry(string $protocol): ?array
     {
-        foreach (DeviceConfigurationCatalog::configsForProtocol($protocol) as $entry) {
-            $nativeKey = trim((string)($entry['key'] ?? ''));
-            if ($nativeKey !== '' && CapabilityCatalog::mapConfigurationKey($nativeKey) === $this->genericKey) {
-                return $entry;
-            }
-        }
-
-        return null;
+        return DeviceConfigurationCatalog::entryForCapability($protocol, $this->genericKey);
     }
 }

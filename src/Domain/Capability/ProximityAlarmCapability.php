@@ -37,6 +37,10 @@ final class ProximityAlarmCapability implements CapabilityContract, CapabilityIn
 
     public function toNative(string $protocol, mixed $value): array
     {
+        if (!in_array($protocol, $this->supportedProtocols(), true)) {
+            throw new \InvalidArgumentException("Unsupported protocol {$protocol} for proximity_alert");
+        }
+
         throw new \InvalidArgumentException('proximity_alert is applied by the hub and has no native command');
     }
 

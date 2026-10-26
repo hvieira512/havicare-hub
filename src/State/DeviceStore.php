@@ -212,6 +212,12 @@ final class DeviceStore implements DeviceStoreContract
         $this->updates->notify($imei);
     }
 
+    public function markDispatched(string $imei, string $id): void
+    {
+        $this->commands->markDispatched($imei, $id);
+        $this->updates->notify($imei);
+    }
+
     public function isCurrentOperation(string $operationId): bool
     {
         return $this->commands->isCurrentOperation($operationId);

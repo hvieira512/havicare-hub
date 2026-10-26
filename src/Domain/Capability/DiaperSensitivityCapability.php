@@ -40,6 +40,10 @@ final class DiaperSensitivityCapability implements CapabilityContract, Capabilit
      */
     public function toNative(string $protocol, mixed $value): array
     {
+        if (!in_array($protocol, $this->supportedProtocols(), true)) {
+            throw new \InvalidArgumentException("Unsupported protocol {$protocol} for diaper_sensitivity");
+        }
+
         throw new \InvalidArgumentException(
             'diaper_sensitivity is applied by the hub and has no native command'
         );

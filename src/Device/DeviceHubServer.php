@@ -570,13 +570,7 @@ class DeviceHubServer
                 // O pedido encontra-se pelo seu identificador; o tipo da trama não é o nome com que foi registado.
                 $commandId = $operationId !== '' ? $operationId : (is_array($downlink->command) ? (string)($downlink->command['id'] ?? '') : '');
                 if ($commandId !== '') {
-                    $record = $this->deviceStore?->findCommand($commandId)['command'] ?? [];
-                    // Sem resposta prevista, sair é o fim; com ela, a repetição conta o prazo a partir de agora.
-                    $this->deviceStore?->markCommand($session->imei, $commandId, [
-                        'status' => ($record['expectedReplyTypes'] ?? null) === [] ? 'sent' : 'waiting',
-                        'sentAt' => gmdate('Y-m-d\\TH:i:s\\Z'),
-                        'nextRetryAt' => gmdate('Y-m-d\\TH:i:s\\Z', time() + (int)($record['retryDelaySeconds'] ?? 60)),
-                    ]);
+                    $this->deviceStore?->markDispatched($session->imei, $commandId);
                 } elseif ($nativeType !== '') {
                     $this->deviceStore?->markLatestCommand($session->imei, $nativeType, [
                         'status' => 'waiting',
@@ -627,7 +621,6 @@ class DeviceHubServer
                     'deviceType' => $session->deviceType,
                     'licenseId' => $current['licenseId'],
                     'company' => $current['company'],
-                    'online' => '1',
                 ]);
             } elseif ($state === 'offline') {
                 $this->deviceStore?->deviceOffline($session->imei);
@@ -681,7 +674,6 @@ class DeviceHubServer
                 ...$this->owner($session),
                 'protocol' => $session->protocol,
                 'transport' => 'tcp',
-                'online' => '1',
                 'lastConnectionId' => $connectionId,
             ]);
         } catch (\Throwable $e) {

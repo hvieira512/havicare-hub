@@ -22,13 +22,13 @@ final class DeviceConfigurationRepositoryTest extends MysqlDashboardTestCase
         $this->repository = new DeviceConfigurationRepository($this->pdo);
     }
 
-    public function testSaveReportedCanonicalizesVivistarAliases(): void
+    public function testSaveReportedStoresTheNativeKeyUnderItsGenericName(): void
     {
         $this->repository->saveReported(
             '861265061009822',
-            'whitelistSwitch',
-            'vivistar-iw',
-            'BP84',
+            'rejectUnknownCalls',
+            'four-p-touch',
+            'BPXZ',
             ['enabled' => true]
         );
 

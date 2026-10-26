@@ -217,7 +217,6 @@ final class DeviceConfigurationCatalogTest extends TestCase
 
         self::assertSame('call_whitelist', CapabilityCatalog::mapConfigurationKey('call_whitelist'));
         self::assertSame('sos_contacts', CapabilityCatalog::mapConfigurationKey('SOSNumber'));
-        self::assertSame('whitelist_enabled', CapabilityCatalog::mapConfigurationKey('whitelistSwitch'));
         self::assertSame('whitelist_enabled', CapabilityCatalog::mapConfigurationKey('rejectUnknownCalls'));
 
         $fourPTouch = DeviceConfigurationCatalog::configForProtocol('four-p-touch', 'alarmClock');

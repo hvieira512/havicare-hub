@@ -66,14 +66,6 @@ final class CapabilityCatalog
     /**
      * @return list<string>
      */
-    public static function keys(): array
-    {
-        return self::keysForDeviceType('watch');
-    }
-
-    /**
-     * @return list<string>
-     */
     public static function keysForDeviceType(string $deviceType): array
     {
         $keys = [];
@@ -275,7 +267,7 @@ final class CapabilityCatalog
             return $key;
         }
 
-        return self::mapTelemetryFeature($key) ?? self::mapConfigurationKey($key);
+        return self::mapConfigurationKey($key);
     }
 
     public static function sectionForCapabilityKey(string $key): ?string
@@ -320,11 +312,7 @@ final class CapabilityCatalog
     {
         $key = trim($key);
 
-        // Sem definição em nenhum catálogo, mas ainda nomes aceites do interruptor da lista branca.
-        $aliases = ['whitelistSwitch' => 'whitelist_enabled', 'callInRestriction' => 'whitelist_enabled'];
-
         return DeviceConfigurationCatalog::capabilityKeys()[$key]
-            ?? $aliases[$key]
             ?? (self::isCatalogKey($key) ? $key : null);
     }
 

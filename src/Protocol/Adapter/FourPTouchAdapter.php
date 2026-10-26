@@ -156,21 +156,21 @@ class FourPTouchAdapter implements DeviceAdapterInterface
 
         $data = array_merge($data, match ($type) {
             'LK' => [
-                'steps' => $this->int($fields[0] ?? null),
-                'tumblingCount' => $this->int($fields[1] ?? null),
-                'batteryPercent' => $this->int($fields[2] ?? null),
+                'steps' => Values::int($fields[0] ?? null),
+                'tumblingCount' => Values::int($fields[1] ?? null),
+                'batteryPercent' => Values::int($fields[2] ?? null),
             ],
             'bphrt' => [
-                'systolic' => $this->int($fields[0] ?? null),
-                'diastolic' => $this->int($fields[1] ?? null),
-                'heartRate' => $this->int($fields[2] ?? null),
-                'heightCm' => $this->int($fields[3] ?? null),
+                'systolic' => Values::int($fields[0] ?? null),
+                'diastolic' => Values::int($fields[1] ?? null),
+                'heartRate' => Values::int($fields[2] ?? null),
+                'heightCm' => Values::int($fields[3] ?? null),
                 'gender' => $this->gender($fields[4] ?? null),
-                'age' => $this->int($fields[5] ?? null),
-                'weightKg' => $this->int($fields[6] ?? null),
+                'age' => Values::int($fields[5] ?? null),
+                'weightKg' => Values::int($fields[6] ?? null),
             ],
-            'oxygen' => ['measureType' => $this->int($fields[0] ?? null), 'spo2' => $this->int($fields[1] ?? null)],
-            'btemp2' => ['measureType' => $this->int($fields[0] ?? null), 'temp' => $this->float($fields[1] ?? null)],
+            'oxygen' => ['measureType' => Values::int($fields[0] ?? null), 'spo2' => Values::int($fields[1] ?? null)],
+            'btemp2' => ['measureType' => Values::int($fields[0] ?? null), 'temp' => Values::float($fields[1] ?? null)],
             'CONFIG' => ['configAck' => $fields[0] ?? null] + self::configs($fields),
             'TAKEPILLS' => ['configAck' => $fields[0] ?? null],
             // A palavra-passe da rede, no campo 1, não se descodifica nem se repete.
@@ -252,7 +252,7 @@ class FourPTouchAdapter implements DeviceAdapterInterface
     private function enrichPosition(string $type, array $fields, array &$data): void
     {
         $gpsValid = strtoupper((string) ($fields[2] ?? '')) === 'A';
-        $baseStationCount = max(0, $this->int($fields[16] ?? null) ?? 0);
+        $baseStationCount = max(0, Values::int($fields[16] ?? null) ?? 0);
 
         $data['date'] = $fields[0] ?? null;
         $data['timeUtc'] = $fields[1] ?? null;
@@ -260,16 +260,16 @@ class FourPTouchAdapter implements DeviceAdapterInterface
         $data['source'] = $gpsValid ? 'gps' : 'lbs_wifi';
         $data['lat'] = $this->coordinate($fields[3] ?? null, $fields[4] ?? null);
         $data['lon'] = $this->coordinate($fields[5] ?? null, $fields[6] ?? null);
-        $data['speed'] = $this->float($fields[7] ?? null);
-        $data['direction'] = $this->float($fields[8] ?? null);
-        $data['altitude'] = $this->float($fields[9] ?? null);
-        $data['satellites'] = $this->int($fields[10] ?? null);
-        $data['gsmSignal'] = $this->int($fields[11] ?? null);
-        $data['batteryPercent'] = $this->int($fields[12] ?? null);
-        $data['steps'] = $this->int($fields[13] ?? null);
-        $data['tumblingCount'] = $this->int($fields[14] ?? null);
+        $data['speed'] = Values::float($fields[7] ?? null);
+        $data['direction'] = Values::float($fields[8] ?? null);
+        $data['altitude'] = Values::float($fields[9] ?? null);
+        $data['satellites'] = Values::int($fields[10] ?? null);
+        $data['gsmSignal'] = Values::int($fields[11] ?? null);
+        $data['batteryPercent'] = Values::int($fields[12] ?? null);
+        $data['steps'] = Values::int($fields[13] ?? null);
+        $data['tumblingCount'] = Values::int($fields[14] ?? null);
         $data['baseStationCount'] = $fields[16] ?? null;
-        $data['connectedBaseStationCount'] = $this->int($fields[17] ?? null);
+        $data['connectedBaseStationCount'] = Values::int($fields[17] ?? null);
         $data['networkType'] = $this->networkTypeFromType($type);
         $data['mcc'] = isset($fields[18]) ? (string) $fields[18] : null;
         $data['mnc'] = isset($fields[19]) ? (string) $fields[19] : null;
@@ -290,7 +290,7 @@ class FourPTouchAdapter implements DeviceAdapterInterface
             $baseStations[] = array_filter([
                 'lac' => $this->stringField($fields[$cursor] ?? null),
                 'cellId' => $this->stringField($fields[$cursor + 1] ?? null),
-                'gsmSignal' => $this->int($fields[$cursor + 2] ?? null),
+                'gsmSignal' => Values::int($fields[$cursor + 2] ?? null),
             ], static fn (mixed $value): bool => $value !== null && $value !== '');
 
             $cursor += 3;
@@ -309,7 +309,7 @@ class FourPTouchAdapter implements DeviceAdapterInterface
         if ($remaining !== []) {
             $last = end($remaining);
             if (is_numeric((string) $last)) {
-                $accuracy = $this->float($last);
+                $accuracy = Values::float($last);
                 array_pop($remaining);
             }
         }
@@ -319,7 +319,7 @@ class FourPTouchAdapter implements DeviceAdapterInterface
         }
 
         if ($remaining !== []) {
-            $wifiCount = $this->int($remaining[0] ?? null);
+            $wifiCount = Values::int($remaining[0] ?? null);
             if ($wifiCount !== null) {
                 $data['wifiCount'] = $wifiCount;
                 $wifiFields = array_slice($remaining, 1);
@@ -333,7 +333,7 @@ class FourPTouchAdapter implements DeviceAdapterInterface
                     $wifi[] = array_filter([
                         'label' => $this->stringField($wifiFields[$offset] ?? null),
                         'mac' => $this->stringField($wifiFields[$offset + 1] ?? null),
-                        'signal' => $this->int($wifiFields[$offset + 2] ?? null),
+                        'signal' => Values::int($wifiFields[$offset + 2] ?? null),
                     ], static fn (mixed $value): bool => $value !== null && $value !== '');
                 }
 
@@ -359,7 +359,7 @@ class FourPTouchAdapter implements DeviceAdapterInterface
 
     private function coordinate(mixed $value, mixed $direction): ?float
     {
-        $float = $this->float($value);
+        $float = Values::float($value);
         if ($float === null) {
             return null;
         }
@@ -385,16 +385,6 @@ class FourPTouchAdapter implements DeviceAdapterInterface
             str_ends_with($type, '_WCDMA') => 'WCDMA',
             default => 'GSM',
         };
-    }
-
-    private function int(mixed $value): ?int
-    {
-        return $value === null || $value === '' || !is_numeric((string) $value) ? null : (int) $value;
-    }
-
-    private function float(mixed $value): ?float
-    {
-        return $value === null || $value === '' || !is_numeric((string) $value) ? null : (float) $value;
     }
 
     private function gender(mixed $value): ?string

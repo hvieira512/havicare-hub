@@ -120,7 +120,7 @@ final class MokoBridge extends MqttBridgeBase implements DispatchesQueued
                 'supplier' => (string)$gateway['supplier'], 'model' => (string)$gateway['model'],
                 'deviceType' => 'gateway', 'licenseId' => DeviceMetadata::normalizeLicenseId($gateway['licenseId'] ?? 0),
                 'company' => (string)($gateway['company'] ?? 'null'),
-                'protocol' => 'havicare-ble-gateway', 'transport' => 'mqtt', 'online' => '1',
+                'protocol' => 'havicare-ble-gateway', 'transport' => 'mqtt',
             ]);
         }
         $this->gateways->markOnline($this->enrichWithCommercialName($gateway), $cameOnline === true);
@@ -273,7 +273,7 @@ final class MokoBridge extends MqttBridgeBase implements DispatchesQueued
         $cameOnline = $this->deviceStore?->deviceSeen($deviceKey, [
             'supplier' => (string)$gateway['supplier'], 'model' => (string)$gateway['model'],
             'deviceType' => $deviceType, 'licenseId' => $licenseId, 'company' => $company,
-            'protocol' => $protocol, 'transport' => 'mqtt', 'online' => '1',
+            'protocol' => $protocol, 'transport' => 'mqtt',
         ]);
         // Os scans ficam fora do histórico do gateway: descrevem os retransmitidos, que têm o seu.
         if (!in_array((string)$decoded['messageId'], self::SCAN_MESSAGE_IDS, true)) {

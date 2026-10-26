@@ -31,4 +31,15 @@ final class Values
 
         return $values[intdiv(count($values), 2)];
     }
+
+    /** Um número solto de uma trama, ou `null` quando o campo não traz número. */
+    public static function int(mixed $value): ?int
+    {
+        return $value === null || $value === '' || !is_numeric((string)$value) ? null : (int)$value;
+    }
+
+    public static function float(mixed $value): ?float
+    {
+        return $value === null || $value === '' || !is_numeric((string)$value) ? null : (float)$value;
+    }
 }

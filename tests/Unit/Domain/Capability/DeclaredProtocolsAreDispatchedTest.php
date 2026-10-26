@@ -74,7 +74,7 @@ final class DeclaredProtocolsAreDispatchedTest extends TestCase
         $wrong = [];
         $checked = 0;
 
-        foreach (CapabilityCatalog::keys() as $key) {
+        foreach (array_unique(array_column(CapabilityCatalog::definitions(), 'key')) as $key) {
             $contract = $registry->get($key);
             if ($contract === null) {
                 continue;

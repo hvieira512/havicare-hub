@@ -130,7 +130,6 @@ final class BridgeW6Test extends TestCase
         self::assertArrayHasKey(self::BRACELET, $seen);
         self::assertSame('moko-w6', $seen[self::BRACELET]['protocol']);
         self::assertSame('bracelet', $seen[self::BRACELET]['deviceType']);
-        self::assertSame('1', $seen[self::BRACELET]['online']);
     }
 
     public function testTheAccelerometerFramePublishesBatteryAndMotion(): void

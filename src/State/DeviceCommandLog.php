@@ -16,6 +16,9 @@ interface DeviceCommandLog
     /** @param array<string, mixed> $fields */
     public function markCommand(string $imei, string $id, array $fields): void;
 
+    /** O comando saiu agora para o aparelho. */
+    public function markDispatched(string $imei, string $id): void;
+
     public function isCurrentOperation(string $operationId): bool;
 
     public function markCommandReply(

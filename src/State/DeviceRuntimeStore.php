@@ -92,6 +92,7 @@ final class DeviceRuntimeStore
         $now = gmdate('Y-m-d\\TH:i:s\\Z');
         $payload = array_merge($fields, [
             'imei' => $imei,
+            'online' => '1',
             'lastSeenAt' => $now,
         ]);
         $score = time();

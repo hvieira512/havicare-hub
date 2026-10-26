@@ -326,6 +326,17 @@ final class DeviceCommandStore
         }
     }
 
+    /** Sem resposta prevista, sair é o fim; com ela, a repetição conta o prazo a partir de agora. */
+    public function markDispatched(string $imei, string $id): void
+    {
+        $record = $this->findCommand($id)['command'] ?? [];
+        $this->markCommand($imei, $id, [
+            'status' => ($record['expectedReplyTypes'] ?? null) === [] ? 'sent' : 'waiting',
+            'sentAt' => gmdate('Y-m-d\\TH:i:s\\Z'),
+            'nextRetryAt' => gmdate('Y-m-d\\TH:i:s\\Z', time() + (int)($record['retryDelaySeconds'] ?? 60)),
+        ]);
+    }
+
     /** @param array<string, mixed> $fields */
     public function markCommand(string $imei, string $id, array $fields): void
     {

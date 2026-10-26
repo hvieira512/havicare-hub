@@ -75,8 +75,8 @@ final class FeatureNormalizer
         }
 
         return Values::withoutNulls([
-            'systolicMmHg' => self::int($payload['systolic'] ?? $payload['systolicMmHg'] ?? $payload['sbp'] ?? null),
-            'diastolicMmHg' => self::int($payload['diastolic'] ?? $payload['diastolicMmHg'] ?? $payload['dbp'] ?? null),
+            'systolicMmHg' => Values::int($payload['systolic'] ?? $payload['systolicMmHg'] ?? $payload['sbp'] ?? null),
+            'diastolicMmHg' => Values::int($payload['diastolic'] ?? $payload['diastolicMmHg'] ?? $payload['dbp'] ?? null),
         ]);
     }
 
@@ -150,9 +150,9 @@ final class FeatureNormalizer
         if (is_string($value) && str_contains($value, '/')) {
             $parts = explode('/', $value);
             return Values::withoutNulls([
-                'bodyCelsius' => self::float($parts[0] ?? null),
-                'surfaceCelsius' => self::float($parts[1] ?? null),
-                'environmentCelsius' => self::float($parts[2] ?? null),
+                'bodyCelsius' => Values::float($parts[0] ?? null),
+                'surfaceCelsius' => Values::float($parts[1] ?? null),
+                'environmentCelsius' => Values::float($parts[2] ?? null),
             ]);
         }
 
@@ -166,12 +166,12 @@ final class FeatureNormalizer
     private static function battery(array $payload): array
     {
         $value = self::first($payload, ['batteryPercent', 'battery', 'batteryLevel', 'power', 'value']);
-        $charging = self::int($payload['batteryState'] ?? null);
+        $charging = Values::int($payload['batteryState'] ?? null);
 
         return Values::withoutNulls([
             'percent' => $value === null ? null : (int)$value,
             'charging' => $charging === null ? null : $charging === 1,
-            'reportReason' => self::WONLEX_REPORT_REASONS[self::int($payload['batteryType'] ?? null) ?? -1] ?? null,
+            'reportReason' => self::WONLEX_REPORT_REASONS[Values::int($payload['batteryType'] ?? null) ?? -1] ?? null,
             'lowBattery' => self::lowBattery($payload),
         ]);
     }
@@ -188,7 +188,7 @@ final class FeatureNormalizer
             return $payload['batteryLow'];
         }
 
-        return self::int($payload['batteryType'] ?? null) === self::WONLEX_LOW_POWER_REPORT ? true : null;
+        return Values::int($payload['batteryType'] ?? null) === self::WONLEX_LOW_POWER_REPORT ? true : null;
     }
 
     /**
@@ -198,12 +198,12 @@ final class FeatureNormalizer
     private static function activity(array $payload): array
     {
         return Values::withoutNulls([
-            'steps' => self::int($payload['steps'] ?? $payload['step'] ?? null),
-            'distanceMeters' => self::float($payload['distanceMeters'] ?? $payload['distance'] ?? null),
-            'distanceKm' => self::float($payload['mileage'] ?? null),
-            'caloriesKcal' => self::float($payload['caloriesKcal'] ?? $payload['kcal'] ?? $payload['calories'] ?? $payload['consumed'] ?? null),
-            'exerciseSeconds' => self::int($payload['exerciseSeconds'] ?? $payload['exerciseTime'] ?? null),
-            'standMinutes' => self::int($payload['standMinutes'] ?? $payload['standTime'] ?? null),
+            'steps' => Values::int($payload['steps'] ?? $payload['step'] ?? null),
+            'distanceMeters' => Values::float($payload['distanceMeters'] ?? $payload['distance'] ?? null),
+            'distanceKm' => Values::float($payload['mileage'] ?? null),
+            'caloriesKcal' => Values::float($payload['caloriesKcal'] ?? $payload['kcal'] ?? $payload['calories'] ?? $payload['consumed'] ?? null),
+            'exerciseSeconds' => Values::int($payload['exerciseSeconds'] ?? $payload['exerciseTime'] ?? null),
+            'standMinutes' => Values::int($payload['standMinutes'] ?? $payload['standTime'] ?? null),
         ]);
     }
 
@@ -292,7 +292,7 @@ final class FeatureNormalizer
 
     private static function validEpochMilliseconds(mixed $value): ?int
     {
-        $timestamp = self::int($value);
+        $timestamp = Values::int($value);
         if ($timestamp === null || $timestamp < 946684800000 || $timestamp > 4102444800000) {
             return null;
         }
@@ -331,10 +331,10 @@ final class FeatureNormalizer
 
         return Values::withoutNulls([
             $field => $samples !== [] ? $samples : null,
-            'frequencyHz' => self::int($payload['frequency'] ?? $payload['Frequency'] ?? null),
+            'frequencyHz' => Values::int($payload['frequency'] ?? $payload['Frequency'] ?? null),
             'collectionId' => self::stringOrNull($payload['collectionLogo'] ?? null),
             'startedAt' => self::instantFromMilliseconds(self::validEpochMilliseconds($payload['dataStartTime'] ?? $payload['Data start time'] ?? null)),
-            'block' => self::int($payload['block'] ?? null),
+            'block' => Values::int($payload['block'] ?? null),
         ]);
     }
 
@@ -359,7 +359,7 @@ final class FeatureNormalizer
 
         return Values::withoutNulls([
             'intervals' => $intervals !== [] ? $intervals : null,
-            'frequencyHz' => self::int($payload['frequency'] ?? $payload['Frequency'] ?? null),
+            'frequencyHz' => Values::int($payload['frequency'] ?? $payload['Frequency'] ?? null),
             'collectionId' => self::stringOrNull($payload['collectionLogo'] ?? null),
         ]);
     }
@@ -446,21 +446,10 @@ final class FeatureNormalizer
         return null;
     }
 
-    /** Público porque o `LocationNormalizer` lê os mesmos campos soltos. */
-    public static function int(mixed $value): ?int
-    {
-        return $value === null || $value === '' || !is_numeric((string)$value) ? null : (int)$value;
-    }
-
-    /** Público porque o `LocationNormalizer` lê os mesmos campos soltos. */
-    public static function float(mixed $value): ?float
-    {
-        return $value === null || $value === '' || !is_numeric((string)$value) ? null : (float)$value;
-    }
 
     private static function number(mixed $value): int|float|null
     {
-        $number = self::float($value);
+        $number = Values::float($value);
         if ($number === null) {
             return null;
         }
