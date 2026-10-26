@@ -1,18 +1,18 @@
 import { loadModelFilters } from "./shell.js";
-import { state } from "../state.js";
-import { html } from "../html.js";
+import { state } from "../core/state.js";
+import { html } from "../core/html.js";
 import { buttonGroup } from "../components/button-group.js";
 import { sectionStrip } from "../components/chips.js";
 import { deviceTypeTiles } from "../components/device-type-tiles.js";
 import { cardIcon } from "../components/cards/telemetry.js";
-import { CAPABILITY_SECTION_ICONS, ensureCapabilityCatalog, ensureModelTemplate } from "../capability-catalog.js";
+import { CAPABILITY_SECTION_ICONS, ensureCapabilityCatalog, ensureModelTemplate } from "../core/capability-catalog.js";
 import {
     capabilitiesGroupedBySection,
     deviceTypeOptions,
     normalizeDeviceType,
-} from "../domain.js";
-import { capabilityLabel, countLabel } from "../i18n.js";
-import { els } from "../dom.js";
+} from "../core/domain.js";
+import { capabilityLabel, countLabel } from "../core/i18n.js";
+import { els } from "../core/dom.js";
 
 /** O catálogo de um tipo de dispositivo, só de leitura; as que o fornecedor não declara ficam esbatidas. */
 const blankView = () => ({

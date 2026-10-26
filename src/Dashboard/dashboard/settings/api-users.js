@@ -3,18 +3,18 @@ import {
     getApiUsers as apiGetApiUsers,
     saveApiUser as apiSaveApiUser,
 } from "../api/index.js";
-import { ensureLicensesLoaded } from "../licenses.js";
+import { ensureLicensesLoaded } from "../core/licenses.js";
 import { stateBadge } from "../components/state-badge.js";
 import { rowActionsMenu } from "../components/row-actions-menu.js";
-import { state } from "../state.js";
-import { html } from "../html.js";
-import { apiError, confirmDestructive, promptPassword, reportApiError, toast } from "../dialogs.js";
-import { clearInvalid } from "../validation.js";
+import { state } from "../core/state.js";
+import { html } from "../core/html.js";
+import { apiError, confirmDestructive, promptPassword, reportApiError, toast } from "../core/dialogs.js";
+import { clearInvalid } from "../core/validation.js";
 import { handleSettingsPaginationClick, setSettingsNavCount } from "./shell.js";
-import { renderPagination } from "../pagination.js";
+import { renderPagination } from "../core/pagination.js";
 import { editorOf, focusEditor } from "./row-editor.js";
-import { countLabel } from "../i18n.js";
-import { els, whileBusy } from "../dom.js";
+import { countLabel } from "../core/i18n.js";
+import { els, whileBusy } from "../core/dom.js";
 
 /** Os utilizadores da API; a busca, os filtros e a paginação são do servidor. */
 let licenses = [];

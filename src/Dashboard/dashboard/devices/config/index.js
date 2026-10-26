@@ -1,5 +1,5 @@
-import { esc, fieldUnit } from "../../format.js";
-import { configText, verbLabel } from "../../i18n.js";
+import { esc, fieldUnit } from "../../core/format.js";
+import { configText, verbLabel } from "../../core/i18n.js";
 import { emptyPanel } from "../../components/empty-panel.js";
 import { stateBadge } from "../../components/state-badge.js";
 import {
@@ -7,7 +7,7 @@ import {
     renderConfigurationDeliveryNotice,
     resolveConfigDelivery,
 } from "./delivery.js";
-import { CAPABILITY_SECTION_ICONS } from "../../capability-catalog.js";
+import { CAPABILITY_SECTION_ICONS } from "../../core/capability-catalog.js";
 import { configCatalogSections } from "./catalog-model.js";
 import { CONFIG_INPUTS } from "./inputs/index.js";
 import { loadedCellsRunoutText } from "./loaded-cells-runout.js";

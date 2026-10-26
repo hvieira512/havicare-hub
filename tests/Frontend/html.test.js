@@ -2,14 +2,14 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import { parseFragment } from "./support/dom.js";
-import { html, raw } from "../../src/Dashboard/dashboard/html.js";
+import { html, raw } from "../../src/Dashboard/dashboard/core/html.js";
 import { field } from "../../src/Dashboard/dashboard/components/form-field.js";
 import { deviceLicenseBlock } from "../../src/Dashboard/dashboard/components/device-license.js";
 import { uplinkCardContent } from "../../src/Dashboard/dashboard/components/cards/telemetry.js";
 import { telemetryCard } from "../../src/Dashboard/dashboard/components/cards/shell.js";
 import { compactDetails, joinMarkup } from "../../src/Dashboard/dashboard/components/cards/shared.js";
 import { apiUserForm } from "../../src/Dashboard/dashboard/settings/api-users.js";
-import { state } from "../../src/Dashboard/dashboard/state.js";
+import { state } from "../../src/Dashboard/dashboard/core/state.js";
 
 /** O que se afirma é a marcação, e o `html` devolve um fragmento: comparar texto com texto. */
 const markup = (value) => String(value);

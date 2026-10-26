@@ -1,4 +1,4 @@
-/** Põe o `data-bs-theme` antes da primeira pintura; a chave é a do `storage.js`, escrita à mão. */
+/** Põe o `data-bs-theme` antes da primeira pintura; a chave é a do `core/storage.js`, escrita à mão. */
 (function () {
     try {
         const stored = localStorage.getItem("hub-dashboard-theme");

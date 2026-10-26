@@ -1,5 +1,5 @@
-import { areaName, areaTypeStyle, brandColor, postureStyle } from "../../radar-style.js";
-import { fieldValue } from "../../format.js";
+import { areaName, areaTypeStyle, brandColor, postureStyle } from "../../core/radar-style.js";
+import { fieldValue } from "../../core/format.js";
 
 /** A planta da divisão de um radar em Konva, com as formas já lidas pelo `LayoutParser`. */
 

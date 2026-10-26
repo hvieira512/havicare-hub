@@ -1,4 +1,4 @@
-import { html } from "../html.js";
+import { html } from "../core/html.js";
 
 /** Uma tira de pastilhas de secção. A acesa vem do estado e não do DOM, porque a tira é redesenhada. */
 export function sectionStrip(sections, action, activeKey = "") {

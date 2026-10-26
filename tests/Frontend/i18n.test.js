@@ -11,7 +11,7 @@ import {
     optionLabel,
     sectionLabel,
     weekdayLabel,
-} from "../../src/Dashboard/dashboard/i18n.js";
+} from "../../src/Dashboard/dashboard/core/i18n.js";
 
 /** Uma chave sem tradução diz isso em português, e nunca a chave inglesa. */
 test("a missing key shows a neutral Portuguese fallback", () => {

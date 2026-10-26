@@ -1,11 +1,11 @@
-import { deviceTypeLabel } from "../domain.js";
-import { state } from "../state.js";
+import { deviceTypeLabel } from "../core/domain.js";
+import { state } from "../core/state.js";
 import {
     classificationTrailHtml,
     licenseBadgeValue,
     licensePickerHtml,
 } from "./classification-ui.js";
-import { els } from "../dom.js";
+import { els } from "../core/dom.js";
 
 /** A classificação no modal de edição: a verdade vive nos elementos do formulário. */
 

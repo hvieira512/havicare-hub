@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { state } from "../../src/Dashboard/dashboard/state.js";
+import { state } from "../../src/Dashboard/dashboard/core/state.js";
 import { renderDeviceConfigurationRoot } from "../../src/Dashboard/dashboard/devices/config/index.js";
 import { parseFragment } from "./support/dom.js";
 

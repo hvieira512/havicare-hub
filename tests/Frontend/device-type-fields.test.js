@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { deviceTypeFields, deviceTypeOptions } from "../../src/Dashboard/dashboard/domain.js";
+import { deviceTypeFields, deviceTypeOptions } from "../../src/Dashboard/dashboard/core/domain.js";
 
 /** A forma de cada tipo prende-se no `DeviceTypeCatalogTest`; aqui só o que o JS acrescenta. */
 /** O que se lê é português; o nome do campo no fio é que não muda. */

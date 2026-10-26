@@ -1,8 +1,8 @@
-import { html } from "../../../html.js";
+import { html } from "../../../core/html.js";
 import { boolValue } from "../normalizers.js";
 import { readCheckbox, readNumber } from "../readers.js";
 import { choiceField, enabledSwitch, entryFieldLabel, entryText, fieldChoices, numberField, readChoice } from "./shared.js";
-import { countLabel } from "../../../i18n.js";
+import { countLabel } from "../../../core/i18n.js";
 
 const fieldsOf = (entry, count) => Array.from({ length: count }, (_, index) => entry.fields?.[index] ?? `value${index}`);
 

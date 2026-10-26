@@ -1,8 +1,8 @@
 /** Com o plano e a posição do prato, o «Carregado até ao compartimento» vira a data em que a medicação acaba. */
 
-import { runoutAt, runoutLabel } from "../medication-runout.js";
-import { state } from "../../state.js";
-import { countLabel } from "../../i18n.js";
+import { runoutAt, runoutLabel } from "../../core/medication-runout.js";
+import { state } from "../../core/state.js";
+import { countLabel } from "../../core/i18n.js";
 
 /** O modal só tem a configuração: a telemetria vem do selecionado, e só quando é o mesmo aparelho. */
 function modalDetail() {

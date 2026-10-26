@@ -2,10 +2,10 @@ import assert from "node:assert/strict";
 import test, { beforeEach } from "node:test";
 
 import { flush } from "./support/deferred-fetch.js";
-import { cacheElements } from "../../src/Dashboard/dashboard/dom.js";
+import { cacheElements } from "../../src/Dashboard/dashboard/core/dom.js";
 import { handleDeviceConfigChange } from "../../src/Dashboard/dashboard/devices/config/handlers.js";
 
-const { state } = await import("../../src/Dashboard/dashboard/state.js");
+const { state } = await import("../../src/Dashboard/dashboard/core/state.js");
 const { renderDeviceConfigurationModal, saveDeviceConfiguration } =
     await import("../../src/Dashboard/dashboard/devices/config/panel.js");
 

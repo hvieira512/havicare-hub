@@ -1,8 +1,8 @@
-import { capabilityLabel } from "../../capability-catalog.js";
-import { UNTRANSLATED } from "../../i18n.js";
-import { rowPayload, when } from "../../format.js";
-import { html } from "../../html.js";
-import { els, renderInto } from "../../dom.js";
+import { capabilityLabel } from "../../core/capability-catalog.js";
+import { UNTRANSLATED } from "../../core/i18n.js";
+import { rowPayload, when } from "../../core/format.js";
+import { html } from "../../core/html.js";
+import { els, renderInto } from "../../core/dom.js";
 import {
     blankDetailFilters,
     resetActivityPaging,
@@ -11,8 +11,8 @@ import {
     setTelemetryPage,
     state,
     updateDetailFiltersDraft,
-} from "../../state.js";
-import { resolvePaginationPage } from "../../pagination.js";
+} from "../../core/state.js";
+import { resolvePaginationPage } from "../../core/pagination.js";
 import { uplinkCardContent } from "../../components/cards/telemetry.js";
 import { filterChips } from "../../components/chips.js";
 

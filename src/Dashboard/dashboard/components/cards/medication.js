@@ -1,9 +1,9 @@
-import { fieldValue, hhmm } from "../../format.js";
-import { medicationPlanTimes } from "../../devices/medication-plan.js";
-import { html } from "../../html.js";
-import { runoutAt, runoutLabel } from "../../devices/medication-runout.js";
-import { state } from "../../state.js";
-import { countLabel } from "../../i18n.js";
+import { fieldValue, hhmm } from "../../core/format.js";
+import { medicationPlanTimes } from "../../core/medication-plan.js";
+import { html } from "../../core/html.js";
+import { runoutAt, runoutLabel } from "../../core/medication-runout.js";
+import { state } from "../../core/state.js";
+import { countLabel } from "../../core/i18n.js";
 
 /** A faixa do dia: uma coluna por dose, na ordem das horas do plano de medicação. */
 

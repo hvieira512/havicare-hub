@@ -7,10 +7,10 @@ window.setTimeout = () => 0;
 window.clearTimeout = () => {};
 
 const { ensureLicensesLoaded, invalidateLicenses } =
-    await import("../../src/Dashboard/dashboard/licenses.js");
+    await import("../../src/Dashboard/dashboard/core/licenses.js");
 const { ensureCapabilityCatalog } =
-    await import("../../src/Dashboard/dashboard/capability-catalog.js");
-const { state } = await import("../../src/Dashboard/dashboard/state.js");
+    await import("../../src/Dashboard/dashboard/core/capability-catalog.js");
+const { state } = await import("../../src/Dashboard/dashboard/core/state.js");
 
 /**
  * As licenças e o catálogo de capacidades são as caches partilhadas: guardam o que chegou,

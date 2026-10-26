@@ -1,5 +1,5 @@
-import { fieldLabel, fieldValue } from "../../format.js";
-import { html } from "../../html.js";
+import { fieldLabel, fieldValue } from "../../core/format.js";
+import { html } from "../../core/html.js";
 
 export function compactDetails(data, keys) {
     return joinMarkup(

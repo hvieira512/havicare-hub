@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { areaName, areaTypeStyle } from "../../src/Dashboard/dashboard/radar-style.js";
+import { areaName, areaTypeStyle } from "../../src/Dashboard/dashboard/core/radar-style.js";
 
 /** Os nomes vêm do `baseList` do console do fabricante. */
 test("the area type shows the manufacturer's name for it", () => {

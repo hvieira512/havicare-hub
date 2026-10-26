@@ -1,5 +1,5 @@
-import { changeDeviceFilter, setDeviceFilters, state } from "../state.js";
-import { html } from "../html.js";
+import { changeDeviceFilter, setDeviceFilters, state } from "../core/state.js";
+import { html } from "../core/html.js";
 import { filterChips } from "../components/chips.js";
 import { filterBranch, filterOption } from "../components/filter-tree.js";
 import { deviceTypeTiles } from "../components/device-type-tiles.js";
@@ -10,8 +10,8 @@ import {
     licenseDisplayLabel,
     modelDisplayName,
     normalizeDeviceType,
-} from "../domain.js";
-import { els } from "../dom.js";
+} from "../core/domain.js";
+import { els } from "../core/dom.js";
 import { loadSummary } from "./list.js";
 
 /** O painel de filtros da listagem. */

@@ -1,8 +1,8 @@
-import { displayPersonIndex, fieldLabel, fieldValue, formatNumber, hhmm, timeOnly } from "../../format.js";
-import { fallLabel, zoneLabel } from "../../domain.js";
-import { html } from "../../html.js";
+import { displayPersonIndex, fieldLabel, fieldValue, formatNumber, hhmm, timeOnly } from "../../core/format.js";
+import { fallLabel, zoneLabel } from "../../core/domain.js";
+import { html } from "../../core/html.js";
 import { compactDetails, joinMarkup } from "./shared.js";
-import { state } from "../../state.js";
+import { state } from "../../core/state.js";
 import { connectivityIcon, connectivityValue } from "./gateway.js";
 import { diaperMoistureBody, diaperMoistureRowValue } from "./diaper.js";
 import { cyclePosition, cycleRunout, doseLabel, doseName, medicationAlarmContent } from "./medication.js";
@@ -18,8 +18,8 @@ import {
     radarVitalsMinuteStatsDetails,
     radarVitalsMinuteStatsValue,
 } from "./radar.js";
-import { capabilityLabel } from "../../capability-catalog.js";
-import { countLabel, valueLabel } from "../../i18n.js";
+import { capabilityLabel } from "../../core/capability-catalog.js";
+import { countLabel, valueLabel } from "../../core/i18n.js";
 
 /** Um número com a vírgula decimal portuguesa; o «-» de quando falta fica como está. */
 const num = (value) => (value === null || value === undefined || value === "" || value === "-" ? "-" : formatNumber(Number(value)));

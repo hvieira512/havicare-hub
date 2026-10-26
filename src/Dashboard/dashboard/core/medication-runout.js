@@ -4,7 +4,7 @@
  */
 
 import { medicationPlanTimes } from "./medication-plan.js";
-import { hhmm } from "../format.js";
+import { hhmm } from "./format.js";
 
 const WEEKDAYS = ["dom.", "seg.", "ter.", "qua.", "qui.", "sex.", "sáb."];
 const MONTHS = [

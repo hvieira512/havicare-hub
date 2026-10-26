@@ -1,6 +1,6 @@
-import { eventTime, rowPayload } from "../../format.js";
-import { valueLabel } from "../../i18n.js";
-import { capabilityLabel } from "../../capability-catalog.js";
+import { eventTime, rowPayload } from "../../core/format.js";
+import { valueLabel } from "../../core/i18n.js";
+import { capabilityLabel } from "../../core/capability-catalog.js";
 import { stateBadge } from "../state-badge.js";
 import { telemetryCard } from "./shell.js";
 import { cardIcon, cardTone, uplinkCardContent } from "./telemetry.js";

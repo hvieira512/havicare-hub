@@ -1,4 +1,4 @@
-import { html } from "../html.js";
+import { html } from "../core/html.js";
 
 /** Uma etiqueta com o seu controlo e a ajuda por baixo; o controlo vem construído com `html`. */
 export function field(label, control, { help = "", cls = "", required = false } = {}) {

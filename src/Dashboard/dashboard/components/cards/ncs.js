@@ -1,5 +1,5 @@
-import { capabilityLabel } from "../../capability-catalog.js";
-import { valueLabel } from "../../i18n.js";
+import { capabilityLabel } from "../../core/capability-catalog.js";
+import { valueLabel } from "../../core/i18n.js";
 
 export function helpCallContent(data) {
     const base = ncsPagerContent("help_call", data);

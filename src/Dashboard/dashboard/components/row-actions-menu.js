@@ -1,4 +1,4 @@
-import { html } from "../html.js";
+import { html } from "../core/html.js";
 
 /** Os verbos de uma linha num menu "⋮"; o `"divider"` separa o apagar do resto. */
 export function rowActionsMenu(label, items) {

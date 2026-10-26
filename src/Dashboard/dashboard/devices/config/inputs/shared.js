@@ -1,6 +1,6 @@
-import { html } from "../../../html.js";
-import { fieldUnit } from "../../../format.js";
-import { configFieldLabel, configText, optionDescription, optionLabel } from "../../../i18n.js";
+import { html } from "../../../core/html.js";
+import { fieldUnit } from "../../../core/format.js";
+import { configFieldLabel, configText, optionDescription, optionLabel } from "../../../core/i18n.js";
 import { boolValue } from "../normalizers.js";
 
 /** Só tem de ser único dentro da página. */

@@ -1,5 +1,5 @@
-import { areaName, areaTypeStyle } from "../../radar-style.js";
-import { html, raw } from "../../html.js";
+import { areaName, areaTypeStyle } from "../../core/radar-style.js";
+import { html, raw } from "../../core/html.js";
 import { stateBadge } from "../../components/state-badge.js";
 import {
     CREATABLE_TYPES,

@@ -3,9 +3,9 @@ import assert from "node:assert/strict";
 
 import { installDeferredFetch } from "./support/deferred-fetch.js";
 import { autoEls } from "./support/els.js";
-import { cacheElements } from "../../src/Dashboard/dashboard/dom.js";
+import { cacheElements } from "../../src/Dashboard/dashboard/core/dom.js";
 
-const { selectImei, setDeviceListPage, state } = await import("../../src/Dashboard/dashboard/state.js");
+const { selectImei, setDeviceListPage, state } = await import("../../src/Dashboard/dashboard/core/state.js");
 const { initDeviceList, loadDevice, loadSummary, selectDevice } =
     await import("../../src/Dashboard/dashboard/devices/list.js");
 

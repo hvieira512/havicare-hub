@@ -4,8 +4,8 @@ import {
     getProtocols as apiGetProtocols,
 } from "../api/index.js";
 import { getDeviceTypeSuppliersModels as apiGetDeviceTypeSuppliersModels } from "../api/index.js";
-import { ensureCapabilityCatalog } from "../capability-catalog.js";
-import { ensureLicensesLoaded } from "../licenses.js";
+import { ensureCapabilityCatalog } from "../core/capability-catalog.js";
+import { ensureLicensesLoaded } from "../core/licenses.js";
 import {
     state,
     clearSelection,
@@ -15,12 +15,12 @@ import {
     selectImei,
     setDeviceListPage,
     setSelectedDetail,
-} from "../state.js";
-import { html } from "../html.js";
+} from "../core/state.js";
+import { html } from "../core/html.js";
 import { emptyPanel } from "../components/empty-panel.js";
 import { deviceCard, deviceCardSkeletonList } from "./device-card.js";
-import { renderPagination, resolvePaginationPage } from "../pagination.js";
-import { normalizeDeviceType } from "../domain.js";
+import { renderPagination, resolvePaginationPage } from "../core/pagination.js";
+import { normalizeDeviceType } from "../core/domain.js";
 import {
     renderDeviceActiveFilters,
     renderDeviceFilterControls,
@@ -28,7 +28,7 @@ import {
 } from "./list-filters.js";
 import { renderSelection as renderSelectionDetail } from "./detail/detail.js";
 import { connectDeviceStream, disconnectDeviceStream, isDeviceStreamFor } from "./stream.js";
-import { els } from "../dom.js";
+import { els } from "../core/dom.js";
 
 /** A coluna da esquerda: a lista, a paginação, a busca e o modal de escolher dispositivo. */
 let ui;

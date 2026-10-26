@@ -21,7 +21,7 @@ const i18nIsland = dom.window.document.createElement("script");
 i18nIsland.type = "application/json";
 i18nIsland.id = "hub-i18n";
 i18nIsland.textContent = readFileSync(
-    fileURLToPath(new URL("../../../src/Dashboard/dashboard/pt-PT.json", import.meta.url)),
+    fileURLToPath(new URL("../../../src/Dashboard/dashboard/core/pt-PT.json", import.meta.url)),
     "utf8",
 );
 dom.window.document.body.appendChild(i18nIsland);

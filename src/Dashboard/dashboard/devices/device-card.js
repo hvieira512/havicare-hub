@@ -1,8 +1,8 @@
-import { html } from "../html.js";
+import { html } from "../core/html.js";
 import { deviceLicenseBlock } from "../components/device-license.js";
 import { presenceBadge, presenceOf } from "../components/state-badge.js";
-import { deviceTypeLabel, normalizeDeviceType } from "../domain.js";
-import { ago } from "../format.js";
+import { deviceTypeLabel, normalizeDeviceType } from "../core/domain.js";
+import { ago } from "../core/format.js";
 
 /** O cartão, o esqueleto e a acção; o ouvinte fica delegado na raiz da lista. */
 

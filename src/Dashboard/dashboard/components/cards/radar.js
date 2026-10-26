@@ -1,6 +1,6 @@
-import { displayPersonIndex, fieldValue, formatNumber } from "../../format.js";
-import { postureStyle } from "../../radar-style.js";
-import { html } from "../../html.js";
+import { displayPersonIndex, fieldValue, formatNumber } from "../../core/format.js";
+import { postureStyle } from "../../core/radar-style.js";
+import { html } from "../../core/html.js";
 import { compactDetails, joinMarkup } from "./shared.js";
 
 /** Quantas pessoas o radar vê, pelo `peopleCount` do hub: sem ninguém, diz «Ninguém» e não «Sem leituras». */

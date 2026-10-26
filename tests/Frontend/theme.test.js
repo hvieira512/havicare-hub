@@ -4,8 +4,8 @@ import assert from "node:assert/strict";
 import { setPrefersDark } from "./support/browser-env.js";
 
 const { applyTheme, initializeTheme, preferredTheme, DARK, LIGHT } =
-    await import("../../src/Dashboard/dashboard/theme.js");
-const { THEME_STORAGE_KEY } = await import("../../src/Dashboard/dashboard/storage.js");
+    await import("../../src/Dashboard/dashboard/core/theme.js");
+const { THEME_STORAGE_KEY } = await import("../../src/Dashboard/dashboard/core/storage.js");
 
 /**
  * O tema claro/escuro. O que se afirma aqui é o que o Bootstrap não faz por nós: qual o tema

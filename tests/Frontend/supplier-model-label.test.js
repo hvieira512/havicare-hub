@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-const { supplierModelLabel, supplierProtocol } = await import("../../src/Dashboard/dashboard/domain.js");
+const { supplierModelLabel, supplierProtocol } = await import("../../src/Dashboard/dashboard/core/domain.js");
 
 /**
  * Seis dos vinte modelos da frota já trazem o fornecedor no nome comercial, como o MONIT:

@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { cacheElements } from "../../src/Dashboard/dashboard/dom.js";
+import { cacheElements } from "../../src/Dashboard/dashboard/core/dom.js";
 
 /** O carrossel do Bootstrap, reduzido a pôr o `active` no painel pedido. */
 globalThis.bootstrap = {
@@ -14,7 +14,7 @@ globalThis.bootstrap = {
 
 globalThis.fetch = async () => Response.json({ data: [] });
 
-const { state } = await import("../../src/Dashboard/dashboard/state.js");
+const { state } = await import("../../src/Dashboard/dashboard/core/state.js");
 const { showModelsPane } = await import(
     "../../src/Dashboard/dashboard/settings/models/shell.js",
 );

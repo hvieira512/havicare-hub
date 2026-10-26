@@ -7,7 +7,7 @@ import {
     focusEditor,
     inlineEditor,
 } from "../../src/Dashboard/dashboard/settings/row-editor.js";
-import { whileBusy } from "../../src/Dashboard/dashboard/dom.js";
+import { whileBusy } from "../../src/Dashboard/dashboard/core/dom.js";
 
 /**
  * A vaga única do editor em linha, partilhada pelas listagens de empresa, licença e utilizador

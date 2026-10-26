@@ -3,9 +3,9 @@ import assert from "node:assert/strict";
 
 import { flush, installDeferredFetch } from "./support/deferred-fetch.js";
 import { autoEls } from "./support/els.js";
-import { cacheElements } from "../../src/Dashboard/dashboard/dom.js";
+import { cacheElements } from "../../src/Dashboard/dashboard/core/dom.js";
 
-const { blankDeviceModal, state } = await import("../../src/Dashboard/dashboard/state.js");
+const { blankDeviceModal, state } = await import("../../src/Dashboard/dashboard/core/state.js");
 const { editDevice, initDeviceModal, saveDevice } =
     await import("../../src/Dashboard/dashboard/devices/device-modal.js");
 

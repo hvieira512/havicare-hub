@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import { parseFragment } from "./support/dom.js";
-import { html } from "../../src/Dashboard/dashboard/html.js";
+import { html } from "../../src/Dashboard/dashboard/core/html.js";
 
 const { modelCardsHtml, ownerFromLicense } =
     await import("../../src/Dashboard/dashboard/devices/classification-ui.js");

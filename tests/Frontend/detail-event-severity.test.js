@@ -1,7 +1,7 @@
 import test, { beforeEach } from "node:test";
 import assert from "node:assert/strict";
 
-const { state } = await import("../../src/Dashboard/dashboard/state.js");
+const { state } = await import("../../src/Dashboard/dashboard/core/state.js");
 const { allDetailItems, detailFilterChipLabels, filterDetailItems } =
     await import("../../src/Dashboard/dashboard/devices/detail/detail-filters.js");
 

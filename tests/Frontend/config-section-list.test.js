@@ -11,8 +11,8 @@ import {
     handleDeviceConfigClick,
     selectConfigSection,
 } from "../../src/Dashboard/dashboard/devices/config/handlers.js";
-import { blankDeviceModal, state } from "../../src/Dashboard/dashboard/state.js";
-import { cacheElements } from "../../src/Dashboard/dashboard/dom.js";
+import { blankDeviceModal, state } from "../../src/Dashboard/dashboard/core/state.js";
+import { cacheElements } from "../../src/Dashboard/dashboard/core/dom.js";
 
 /** As secções variam por fornecedor e chegam a seis: em tira horizontal não cabem a 342 px. */
 

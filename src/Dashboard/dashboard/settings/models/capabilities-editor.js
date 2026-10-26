@@ -1,9 +1,9 @@
 import {
     saveModel as apiSaveModel,
 } from "../../api/index.js";
-import { state } from "../../state.js";
-import { html } from "../../html.js";
-import { apiError, toast } from "../../dialogs.js";
+import { state } from "../../core/state.js";
+import { html } from "../../core/html.js";
+import { apiError, toast } from "../../core/dialogs.js";
 import { sectionStrip } from "../../components/chips.js";
 import { modelPreviewHtml } from "../../components/model-image.js";
 import {
@@ -11,11 +11,11 @@ import {
     modelCommercialName,
     modelDeviceType,
     modelInternalName,
-} from "../../domain.js";
-import { capabilityLabel, countLabel } from "../../i18n.js";
-import { CAPABILITY_SECTION_ICONS } from "../../capability-catalog.js";
+} from "../../core/domain.js";
+import { capabilityLabel, countLabel } from "../../core/i18n.js";
+import { CAPABILITY_SECTION_ICONS } from "../../core/capability-catalog.js";
 import { backToModelList } from "./list.js";
-import { els } from "../../dom.js";
+import { els } from "../../core/dom.js";
 
 /** O editor das capacidades de um modelo: que suporta, e quais se podem pedir ao aparelho. */
 

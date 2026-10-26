@@ -1,4 +1,4 @@
-import { esc } from "../format.js";
+import { esc } from "../core/format.js";
 
 /** Quantos lugares tem a janela. Ímpar, para a página actual ficar ao centro. */
 const WINDOW_SLOTS = 7;

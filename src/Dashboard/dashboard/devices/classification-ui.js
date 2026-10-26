@@ -1,9 +1,9 @@
-import { html } from "../html.js";
+import { html } from "../core/html.js";
 import {
     companyLabel,
     modelCommercialName,
     modelInternalName,
-} from "../domain.js";
+} from "../core/domain.js";
 import { modelPreviewHtml } from "../components/model-image.js";
 import { cardGrid } from "../components/wizard-cards.js";
 import { filterBranch, filterOption } from "../components/filter-tree.js";

@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { autoEls } from "./support/els.js";
-import { cacheElements } from "../../src/Dashboard/dashboard/dom.js";
+import { cacheElements } from "../../src/Dashboard/dashboard/core/dom.js";
 
 const { bindDeviceEvents } = await import("../../src/Dashboard/dashboard/wiring/devices.js");
 

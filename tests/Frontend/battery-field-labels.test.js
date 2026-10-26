@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { fieldLabel, fieldValue } from "../../src/Dashboard/dashboard/format.js";
+import { fieldLabel, fieldValue } from "../../src/Dashboard/dashboard/core/format.js";
 
 test("the reason for sending a battery reading is in Portuguese", () => {
     assert.equal(fieldLabel("reportReason"), "Motivo do envio");

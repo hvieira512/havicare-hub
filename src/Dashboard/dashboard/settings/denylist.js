@@ -1,12 +1,12 @@
 import { getDenylist, unblockDevice } from "../api/index.js";
-import { state } from "../state.js";
-import { html } from "../html.js";
-import { ago } from "../format.js";
-import { apiError, toast } from "../dialogs.js";
+import { state } from "../core/state.js";
+import { html } from "../core/html.js";
+import { ago } from "../core/format.js";
+import { apiError, toast } from "../core/dialogs.js";
 import { emptyPanel } from "../components/empty-panel.js";
 import { setSettingsNavCount } from "./shell.js";
-import { countLabel } from "../i18n.js";
-import { els } from "../dom.js";
+import { countLabel } from "../core/i18n.js";
+import { els } from "../core/dom.js";
 
 /** A denylist: só se vê e se desbloqueia; bloquear faz-se na notificação. */
 let current = [];

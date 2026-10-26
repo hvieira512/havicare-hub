@@ -1,7 +1,7 @@
 import { field } from "../../../components/form-field.js";
-import { medicationPlanTimes } from "../../medication-plan.js";
-import { hhmm } from "../../../format.js";
-import { html } from "../../../html.js";
+import { medicationPlanTimes } from "../../../core/medication-plan.js";
+import { hhmm } from "../../../core/format.js";
+import { html } from "../../../core/html.js";
 import { choiceField, enabledSwitch, entryFieldLabel, entryText, fieldChoices, readChoice } from "./shared.js";
 import { readCheckbox, readText } from "../readers.js";
 

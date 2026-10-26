@@ -4,8 +4,8 @@ import {
     getRadarCredentials as apiGetRadarCredentials,
     saveRadarCredentials as apiSaveRadarCredentials,
 } from "../api/index.js";
-import { html } from "../html.js";
-import { clearInvalid } from "../validation.js";
+import { html } from "../core/html.js";
+import { clearInvalid } from "../core/validation.js";
 import { errorCodeText } from "../api/errors.js";
 
 /** As credenciais da cloud dos radares, por licença: com a conta de outra, os radares respondem offline. */

@@ -1,6 +1,6 @@
-import { html } from "../../../html.js";
+import { html } from "../../../core/html.js";
 import { field } from "../../../components/form-field.js";
-import { languageLabel } from "../../../i18n.js";
+import { languageLabel } from "../../../core/i18n.js";
 import { boolValue } from "../normalizers.js";
 import { takePillsInput, readTakePills } from "../four-p-touch-take-pills.js";
 import { boundedNumber, choiceField, entryFieldLabel, fieldChoices, readChoice, switchField } from "./shared.js";

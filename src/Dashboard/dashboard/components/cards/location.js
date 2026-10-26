@@ -1,7 +1,7 @@
-import { ago } from "../../format.js";
-import { html } from "../../html.js";
+import { ago } from "../../core/format.js";
+import { html } from "../../core/html.js";
 import { joinMarkup } from "./shared.js";
-import { countLabel } from "../../i18n.js";
+import { countLabel } from "../../core/i18n.js";
 
 export function locationCoordinates(data) {
     return data?.hasCoordinates === true ? { lat: Number(data.lat), lon: Number(data.lon) } : null;

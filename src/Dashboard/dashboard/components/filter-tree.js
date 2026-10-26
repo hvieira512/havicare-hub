@@ -1,4 +1,4 @@
-import { html } from "../html.js";
+import { html } from "../core/html.js";
 
 /** Uma opção de uma árvore de escolha: a caixa, o nome e, quando há, a contagem. */
 export function filterOption({ attrs, label, count = null, selected, partial = false, nested = false, radio = false }) {

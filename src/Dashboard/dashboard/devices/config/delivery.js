@@ -1,4 +1,4 @@
-import { esc } from "../../format.js";
+import { esc } from "../../core/format.js";
 import { stateBadge } from "../../components/state-badge.js";
 
 /** O que aconteceu ao valor depois de o hub o guardar, que aplicá-lo pode levar dias. */

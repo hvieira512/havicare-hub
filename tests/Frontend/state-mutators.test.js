@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 const {
     FILTERS_STORAGE_KEY,
     SELECTED_DEVICE_STORAGE_KEY,
-} = await import("../../src/Dashboard/dashboard/storage.js");
+} = await import("../../src/Dashboard/dashboard/core/storage.js");
 const {
     changeDeviceFilter,
     clearSelection,
@@ -15,7 +15,7 @@ const {
     setModelPreviewObjectUrl,
     setSelectedDetail,
     state,
-} = await import("../../src/Dashboard/dashboard/state.js");
+} = await import("../../src/Dashboard/dashboard/core/state.js");
 
 /**
  * Os pares inseparáveis: o `recent` que sobrevive à releitura, o object URL revogado ao ser

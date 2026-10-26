@@ -29,7 +29,7 @@ final class PortugueseDictionaryTest extends TestCase
     protected function setUp(): void
     {
         $this->dictionary = json_decode(
-            (string)file_get_contents(__DIR__ . '/../../../src/Dashboard/dashboard/pt-PT.json'),
+            (string)file_get_contents(__DIR__ . '/../../../src/Dashboard/dashboard/core/pt-PT.json'),
             true,
             flags: JSON_THROW_ON_ERROR,
         );

@@ -1,4 +1,4 @@
-import { html } from "../../html.js";
+import { html } from "../../core/html.js";
 import { addAlarmButton, alarmClockRow, readAlarmRows } from "./alarm-fields.js";
 import { nextUid, switchField } from "./inputs/shared.js";
 import { boolValue } from "./normalizers.js";

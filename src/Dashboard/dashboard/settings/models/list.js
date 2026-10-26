@@ -1,8 +1,8 @@
 import {
     getDeviceTypeSuppliersModels as apiGetCatalog,
 } from "../../api/index.js";
-import { state } from "../../state.js";
-import { esc } from "../../format.js";
+import { state } from "../../core/state.js";
+import { esc } from "../../core/format.js";
 import { deviceTypeIcon } from "../../components/device-type-tiles.js";
 import { modelImageHtml } from "../../components/model-image.js";
 import {
@@ -11,11 +11,11 @@ import {
     modelDeviceType,
     modelInternalName,
     normalizeDeviceType,
-} from "../../domain.js";
+} from "../../core/domain.js";
 import { setSettingsNavCount } from "../shell.js";
 import { resetModelWizard } from "./form.js";
 import { isModelListShown, showModelsPane } from "./shell.js";
-import { els } from "../../dom.js";
+import { els } from "../../core/dom.js";
 
 /** O catálogo: um nível por tipo de dispositivo, e o modelo como folha. */
 

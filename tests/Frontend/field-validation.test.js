@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 const { bindInvalidClearing, clearInvalid, markInvalid } = await import(
-    "../../src/Dashboard/dashboard/validation.js",
+    "../../src/Dashboard/dashboard/core/validation.js",
 );
 
 /**

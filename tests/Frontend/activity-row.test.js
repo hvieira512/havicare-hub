@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-const { state } = await import("../../src/Dashboard/dashboard/state.js");
+const { state } = await import("../../src/Dashboard/dashboard/core/state.js");
 const { telemetryActivityRow } =
     await import("../../src/Dashboard/dashboard/devices/detail/detail.js");
 

@@ -1,17 +1,17 @@
 /** A raiz de composição da dashboard: uma funcionalidade nunca importa outra. */
 import { getDevice as apiGetDevice } from "./api/index.js";
 import { isSignedIn } from "./api/http.js";
-import { refreshSelectedDetail, setDeviceFilters, state } from "./state.js";
-import { cacheElements, els, whileVisible } from "./dom.js";
-import { trackStickyTop } from "./sticky-top.js";
+import { refreshSelectedDetail, setDeviceFilters, state } from "./core/state.js";
+import { cacheElements, els, whileVisible } from "./core/dom.js";
+import { trackStickyTop } from "./core/sticky-top.js";
 import { bindDeviceEvents } from "./wiring/devices.js";
-import { bindInvalidClearing } from "./validation.js";
+import { bindInvalidClearing } from "./core/validation.js";
 import {
     FILTERS_STORAGE_KEY,
     SELECTED_DEVICE_STORAGE_KEY,
     loadJsonStorage,
     loadTextStorage,
-} from "./storage.js";
+} from "./core/storage.js";
 import { storedFilterList } from "./devices/list-filters.js";
 import {
     ensureProtocolsLoaded,

@@ -1,7 +1,7 @@
 import {
     getCapabilities as apiGetCapabilities,
     getModelTemplate as apiGetModelTemplate,
-} from "./api/index.js";
+} from "../api/index.js";
 import { state } from "./state.js";
 import { normalizeDeviceType } from "./domain.js";
 

@@ -1,9 +1,9 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { autoEls } from "./support/els.js";
-import { cacheElements } from "../../src/Dashboard/dashboard/dom.js";
+import { cacheElements } from "../../src/Dashboard/dashboard/core/dom.js";
 
-const { setSelectedDetail, state } = await import("../../src/Dashboard/dashboard/state.js");
+const { setSelectedDetail, state } = await import("../../src/Dashboard/dashboard/core/state.js");
 const { renderSelection } = await import("../../src/Dashboard/dashboard/devices/detail/detail.js");
 
 /** Uma frame do stream que não muda os cartões não pode desligar as tooltips deles. */

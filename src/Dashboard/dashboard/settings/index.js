@@ -1,5 +1,5 @@
-import { resetSettingsModal, state } from "../state.js";
-import { els } from "../dom.js";
+import { resetSettingsModal, state } from "../core/state.js";
+import { els } from "../core/dom.js";
 import { initSettingsShell, loadSettingsNavCounts, showSettingsModal } from "./shell.js";
 import { initSettingsApiUsers, loadSettingsApiUsersSection } from "./api-users.js";
 import { initSettingsCompanies, loadSettingsCompanySection } from "./companies.js";

@@ -3,10 +3,10 @@ import {
     getModelFilters as apiGetModelFilters,
     getModels as apiGetModels,
 } from "../api/index.js";
-import { state } from "../state.js";
-import { ensureLicensesLoaded } from "../licenses.js";
-import { resolvePaginationPage } from "../pagination.js";
-import { els } from "../dom.js";
+import { state } from "../core/state.js";
+import { ensureLicensesLoaded } from "../core/licenses.js";
+import { resolvePaginationPage } from "../core/pagination.js";
+import { els } from "../core/dom.js";
 
 /** A casca do modal de definições; não conhece nenhuma secção, e por isso todas a importam. */
 let ui;

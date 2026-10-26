@@ -1,8 +1,8 @@
 import test, { beforeEach } from "node:test";
 import assert from "node:assert/strict";
-import { cacheElements } from "../../src/Dashboard/dashboard/dom.js";
+import { cacheElements } from "../../src/Dashboard/dashboard/core/dom.js";
 
-const { state } = await import("../../src/Dashboard/dashboard/state.js");
+const { state } = await import("../../src/Dashboard/dashboard/core/state.js");
 const {
     renderTelemetryList,
     renderDownlinkRequests,

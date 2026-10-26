@@ -1,4 +1,4 @@
-import { configText, sectionLabel } from "../../i18n.js";
+import { configText, sectionLabel } from "../../core/i18n.js";
 
 const CONFIG_SECTION_ORDER = [
     "health",

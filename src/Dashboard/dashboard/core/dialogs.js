@@ -3,7 +3,7 @@
  * `titleText:` do SweetAlert, e não o `title:`, que é HTML.
  */
 
-import { errorText } from "./api/errors.js";
+import { errorText } from "../api/errors.js";
 import { markApiFields } from "./validation.js";
 
 /** O "danger" é o nome do bootstrap para o que o SweetAlert chama "error". */

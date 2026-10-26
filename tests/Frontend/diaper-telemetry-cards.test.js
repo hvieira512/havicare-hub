@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import { requestCardShell as buildCard } from "../../src/Dashboard/dashboard/components/cards/request.js";
-import { state } from "../../src/Dashboard/dashboard/state.js";
+import { state } from "../../src/Dashboard/dashboard/core/state.js";
 import { asText, parseFragment } from "./support/dom.js";
 
 const requestCardShell = asText(buildCard);

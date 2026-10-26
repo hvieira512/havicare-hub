@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-const { renderPagination } = await import("../../src/Dashboard/dashboard/pagination.js");
+const { renderPagination } = await import("../../src/Dashboard/dashboard/core/pagination.js");
 
 /**
  * O paginador partilhado desenha uma janela com um número fixo de lugares, para a largura não

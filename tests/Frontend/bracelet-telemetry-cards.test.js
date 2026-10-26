@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import { cardContent } from "./support/cards.js";
-import { fieldValue } from "../../src/Dashboard/dashboard/format.js";
+import { fieldValue } from "../../src/Dashboard/dashboard/core/format.js";
 
 /** Cada cartão lê o campo do contrato, que traz a unidade no nome. */
 test("the bracelet cards read the named quantities", () => {

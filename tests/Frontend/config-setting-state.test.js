@@ -3,7 +3,7 @@ import test from "node:test";
 
 import { parseFragment } from "./support/dom.js";
 import { renderConfigSection } from "../../src/Dashboard/dashboard/devices/config/index.js";
-import { cacheElements } from "../../src/Dashboard/dashboard/dom.js";
+import { cacheElements } from "../../src/Dashboard/dashboard/core/dom.js";
 import {
     captureConfigPristine,
     syncConfigCounts,

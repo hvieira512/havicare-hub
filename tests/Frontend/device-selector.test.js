@@ -2,8 +2,8 @@ import test, { beforeEach, describe } from "node:test";
 import assert from "node:assert/strict";
 import { autoEls } from "./support/els.js";
 
-const { state } = await import("../../src/Dashboard/dashboard/state.js");
-const { cacheElements } = await import("../../src/Dashboard/dashboard/dom.js");
+const { state } = await import("../../src/Dashboard/dashboard/core/state.js");
+const { cacheElements } = await import("../../src/Dashboard/dashboard/core/dom.js");
 const {
     initDeviceList,
     openDeviceSelector,

@@ -2,14 +2,14 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 
-import { fieldLabel, fieldUnit, fieldValue } from "../../src/Dashboard/dashboard/format.js";
+import { fieldLabel, fieldUnit, fieldValue } from "../../src/Dashboard/dashboard/core/format.js";
 
 /**
  * A unidade diz-se num sítio só: o `FIELD_UNIT` cola-a ao valor na telemetria, e os parênteses
  * na etiqueta servem os campos de configuração, cujo rótulo é escondido.
  */
 const source = readFileSync(
-    new URL("../../src/Dashboard/dashboard/format.js", import.meta.url),
+    new URL("../../src/Dashboard/dashboard/core/format.js", import.meta.url),
     "utf8",
 );
 

@@ -1,12 +1,12 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { cacheElements } from "../../src/Dashboard/dashboard/dom.js";
+import { cacheElements } from "../../src/Dashboard/dashboard/core/dom.js";
 import { installDeferredFetch } from "./support/deferred-fetch.js";
 
 const { loadSettingsCompanySection } = await import(
     "../../src/Dashboard/dashboard/settings/companies.js",
 );
-const { invalidateLicenses } = await import("../../src/Dashboard/dashboard/licenses.js");
+const { invalidateLicenses } = await import("../../src/Dashboard/dashboard/core/licenses.js");
 
 /**
  * Cada linha da árvore leva os seus verbos num menu e não em ícones soltos: três ícones sem

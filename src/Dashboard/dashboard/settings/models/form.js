@@ -1,14 +1,14 @@
-import { html } from "../../html.js";
+import { html } from "../../core/html.js";
 import {
     saveModel as apiSaveModel,
 } from "../../api/index.js";
-import { ensureModelTemplate } from "../../capability-catalog.js";
+import { ensureModelTemplate } from "../../core/capability-catalog.js";
 import {
     invalidateDeviceTypeSuppliersModels,
     setModelPreviewObjectUrl,
     state,
-} from "../../state.js";
-import { apiError, toast } from "../../dialogs.js";
+} from "../../core/state.js";
+import { apiError, toast } from "../../core/dialogs.js";
 import { field } from "../../components/form-field.js";
 import { modelImageHtml } from "../../components/model-image.js";
 import {
@@ -17,13 +17,13 @@ import {
     wizardProgressHtml,
     wizardTrailHtml,
 } from "../../components/wizard-cards.js";
-import { createWizard } from "../../wizard.js";
-import { deviceTypeLabel, normalizeDeviceType } from "../../domain.js";
+import { createWizard } from "../../core/wizard.js";
+import { deviceTypeLabel, normalizeDeviceType } from "../../core/domain.js";
 import {
     backToModelList,
     showNewModelSlide,
 } from "./list.js";
-import { els } from "../../dom.js";
+import { els } from "../../core/dom.js";
 import { loadModelFilters } from "../shell.js";
 
 /** O modelo novo, em três passos; nasce com o template de capacidades do fornecedor para o tipo. */

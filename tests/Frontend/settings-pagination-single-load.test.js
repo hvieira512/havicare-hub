@@ -5,9 +5,9 @@ import {
     handleSettingsPaginationClick,
     setSettingsNavCount,
 } from "../../src/Dashboard/dashboard/settings/shell.js";
-import { renderPagination } from "../../src/Dashboard/dashboard/pagination.js";
-import { state } from "../../src/Dashboard/dashboard/state.js";
-import { cacheElements } from "../../src/Dashboard/dashboard/dom.js";
+import { renderPagination } from "../../src/Dashboard/dashboard/core/pagination.js";
+import { state } from "../../src/Dashboard/dashboard/core/state.js";
+import { cacheElements } from "../../src/Dashboard/dashboard/core/dom.js";
 
 /** O contentor e os controlos aninhados, como o `pagination_component()` os desenha. */
 function mountPager(prefix) {

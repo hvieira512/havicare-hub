@@ -1,4 +1,4 @@
-import { html } from "../../html.js";
+import { html } from "../../core/html.js";
 
 // O limiar vem no payload, por sensor; 12 é o preset normal, para leituras sem o campo.
 const DIAPER_WET_DELTA_FALLBACK = 12;

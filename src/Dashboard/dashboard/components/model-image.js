@@ -1,4 +1,4 @@
-import { html } from "../html.js";
+import { html } from "../core/html.js";
 
 /** A imagem de um modelo, com o nome comercial, o interno, e o do modelo, por esta ordem. */
 

@@ -1,5 +1,5 @@
 import { getProtocolConfigCatalog } from "../../api/index.js";
-import { state } from "../../state.js";
+import { state } from "../../core/state.js";
 
 // Pedidos em curso, para quem pede o mesmo protocolo ao mesmo tempo partilhar um fetch.
 const protocolCatalogRequests = {};

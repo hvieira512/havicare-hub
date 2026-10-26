@@ -1,7 +1,7 @@
-import { html } from "../../html.js";
-import { ago, displayPersonIndex, eventTime, rowPayload, when } from "../../format.js";
-import { fallLabel } from "../../domain.js";
-import { valueLabel } from "../../i18n.js";
+import { html } from "../../core/html.js";
+import { ago, displayPersonIndex, eventTime, rowPayload, when } from "../../core/format.js";
+import { fallLabel } from "../../core/domain.js";
+import { valueLabel } from "../../core/i18n.js";
 
 /** Cartões que resumem o histórico de eventos inteiro, fora do catálogo de cartões. */
 

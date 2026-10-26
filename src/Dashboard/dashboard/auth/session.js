@@ -5,13 +5,13 @@ import {
     requestSessionToken,
     setDashboardApiToken,
 } from "../api/http.js";
-import { toast } from "../dialogs.js";
+import { toast } from "../core/dialogs.js";
 import {
     clearStorageKey,
     LAST_ACTIVITY_STORAGE_KEY,
     loadTextStorage,
     saveTextStorage,
-} from "../storage.js";
+} from "../core/storage.js";
 
 const ADMIN_ROLE = "hub_admin";
 const WARNING_AFTER_MS = 15 * 60 * 1000;

@@ -1,4 +1,4 @@
-import { html } from "../../html.js";
+import { html } from "../../core/html.js";
 import { normalizeKey } from "./gateway-links.js";
 import { signalMeter } from "./gateway-signal.js";
 

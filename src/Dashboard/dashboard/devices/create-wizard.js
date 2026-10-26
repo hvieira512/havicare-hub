@@ -1,12 +1,12 @@
-import { html } from "../html.js";
+import { html } from "../core/html.js";
 import {
     getDevices as apiGetDevices,
     saveDevice as apiSaveDevice,
 } from "../api/index.js";
-import { ensureLicensesLoaded } from "../licenses.js";
-import { apiError, toast } from "../dialogs.js";
+import { ensureLicensesLoaded } from "../core/licenses.js";
+import { apiError, toast } from "../core/dialogs.js";
 import { allPages } from "../api/http.js";
-import { state } from "../state.js";
+import { state } from "../core/state.js";
 import { field } from "../components/form-field.js";
 import { modelPreviewHtml } from "../components/model-image.js";
 import {
@@ -19,8 +19,8 @@ import {
     modelsForSupplierAndType,
     supplierProtocol,
     suppliersForDeviceType,
-} from "../domain.js";
-import { createWizard } from "../wizard.js";
+} from "../core/domain.js";
+import { createWizard } from "../core/wizard.js";
 import { syncGatewayLinks } from "./gateways/gateway-links-ui.js";
 import {
     licenseBadgeValue,
@@ -41,7 +41,7 @@ import {
     ensureDeviceTypeSuppliersModelsLoaded,
     loadSummary,
 } from "./list.js";
-import { els } from "../dom.js";
+import { els } from "../core/dom.js";
 
 /** O assistente de adicionar, uma pergunta por passo; o que varia por tipo vem do `DEVICE_TYPES`. */
 

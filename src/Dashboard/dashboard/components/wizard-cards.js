@@ -1,7 +1,7 @@
-import { html } from "../html.js";
-import { deviceTypeOptions } from "../domain.js";
+import { html } from "../core/html.js";
+import { deviceTypeOptions } from "../core/domain.js";
 import { deviceTypeIcon } from "./device-type-tiles.js";
-import { countLabel } from "../i18n.js";
+import { countLabel } from "../core/i18n.js";
 
 /** A migalha, a barra de progresso e as grelhas de tipo e fornecedor dos assistentes de aparelho e de modelo. */
 

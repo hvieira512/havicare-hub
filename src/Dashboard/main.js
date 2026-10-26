@@ -1,6 +1,6 @@
 import { initializeDashboardSession } from "./dashboard/auth/session.js";
-import { initializeTheme } from "./dashboard/theme.js";
-import { installErrorReporting } from "./dashboard/observability.js";
+import { initializeTheme } from "./dashboard/core/theme.js";
+import { installErrorReporting } from "./dashboard/core/observability.js";
 
 installErrorReporting();
 

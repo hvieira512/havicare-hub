@@ -1,8 +1,8 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-const { apiError } = await import("../../src/Dashboard/dashboard/dialogs.js");
-const { markApiFields } = await import("../../src/Dashboard/dashboard/validation.js");
+const { apiError } = await import("../../src/Dashboard/dashboard/core/dialogs.js");
+const { markApiFields } = await import("../../src/Dashboard/dashboard/core/validation.js");
 
 /** O `message` da API é inglês e é para quem integra: o ecrã traduz pelo `code`. */
 

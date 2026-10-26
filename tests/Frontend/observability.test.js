@@ -1,7 +1,7 @@
 import test, { beforeEach } from "node:test";
 import assert from "node:assert/strict";
 
-import { installErrorReporting } from "../../src/Dashboard/dashboard/observability.js";
+import { installErrorReporting } from "../../src/Dashboard/dashboard/core/observability.js";
 
 const seen = [];
 installErrorReporting();

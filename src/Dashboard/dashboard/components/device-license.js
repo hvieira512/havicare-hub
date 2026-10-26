@@ -1,4 +1,4 @@
-import { html } from "../html.js";
+import { html } from "../core/html.js";
 /** Um aparelho sem dono tem a empresa e a licença a `null`. */
 const hasLicense = (device) => Boolean(device.company && device.licenseId);
 

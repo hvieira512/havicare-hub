@@ -1,10 +1,10 @@
 import test, { beforeEach, describe } from "node:test";
 import assert from "node:assert/strict";
 import { autoEls } from "./support/els.js";
-import { cacheElements } from "../../src/Dashboard/dashboard/dom.js";
+import { cacheElements } from "../../src/Dashboard/dashboard/core/dom.js";
 
 const { state, resetDetailFiltersDraft, selectImei, updateDetailFiltersDraft } =
-    await import("../../src/Dashboard/dashboard/state.js");
+    await import("../../src/Dashboard/dashboard/core/state.js");
 const {
     allDetailItems,
     applyDetailRange,

@@ -1,4 +1,4 @@
-import { getLicenses as apiGetLicenses } from "./api/index.js";
+import { getLicenses as apiGetLicenses } from "../api/index.js";
 import { state } from "./state.js";
 
 /** As licenças, uma vez por sessão; quem as muda chama o `invalidateLicenses`. */

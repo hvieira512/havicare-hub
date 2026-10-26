@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import { syncDeviceModalCommandStates } from "../../src/Dashboard/dashboard/devices/config/panel.js";
-import { state } from "../../src/Dashboard/dashboard/state.js";
+import { state } from "../../src/Dashboard/dashboard/core/state.js";
 
 /**
  * Uma configuração guarda a entrega em `configurationSync.entries`; uma acção guarda-a em

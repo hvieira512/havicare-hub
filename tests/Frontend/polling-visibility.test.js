@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { cacheElements } from "../../src/Dashboard/dashboard/dom.js";
+import { cacheElements } from "../../src/Dashboard/dashboard/core/dom.js";
 
 /**
  * Com o separador escondido não se sonda, e ao voltar relê-se de imediato, como no
@@ -56,7 +56,7 @@ const divWithId = (id) => {
 
 const { initNotifications } = await import("../../src/Dashboard/dashboard/notifications.js");
 const { startSelectedDevicePolling } = await import("../../src/Dashboard/dashboard/app.js");
-const { state } = await import("../../src/Dashboard/dashboard/state.js");
+const { state } = await import("../../src/Dashboard/dashboard/core/state.js");
 
 const notificationTicks = capturedInterval(globalThis, () => {
     cacheElements({

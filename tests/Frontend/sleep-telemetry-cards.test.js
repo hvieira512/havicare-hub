@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import { cardContent as uplinkCardContent } from "./support/cards.js";
-import { commandError } from "../../src/Dashboard/dashboard/format.js";
+import { commandError } from "../../src/Dashboard/dashboard/core/format.js";
 
 /** A noite chega inteira -- fronteiras, duração e os troços de cada fase -- e o cartão mostra-a. */
 

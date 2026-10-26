@@ -3,10 +3,10 @@ import {
     getDevice as apiGetDevice,
     saveDevice as apiSaveDevice,
 } from "../api/index.js";
-import { ensureCapabilityCatalog } from "../capability-catalog.js";
-import { apiError, confirmDestructive } from "../dialogs.js";
-import { clearInvalid, markApiFields } from "../validation.js";
-import { ensureLicensesLoaded } from "../licenses.js";
+import { ensureCapabilityCatalog } from "../core/capability-catalog.js";
+import { apiError, confirmDestructive } from "../core/dialogs.js";
+import { clearInvalid, markApiFields } from "../core/validation.js";
+import { ensureLicensesLoaded } from "../core/licenses.js";
 import { licenseTree, modelCardsHtml } from "./classification-ui.js";
 import { deviceTypeCardsHtml, supplierCardsHtml } from "../components/wizard-cards.js";
 import {
@@ -37,7 +37,7 @@ import {
     supplierModelLabel,
     supplierProtocol,
     suppliersForDeviceType,
-} from "../domain.js";
+} from "../core/domain.js";
 import {
     ensureDeviceTypeSuppliersModelsLoaded,
     isDeviceSelectorOpen,
@@ -49,7 +49,7 @@ import {
 } from "./stream.js";
 import {
     html,
-} from "../html.js";
+} from "../core/html.js";
 import {
     normalizePhoneControl,
     renderPhoneControl,
@@ -64,8 +64,8 @@ import {
     clearSelection,
     selectImei,
     state,
-} from "../state.js";
-import { els } from "../dom.js";
+} from "../core/state.js";
+import { els } from "../core/dom.js";
 import { presenceOf, PRESENCE_LABEL } from "../components/state-badge.js";
 
 let deviceModal;

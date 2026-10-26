@@ -1,10 +1,10 @@
 /** Os ouvintes da coluna dos dispositivos; raiz de composição, pode importar de onde precisar. */
-import { state } from "../state.js";
+import { state } from "../core/state.js";
 import { syncPhoneControl } from "../devices/phone.js";
-import { normalizeDeviceType } from "../domain.js";
-import { confirmDestructive } from "../dialogs.js";
+import { normalizeDeviceType } from "../core/domain.js";
+import { confirmDestructive } from "../core/dialogs.js";
 import { emptyPanel } from "../components/empty-panel.js";
-import { html } from "../html.js";
+import { html } from "../core/html.js";
 import {
     clearDeviceFilters,
     handleDeviceFilterChipRemove,
@@ -62,8 +62,8 @@ import {
     refreshGatewayOptions,
     updateGatewayLinkSelection,
 } from "../devices/gateways/gateway-links-ui.js";
-import { countLabel } from "../i18n.js";
-import { els } from "../dom.js";
+import { countLabel } from "../core/i18n.js";
+import { els } from "../core/dom.js";
 
 let ui;
 

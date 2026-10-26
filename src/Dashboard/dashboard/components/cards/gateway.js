@@ -1,5 +1,5 @@
-import { capabilityLabel } from "../../capability-catalog.js";
-import { UNTRANSLATED, valueLabel } from "../../i18n.js";
+import { capabilityLabel } from "../../core/capability-catalog.js";
+import { UNTRANSLATED, valueLabel } from "../../core/i18n.js";
 
 const CONNECTIVITY_INTERFACE_ICONS = {
     wifi: "fa-wifi",

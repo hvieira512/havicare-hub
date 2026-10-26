@@ -1,7 +1,7 @@
 import { stateBadge } from "../../../components/state-badge.js";
-import { html } from "../../../html.js";
-import { formatNumber } from "../../../format.js";
-import { state } from "../../../state.js";
+import { html } from "../../../core/html.js";
+import { formatNumber } from "../../../core/format.js";
+import { state } from "../../../core/state.js";
 import { nextUid } from "./shared.js";
 
 // O identificador é do hub e viaja escondido no cartão: um cartão sem ele é um registo novo.

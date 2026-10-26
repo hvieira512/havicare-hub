@@ -1,7 +1,7 @@
-import { duration, timeOnly } from "../../format.js";
-import { html } from "../../html.js";
+import { duration, timeOnly } from "../../core/format.js";
+import { html } from "../../core/html.js";
 import { joinMarkup } from "./shared.js";
-import { valueLabel, countLabel } from "../../i18n.js";
+import { valueLabel, countLabel } from "../../core/i18n.js";
 
 /** As fases pela ordem em que se lêem, e não pela ordem em que a noite as traz. */
 const PHASE_ORDER = ["deep_sleep", "light_sleep", "rem", "insomnia", "awake"];

@@ -1,4 +1,4 @@
-import { html } from "../html.js";
+import { html } from "../core/html.js";
 
 /** Um grupo de botões de escolha única, de itens `{value, label}`. */
 export function buttonGroup(items, selected, action) {

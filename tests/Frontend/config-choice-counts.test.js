@@ -8,7 +8,7 @@ import {
     syncConfigCounts,
 } from "../../src/Dashboard/dashboard/devices/config/panel.js";
 import { handleDeviceConfigChange } from "../../src/Dashboard/dashboard/devices/config/handlers.js";
-import { cacheElements } from "../../src/Dashboard/dashboard/dom.js";
+import { cacheElements } from "../../src/Dashboard/dashboard/core/dom.js";
 
 /**
  * Os cartões de escolha não têm botão próprio: quem envia é o rodapé da secção. Se o clique

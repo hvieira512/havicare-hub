@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { autoEls } from "./support/els.js";
-import { cacheElements } from "../../src/Dashboard/dashboard/dom.js";
+import { cacheElements } from "../../src/Dashboard/dashboard/core/dom.js";
 
 /**
  * O `Swal.fire()` devolve uma promessa, e cancelar não pode chegar à API. A caixa diz também o
@@ -39,7 +39,7 @@ const { dangerousCommandPrompt, saveDeviceConfiguration } = await import(
 const { renderConfigSection } = await import(
     "../../src/Dashboard/dashboard/devices/config/index.js",
 );
-const { state } = await import("../../src/Dashboard/dashboard/state.js");
+const { state } = await import("../../src/Dashboard/dashboard/core/state.js");
 
 test("cancelling the confirmation never calls the API", async () => {
     reset();

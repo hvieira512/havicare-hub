@@ -1,4 +1,4 @@
-import { html } from "../html.js";
+import { html } from "../core/html.js";
 
 /** O estado vazio de um painel, em texto: uma segunda moldura dentro do cartão lê-se como conteúdo. */
 export function emptyPanel(text) {

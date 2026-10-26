@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 
 import { cardContent as uplinkCardContent } from "./support/cards.js";
 
-const { state } = await import("../../src/Dashboard/dashboard/state.js");
+const { state } = await import("../../src/Dashboard/dashboard/core/state.js");
 
 test("a weighing says whose it is, by the scale's list name, and whether it came from memory", () => {
     state.selectedDetail = {

@@ -9,7 +9,7 @@ import { installStreamHarness } from "./support/device-stream-harness.js";
 
 const harness = installStreamHarness();
 
-const { state, setSelectedDetail } = await import("../../src/Dashboard/dashboard/state.js");
+const { state, setSelectedDetail } = await import("../../src/Dashboard/dashboard/core/state.js");
 const stream = await import("../../src/Dashboard/dashboard/devices/stream.js");
 const { setDashboardApiToken } = await import("../../src/Dashboard/dashboard/api/http.js");
 

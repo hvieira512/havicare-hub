@@ -1,4 +1,4 @@
-import { html } from "../../../html.js";
+import { html } from "../../../core/html.js";
 import { field } from "../../../components/form-field.js";
 import { boolValue } from "../normalizers.js";
 import { choiceField, entryFieldLabel, fieldChoices, numberField, readChoice, switchField } from "./shared.js";

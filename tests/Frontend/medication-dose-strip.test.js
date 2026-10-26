@@ -2,9 +2,9 @@ import test, { beforeEach } from "node:test";
 import assert from "node:assert/strict";
 
 import { parseFragment } from "./support/dom.js";
-import { timeOnly } from "../../src/Dashboard/dashboard/format.js";
+import { timeOnly } from "../../src/Dashboard/dashboard/core/format.js";
 
-const { state } = await import("../../src/Dashboard/dashboard/state.js");
+const { state } = await import("../../src/Dashboard/dashboard/core/state.js");
 const { uplinkCardContent } = await import(
     "../../src/Dashboard/dashboard/components/cards/telemetry.js",
 );

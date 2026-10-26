@@ -5,7 +5,7 @@ import { cardContent as uplinkCardContent } from "./support/cards.js";
 import { requestCardShell as buildCard } from "../../src/Dashboard/dashboard/components/cards/request.js";
 
 const requestCardShell = asText(buildCard);
-import { state } from "../../src/Dashboard/dashboard/state.js";
+import { state } from "../../src/Dashboard/dashboard/core/state.js";
 import { asText } from "./support/dom.js";
 
 state.capabilityCatalogByType.watch = [{ key: "location", label: "Localização" }];

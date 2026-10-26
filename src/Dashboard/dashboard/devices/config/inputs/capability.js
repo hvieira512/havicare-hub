@@ -1,7 +1,7 @@
-import { html } from "../../../html.js";
+import { html } from "../../../core/html.js";
 import { field } from "../../../components/form-field.js";
 import { renderPhoneControl } from "../../phone.js";
-import { optionLabel } from "../../../i18n.js";
+import { optionLabel } from "../../../core/i18n.js";
 import { addAlarmButton, alarmClockRow, readAlarmRows, RECURRENCES } from "../alarm-fields.js";
 import { boolValue } from "../normalizers.js";
 import { contactsInput } from "./generic.js";

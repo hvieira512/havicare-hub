@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { runoutAt, runoutLabel } from "../../src/Dashboard/dashboard/devices/medication-runout.js";
+import { runoutAt, runoutLabel } from "../../src/Dashboard/dashboard/core/medication-runout.js";
 
 // Quinta, 1 de outubro de 2026, depois dos dois alarmes do dia já terem tocado.
 const now = new Date(2026, 9, 1, 10, 52);

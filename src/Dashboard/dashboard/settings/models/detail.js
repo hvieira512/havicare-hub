@@ -5,16 +5,16 @@ import {
     getSuppliers as apiGetSuppliers,
     saveModel as apiSaveModel,
 } from "../../api/index.js";
-import { ensureModelTemplate } from "../../capability-catalog.js";
+import { ensureModelTemplate } from "../../core/capability-catalog.js";
 import {
     invalidateDeviceTypeSuppliersModels,
     setModelPreviewObjectUrl,
     state,
-} from "../../state.js";
-import { html } from "../../html.js";
-import { apiError, confirmDestructive, reportApiError, toast } from "../../dialogs.js";
+} from "../../core/state.js";
+import { html } from "../../core/html.js";
+import { apiError, confirmDestructive, reportApiError, toast } from "../../core/dialogs.js";
 import { allPages } from "../../api/http.js";
-import { clearInvalid } from "../../validation.js";
+import { clearInvalid } from "../../core/validation.js";
 import { modelPreviewHtml } from "../../components/model-image.js";
 import {
     deviceTypeOptions,
@@ -22,13 +22,13 @@ import {
     modelCommercialName,
     modelDeviceType,
     modelInternalName,
-} from "../../domain.js";
+} from "../../core/domain.js";
 import { loadCapabilityCatalog } from "../capabilities.js";
 import { showModelsPane } from "./shell.js";
 import { backToModelList } from "./list.js";
 import { renderCapabilitiesSection } from "./capabilities-editor.js";
-import { countLabel } from "../../i18n.js";
-import { els } from "../../dom.js";
+import { countLabel } from "../../core/i18n.js";
+import { els } from "../../core/dom.js";
 
 /** A ficha de um modelo: a identidade em cima e o editor de capacidades em baixo, cada um com o seu Guardar. */
 

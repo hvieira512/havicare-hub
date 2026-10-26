@@ -1,10 +1,10 @@
-import { html } from "../html.js";
+import { html } from "../core/html.js";
 import {
     deviceTypeFields,
     deviceTypeLabel,
     deviceTypeShortLabel,
     normalizeDeviceType,
-} from "../domain.js";
+} from "../core/domain.js";
 
 export function deviceTypeIcon(deviceType) {
     // O `fa-microchip` é para uma entrada do catálogo que chegue sem ícone.

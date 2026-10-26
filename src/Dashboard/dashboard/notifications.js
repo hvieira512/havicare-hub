@@ -5,11 +5,11 @@ import {
     markNotificationsRead,
 } from "./api/index.js";
 import { isSignedIn } from "./api/http.js";
-import { ago, when } from "./format.js";
-import { countLabel } from "./i18n.js";
-import { html } from "./html.js";
-import { apiError, confirmDestructive, toast } from "./dialogs.js";
-import { els, whileBusy, whileVisible } from "./dom.js";
+import { ago, when } from "./core/format.js";
+import { countLabel } from "./core/i18n.js";
+import { html } from "./core/html.js";
+import { apiError, confirmDestructive, toast } from "./core/dialogs.js";
+import { els, whileBusy, whileVisible } from "./core/dom.js";
 
 const SPINNER = "<span class=\"spinner-border spinner-border-sm\" aria-hidden=\"true\"></span>";
 

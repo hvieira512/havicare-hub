@@ -1,5 +1,5 @@
 /** O texto de cada `code` da API, do dicionário. O `message` é inglês e não se mostra. */
-import { DICTIONARY, fieldLabel } from "../i18n.js";
+import { DICTIONARY, fieldLabel } from "../core/i18n.js";
 
 const GENERIC = "Não foi possível concluir a operação.";
 

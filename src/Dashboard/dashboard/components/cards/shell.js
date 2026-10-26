@@ -1,4 +1,4 @@
-import { html } from "../../html.js";
+import { html } from "../../core/html.js";
 import { stateBadge } from "../state-badge.js";
 
 /** A casca de um cartão, partilhada pelo uplink e pelo downlink. */

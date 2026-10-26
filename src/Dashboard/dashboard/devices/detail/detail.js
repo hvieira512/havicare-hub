@@ -6,8 +6,8 @@ import {
     setDownlinkPage,
     setTelemetryPage,
     state,
-} from "../../state.js";
-import { deviceTypeLabel, normalizeDeviceType } from "../../domain.js";
+} from "../../core/state.js";
+import { deviceTypeLabel, normalizeDeviceType } from "../../core/domain.js";
 import {
     commandError,
     commandLabel,
@@ -17,13 +17,13 @@ import {
     duration,
     timeOnly,
     when,
-} from "../../format.js";
-import { html } from "../../html.js";
-import { optionLabel } from "../../i18n.js";
+} from "../../core/format.js";
+import { html } from "../../core/html.js";
+import { optionLabel } from "../../core/i18n.js";
 import { joinMarkup } from "../../components/cards/shared.js";
-import { els, renderInto } from "../../dom.js";
-import { capabilityLabel } from "../../capability-catalog.js";
-import { apiError, toast } from "../../dialogs.js";
+import { els, renderInto } from "../../core/dom.js";
+import { capabilityLabel } from "../../core/capability-catalog.js";
+import { apiError, toast } from "../../core/dialogs.js";
 import { deviceLicenseBlock, deviceLicenseLabel } from "../../components/device-license.js";
 import { presenceBadge, presenceOf, PRESENCE_LABEL } from "../../components/state-badge.js";
 import { cardTone, uplinkCardContent } from "../../components/cards/telemetry.js";
@@ -37,7 +37,7 @@ import { fallSummaryCard, helpCallSummaryCard, proximityAlarmSummaryCard } from 
 import { onRadarPresence } from "../radar/radar-map-modal.js";
 import { activityTable } from "./activity-table.js";
 import { protocolHelpCallPressModes } from "../config/protocol-catalog.js";
-import { renderPagination } from "../../pagination.js";
+import { renderPagination } from "../../core/pagination.js";
 import { loadMoreButton, pagedRows } from "../../components/pagination.js";
 import { disposeTooltips, refreshTooltips } from "../tooltips.js";
 import { gatewaySignalRows } from "../gateways/gateway-signal.js";

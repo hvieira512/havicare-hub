@@ -1,6 +1,6 @@
-import { duration } from "../../format.js";
-import { html } from "../../html.js";
-import { resolvePaginationPage } from "../../pagination.js";
+import { duration } from "../../core/format.js";
+import { html } from "../../core/html.js";
+import { resolvePaginationPage } from "../../core/pagination.js";
 import { disposeTooltips, refreshTooltips } from "../tooltips.js";
 import { loadMoreButton, pagedRows, paginationControls } from "../../components/pagination.js";
 

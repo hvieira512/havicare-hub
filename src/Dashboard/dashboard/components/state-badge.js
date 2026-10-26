@@ -1,4 +1,4 @@
-import { html } from "../html.js";
+import { html } from "../core/html.js";
 
 /** A pastilha de estado: o ponto, o rótulo e um tom do Bootstrap. O rótulo diz sempre o estado. */
 const TONES = ["primary", "secondary", "success", "warning", "danger", "info"];

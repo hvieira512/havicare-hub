@@ -1,4 +1,4 @@
-import { toast } from "../../dialogs.js";
+import { toast } from "../../core/dialogs.js";
 
 const recordingState = new WeakMap();
 

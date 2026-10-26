@@ -6,14 +6,14 @@ import {
     saveLicense as apiSaveLicense,
     updateCompany as apiUpdateCompany,
 } from "../api/index.js";
-import { ensureLicensesLoaded, invalidateLicenses } from "../licenses.js";
-import { state } from "../state.js";
-import { html } from "../html.js";
+import { ensureLicensesLoaded, invalidateLicenses } from "../core/licenses.js";
+import { state } from "../core/state.js";
+import { html } from "../core/html.js";
 import { rowActionsMenu } from "../components/row-actions-menu.js";
-import { apiError, confirmDestructive, reportApiError, toast } from "../dialogs.js";
-import { clearInvalid } from "../validation.js";
+import { apiError, confirmDestructive, reportApiError, toast } from "../core/dialogs.js";
+import { clearInvalid } from "../core/validation.js";
 import { handleSettingsPaginationClick, setSettingsNavCount } from "./shell.js";
-import { renderPagination } from "../pagination.js";
+import { renderPagination } from "../core/pagination.js";
 import { editorOf, focusEditor, inlineEditor } from "./row-editor.js";
 import {
     EDITOR_KIND as RADAR_EDITOR_KIND,
@@ -26,8 +26,8 @@ import {
     submitRadarCredentials,
     tryRadarCredentials,
 } from "./radar-credentials.js";
-import { countLabel } from "../i18n.js";
-import { els, whileBusy } from "../dom.js";
+import { countLabel } from "../core/i18n.js";
+import { els, whileBusy } from "../core/dom.js";
 
 /** As licenças, dentro de cada empresa; a linha que se toca é a que se transforma. */
 // A página de empresas à vista, para redesenhar depois de mexer numa licença.

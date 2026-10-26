@@ -1,4 +1,4 @@
-import { paginationControls } from "./components/pagination.js";
+import { paginationControls } from "../components/pagination.js";
 
 /** O resumo das listagens servidas pela API, que dizem quantos registos existem em total. */
 const defaultSummary = (start, end, total) => `A mostrar de ${start} até ${end} | ${total}`;

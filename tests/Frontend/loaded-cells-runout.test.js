@@ -7,7 +7,7 @@ import {
     syncLoadedCellsRunout,
 } from "../../src/Dashboard/dashboard/devices/config/loaded-cells-runout.js";
 import { renderDeviceConfigurationRoot } from "../../src/Dashboard/dashboard/devices/config/index.js";
-import { state } from "../../src/Dashboard/dashboard/state.js";
+import { state } from "../../src/Dashboard/dashboard/core/state.js";
 
 const now = new Date(2026, 9, 1, 10, 52);
 

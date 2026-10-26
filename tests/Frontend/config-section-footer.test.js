@@ -9,7 +9,7 @@ import {
     syncConfigCounts,
 } from "../../src/Dashboard/dashboard/devices/config/panel.js";
 import { resetConfigPane } from "../../src/Dashboard/dashboard/devices/config/handlers.js";
-import { cacheElements } from "../../src/Dashboard/dashboard/dom.js";
+import { cacheElements } from "../../src/Dashboard/dashboard/core/dom.js";
 
 /** O envio é da secção; só tem botão próprio o que dispara em vez de se guardar. */
 

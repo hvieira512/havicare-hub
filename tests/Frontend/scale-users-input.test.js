@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 import { renderConfigInputs, readConfigPayload } from "../../src/Dashboard/dashboard/devices/config/index.js";
 import { CONFIG_INPUTS } from "../../src/Dashboard/dashboard/devices/config/inputs/index.js";
 import { handleScaleUserAction } from "../../src/Dashboard/dashboard/devices/config/inputs/scale.js";
-import { state } from "../../src/Dashboard/dashboard/state.js";
+import { state } from "../../src/Dashboard/dashboard/core/state.js";
 import { configSection } from "./support/dom.js";
 
 /** Os utilizadores da balança: um cartão por pessoa, e o formulário só a editar. */
