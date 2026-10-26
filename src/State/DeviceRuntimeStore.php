@@ -46,8 +46,9 @@ final class DeviceRuntimeStore
 
     public function deleteDevice(string $imei): void
     {
-        foreach ($this->redis->lrange(RedisKeys::list($imei, 'commands'), 0, $this->limit - 1) as $id) {
-            $this->redis->hdel(RedisKeys::commandIndex(), [(string)$id]);
+        $ids = array_map(strval(...), $this->redis->lrange(RedisKeys::list($imei, 'commands'), 0, $this->limit - 1));
+        if ($ids !== []) {
+            $this->redis->hdel(RedisKeys::commandIndex(), $ids);
         }
 
         $this->redis->srem(RedisKeys::devices(), $imei);
@@ -126,12 +127,15 @@ final class DeviceRuntimeStore
      */
     public function reachableDeviceImeis(): array
     {
-        $candidates = $this->onlineDeviceImeis();
+        $candidates = array_map('strval', $this->redis->zrangebyscore(RedisKeys::onlineDevices(), '-inf', '+inf'));
+        $reachable = [];
+        foreach ($this->runtimeStates($candidates) as $imei => $state) {
+            if (($state['online'] ?? false) === true && (string)($state['asleep'] ?? '0') !== '1') {
+                $reachable[] = (string)$imei;
+            }
+        }
 
-        return array_values(array_filter(
-            $candidates,
-            fn (string $imei): bool => $this->redis->hget(RedisKeys::device($imei), 'asleep') !== '1',
-        ));
+        return $reachable;
     }
 
     /** Uma trama de quem já está ligado prova-o vivo, sem o voltar a ligar. */

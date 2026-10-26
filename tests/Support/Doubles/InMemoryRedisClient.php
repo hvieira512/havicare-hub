@@ -31,6 +31,9 @@ final class InMemoryRedisClient implements ClientInterface
     /** O comando que rebenta, para provar o que acontece com o Redis em baixo. */
     public ?string $failOn = null;
 
+    /** @var list<array{string, mixed}> Cada comando e a sua chave, para provar o que não se leu. */
+    public array $calls = [];
+
     public function getCommandFactory()
     {
         throw new \BadMethodCallException('Not implemented');
@@ -76,11 +79,14 @@ final class InMemoryRedisClient implements ClientInterface
         if ($this->failOn !== null && strtolower((string)$method) === $this->failOn) {
             throw new \RuntimeException("redis {$this->failOn} failed");
         }
+        $this->calls[] = [strtolower((string)$method), $arguments[0] ?? null];
 
         return match (strtolower((string)$method)) {
             'sadd' => $this->sadd((string)$arguments[0], $arguments[1]),
             'srem' => $this->srem((string)$arguments[0], (string)$arguments[1]),
             'smembers' => $this->smembers((string)$arguments[0]),
+            'sismember' => isset($this->sets[(string)$arguments[0]][(string)$arguments[1]]) ? 1 : 0,
+            'exists' => $this->exists((string)$arguments[0]),
             'hmset' => $this->hmset((string)$arguments[0], $arguments[1]),
             'hgetall' => $this->hgetall((string)$arguments[0]),
             'hset' => $this->hset((string)$arguments[0], (string)$arguments[1], (string)$arguments[2]),
@@ -366,6 +372,17 @@ final class InMemoryRedisClient implements ClientInterface
         }
 
         return $this->strings[$key] ?? null;
+    }
+
+    private function exists(string $key): int
+    {
+        foreach ([$this->hashes, $this->lists, $this->strings, $this->sets, $this->sortedSets] as $bucket) {
+            if (($bucket[$key] ?? []) !== [] && ($bucket[$key] ?? '') !== '') {
+                return 1;
+            }
+        }
+
+        return 0;
     }
 
     /** @param list<string>|string $keys */

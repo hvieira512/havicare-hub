@@ -14,6 +14,11 @@ final class DeviceCommandStore
     /** Os estados de que um comando não sai. */
     private const FINISHED = ['acked', 'failed', 'dropped', 'superseded'];
 
+    /** Os estados que deixam o aparelho no índice dos pendentes. */
+    private const PENDING = ['queued', 'waiting'];
+
+    private bool $pendingIndexed = false;
+
     /** @var null|\Closure(string, string, array<string, mixed>): void */
     private ?\Closure $announce = null;
 
@@ -74,6 +79,9 @@ final class DeviceCommandStore
         }
         $this->redis->hset(RedisKeys::commandRecords($imei), $id, $encoded);
         $this->redis->hset(RedisKeys::commandIndex(), $id, $imei);
+        if (in_array((string)($record['status'] ?? ''), self::PENDING, true)) {
+            $this->redis->sadd(RedisKeys::pendingCommands(), [$imei]);
+        }
         $this->redis->lrem(RedisKeys::list($imei, 'commands'), 0, $id);
         $this->redis->lpush(RedisKeys::list($imei, 'commands'), [$id]);
         $evictedIds = array_map(
@@ -97,23 +105,22 @@ final class DeviceCommandStore
         }
     }
 
-    /** @param callable(string, string, array<string, mixed>): string $dispatch */
-    public function retryWaitingCommands(int $retryAfterSeconds, int $timeoutSeconds, int $maxAttempts, callable $dispatch): void
+    /**
+     * @param callable(string, string, array<string, mixed>): string $dispatch
+     * @return list<string> os aparelhos percorridos
+     */
+    public function retryWaitingCommands(int $retryAfterSeconds, int $timeoutSeconds, int $maxAttempts, callable $dispatch): array
     {
         $retryAfterSeconds = max(1, $retryAfterSeconds);
         $timeoutSeconds = max($retryAfterSeconds, $timeoutSeconds);
         $maxAttempts = max(1, $maxAttempts);
         $now = time();
+        $imeis = $this->pendingImeis();
 
-        foreach ($this->runtime->devices() as $device) {
-            $imei = (string)($device['imei'] ?? '');
-            if ($imei === '') {
-                continue;
-            }
-
+        foreach ($imeis as $imei) {
             foreach ($this->commands($imei) as $command) {
                 $commandStatus = (string)($command['status'] ?? '');
-                if (!in_array($commandStatus, ['queued', 'waiting'], true)) {
+                if (!in_array($commandStatus, self::PENDING, true)) {
                     continue;
                 }
                 if (!($command['retryable'] ?? false)) {
@@ -184,7 +191,51 @@ final class DeviceCommandStore
             }
 
             $this->fallBackToLegacyPhonebook($imei, $dispatch);
+            // Só aqui sai do índice: o recuo da lista telefónica acima precisa de ver os que a expiração falhou.
+            if (!self::hasPending($this->commands($imei))) {
+                $this->redis->srem(RedisKeys::pendingCommands(), $imei);
+            }
         }
+
+        return $imeis;
+    }
+
+    /** @param list<array<string, mixed>> $commands */
+    private static function hasPending(array $commands): bool
+    {
+        foreach ($commands as $command) {
+            if (in_array((string)($command['status'] ?? ''), self::PENDING, true)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /** @return list<string> */
+    private function pendingImeis(): array
+    {
+        $this->ensurePendingIndexed();
+
+        return array_map(strval(...), $this->redis->smembers(RedisKeys::pendingCommands()));
+    }
+
+    /** Os comandos guardados antes de o índice existir entram nele uma vez, na primeira leitura. */
+    private function ensurePendingIndexed(): void
+    {
+        if ($this->pendingIndexed) {
+            return;
+        }
+        if ((int)$this->redis->exists(RedisKeys::pendingCommandsIndexed()) === 0) {
+            foreach ($this->runtime->devices() as $device) {
+                $imei = (string)($device['imei'] ?? '');
+                if ($imei !== '' && self::hasPending($this->commands($imei))) {
+                    $this->redis->sadd(RedisKeys::pendingCommands(), [$imei]);
+                }
+            }
+            $this->redis->set(RedisKeys::pendingCommandsIndexed(), '1');
+        }
+        $this->pendingIndexed = true;
     }
 
     /**
@@ -297,7 +348,11 @@ final class DeviceCommandStore
         string $ref = '',
         ?bool $accepted = null,
         string $error = '',
-    ): void {
+    ): bool {
+        $this->ensurePendingIndexed();
+        if ((int)$this->redis->sismember(RedisKeys::pendingCommands(), $imei) === 0) {
+            return false;
+        }
         $uncorrelatedMatch = null;
         $semanticMatch = null;
 
@@ -313,7 +368,7 @@ final class DeviceCommandStore
 
             if ($commandIdent !== null && $ident !== null && (string)$commandIdent === (string)$ident) {
                 $this->completeCommandReply($imei, $command, $replyNativeType, $ident, $ref, $accepted, $error);
-                return;
+                return true;
             }
 
             $echoes = $this->echoesReplyIdent === null || ($this->echoesReplyIdent)((string)($command['protocol'] ?? ''));
@@ -329,19 +384,19 @@ final class DeviceCommandStore
         }
 
         $command = $uncorrelatedMatch ?? $semanticMatch;
-        if (is_array($command)) {
-            $this->completeCommandReply($imei, $command, $replyNativeType, $ident, $ref, $accepted, $error);
+        if (!is_array($command)) {
+            return false;
         }
+        $this->completeCommandReply($imei, $command, $replyNativeType, $ident, $ref, $accepted, $error);
+        return true;
     }
 
-    public function expireWaitingCommands(int $timeoutSeconds): void
+    /** @return list<string> os aparelhos percorridos */
+    public function expireWaitingCommands(int $timeoutSeconds): array
     {
         $cutoff = time() - max(1, $timeoutSeconds);
-        foreach ($this->runtime->devices() as $device) {
-            $imei = (string)($device['imei'] ?? '');
-            if ($imei === '') {
-                continue;
-            }
+        $imeis = $this->pendingImeis();
+        foreach ($imeis as $imei) {
             foreach ($this->commands($imei) as $command) {
                 $status = (string)($command['status'] ?? '');
                 if (!in_array($status, ['waiting', 'queued'], true)) {
@@ -361,6 +416,8 @@ final class DeviceCommandStore
                 }
             }
         }
+
+        return $imeis;
     }
 
     /**

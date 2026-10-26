@@ -50,6 +50,17 @@ final class RedisKeys
         return self::PREFIX . 'command-index';
     }
 
+    public static function pendingCommands(): string
+    {
+        return self::PREFIX . 'devices-with-pending-commands';
+    }
+
+    /** Marca que o índice dos pendentes já foi semeado a partir dos comandos guardados. */
+    public static function pendingCommandsIndexed(): string
+    {
+        return self::PREFIX . 'pending-commands-indexed';
+    }
+
     public static function onlineDevices(): string
     {
         return self::PREFIX . 'online-devices-by-last-seen';

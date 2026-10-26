@@ -195,8 +195,9 @@ final class DeviceStore implements DeviceStoreContract
 
     public function retryWaitingCommands(int $retryAfterSeconds, int $timeoutSeconds, int $maxAttempts, callable $dispatch): void
     {
-        $this->commands->retryWaitingCommands($retryAfterSeconds, $timeoutSeconds, $maxAttempts, $dispatch);
-        $this->updates->notifyAll();
+        foreach ($this->commands->retryWaitingCommands($retryAfterSeconds, $timeoutSeconds, $maxAttempts, $dispatch) as $imei) {
+            $this->updates->notify($imei);
+        }
     }
 
     public function markLatestCommand(string $imei, string $nativeType, array $fields): void
@@ -224,14 +225,16 @@ final class DeviceStore implements DeviceStoreContract
         ?bool $accepted = null,
         string $error = '',
     ): void {
-        $this->commands->markCommandReply($imei, $replyNativeType, $ident, $ref, $accepted, $error);
-        $this->updates->notify($imei);
+        if ($this->commands->markCommandReply($imei, $replyNativeType, $ident, $ref, $accepted, $error)) {
+            $this->updates->notify($imei);
+        }
     }
 
     public function expireWaitingCommands(int $timeoutSeconds): void
     {
-        $this->commands->expireWaitingCommands($timeoutSeconds);
-        $this->updates->notifyAll();
+        foreach ($this->commands->expireWaitingCommands($timeoutSeconds) as $imei) {
+            $this->updates->notify($imei);
+        }
     }
 
     public function recent(string $imei, string $list, int $sinceSeq = 0): array
