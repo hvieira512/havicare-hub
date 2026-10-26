@@ -113,7 +113,8 @@ abstract class DashboardHttpTestCase extends MysqlDashboardTestCase
         $dashboard = new DashboardHttpServer(
             $store,
             new ApiTokenStore($redis),
-            new Whitelist($db->whitelist),
+            // Os testes escrevem na base por fora do processo: a lista relê-se a cada leitura.
+            new Whitelist($db->whitelist, databaseCacheTtlSeconds: 0),
             $hub,
             $db,
             new DashboardHttpOptions(

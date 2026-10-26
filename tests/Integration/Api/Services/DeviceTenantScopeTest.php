@@ -30,6 +30,7 @@ final class DeviceTenantScopeTest extends MysqlDashboardTestCase
     private RadarLayoutService $layouts;
     private Whitelist $whitelist;
     private ApiDataAccess $db;
+    private DeviceStore $store;
 
     protected function setUp(): void
     {
@@ -37,8 +38,9 @@ final class DeviceTenantScopeTest extends MysqlDashboardTestCase
 
         $this->db = ApiDataAccess::fromDatabase($this->createDashboardDatabase());
         $this->whitelist = new Whitelist($this->db->whitelist);
+        $this->store = new DeviceStore(new InMemoryRedisClient());
         $this->devices = new DeviceService(
-            new DeviceStore(new InMemoryRedisClient()),
+            $this->store,
             $this->whitelist,
             $this->createStub(DeviceHubServer::class),
             $this->db,
@@ -64,6 +66,16 @@ final class DeviceTenantScopeTest extends MysqlDashboardTestCase
             $this->whitelist->getMetadata(self::OWNER_IMEI),
             'o dispositivo tem de continuar registado',
         );
+    }
+
+    /** O dono é o da whitelist: o que o Redis guardou de uma trama antiga não dá acesso. */
+    public function testAStaleOwnerInTheRuntimeStateGrantsNoAccess(): void
+    {
+        $this->store->deviceSeen(self::OWNER_IMEI, ['online' => '1', 'licenseId' => 2002, 'company' => 'outra']);
+
+        $result = $this->devices->show(self::OWNER_IMEI, $this->intruder(), '');
+
+        self::assertSame('not_found', $result['error']['code'] ?? null);
     }
 
     public function testAnotherTenantCannotCreateADeviceInTheOwnerTenant(): void

@@ -70,40 +70,16 @@ final class DeviceDirectory
     }
 
 
-    /** @param array<string, mixed>|null $device */
-    public function canAccessDevice(string $imei, ?ApiAuthContext $auth, ?array $device = null): bool
+    /** O dono é o da whitelist, em memória: o que o Redis guardou de uma trama pode estar desatualizado. */
+    public function canAccessDevice(string $imei, ?ApiAuthContext $auth): bool
     {
         if ($auth === null || $auth->isAdmin()) {
             return true;
         }
 
-        $device ??= $this->deviceSnapshot($imei);
-        $licenseId = $this->deviceLicenseId($imei, $device);
-        $company = $this->deviceCompany($imei, $device);
+        $metadata = $this->whitelist->getMetadata($imei);
 
-        return $auth->canAccessTenant($company, $licenseId);
-    }
-
-    /** @param array<string, mixed> $device */
-    private function deviceLicenseId(string $imei, array $device): int
-    {
-        $licenseId = trim((string)($device['licenseId'] ?? ''));
-        if ($licenseId !== '') {
-            return DeviceMetadata::normalizeLicenseId($licenseId);
-        }
-
-        return $this->whitelist->getMetadata($imei)?->licenseId ?? 0;
-    }
-
-    /** @param array<string, mixed> $device */
-    private function deviceCompany(string $imei, array $device): string
-    {
-        $company = trim((string)($device['company'] ?? ''));
-        if ($company !== '') {
-            return $company;
-        }
-
-        return $this->whitelist->getMetadata($imei)?->company ?? '';
+        return $metadata !== null && $auth->canAccessTenant($metadata->company, $metadata->licenseId);
     }
 
     /** @return array<string, mixed> */

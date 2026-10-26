@@ -350,7 +350,7 @@ final class DeviceFeatureRequestService
         }
         $device = is_array($result['device'] ?? null) ? $result['device'] : [];
         $imei = (string)($device['imei'] ?? '');
-        if ($imei === '' || !$this->directory->canAccessDevice($imei, $auth, $device)) {
+        if ($imei === '' || !$this->directory->canAccessDevice($imei, $auth)) {
             return ApiError::commandNotFound()->toArray();
         }
 

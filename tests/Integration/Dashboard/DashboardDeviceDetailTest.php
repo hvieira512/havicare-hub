@@ -175,6 +175,7 @@ final class DashboardDeviceDetailTest extends DashboardHttpTestCase
 
         self::assertIsArray($model);
         $store->runtime->registerDevice('868017032159118', '4P Touch', 'D46', 'watch', 1001, '', '', 'hitcare');
+        $db->whitelist->register('868017032159118', '4P Touch', 'D46', 'watch', 1001, '', '', 'hitcare');
         $db->modelCapabilities->replaceForModelId((int)$model['id'], ['medication_reminders']);
         ConfigurationFixtures::desired(
             $db,
@@ -227,6 +228,7 @@ final class DashboardDeviceDetailTest extends DashboardHttpTestCase
 
         self::assertIsArray($model);
         $store->runtime->registerDevice('868017032159118', '4P Touch', 'D46', 'watch', 1001, '', '', 'hitcare');
+        $db->whitelist->register('868017032159118', '4P Touch', 'D46', 'watch', 1001, '', '', 'hitcare');
         $db->modelCapabilities->replaceForModelId((int)$model['id'], ['medication_reminders']);
         ConfigurationFixtures::desired(
             $db,

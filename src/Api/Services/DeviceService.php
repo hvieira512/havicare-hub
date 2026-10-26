@@ -192,7 +192,7 @@ class DeviceService
     public function show(string $imei, ?ApiAuthContext $auth, string $baseUrl): array
     {
         $device = $this->directory->deviceSnapshot($imei);
-        if (!$this->directory->canAccessDevice($imei, $auth, $device)) {
+        if (!$this->directory->canAccessDevice($imei, $auth)) {
             return ApiError::deviceNotFound()->toArray();
         }
         $protocol = (string)($device['protocol'] ?? ProtocolRegistry::forModel((string)($device['supplier'] ?? ''), (string)($device['model'] ?? '')));
