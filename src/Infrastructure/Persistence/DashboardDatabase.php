@@ -33,6 +33,8 @@ final class DashboardDatabase
             PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
             // Limita a espera numa ligação morta em vez de bloquear o event loop sem fim.
             PDO::ATTR_TIMEOUT => (int)($config['timeout_seconds'] ?? 5),
+            // Preparação nativa: a ligação morta acusa-se no `prepare`, que o ReconnectingPdo repete.
+            PDO::ATTR_EMULATE_PREPARES => false,
         ];
 
         // A ligação real vive dentro do ReconnectingPdo e é refeita quando o MySQL a larga.
