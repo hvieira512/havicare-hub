@@ -33,7 +33,7 @@ done
 # Um fixo de GPS de confiança acompanhado de Wi-Fi ensina o mapa de rádio privado.
 docker compose exec -T hub php -r '
 require "vendor/autoload.php";
-$adapter = new Hub\Protocol\Adapter\WonlexAdapter();
+$adapter = new Hub\Ingress\Tcp\Wonlex\WonlexAdapter();
 $socket = fsockopen("127.0.0.1", 9000, $errno, $error, 3);
 if (!$socket) { fwrite(STDERR, "$error\n"); exit(1); }
 fwrite($socket, $adapter->encodeOutgoing([
@@ -85,7 +85,7 @@ fi
 
 docker compose exec -T hub php -r '
 require "vendor/autoload.php";
-$adapter = new Hub\Protocol\Adapter\WonlexAdapter();
+$adapter = new Hub\Ingress\Tcp\Wonlex\WonlexAdapter();
 $socket = fsockopen("127.0.0.1", 9000, $errno, $error, 3);
 if (!$socket) { fwrite(STDERR, "$error\n"); exit(1); }
 fwrite($socket, $adapter->encodeOutgoing([
@@ -131,7 +131,7 @@ REQUEST_COUNT_BEFORE_PRIVATE="$(docker compose exec -T hub sh -lc "wc -l < /tmp/
 # e antes da cache de resolução dele.
 docker compose exec -T hub php -r '
 require "vendor/autoload.php";
-$adapter = new Hub\Protocol\Adapter\WonlexAdapter();
+$adapter = new Hub\Ingress\Tcp\Wonlex\WonlexAdapter();
 $socket = fsockopen("127.0.0.1", 9000, $errno, $error, 3);
 if (!$socket) { fwrite(STDERR, "$error\n"); exit(1); }
 fwrite($socket, $adapter->encodeOutgoing([
@@ -182,7 +182,7 @@ wait_for_hub_tcp
 
 docker compose exec -T hub php -r '
 require "vendor/autoload.php";
-$adapter = new Hub\Protocol\Adapter\WonlexAdapter();
+$adapter = new Hub\Ingress\Tcp\Wonlex\WonlexAdapter();
 $socket = fsockopen("127.0.0.1", 9000, $errno, $error, 3);
 if (!$socket) { fwrite(STDERR, "$error\n"); exit(1); }
 fwrite($socket, $adapter->encodeOutgoing([
@@ -222,7 +222,7 @@ fi
 # O mapa privado é estado durável em MySQL, e não uma cache efémera no Redis.
 docker compose exec -T hub php -r '
 require "vendor/autoload.php";
-$adapter = new Hub\Protocol\Adapter\WonlexAdapter();
+$adapter = new Hub\Ingress\Tcp\Wonlex\WonlexAdapter();
 $socket = fsockopen("127.0.0.1", 9000, $errno, $error, 3);
 if (!$socket) { fwrite(STDERR, "$error\n"); exit(1); }
 fwrite($socket, $adapter->encodeOutgoing([
