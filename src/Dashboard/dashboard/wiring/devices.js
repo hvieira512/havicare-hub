@@ -88,7 +88,16 @@ function bindRadarMap() {
         closeRadarMap();
         refreshConfigAfterRadarMap();
     });
-    globalThis.addEventListener("resize", () => resizeRadarMap());
+    // Redesenhar a planta é refazer a cena: uma rajada de `resize` dá um só por frame.
+    let resizePending = false;
+    globalThis.addEventListener("resize", () => {
+        if (resizePending) return;
+        resizePending = true;
+        requestAnimationFrame(() => {
+            resizePending = false;
+            resizeRadarMap();
+        });
+    });
 }
 
 /** Fechada a planta, o cartão das áreas mostra o que se enviou, a não ser que haja outras edições por enviar. */
