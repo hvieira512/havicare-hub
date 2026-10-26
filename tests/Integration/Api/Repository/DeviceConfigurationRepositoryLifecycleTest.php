@@ -91,6 +91,30 @@ final class DeviceConfigurationRepositoryLifecycleTest extends MysqlDashboardTes
         self::assertSame(['fall_alarm' => ['afterSeconds' => 20]], $db->deviceConfigurations->effectivePayloads('AD8A613B0493', ['fall_alarm']));
     }
 
+    /** O histórico de uma definição guarda as 20 revisões substituídas mais recentes, e nunca a do valor aplicado. */
+    public function testOldRevisionsArePrunedButTheAppliedOneStays(): void
+    {
+        $database = $this->createDashboardDatabase();
+        $db = ApiDataAccess::fromDatabase($database);
+        $db->deviceConfigurations->recordRead('AD8A613B0493', 'fall_alarm', ['afterSeconds' => 20], 'qinglanst-radar');
+        for ($i = 1; $i <= 25; $i++) {
+            $payload = ['afterSeconds' => 20 + $i];
+            $db->deviceConfigurations->stage('AD8A613B0493', 'fall_alarm', $payload, [[
+                'nativeKey' => 'fall_alarm', 'protocol' => 'qinglanst-radar', 'command' => 'fall_alarm',
+                'payload' => $payload, 'confirmationMode' => 'execution_ack', 'operationId' => "op-{$i}",
+            ]], [[
+                'operationId' => "op-{$i}", 'nativeKey' => 'fall_alarm', 'nativeType' => 'fall_alarm',
+                'protocol' => 'qinglanst-radar', 'confirmationMode' => 'execution_ack',
+            ]]);
+        }
+
+        $superseded = (int)$database->pdo()->query(
+            "SELECT COUNT(*) FROM device_configuration_changes WHERE imei = 'AD8A613B0493' AND superseded_at IS NOT NULL AND effective_payload IS NULL"
+        )->fetchColumn();
+        self::assertSame(20, $superseded);
+        self::assertSame(['fall_alarm' => ['afterSeconds' => 20]], $db->deviceConfigurations->effectivePayloads('AD8A613B0493', ['fall_alarm']));
+    }
+
     /** Entre várias revisões aplicadas, vale a mais recente. */
     public function testTheAppliedValueIsTheLatestRevision(): void
     {

@@ -13,6 +13,9 @@ use PDO;
 /** Dono das tabelas da configuração: a linha por chave, e as alterações e as operações que a mudam. */
 final class DeviceConfigurationRepository
 {
+    /** As revisões substituídas que o histórico de cada definição guarda. */
+    private const KEPT_SUPERSEDED_REVISIONS = 20;
+
     /** Os estados em que uma alteração acabou, e que se anunciam. */
     private const OUTCOMES = ['confirmed', 'failed', 'confirmation_unavailable'];
 
@@ -159,6 +162,7 @@ final class DeviceConfigurationRepository
                   AND operation_row.delivery_status NOT IN ('acked', 'failed', 'superseded')
             ");
             $supersedeOps->execute([$now, $imei, $genericKey]);
+            $this->pruneHistory($imei, $genericKey);
 
             $insertChange = $this->pdo->prepare('
                 INSERT INTO device_configuration_changes (
@@ -265,6 +269,29 @@ final class DeviceConfigurationRepository
         }
         $this->refreshChangeForOperation($operationId);
         return true;
+    }
+
+    /**
+     * Guarda as revisões substituídas mais recentes de uma definição e apaga as outras, com as
+     * operações; a do último valor aplicado fica sempre, que é dela que o valor se lê.
+     */
+    private function pruneHistory(string $imei, string $configKey): void
+    {
+        $this->pdo->prepare('
+            DELETE c FROM device_configuration_changes c
+            JOIN (
+                SELECT desired_revision AS revision FROM device_configuration_changes
+                WHERE imei = ? AND config_key = ? AND superseded_at IS NOT NULL
+                ORDER BY desired_revision DESC LIMIT 1 OFFSET ' . (self::KEPT_SUPERSEDED_REVISIONS - 1) . '
+            ) cutoff
+            LEFT JOIN (
+                SELECT MAX(desired_revision) AS revision FROM device_configuration_changes
+                WHERE imei = ? AND config_key = ? AND effective_payload IS NOT NULL
+            ) applied ON TRUE
+            WHERE c.imei = ? AND c.config_key = ? AND c.superseded_at IS NOT NULL
+              AND c.desired_revision < cutoff.revision
+              AND c.desired_revision <> COALESCE(applied.revision, 0)
+        ')->execute([$imei, $configKey, $imei, $configKey, $imei, $configKey]);
     }
 
     /** Uma operação a mais numa alteração ainda em curso, como o recuo da lista telefónica do 4P Touch. */
