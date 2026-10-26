@@ -91,6 +91,16 @@ final class DeviceConfigurationRepositoryLifecycleTest extends MysqlDashboardTes
         self::assertSame(['fall_alarm' => ['afterSeconds' => 20]], $db->deviceConfigurations->effectivePayloads('AD8A613B0493', ['fall_alarm']));
     }
 
+    /** Entre várias revisões aplicadas, vale a mais recente. */
+    public function testTheAppliedValueIsTheLatestRevision(): void
+    {
+        $db = ApiDataAccess::fromDatabase($this->createDashboardDatabase());
+        $db->deviceConfigurations->recordRead('AD8A613B0493', 'fall_alarm', ['afterSeconds' => 20], 'qinglanst-radar');
+        $db->deviceConfigurations->recordRead('AD8A613B0493', 'fall_alarm', ['afterSeconds' => 40], 'qinglanst-radar');
+
+        self::assertSame(['fall_alarm' => ['afterSeconds' => 40]], $db->deviceConfigurations->effectivePayloads('AD8A613B0493', ['fall_alarm']));
+    }
+
     /** Ler o mesmo valor outra vez não cria revisão nova. */
     public function testReadingTheSameValueAgainChangesNothing(): void
     {

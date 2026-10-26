@@ -24,8 +24,18 @@ use Hub\Api\OpenApi\Schemas\TenancySchemas;
  */
 class OpenApiSpec
 {
+    /** @var array<string, mixed>|null */
+    private static ?array $spec = null;
+
     /** @return array<string, mixed> */
     public static function get(): array
+    {
+        // A especificação só muda com o código: constrói-se uma vez por processo.
+        return self::$spec ??= self::build();
+    }
+
+    /** @return array<string, mixed> */
+    private static function build(): array
     {
         return [
             'openapi' => '3.1.0',

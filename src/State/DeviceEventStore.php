@@ -46,6 +46,9 @@ final class DeviceEventStore
      */
     public function recent(string $imei, string $list, int $sinceSeq = 0): array
     {
+        if ($sinceSeq > 0 && $this->latestSequence($imei, $list) <= $sinceSeq) {
+            return [];
+        }
         $raw = $this->redis->lrange(RedisKeys::list($imei, $list), 0, $this->limit - 1);
 
         if ($sinceSeq <= 0) {

@@ -401,13 +401,19 @@ final class DeviceConfigurationRepository
             return [];
         }
 
+        // Só a revisão mais recente de cada chave: o histórico cresce, e a consulta corre a cada passagem.
         $stmt = $this->pdo->prepare('
-            SELECT config_key, effective_payload FROM device_configuration_changes
-            WHERE imei = ? AND effective_payload IS NOT NULL
-              AND config_key IN (' . implode(', ', array_fill(0, count($keys), '?')) . ')
-            ORDER BY desired_revision
+            SELECT c.config_key, c.effective_payload
+            FROM device_configuration_changes c
+            JOIN (
+                SELECT config_key, MAX(desired_revision) AS revision FROM device_configuration_changes
+                WHERE imei = ? AND effective_payload IS NOT NULL
+                  AND config_key IN (' . implode(', ', array_fill(0, count($keys), '?')) . ')
+                GROUP BY config_key
+            ) latest ON latest.config_key = c.config_key AND latest.revision = c.desired_revision
+            WHERE c.imei = ?
         ');
-        $stmt->execute([$imei, ...$keys]);
+        $stmt->execute([$imei, ...$keys, $imei]);
 
         $payloads = [];
         foreach ($stmt->fetchAll() as $row) {
