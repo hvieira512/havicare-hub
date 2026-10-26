@@ -83,7 +83,7 @@ com as instâncias de desenvolvimento e produção estão no
 | [17 — Sensor de fralda](17-sensor-de-fralda.md) | Capacidades, derivação do estado, sensibilidade e contrato congelado |
 | [19 — Dispensador de comprimidos](19-dispensador-de-comprimidos.md) | Zayata M228: protocolo TCP, o que o hub já descodifica, API do fabricante e armadilhas |
 | [19a — Parâmetros do M228](19a-dispensador-parametros.md) | O anexo de consulta: as TAGs do tipo `0x02`, uma a uma |
-| [26 — Alarmes clínicos](26-alarmes-clinicos.md) | **Proposta.** O inventário do que cada aparelho alarma sozinho, os limites que o hub aplica, e o fim de cada condição no MQTT |
+| [26 — Alarmes clínicos](26-alarmes-clinicos.md) | **Proposta.** O inventário do que cada aparelho alarma sozinho, as gravidades que mudam, as leituras que não contam e o estado do dispensador na telemetria |
 
 ### Infraestrutura
 

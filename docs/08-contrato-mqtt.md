@@ -406,72 +406,48 @@ ativo. Quem consome a QoS 1 já tem de tolerar repetidos.
 
 > **Por aprovar e por construir.** Nada desta subsecção está em vigor: as tabelas
 > acima continuam a ser o contrato. O desenho completo, com o inventário que o
-> justifica e um exemplo, está no [capítulo 26](26-alarmes-clinicos.md).
+> justifica, está no [capítulo 26](26-alarmes-clinicos.md).
 
-O hub passa a ser o único a decidir a gravidade, e continua a ser um
-normalizador: publica factos. Agrupar, escalar e fechar alertas é de quem
-consome, e o fim de uma condição já está no que o hub publica hoje — a telemetria
-de volta aos limites, a fralda limpa, o estado `online`.
+O hub continua a ser um normalizador: publica as leituras e os acontecimentos
+que o aparelho levanta, com a gravidade que lhes dá. Os limites dos sinais vitais
+e o ciclo de vida dos alertas são de quem consome, que já recebe as leituras
+todas. Uma regra só fica no hub quando precisa de dados que só ele tem, como o
+`proximity_alarm`.
 
-**Limites por dispositivo.** `heart_rate_limits`, `blood_oxygen_limits`,
-`blood_pressure_limits`, `temperature_limits` e `breath_rate_limits`, escritos
-pelo `PATCH /api/devices/{imei}/configurations`. O hub aplica-os à telemetria; no
-radar, que alarma sozinho, traduz-os para o limiar dele.
-
-**O envelope fica como está**: nenhum campo novo, nenhum evento de fim. Os
-repetidos da QoS 1 reconhecem-se por dispositivo + `type` + `occurredAt`, mais o
-campo do `data` que distingue; dois factos reais do mesmo `type` no mesmo segundo
-juntam-se num, porque o `occurredAt` é ao segundo.
-
-**A regra do hub.** Com `*_limits` configurados, o hub publica o evento de
-alarme — `heart_rate_high`, `blood_oxygen_low`, … — com a gravidade pelo nível, o
-valor e o limite no `data`, a partir de `confirmReadings` leituras seguidas fora,
-e **de novo a cada leitura confirmada fora**. A subida de alerta para alarme é a
-primeira repetição com `severity: alarm`. Uma leitura dentro dos limites sai só
-como a telemetria de sempre, e é por ela que quem consome vê que voltou. Onde o
-normal se vê, aparelho a aparelho, está no capítulo 26, secção 7 — e o dispensador
-não o mostra para as avarias, o ambiente e a chamada, que só existem como evento.
-
-**Vários do mesmo tipo.** Quando um dispositivo representa várias coisas, o que
-as distingue já está no `data`: `pagerId` no NCS, `personIndex` no radar,
-`gatewayId` no `proximity_alarm`, `fault` no `device_fault`, `slot` e `doseDate`
-nas doses. É por esses campos que quem consome os distingue.
-
-**O desligado atrás de um gateway.** O `device.disconnected` de um aparelho
-retransmitido por um gateway MOKO ou da Havicare leva `data.gatewayId`, o último
-gateway que o ouviu, e `data.cause: "gateway_offline"` quando esse gateway já
-estava `offline`.
-
-Regras de gravidade que mudam:
+Gravidades que mudam:
 
 | `type` | Hoje | Proposta |
 |---|---|---|
-| `heart_rate_high` · `heart_rate_low` | `alarm` fora de 20–160 bpm | `alarm` ou `alert` pelo `heart_rate_limits`; publicados também pelo hub para relógios, pulseira Veepoo, tensiómetro, oxímetro e balança |
-| `breath_rate_high` · `breath_rate_low` | `alert` | idem, com o `breath_rate_limits`; também Wonlex e Veepoo |
 | `apnea` | `alarm` | `alert` |
 | `weak_vital_signs` | `alert` | `alarm` |
 | `device_state` | `alert` | `info` |
-| `low_battery` | `alert` | `info`, em todos os que o publicam: bateria fraca é manutenção, e a perda de proteção é o `device.disconnected` |
 | `medication_alarm_change` · `medication_intake` | `alert` numa dose falhada ou toma anormal | `info`; a dose falhada passa a `dose_missed` |
 | `device.disconnected` | sem `severity` | `alert`; `info` nos aparelhos que só se ligam para medir |
 | `device.connected` | sem `severity` | `info` |
 
 Tipos novos:
 
-| `type` | `data` | `severity` |
-|---|---|---|
-| `blood_oxygen_low` | `spo2Percent`, `limitPercent` | `alert` · `alarm` |
-| `blood_pressure_high` · `blood_pressure_low` | `systolicMmHg`, `diastolicMmHg`, `limitSystolicMmHg`, `limitDiastolicMmHg` | `alert` · `alarm` |
-| `temperature_high` · `temperature_low` | `bodyCelsius`, `limitCelsius`, `site` | `alert` · `alarm` |
-| `dose_missed` | `slot`, `scheduledAt`, `doseDate` | `alert` |
+| `type` | Canal | `data` | `severity` |
+|---|---|---|---|
+| `dose_missed` | `events` | `slot`, `scheduledAt`, `doseDate` — um por dose, sem evento de fim | `alert` |
+| `dispenser_conditions` | `telemetry` | `faults` (lista das avarias acesas), `storageOutOfRange`, `helpCallActive` — a cada heartbeat do M228 | — |
 
-A cerca passa a ser configuração do hub (`safe_zones`), e os bits de cerca da 4P
-Touch deixam de ser publicados.
+**O desligado.** Num socket fechado, o `device.disconnected` espera 60 s por uma
+nova ligação antes de sair. O de um aparelho retransmitido por um gateway MOKO ou
+da Havicare leva `data.gatewayId`, o último gateway que o ouviu, e
+`data.cause: "gateway_offline"` quando esse gateway já estava `offline`.
 
-Nenhuma gravidade nem nenhum `type` que o hitCare lê muda. A `severity` e o
-`data` nos `device.*` vão coordenados com ele (ver
-[«Pendente do hitCare»](#pendente-do-hitcare) e a secção 10 do
-[capítulo 26](26-alarmes-clinicos.md#10-o-hitcare-e-a-compatibilidade)).
+**As leituras que não contam.** `fromHistory: true` passa a marcar todas as
+leituras clínicas que não são ao vivo — da memória, de um lote, ou com a hora do
+aparelho mais de 30 minutos antes da chegada. Um sentinela de «medição falhada»
+(o `temp=0` da 4P Touch) deixa de sair como leitura; uma temperatura corporal
+abaixo de 34,0 °C sai com `implausible: true`.
+
+Os limiares nativos do radar, as cercas da 4P Touch e o `proximity_alarm` ficam
+como estão. Nenhuma gravidade nem nenhum `type` que o hitCare lê muda; a
+`severity` e o `data` nos `device.*` vão coordenados com ele (ver
+[«Pendente do hitCare»](#pendente-do-hitcare) e a secção 8 do
+[capítulo 26](26-alarmes-clinicos.md#8-o-hitcare-e-a-compatibilidade)).
 
 ## 5. `status`
 
