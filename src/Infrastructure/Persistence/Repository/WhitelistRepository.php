@@ -30,18 +30,6 @@ final class WhitelistRepository
     }
 
     /** @return array<string, mixed>|null */
-    public function findByDeviceId(string $deviceId, ?string $deviceType = null): ?array
-    {
-        $sql = 'SELECT * FROM whitelist WHERE device_id = ?';
-        $params = [$deviceId];
-        if ($deviceType !== null) {
-            $sql .= ' AND device_type = ?';
-            $params[] = DeviceMetadata::normalizeDeviceType($deviceType);
-        }
-        return $this->fetchOne($sql . ' ORDER BY imei LIMIT 1', $params);
-    }
-
-    /** @return array<string, mixed>|null */
     public function getDevice(string $imei): ?array
     {
         $stmt = $this->pdo->prepare($this->deviceSelectSql() . ' WHERE w.imei = ?');

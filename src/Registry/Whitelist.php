@@ -29,7 +29,7 @@ class Whitelist
      */
     public function __construct(
         private ?WhitelistRepository $db = null,
-        private int $databaseCacheTtlSeconds = 5,
+        private int $databaseCacheTtlSeconds = 60,
         array $devices = [],
     ) {
         $this->databaseCacheTtlSeconds = max(0, $this->databaseCacheTtlSeconds);
@@ -157,7 +157,7 @@ class Whitelist
         }
 
         if ($this->db !== null) {
-            return $this->resolvedDatabaseAlias($this->db->findByDeviceId($alias, $deviceType));
+            $this->refreshDatabaseCacheIfStale();
         }
         foreach ($this->devices as $canonicalImei => $metadata) {
             if ($metadata->deviceType !== $deviceType) {
@@ -200,19 +200,5 @@ class Whitelist
             $this->loadEntry((string)$row['imei'], $row);
         }
         $this->databaseCacheLoadedAt = time();
-    }
-
-    /**
-     * @param array<string, mixed>|null $row
-     * @return array<string, mixed>|null
-     */
-    private function resolvedDatabaseAlias(?array $row): ?array
-    {
-        if ($row === null) {
-            return null;
-        }
-
-        $imei = trim((string)($row['imei'] ?? ''));
-        return $imei === '' ? null : ['imei' => $imei] + DeviceMetadata::fromArray($row)->toArray();
     }
 }

@@ -22,4 +22,17 @@ final class WhitelistCacheTest extends MysqlDashboardTestCase
 
         self::assertTrue($whitelist->isAuthorized('861265061009822'));
     }
+
+    /** O alias resolve-se na lista em memória: uma consulta por mensagem bloqueava o loop. */
+    public function testAnAliasResolvesWithoutTheDatabase(): void
+    {
+        $database = $this->createDashboardDatabase();
+        $db = ApiDataAccess::fromDatabase($database);
+        $db->whitelist->register('bea6c3dd8e02', 'Voerka', 'W812', 'ncs', 1001, '', '3e78ec2b0fb7', 'hitcare');
+        $whitelist = new Whitelist($db->whitelist, databaseCacheTtlSeconds: 3600);
+
+        $database->pdo()->exec('RENAME TABLE whitelist TO whitelist_away');
+
+        self::assertSame('bea6c3dd8e02', $whitelist->resolve('3e78ec2b0fb7', 'ncs')['imei'] ?? null);
+    }
 }
