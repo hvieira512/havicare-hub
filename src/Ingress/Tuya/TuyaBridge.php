@@ -13,6 +13,7 @@ use Hub\Log\Logger;
 use Hub\Registry\Denylist;
 use Hub\Registry\Whitelist;
 use Hub\State\DeviceReportStore;
+use Hub\State\DeviceRuntimeStore;
 use Hub\Support\Throttle;
 use Predis\ClientInterface;
 use Ratchet\Client\Connector;
@@ -155,15 +156,7 @@ final class TuyaBridge implements MqttIngress
             return;
         }
         $woke = $this->deviceStore?->deviceAsleep($deviceId, false) ?? false;
-        $cameOnline = $this->deviceStore?->deviceSeen($deviceId, [
-            'supplier' => (string)$device['supplier'],
-            'model' => (string)$device['model'],
-            'deviceType' => $deviceType,
-            'licenseId' => $licenseId,
-            'company' => $company,
-            'protocol' => self::PROTOCOL,
-            'transport' => 'pulsar',
-        ]) ?? false;
+        $cameOnline = $this->deviceStore?->deviceSeen($deviceId, DeviceRuntimeStore::seenFields($device, self::PROTOCOL, 'pulsar')) ?? false;
         if ($cameOnline) {
             $this->connections->announce($deviceId, $device, true);
         } elseif ($woke) {

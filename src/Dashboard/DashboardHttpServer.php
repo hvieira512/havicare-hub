@@ -56,6 +56,7 @@ final class DashboardHttpServer
         private ?LoginThrottle $loginThrottle = null,
         // A mesma instância que o processo do hub monta; quando falta, monta-se aqui.
         ?RadarLayoutSync $radarLayoutSync = null,
+        ?DeviceService $deviceService = null,
     ) {
         $radarLayoutSync ??= new RadarLayoutSync(
             new QinglanstApiClient(new Browser()),
@@ -64,12 +65,7 @@ final class DashboardHttpServer
             $this->db->radarCredentials,
             $this->db->whitelist,
         );
-        $deviceService = new DeviceService(
-            $this->store,
-            $this->whitelist,
-            $this->hub,
-            $this->db,
-        );
+        $deviceService ??= new DeviceService($this->store, $this->whitelist, $this->hub, $this->db);
         $this->apiKernel = new ApiKernel(
             $options->apiAuthRequired,
             new \Hub\Api\ApiServices(

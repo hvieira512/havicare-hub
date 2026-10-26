@@ -8,6 +8,7 @@ use Hub\Device\ConnectionAnnouncer;
 use Hub\Device\HubMqttBridge;
 use Hub\Domain\DeviceMetadata;
 use Hub\State\DeviceReportStore;
+use Hub\State\DeviceRuntimeStore;
 
 /**
  * Se cada aparelho servido por gateway GATT está alcançável: está online enquanto um gateway
@@ -44,15 +45,10 @@ final class BraceletPresence
 
         // É isto que a dashboard e a API leem para dizer se o aparelho está online; a manutenção
         // também o desliga, e por isso é por aqui que se sabe se isto é uma ligação nova.
-        $cameOnline = $this->deviceStore?->deviceSeen($deviceKey, [
-            'supplier' => (string)($device['supplier'] ?? ''),
-            'model' => (string)($device['model'] ?? ''),
-            'deviceType' => (string)($device['deviceType'] ?? ''),
-            'licenseId' => DeviceMetadata::normalizeLicenseId($device['licenseId'] ?? 0),
-            'company' => (string)($device['company'] ?? 'null'),
-            'protocol' => $this->protocol,
-            'transport' => 'ble_gateway',
-        ] + ($gatewayKey === '' ? [] : ['gatewayId' => $gatewayKey]));
+        $cameOnline = $this->deviceStore?->deviceSeen(
+            $deviceKey,
+            DeviceRuntimeStore::seenFields($device, $this->protocol, 'ble_gateway') + ($gatewayKey === '' ? [] : ['gatewayId' => $gatewayKey]),
+        );
 
         // O estado é retido e vale a cada anúncio; o acontecimento só sai na transição.
         if ($wasOnline && $cameOnline !== true) {

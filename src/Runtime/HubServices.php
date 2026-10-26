@@ -32,6 +32,7 @@ use Hub\Registry\Whitelist;
 use PhpMqtt\Client\MqttClient;
 use Predis\Client as RedisClient;
 use Predis\ClientInterface;
+use Hub\Api\Services\DeviceService;
 
 /**
  * A raiz de composição dos serviços de vida longa do hub, singletons do processo. Uma só
@@ -53,6 +54,8 @@ final class HubServices
         public readonly ?LocationTelemetryEnricherContract $locationEnricher,
         public readonly RadarLayoutSync $radarLayoutSync,
         public readonly QinglanstCloudDownlinks $qinglanstCloudDownlinks,
+        // Uma só para a API e para a manutenção.
+        public readonly DeviceService $deviceService,
     ) {
     }
 
@@ -170,6 +173,7 @@ final class HubServices
             $locationEnricher,
             $radarLayoutSync,
             $qinglanstCloudDownlinks,
+            new DeviceService($deviceStore, $whitelist, $hubServer, $dataAccess),
         );
     }
 

@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Hub\Ingress\Mqtt\Moko;
 
-use Hub\Domain\Capability\CapabilityCatalog;
-use Hub\Domain\DeviceMetadata;
 use Hub\Device\CommercialModelResolver;
 use Hub\Device\DeviceDescriptor;
+use Hub\Domain\Capability\CapabilityCatalog;
+use Hub\Domain\DeviceMetadata;
 use Hub\Domain\DiaperSensitivity;
 use Hub\Domain\GatewayDeviceLinkLookup;
 use Hub\Ingress\Mqtt\DispatchesQueued;
@@ -18,6 +18,7 @@ use Hub\Ingress\Mqtt\Monit\MonitMecsProDecoder;
 use Hub\Ingress\Mqtt\Monit\MonitNormalizer;
 use Hub\Ingress\Mqtt\MqttBridgeBase;
 use Hub\Log\Logger;
+use Hub\State\DeviceRuntimeStore;
 
 /**
  * O subscritor único do `…/gw/+/raw`: trata as tramas MOKO, e entrega à ponte que a reclama
@@ -116,12 +117,7 @@ final class MokoBridge extends MqttBridgeBase implements DispatchesQueued
         // Reencaminha dezenas de tramas por segundo: o «visto» guarda-se a metade do sinal de vida.
         $cameOnline = false;
         if ($this->allow('relaying:' . $deviceKey, self::RELAYING_SEEN_SECONDS)) {
-            $cameOnline = $this->deviceStore?->deviceSeen($deviceKey, [
-                'supplier' => (string)$gateway['supplier'], 'model' => (string)$gateway['model'],
-                'deviceType' => 'gateway', 'licenseId' => DeviceMetadata::normalizeLicenseId($gateway['licenseId'] ?? 0),
-                'company' => (string)($gateway['company'] ?? 'null'),
-                'protocol' => 'havicare-ble-gateway', 'transport' => 'mqtt',
-            ]);
+            $cameOnline = $this->deviceStore?->deviceSeen($deviceKey, DeviceRuntimeStore::seenFields($gateway, 'havicare-ble-gateway', 'mqtt'));
         }
         $this->gateways->markOnline($this->enrichWithCommercialName($gateway), $cameOnline === true);
     }
@@ -270,11 +266,7 @@ final class MokoBridge extends MqttBridgeBase implements DispatchesQueued
             ],
         ];
         $this->mqttBridge->publishRaw($deviceKey, $raw, $deviceType, $licenseId, $company);
-        $cameOnline = $this->deviceStore?->deviceSeen($deviceKey, [
-            'supplier' => (string)$gateway['supplier'], 'model' => (string)$gateway['model'],
-            'deviceType' => $deviceType, 'licenseId' => $licenseId, 'company' => $company,
-            'protocol' => $protocol, 'transport' => 'mqtt',
-        ]);
+        $cameOnline = $this->deviceStore?->deviceSeen($deviceKey, DeviceRuntimeStore::seenFields($gateway, $protocol, 'mqtt'));
         // Os scans ficam fora do histórico do gateway: descrevem os retransmitidos, que têm o seu.
         if (!in_array((string)$decoded['messageId'], self::SCAN_MESSAGE_IDS, true)) {
             $this->deviceStore?->append($deviceKey, 'raw', $raw + ['deviceType' => $deviceType, 'licenseId' => $licenseId]);

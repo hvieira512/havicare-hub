@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Hub\Domain\Capability\FourPTouch;
 
+use Hub\Command\DeviceConfigurationCatalog;
 use Hub\Domain\Capability\CapabilityHelpers;
 
 /**
@@ -38,27 +39,30 @@ final class FourPTouchGenericHandler
      */
     public function toNative(string $genericKey, mixed $value): array
     {
+        // O nome nativo é o da definição; aqui fica só a forma do valor de cada capacidade.
+        $native = trim((string)(DeviceConfigurationCatalog::entryForCapability('four-p-touch', $genericKey)['key'] ?? $genericKey));
+
         return match ($genericKey) {
-            'location_reporting_interval' => ['uploadInterval' => self::requireObjectValue($value, 'uploadInterval')],
-            'monitor_number' => ['monitorNumber' => ['phone' => self::requireStringValue($value, 'phone')]],
-            'language_timezone' => ['languageTimezone' => self::requireObjectValue($value, 'languageTimezone')],
-            'low_battery_alert' => ['lowBatterySmsAlerts' => ['enabled' => self::requireBoolLikeValue($value, 'enabled')]],
-            'remove_watch_alarm' => ['removeWatchAlarm' => ['enabled' => self::requireBoolLikeValue($value, 'enabled')]],
-            'remove_watch_sms_alert' => ['removeWatchSmsAlerts' => ['enabled' => self::requireBoolLikeValue($value, 'enabled')]],
-            'do_not_disturb' => ['doNotDisturb' => ['ranges' => self::requireListValue(is_array($value) && array_key_exists('ranges', $value) ? $value['ranges'] : $value, 'ranges')]],
-            'fall_detection' => ['fallDownAlert' => self::requireObjectValue($value, 'fallDownAlert')],
-            'fall_sensitivity' => ['fallDownSensitivity' => $this->fallSensitivityPayload($value)],
-            'auto_vitals_interval' => ['healthAutoMeasurement' => self::requireObjectValue($value, 'healthAutoMeasurement')],
-            'sound_profile' => ['profile' => ['mode' => self::requireStringField($value, 'mode')]],
-            'pedometer_schedule' => ['walkTime' => ['ranges' => self::requireListValue(is_array($value) && array_key_exists('ranges', $value) ? $value['ranges'] : $value, 'ranges')]],
-            'sleep_monitoring' => ['sleepTime' => ['range' => self::requireStringField($value, 'range')]],
-            'temperature_measurement_interval' => ['bodyTemperatureInterval' => self::requireObjectValue($value, 'bodyTemperatureInterval')],
-            'make_call' => ['makeCall' => ['phone' => self::requireStringField($value, 'phone')]],
-            'center_number' => ['centerNumber' => ['phone' => self::requireStringField($value, 'phone')]],
-            'push_message' => ['pushMessage' => ['message' => self::requireStringField($value, 'message')]],
-            'restart_device' => ['restartCommand' => []],
-            'power_off' => ['powerOffCommand' => []],
-            'find_device' => ['findDeviceCommand' => []],
+            'location_reporting_interval' => [$native => self::requireObjectValue($value, $native)],
+            'monitor_number' => [$native => ['phone' => self::requireStringValue($value, 'phone')]],
+            'language_timezone' => [$native => self::requireObjectValue($value, $native)],
+            'low_battery_alert' => [$native => ['enabled' => self::requireBoolLikeValue($value, 'enabled')]],
+            'remove_watch_alarm' => [$native => ['enabled' => self::requireBoolLikeValue($value, 'enabled')]],
+            'remove_watch_sms_alert' => [$native => ['enabled' => self::requireBoolLikeValue($value, 'enabled')]],
+            'do_not_disturb' => [$native => ['ranges' => self::requireListValue(is_array($value) && array_key_exists('ranges', $value) ? $value['ranges'] : $value, 'ranges')]],
+            'fall_detection' => [$native => self::requireObjectValue($value, $native)],
+            'fall_sensitivity' => [$native => $this->fallSensitivityPayload($value)],
+            'auto_vitals_interval' => [$native => self::requireObjectValue($value, $native)],
+            'sound_profile' => [$native => ['mode' => self::requireStringField($value, 'mode')]],
+            'pedometer_schedule' => [$native => ['ranges' => self::requireListValue(is_array($value) && array_key_exists('ranges', $value) ? $value['ranges'] : $value, 'ranges')]],
+            'sleep_monitoring' => [$native => ['range' => self::requireStringField($value, 'range')]],
+            'temperature_measurement_interval' => [$native => self::requireObjectValue($value, $native)],
+            'make_call' => [$native => ['phone' => self::requireStringField($value, 'phone')]],
+            'center_number' => [$native => ['phone' => self::requireStringField($value, 'phone')]],
+            'push_message' => [$native => ['message' => self::requireStringField($value, 'message')]],
+            'restart_device' => [$native => []],
+            'power_off' => [$native => []],
+            'find_device' => [$native => []],
             default => throw new \InvalidArgumentException("Unsupported four-p-touch capability {$genericKey}"),
         };
     }

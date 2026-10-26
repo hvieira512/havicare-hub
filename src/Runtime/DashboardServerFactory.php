@@ -48,6 +48,7 @@ final class DashboardServerFactory
                 maxGlobal: (int)$dashboardConfig['login_max_global'],
             ),
             $services->radarLayoutSync,
+            $services->deviceService,
         );
         // Quem serve é que semeia o Redis, e só aqui.
         $dashboard->warmUp();

@@ -5,18 +5,13 @@ declare(strict_types=1);
 namespace Hub\State;
 
 use Hub\Command\Configuration\Payload\FourPTouchPhonebookFallback;
+use Hub\Command\DeliveryStatus;
 use Hub\Command\DeviceCommandCatalog;
 use Hub\Protocol\Adapter\FourPTouchAdapter;
 use Predis\ClientInterface;
 
 final class DeviceCommandStore
 {
-    /** Os estados de que um comando não sai. */
-    private const FINISHED = ['acked', 'failed', 'dropped', 'superseded'];
-
-    /** Os estados que deixam o aparelho no índice depois da passagem de repetição. */
-    private const PENDING = ['queued', 'waiting'];
-
     /** Quanto tempo um comando em fila espera que o aparelho volte. */
     private const QUEUED_LIFETIME_SECONDS = 7 * 86400;
 
@@ -48,7 +43,7 @@ final class DeviceCommandStore
      */
     private static function outcome(string $before, string $after, bool $announceSent): ?string
     {
-        if (in_array($before, self::FINISHED, true)) {
+        if (in_array($before, DeliveryStatus::FINISHED, true)) {
             return null;
         }
         if ($announceSent && in_array($after, ['waiting', 'sent'], true)) {
@@ -123,7 +118,7 @@ final class DeviceCommandStore
         foreach ($imeis as $imei) {
             foreach ($this->commands($imei) as $command) {
                 $commandStatus = (string)($command['status'] ?? '');
-                if (!in_array($commandStatus, self::PENDING, true)) {
+                if (!in_array($commandStatus, DeliveryStatus::PENDING, true)) {
                     continue;
                 }
                 if (!($command['retryable'] ?? false)) {
@@ -207,7 +202,7 @@ final class DeviceCommandStore
     private static function hasPending(array $commands): bool
     {
         foreach ($commands as $command) {
-            if (in_array((string)($command['status'] ?? ''), self::PENDING, true)) {
+            if (in_array((string)($command['status'] ?? ''), DeliveryStatus::PENDING, true)) {
                 return true;
             }
         }
@@ -318,7 +313,7 @@ final class DeviceCommandStore
             if (($command['nativeType'] ?? '') !== $nativeType) {
                 continue;
             }
-            if (in_array((string)($command['status'] ?? ''), self::FINISHED, true)) {
+            if (in_array((string)($command['status'] ?? ''), DeliveryStatus::FINISHED, true)) {
                 continue;
             }
             $this->recordCommand($imei, (string)$command['id'], array_merge($command, $fields));
@@ -342,7 +337,7 @@ final class DeviceCommandStore
     {
         foreach ($this->commands($imei) as $command) {
             if ((string)($command['id'] ?? '') === $id) {
-                if (!in_array((string)($command['status'] ?? ''), self::FINISHED, true)) {
+                if (!in_array((string)($command['status'] ?? ''), DeliveryStatus::FINISHED, true)) {
                     $this->recordCommand($imei, $id, array_merge($command, $fields));
                 }
                 return;
@@ -413,7 +408,7 @@ final class DeviceCommandStore
         foreach ($imeis as $imei) {
             foreach ($this->commands($imei) as $command) {
                 $status = (string)($command['status'] ?? '');
-                if (!in_array($status, ['waiting', 'queued'], true)) {
+                if (!in_array($status, DeliveryStatus::PENDING, true)) {
                     continue;
                 }
                 // Em fila e repetível quer dizer "à espera de o dispositivo voltar": a varredura de

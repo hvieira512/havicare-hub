@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Hub\Domain\Capability;
 
+use Hub\Command\DeviceConfigurationCatalog;
 use Hub\Domain\Capability\AlarmClock\AlarmClockCapability;
 use Hub\Domain\Capability\AlarmClock\FourPTouch as FourPTouchAlarmClock;
 use Hub\Domain\Capability\AlarmClock\Vivistar as VivistarAlarmClock;
@@ -44,16 +45,32 @@ final class CapabilityRegistry
         // A 4P Touch tem duas chaves nativas para a mesma restrição.
         $this->register(new SwitchCapability(
             'whitelist_enabled',
-            ['vivistar-iw' => 'whitelist_enabled', 'wonlex-json' => 'wonlexCallInLimitSwitch', 'four-p-touch' => 'rejectUnknownCalls'],
+            self::nativeKeys('whitelist_enabled', ['vivistar-iw', 'wonlex-json', 'four-p-touch']),
             multipleNativeKeys: true,
             offByDefault: ['four-p-touch'],
             meta: ['wonlex-json' => ['allowedContactSources' => ['phonebook', 'sos_contacts']]],
         ));
         $this->register(new PhonebookCapability());
-        $this->register(new SwitchCapability('sos_sms_alert', ['wonlex-json' => 'wonlexSOSSwitch', 'four-p-touch' => 'sosSmsAlerts']));
+        $this->register(new SwitchCapability('sos_sms_alert', self::nativeKeys('sos_sms_alert', ['wonlex-json', 'four-p-touch'])));
         $this->register(new MedicationRemindersCapability());
         $this->register(new DiaperSensitivityCapability());
         $this->register(new ProximityAlarmCapability());
+    }
+
+    /**
+     * O nome nativo de uma capacidade em cada protocolo, pela definição que a declara.
+     *
+     * @param list<string> $protocols
+     * @return array<string, string>
+     */
+    private static function nativeKeys(string $genericKey, array $protocols): array
+    {
+        $keys = [];
+        foreach ($protocols as $protocol) {
+            $keys[$protocol] = trim((string)(DeviceConfigurationCatalog::entryForCapability($protocol, $genericKey)['key'] ?? $genericKey));
+        }
+
+        return $keys;
     }
 
     public function register(CapabilityContract $capability): void

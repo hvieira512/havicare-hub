@@ -5,10 +5,10 @@ declare(strict_types=1);
 namespace Hub\Api\Services;
 
 use Hub\Api\Http\ApiError;
-use Hub\Api\Http\CollectionPresenter;
 use Hub\Api\Http\CollectionColumns;
-use Hub\Infrastructure\Persistence\Repository\ApiDataAccess;
+use Hub\Api\Http\CollectionPresenter;
 use Hub\Api\Request\CompanyWriteRequest;
+use Hub\Infrastructure\Persistence\Repository\ApiDataAccess;
 use Hub\Registry\Whitelist;
 
 class CompanyService

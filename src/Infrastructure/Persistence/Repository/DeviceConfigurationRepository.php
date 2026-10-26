@@ -38,6 +38,7 @@ final class DeviceConfigurationRepository
     /** @return list<array<string, mixed>> */
     public function allForImei(string $imei): array
     {
+        // A ordem decide o empate do `isNewerRow()`; o `usort` no fim ordena o que sobrou.
         $stmt = $this->pdo->prepare('
             SELECT *
             FROM device_configurations

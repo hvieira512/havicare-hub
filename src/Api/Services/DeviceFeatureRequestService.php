@@ -4,20 +4,21 @@ declare(strict_types=1);
 
 namespace Hub\Api\Services;
 
-use Hub\Domain\Capability\TimeZoneOffset;
 use Hub\Api\Auth\ApiAuthContext;
 use Hub\Api\Http\ApiError;
-use Hub\Infrastructure\Persistence\Repository\ApiDataAccess;
+use Hub\Command\DeliveryStatus;
 use Hub\Command\DeviceCommandCatalog;
 use Hub\Command\DeviceConfigurationCatalog;
-use Hub\Domain\Capability\CapabilityCatalog;
-use Hub\State\DeviceCommandLog;
-use Hub\State\DeviceCommandStore;
-use Hub\State\DeviceCommandRecord;
 use Hub\Device\DeviceHubServer;
+use Hub\Domain\Capability\CapabilityCatalog;
 use Hub\Domain\Capability\CapabilityRegistry;
+use Hub\Domain\Capability\TimeZoneOffset;
 use Hub\Domain\DeviceMetadata;
+use Hub\Infrastructure\Persistence\Repository\ApiDataAccess;
 use Hub\Log\Logger;
+use Hub\State\DeviceCommandLog;
+use Hub\State\DeviceCommandRecord;
+use Hub\State\DeviceCommandStore;
 
 /**
  * Pedir a um dispositivo que faça algo: telemetria, acções de capacidades, os comandos em que
@@ -244,7 +245,7 @@ final class DeviceFeatureRequestService
         $isWaveform = in_array($feature, $waveforms, true);
 
         foreach ($this->commands->commands($imei) as $command) {
-            if (!in_array((string)($command['status'] ?? ''), ['queued', 'waiting'], true)) {
+            if (!in_array((string)($command['status'] ?? ''), DeliveryStatus::PENDING, true)) {
                 continue;
             }
 

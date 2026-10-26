@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Hub\Runtime;
 
-use Hub\Api\Services\DeviceService;
 use Hub\Device\ConnectionAnnouncer;
 use Hub\Device\DeviceHubServer;
 use Hub\Device\DownlinkRetryContext;
@@ -59,10 +58,10 @@ final class MaintenanceScheduler
         $timeZones = null;
         $loop->addPeriodicTimer(
             self::TIME_ZONE_INTERVAL_SECONDS,
-            static function () use (&$timeZones, $services, $store, $hubServer): void {
+            static function () use (&$timeZones, $services, $store): void {
                 try {
                     $timeZones ??= new NamedTimeZoneFollower(
-                        new DeviceService($store, $services->whitelist, $hubServer, $services->dataAccess),
+                        $services->deviceService,
                         $services->dataAccess->deviceConfigurations,
                         static fn (): array => $store->runtime->onlineDeviceImeis(),
                     );

@@ -10,6 +10,7 @@ use Hub\Domain\DeviceMetadata;
 use Hub\Ingress\Mqtt\MqttBridgeBase;
 use Hub\Log\Logger;
 use Hub\State\ActiveAlarms;
+use Hub\State\DeviceRuntimeStore;
 
 final class QinglanstBridge extends MqttBridgeBase
 {
@@ -166,15 +167,7 @@ final class QinglanstBridge extends MqttBridgeBase
         }
 
         if ($this->deviceStore !== null && $this->allow('seen:' . $deviceKey, $this->seenIntervalMs / 1000)) {
-            $cameOnline = $this->deviceStore->deviceSeen($deviceKey, [
-                'supplier' => (string)$device['supplier'],
-                'model' => (string)$device['model'],
-                'deviceType' => $deviceType,
-                'licenseId' => $licenseId,
-                'company' => $company,
-                'protocol' => 'qinglanst-radar',
-                'transport' => 'mqtt',
-            ]);
+            $cameOnline = $this->deviceStore->deviceSeen($deviceKey, DeviceRuntimeStore::seenFields($device, 'qinglanst-radar', 'mqtt'));
             if ($cameOnline) {
                 $this->connections->announce($deviceKey, $device, true);
             }

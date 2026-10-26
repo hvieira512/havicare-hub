@@ -6,16 +6,16 @@ namespace Hub\Domain\Capability;
 
 use Hub\Command\DeviceCommandCatalog;
 use Hub\Command\DeviceConfigurationCatalog;
-use Hub\Domain\Capability\Definition\NcsCapabilityDefinitions;
-use Hub\Domain\Capability\Definition\RadarCapabilityDefinitions;
-use Hub\Domain\Capability\Definition\ScaleCapabilityDefinitions;
-use Hub\Domain\Capability\Definition\PulseOximeterCapabilityDefinitions;
-use Hub\Domain\Capability\Definition\ThermometerCapabilityDefinitions;
-use Hub\Domain\Capability\Definition\GatewayCapabilityDefinitions;
 use Hub\Domain\Capability\Definition\BloodPressureMonitorCapabilityDefinitions;
 use Hub\Domain\Capability\Definition\BraceletCapabilityDefinitions;
 use Hub\Domain\Capability\Definition\DiaperSensorCapabilityDefinitions;
+use Hub\Domain\Capability\Definition\GatewayCapabilityDefinitions;
+use Hub\Domain\Capability\Definition\NcsCapabilityDefinitions;
 use Hub\Domain\Capability\Definition\PillDispenserCapabilityDefinitions;
+use Hub\Domain\Capability\Definition\PulseOximeterCapabilityDefinitions;
+use Hub\Domain\Capability\Definition\RadarCapabilityDefinitions;
+use Hub\Domain\Capability\Definition\ScaleCapabilityDefinitions;
+use Hub\Domain\Capability\Definition\ThermometerCapabilityDefinitions;
 use Hub\Domain\Capability\Definition\WatchCapabilityDefinitions;
 use Hub\Domain\DeviceMetadata;
 use Hub\Domain\DeviceTypeCatalog;
@@ -122,9 +122,8 @@ final class CapabilityCatalog
         }
 
         foreach (DeviceCommandCatalog::featuresForProtocol($protocol) as $feature) {
-            $generic = self::mapTelemetryFeature($feature);
-            if ($generic !== null) {
-                $keys[$generic] = true;
+            if (self::isCatalogKey($feature)) {
+                $keys[$feature] = true;
             }
         }
 
@@ -279,33 +278,6 @@ final class CapabilityCatalog
         }
 
         return null;
-    }
-
-    public static function mapTelemetryFeature(string $feature): ?string
-    {
-        $feature = trim($feature);
-
-        return match ($feature) {
-            'heart_rate',
-            'blood_pressure',
-            'blood_oxygen',
-            'temperature',
-            'breath_rate',
-            'location',
-            'sleep',
-            'ecg',
-            'hrv',
-            'ppg',
-            'rr_interval',
-            'battery',
-            'activity',
-            'blood_sugar',
-            'firmware_version',
-            // Não traz valor próprio: o que a resposta enche são as leituras que já existem.
-            // Está aqui porque é uma capacidade pedível como as outras.
-            'device_status' => $feature,
-            default => null,
-        };
     }
 
     public static function mapConfigurationKey(string $key): ?string

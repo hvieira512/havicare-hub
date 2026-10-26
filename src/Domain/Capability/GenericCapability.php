@@ -109,12 +109,15 @@ final class GenericCapability implements CapabilityContract
      */
     private function vivistarToNative(mixed $value): array
     {
+        // O nome nativo é o da definição; aqui fica só a forma do valor de cada capacidade.
+        $native = $this->nativeKey('vivistar-iw');
+
         return match ($this->genericKey) {
-            'working_mode' => ['workingMode' => self::requireObjectValue($value, 'workingMode')],
-            'fall_detection' => ['fallDetection' => ['enabled' => self::requireBoolLikeField($value, 'enabled')]],
-            'fall_sensitivity' => ['fallSensitivity' => ['sensitivity' => self::requireIntField($value, 'sensitivity')]],
-            'push_message' => ['pushMessage' => ['message' => self::requireStringField($value, 'message')]],
-            'auto_vitals_interval' => ['autoHealthMeasurement' => self::requireObjectValue($value, 'autoHealthMeasurement')],
+            'working_mode' => [$native => self::requireObjectValue($value, $native)],
+            'fall_detection' => [$native => ['enabled' => self::requireBoolLikeField($value, 'enabled')]],
+            'fall_sensitivity' => [$native => ['sensitivity' => self::requireIntField($value, 'sensitivity')]],
+            'push_message' => [$native => ['message' => self::requireStringField($value, 'message')]],
+            'auto_vitals_interval' => [$native => self::requireObjectValue($value, $native)],
             default => throw new \InvalidArgumentException(
                 "Unsupported vivistar-iw capability {$this->genericKey}"
             ),
@@ -126,23 +129,21 @@ final class GenericCapability implements CapabilityContract
      */
     private function wonlexGenericToNative(mixed $value): array
     {
+        if ($this->findConfigEntry('wonlex-json') === null) {
+            throw new \InvalidArgumentException("Unsupported wonlex-json capability {$this->genericKey}");
+        }
+        $native = $this->nativeKey('wonlex-json');
+
         return match ($this->genericKey) {
-            'reset_device' => ['factoryResetCommand' => []],
-            'restart_device' => ['restartCommand' => []],
-            'power_off' => ['powerOffCommand' => []],
-            'find_device' => ['findDeviceCommand' => []],
-            default => [$this->resolveWonlexNativeKey() => self::requireObjectValue($value, $this->genericKey)],
+            'reset_device', 'restart_device', 'power_off', 'find_device' => [$native => []],
+            default => [$native => self::requireObjectValue($value, $this->genericKey)],
         };
     }
 
-    private function resolveWonlexNativeKey(): string
+    /** O nome nativo que a definição do protocolo dá a esta capacidade, ou a própria chave. */
+    private function nativeKey(string $protocol): string
     {
-        $entry = $this->findConfigEntry('wonlex-json');
-        if ($entry === null) {
-            throw new \InvalidArgumentException("Unsupported wonlex-json capability {$this->genericKey}");
-        }
-
-        return trim((string)$entry['key']);
+        return trim((string)($this->findConfigEntry($protocol)['key'] ?? $this->genericKey));
     }
 
     /** @return array<string, mixed>|null */

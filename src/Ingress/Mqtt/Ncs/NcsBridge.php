@@ -7,6 +7,7 @@ namespace Hub\Ingress\Mqtt\Ncs;
 use Hub\Domain\DeviceMetadata;
 use Hub\Ingress\Mqtt\MqttBridgeBase;
 use Hub\Log\Logger;
+use Hub\State\DeviceRuntimeStore;
 
 final class NcsBridge extends MqttBridgeBase
 {
@@ -95,15 +96,7 @@ final class NcsBridge extends MqttBridgeBase
         $company = (string)($device['company'] ?? 'null');
 
         $this->mqttBridge->publishRaw($deviceKey, $normalized['raw'], $deviceType, $licenseId, $company);
-        $this->deviceStore?->deviceSeen($deviceKey, [
-            'supplier' => (string)$device['supplier'],
-            'model' => (string)$device['model'],
-            'deviceType' => $deviceType,
-            'licenseId' => $licenseId,
-            'company' => $company,
-            'protocol' => 'voerka-ncs',
-            'transport' => 'mqtt',
-        ]);
+        $this->deviceStore?->deviceSeen($deviceKey, DeviceRuntimeStore::seenFields($device, 'voerka-ncs', 'mqtt'));
         $this->deviceStore?->append($deviceKey, 'raw', array_merge($normalized['raw'], [
             'deviceType' => $deviceType,
             'licenseId' => $licenseId,

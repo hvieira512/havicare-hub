@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Hub\Api\Services;
 
+use Hub\Command\DeliveryStatus;
 use Hub\Domain\Capability\CapabilityCatalog;
 use Hub\Domain\Capability\CapabilityHelpers;
 
@@ -14,16 +15,6 @@ use Hub\Domain\Capability\CapabilityHelpers;
 final class ConfigurationSyncStatus
 {
     use CapabilityHelpers;
-
-    private const IN_FLIGHT_STATUSES = ['queued', 'waiting', 'sent'];
-
-    private const FAILURE_STATUSES = [
-        'failed',
-        'dropped',
-        'delivery_failed',
-        'retry_exhausted',
-        'response_timeout',
-    ];
 
     /**
      * Quanto de uma capacidade entregue em vários comandos o aparelho já confirmou, como os
@@ -167,7 +158,7 @@ final class ConfigurationSyncStatus
             if ($lastStatus === 'acked') {
                 return 'applied';
             }
-            return in_array($lastStatus, self::IN_FLIGHT_STATUSES, true)
+            return in_array($lastStatus, DeliveryStatus::IN_FLIGHT, true)
                 ? 'waiting_device'
                 : 'never_reported';
         }
@@ -177,7 +168,7 @@ final class ConfigurationSyncStatus
 
     public function pendingFailureCode(string $lastStatus): string
     {
-        return in_array($lastStatus, self::FAILURE_STATUSES, true) ? $lastStatus : '';
+        return in_array($lastStatus, DeliveryStatus::FAILURES, true) ? $lastStatus : '';
     }
 
     private function configurationStatusPriority(string $status): int
@@ -185,7 +176,7 @@ final class ConfigurationSyncStatus
         if ($this->pendingFailureCode($status) !== '') {
             return 3;
         }
-        if (in_array($status, self::IN_FLIGHT_STATUSES, true)) {
+        if (in_array($status, DeliveryStatus::IN_FLIGHT, true)) {
             return 2;
         }
         if ($status === 'acked') {

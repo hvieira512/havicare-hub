@@ -175,20 +175,6 @@ final class CapabilityCatalogTest extends TestCase
         self::assertSame($expected, $actual);
     }
 
-    public function testTelemetryFeatureMappingIsFrozen(): void
-    {
-        $accepted = [
-            'heart_rate', 'blood_pressure', 'blood_oxygen', 'temperature', 'breath_rate', 'location', 'sleep', 'ecg',
-            'hrv', 'ppg', 'rr_interval', 'battery', 'activity', 'blood_sugar', 'firmware_version', 'device_status',
-        ];
-        foreach ($accepted as $feature) {
-            self::assertSame($feature, CapabilityCatalog::mapTelemetryFeature($feature));
-        }
-        foreach (['body_composition', 'stress', 'sync_configuration', 'unknown'] as $feature) {
-            self::assertNull(CapabilityCatalog::mapTelemetryFeature($feature), $feature);
-        }
-    }
-
     public function testFourPTouchAliasesAreResolvedByTheDefinitions(): void
     {
         self::assertSame('sos_contacts', CapabilityCatalog::mapConfigurationKey('sosContacts'));

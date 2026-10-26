@@ -86,6 +86,26 @@ final class DeviceRuntimeStore
      *
      * @param array<string, mixed> $fields
      */
+    /**
+     * O que se grava de um aparelho visto, tirado do registo dele na whitelist.
+     *
+     * @param array<string, mixed> $device
+     * @return array<string, mixed>
+     */
+    public static function seenFields(array $device, string $protocol, string $transport): array
+    {
+        return [
+            'supplier' => (string)($device['supplier'] ?? ''),
+            'model' => (string)($device['model'] ?? ''),
+            'deviceType' => (string)($device['deviceType'] ?? ''),
+            'licenseId' => DeviceMetadata::normalizeLicenseId($device['licenseId'] ?? 0),
+            'company' => (string)($device['company'] ?? 'null'),
+            'protocol' => $protocol,
+            'transport' => $transport,
+        ];
+    }
+
+    /** @param array<string, mixed> $fields */
     public function deviceSeen(string $imei, array $fields): bool
     {
         $wasOnline = $this->redis->hget(RedisKeys::device($imei), 'online') === '1';
@@ -215,13 +235,15 @@ final class DeviceRuntimeStore
     public function deviceOffline(string $imei): bool
     {
         $wasOnline = $this->redis->hget(RedisKeys::device($imei), 'online') === '1';
-        $this->redis->hmset(RedisKeys::device($imei), [
-            'imei' => $imei,
-            'online' => '0',
-            'asleep' => '0',
-            'lastStateAt' => gmdate('Y-m-d\\TH:i:s\\Z'),
-        ]);
-        $this->redis->zrem(RedisKeys::onlineDevices(), $imei);
+        $this->redis->pipeline(function ($pipe) use ($imei): void {
+            $pipe->hmset(RedisKeys::device($imei), [
+                'imei' => $imei,
+                'online' => '0',
+                'asleep' => '0',
+                'lastStateAt' => gmdate('Y-m-d\\TH:i:s\\Z'),
+            ]);
+            $pipe->zrem(RedisKeys::onlineDevices(), $imei);
+        });
 
         return $wasOnline;
     }

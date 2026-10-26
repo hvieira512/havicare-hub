@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Hub\Ingress\Mqtt\Moko;
 
-use Hub\State\DeviceReportStore;
 use Hub\Device\CommercialModelResolver;
 use Hub\Device\ConnectionAnnouncer;
 use Hub\Device\DeviceDescriptor;
@@ -15,6 +14,8 @@ use Hub\Domain\ProximityAlarm;
 use Hub\Domain\ProximityAlarmLookup;
 use Hub\Ingress\Mqtt\Gateway\ObservationStateStore;
 use Hub\Registry\Whitelist;
+use Hub\State\DeviceReportStore;
+use Hub\State\DeviceRuntimeStore;
 use Hub\Support\Throttle;
 use Hub\Support\Values;
 
@@ -114,11 +115,10 @@ final class RelayPublisher
         $deviceType = (string)$device['deviceType'];
         $licenseId = DeviceMetadata::normalizeLicenseId($device['licenseId'] ?? 0);
         $company = (string)($device['company'] ?? 'null');
-        $cameOnline = $this->deviceStore?->deviceSeen($deviceKey, [
-            'supplier' => (string)$device['supplier'], 'model' => (string)$device['model'],
-            'deviceType' => $deviceType, 'licenseId' => $licenseId, 'company' => $company,
-            'protocol' => $protocol, 'transport' => 'ble_gateway', 'gatewayId' => (string)$gateway['imei'],
-        ]);
+        $cameOnline = $this->deviceStore?->deviceSeen(
+            $deviceKey,
+            DeviceRuntimeStore::seenFields($device, $protocol, 'ble_gateway') + ['gatewayId' => (string)$gateway['imei']],
+        );
         // Desligado dá-o a manutenção do hub, quando nenhum gateway o ouve durante o prazo.
         if ($cameOnline === true) {
             $this->connections->announce($deviceKey, $device, true);

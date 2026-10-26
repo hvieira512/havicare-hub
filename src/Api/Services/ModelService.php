@@ -5,16 +5,16 @@ declare(strict_types=1);
 namespace Hub\Api\Services;
 
 use Hub\Api\Http\ApiError;
-use Hub\Api\Http\CollectionPresenter;
 use Hub\Api\Http\CollectionColumns;
+use Hub\Api\Http\CollectionPresenter;
 use Hub\Api\Http\ModelImageUrl;
-use Hub\Infrastructure\Persistence\Repository\ApiDataAccess;
 use Hub\Api\Request\ModelWriteRequest;
 use Hub\Command\DeviceCommandCatalog;
-use Hub\Domain\ProtocolRegistry;
-use Hub\Domain\DeviceMetadata;
 use Hub\Domain\Capability\CapabilityCatalog;
+use Hub\Domain\DeviceMetadata;
+use Hub\Domain\ProtocolRegistry;
 use Hub\Domain\SupplierCapabilityTemplate;
+use Hub\Infrastructure\Persistence\Repository\ApiDataAccess;
 use Hub\Registry\Whitelist;
 
 class ModelService

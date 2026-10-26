@@ -4,27 +4,27 @@ declare(strict_types=1);
 
 namespace Hub\Api\Services;
 
+use Hub\Api\Auth\ApiAuthContext;
 use Hub\Api\Http\ApiError;
 use Hub\Api\Http\CollectionPresenter;
 use Hub\Api\Http\CollectionQuery;
 use Hub\Api\Http\DevicePresentation;
 use Hub\Api\Http\ModelImageUrl;
-use Hub\Command\DeviceConfigurationCatalog;
-use Hub\Api\Auth\ApiAuthContext;
-use Hub\Infrastructure\Persistence\Repository\ApiDataAccess;
 use Hub\Api\Request\DeviceWriteRequest;
+use Hub\Command\DeviceConfigurationCatalog;
+use Hub\Device\DeviceHubServer;
 use Hub\Domain\Capability\CapabilityCatalog;
 use Hub\Domain\Capability\CapabilityRegistry;
-use Hub\State\DeviceStore;
-use Hub\State\DeviceUpdateNotifier;
 use Hub\Domain\DeviceMetadata;
 use Hub\Domain\DeviceTypeCatalog;
 use Hub\Domain\Liveness;
 use Hub\Domain\ProtocolRegistry;
 use Hub\Domain\VoiceDataMarker;
-use Hub\Device\DeviceHubServer;
+use Hub\Infrastructure\Persistence\Repository\ApiDataAccess;
 use Hub\Log\Logger;
 use Hub\Registry\Whitelist;
+use Hub\State\DeviceStore;
+use Hub\State\DeviceUpdateNotifier;
 
 class DeviceService
 {
@@ -411,14 +411,7 @@ class DeviceService
     public function create(DeviceWriteRequest $request, ?ApiAuthContext $auth = null): array
     {
         $imei = trim((string)$request->imei);
-        $supplier = trim($request->supplier);
-        $model = trim($request->model);
-        $modelRecord = $this->directory->modelForSupplierAndName($supplier, $model);
-        $deviceType = DeviceMetadata::normalizeDeviceType((string)($modelRecord['device_type'] ?? $request->deviceType));
-        $licenseId = $request->licenseId ?? 0;
-        $simNumber = trim($request->simNumber);
-        $deviceId = trim($request->deviceId);
-        $company = DeviceMetadata::normalizeCompany($request->company);
+        [$supplier, $model, $modelRecord, $deviceType, $licenseId, $simNumber, $deviceId, $company] = $this->writeFields($request);
         $ownerError = self::ownerError($request);
         if ($ownerError !== null) {
             return $ownerError->toArray();
@@ -482,14 +475,7 @@ class DeviceService
         // Ausente é o do endereço; vazio é uma recusa. Daí o campo ser anulável e o
         // `NotBlank` só valer no grupo `create`.
         $newImei = trim($request->imei ?? $imei);
-        $supplier = trim($request->supplier);
-        $model = trim($request->model);
-        $modelRecord = $this->directory->modelForSupplierAndName($supplier, $model);
-        $deviceType = DeviceMetadata::normalizeDeviceType((string)($modelRecord['device_type'] ?? $request->deviceType));
-        $licenseId = $request->licenseId ?? 0;
-        $simNumber = trim($request->simNumber);
-        $deviceId = trim($request->deviceId);
-        $company = DeviceMetadata::normalizeCompany($request->company);
+        [$supplier, $model, $modelRecord, $deviceType, $licenseId, $simNumber, $deviceId, $company] = $this->writeFields($request);
         $ownerError = self::ownerError($request);
         if ($ownerError !== null) {
             return $audit->reject($ownerError, 'incomplete_owner');
@@ -548,6 +534,29 @@ class DeviceService
         ]);
 
         return ['status' => 'ok', 'imei' => $newImei];
+    }
+
+    /**
+     * Os campos de um pedido de escrita normalizados, e o modelo que eles nomeiam.
+     *
+     * @return array{string, string, array<string, mixed>|null, string, int, string, string, string}
+     */
+    private function writeFields(DeviceWriteRequest $request): array
+    {
+        $supplier = trim($request->supplier);
+        $model = trim($request->model);
+        $modelRecord = $this->directory->modelForSupplierAndName($supplier, $model);
+
+        return [
+            $supplier,
+            $model,
+            $modelRecord,
+            DeviceMetadata::normalizeDeviceType((string)($modelRecord['device_type'] ?? $request->deviceType)),
+            $request->licenseId ?? 0,
+            trim($request->simNumber),
+            trim($request->deviceId),
+            DeviceMetadata::normalizeCompany($request->company),
+        ];
     }
 
     /** A empresa e a licença vão juntas: as duas, ou nenhuma. Dentro do hub, nenhuma é `'null'` e `0`. */

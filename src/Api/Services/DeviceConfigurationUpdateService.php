@@ -5,21 +5,21 @@ declare(strict_types=1);
 namespace Hub\Api\Services;
 
 use Hub\Api\Http\ApiError;
-use Hub\Infrastructure\Persistence\Repository\ApiDataAccess;
 use Hub\Command\Configuration\Payload\FourPTouchPayloadBuilder;
 use Hub\Command\Configuration\Payload\FourPTouchPhonebookDelta;
 use Hub\Command\Configuration\Payload\LefuTorreScaleUsers;
+use Hub\Command\DeliveryStatus;
 use Hub\Command\DeviceCommandCatalog;
 use Hub\Command\DeviceConfigurationCatalog;
-use Hub\State\DeviceCommandLog;
 use Hub\Device\DeviceHubServer;
 use Hub\Domain\Capability\CapabilityCatalog;
 use Hub\Domain\Capability\CapabilityHelpers;
 use Hub\Domain\Capability\CapabilityRegistry;
 use Hub\Domain\Capability\Contacts\WonlexContactCodec;
 use Hub\Domain\Capability\Medication\PillDispenserMedicationRemindersHandler;
+use Hub\Infrastructure\Persistence\Repository\ApiDataAccess;
 use Hub\Log\Logger;
-use Hub\Command\DeliveryStatus;
+use Hub\State\DeviceCommandLog;
 
 final class DeviceConfigurationUpdateService
 {

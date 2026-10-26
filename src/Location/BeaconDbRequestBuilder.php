@@ -8,6 +8,9 @@ use Hub\Device\LocationNormalizer;
 
 final class BeaconDbRequestBuilder
 {
+    /** @var array{array<string, mixed>, array<string, mixed>|null}|null A última trama e o seu pedido. */
+    private ?array $last = null;
+
     /**
      * Constrói um pedido de geolocalização compatível com MLS/Ichnaea a partir de um envelope
      * de telemetria de localização normalizado (ou directamente do seu objecto `data`).
@@ -16,6 +19,22 @@ final class BeaconDbRequestBuilder
      * @return array<string, mixed>|null
      */
     public function build(array $payload): ?array
+    {
+        // O mapa privado e a BeaconDB pedem o mesmo pedido da mesma trama, um a seguir ao outro.
+        if ($this->last !== null && $this->last[0] === $payload) {
+            return $this->last[1];
+        }
+        $request = $this->buildRequest($payload);
+        $this->last = [$payload, $request];
+
+        return $request;
+    }
+
+    /**
+     * @param array<string, mixed> $payload
+     * @return array<string, mixed>|null
+     */
+    private function buildRequest(array $payload): ?array
     {
         $data = isset($payload['data']) && is_array($payload['data']) ? $payload['data'] : $payload;
 
