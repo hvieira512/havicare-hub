@@ -9,6 +9,7 @@ use Hub\Ingress\Http\Qinglanst\QinglanstCloudCommands;
 use Hub\Ingress\Http\Qinglanst\RadarStateAbsorber;
 use Tests\Support\Doubles\RecordingHubMqttBridge;
 use Tests\Support\MysqlDashboardTestCase;
+use Tests\Support\TestInventory;
 
 /** Uma leitura do radar passa a ser o que o hub mostra dele: as configurações e o estado. */
 final class RadarStateAbsorberTest extends MysqlDashboardTestCase
@@ -60,8 +61,7 @@ final class RadarStateAbsorberTest extends MysqlDashboardTestCase
     private function absorber(): array
     {
         $database = $this->createDashboardDatabase();
-        $database->pdo()->exec("INSERT INTO whitelist (imei, supplier, model, device_type, license_id, device_id, company)
-            VALUES ('" . self::IMEI . "', 'Qinglanst', 'HC2', 'radar', 1001, '" . self::IMEI . "', 'hitcare')");
+        TestInventory::register($database->pdo(), self::IMEI, 'Qinglanst', 'HC2', 'radar', 1001, 'hitcare', deviceId: self::IMEI);
         $db = ApiDataAccess::fromDatabase($database);
         $mqtt = new RecordingHubMqttBridge();
 

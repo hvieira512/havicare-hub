@@ -205,7 +205,7 @@ final class DashboardApiTenancyTest extends DashboardHttpTestCase
     public function testTenantClientCannotAccessAnotherLicenseWithinItsOwnCompany(): void
     {
         [$server, $db, $store] = $this->makeServerWithDatabase();
-        $hitcareId = $db->companies->create('hitcare-extra-holder');
+        $hitcareId = $db->companies->create('hitcare');
         $db->licenses->create($hitcareId, 3003, 'hitcare-second-license');
 
         // A mesma empresa do cliente, e uma licença que ele não tem.

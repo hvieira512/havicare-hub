@@ -172,6 +172,13 @@ class Whitelist
         return null;
     }
 
+    /** Relê a lista já: os nomes do modelo e do dono vêm de outras tabelas, que se podem ter renomeado. */
+    public function reload(): void
+    {
+        $this->databaseCacheLoadedAt = 0;
+        $this->refreshDatabaseCacheIfStale();
+    }
+
     private function refreshDatabaseCacheIfStale(): void
     {
         if (

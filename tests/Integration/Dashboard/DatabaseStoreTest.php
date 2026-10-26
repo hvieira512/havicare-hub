@@ -197,7 +197,7 @@ final class DatabaseStoreTest extends MysqlDashboardTestCase
         $pdo = $database->pdo();
 
         $pdo->exec("DELETE FROM model_capabilities WHERE model_id IN (SELECT id FROM models WHERE device_type = 'radar')");
-        $pdo->exec("DELETE FROM whitelist WHERE supplier = 'Qinglanst' OR device_type = 'radar'");
+        $pdo->exec("DELETE FROM whitelist WHERE device_type = 'radar'");
         $pdo->exec("DELETE FROM models WHERE device_type = 'radar'");
         $pdo->exec("DELETE FROM suppliers WHERE name = 'Qinglanst'");
 

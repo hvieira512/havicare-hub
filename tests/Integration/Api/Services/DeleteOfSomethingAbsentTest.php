@@ -13,6 +13,7 @@ use Hub\Registry\Whitelist;
 use Hub\State\DeviceStore;
 use Tests\Support\Doubles\InMemoryRedisClient;
 use Tests\Support\MysqlDashboardTestCase;
+use Tests\Support\TestInventory;
 
 /** Apagar o que não existe diz que não existe, em todos os recursos, e não responde como um apagar certo. */
 final class DeleteOfSomethingAbsentTest extends MysqlDashboardTestCase
@@ -34,7 +35,7 @@ final class DeleteOfSomethingAbsentTest extends MysqlDashboardTestCase
     public function testDeletingAConnectedDeviceClosesItsSession(): void
     {
         $db = ApiDataAccess::fromDatabase($this->createDashboardDatabase());
-        $db->whitelist->register('865028000000308', 'Vivistar', 'VIVISTAR-CARE', 'watch', 1001, '', '', 'hitcare');
+        TestInventory::registerVia($db, '865028000000308', 'Vivistar', 'L08 Pro', 'watch', 1001, '', '', 'hitcare');
         $hub = $this->createMock(DeviceHubServer::class);
         $hub->expects(self::once())->method('disconnect')->with('865028000000308');
         $service = new DeviceService(new DeviceStore(new InMemoryRedisClient()), new Whitelist($db->whitelist), $hub, $db);

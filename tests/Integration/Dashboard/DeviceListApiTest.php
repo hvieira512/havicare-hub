@@ -7,6 +7,7 @@ namespace Tests\Integration\Dashboard;
 use Hub\Api\Request\DeviceWriteRequest;
 use Tests\Support\DevicesApiFixture;
 use Tests\Support\MysqlDashboardTestCase;
+use Tests\Support\TestInventory;
 
 final class DeviceListApiTest extends MysqlDashboardTestCase
 {
@@ -59,7 +60,7 @@ final class DeviceListApiTest extends MysqlDashboardTestCase
     public function testListAcceptsSeveralValuesForTheSameFilter(): void
     {
         [$api, $db] = $this->makeApi();
-        $db->whitelist->register('865028000000306', 'Wonlex', 'HW20PRO', 'radar');
+        TestInventory::registerVia($db, '865028000000306', 'Wonlex', 'HW20PRO', 'radar');
 
         $both = $api->list('page=1&limit=10&deviceType[]=watch&deviceType[]=radar', null, '');
         $onlyRadar = $api->list('page=1&limit=10&deviceType[]=radar', null, '');
@@ -72,9 +73,9 @@ final class DeviceListApiTest extends MysqlDashboardTestCase
     public function testLicenseFilterMatchesCompanyAndLicensePairsAndNotTheirCrossProduct(): void
     {
         [$api, $db] = $this->makeApi();
-        $db->whitelist->register('900000000000001', 'Vivistar', 'L08 Pro', 'watch', 1001, '', '', 'alfa');
-        $db->whitelist->register('900000000000002', 'Vivistar', 'L08 Pro', 'watch', 2002, '', '', 'beta');
-        $db->whitelist->register('900000000000003', 'Vivistar', 'L08 Pro', 'watch', 2002, '', '', 'alfa');
+        TestInventory::registerVia($db, '900000000000001', 'Vivistar', 'L08 Pro', 'watch', 1001, '', '', 'alfa');
+        TestInventory::registerVia($db, '900000000000002', 'Vivistar', 'L08 Pro', 'watch', 2002, '', '', 'beta');
+        TestInventory::registerVia($db, '900000000000003', 'Vivistar', 'L08 Pro', 'watch', 2002, '', '', 'alfa');
 
         $pairs = $api->list('page=1&limit=10&license[]=alfa:1001&license[]=beta:2002', null, '');
         $wholeCompany = $api->list('page=1&limit=10&license[]=alfa', null, '');
@@ -92,7 +93,7 @@ final class DeviceListApiTest extends MysqlDashboardTestCase
     public function testListFiltersByOnlineStateWithoutBreakingTheTotal(): void
     {
         [$api, $db, $store] = $this->makeApi();
-        $db->whitelist->register('900000000000005', 'Vivistar', 'L08 Pro');
+        TestInventory::registerVia($db, '900000000000005', 'Vivistar', 'L08 Pro');
         $store->deviceSeen('861265061009822', ['online' => '1']);
 
         $online = $api->list('page=1&limit=1&online=online', null, '');
@@ -144,10 +145,10 @@ final class DeviceListApiTest extends MysqlDashboardTestCase
     public function testListGroupsModelsUnderTheSupplierTheyBelongTo(): void
     {
         [$api, $db] = $this->makeApi();
-        $db->whitelist->register('900000000000010', 'Vivistar', 'L08 Pro', 'watch', 1001, '', '', 'alfa');
-        $db->whitelist->register('900000000000011', 'Vivistar', 'L08 Pro', 'watch', 1001, '', '', 'alfa');
-        $db->whitelist->register('900000000000012', 'Vivistar', 'VL17', 'watch', 1001, '', '', 'alfa');
-        $db->whitelist->register('900000000000013', 'MOKO', 'MKGW4', 'gateway', 1001, '', '', 'alfa');
+        TestInventory::registerVia($db, '900000000000010', 'Vivistar', 'L08 Pro', 'watch', 1001, '', '', 'alfa');
+        TestInventory::registerVia($db, '900000000000011', 'Vivistar', 'L08 Pro', 'watch', 1001, '', '', 'alfa');
+        TestInventory::registerVia($db, '900000000000012', 'Vivistar', 'VL17', 'watch', 1001, '', '', 'alfa');
+        TestInventory::registerVia($db, '900000000000013', 'MOKO', 'MKGW4', 'gateway', 1001, '', '', 'alfa');
 
         $tree = $api->list('page=1&limit=1', null, '')['filters']['counts']['supplierModels'] ?? [];
 
@@ -186,8 +187,8 @@ final class DeviceListApiTest extends MysqlDashboardTestCase
     public function testListCountsEveryOptionAndBuildsTheLicenseTree(): void
     {
         [$api, $db, $store] = $this->makeApi();
-        $db->whitelist->register('900000000000006', 'Vivistar', 'L08 Pro', 'watch', 1001, '', '', 'alfa');
-        $db->whitelist->register('900000000000007', 'Vivistar', 'L08 Pro', 'watch', 1001, '', '', 'alfa');
+        TestInventory::registerVia($db, '900000000000006', 'Vivistar', 'L08 Pro', 'watch', 1001, '', '', 'alfa');
+        TestInventory::registerVia($db, '900000000000007', 'Vivistar', 'L08 Pro', 'watch', 1001, '', '', 'alfa');
         $store->deviceSeen('900000000000006', ['online' => '1']);
 
         $response = $api->list('page=1&limit=1', null, '');

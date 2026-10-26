@@ -34,7 +34,7 @@ final class ResponsesAreCamelCaseTest extends DashboardHttpTestCase
             'room' => ['xMinDm' => -20, 'yMinDm' => 0, 'xMaxDm' => 20, 'yMaxDm' => 30],
             'areas' => [['key' => 0, 'type' => 'monitoring_bed', 'name' => 'Cama', 'xMinDm' => -5, 'yMinDm' => 5, 'xMaxDm' => 5, 'yMaxDm' => 20]],
         ], '2026-10-21 10:00:00');
-        $db->whitelist->register('C80000000001', 'MOKO', 'MKGW', 'gateway', 1001, '', '', 'hitcare');
+        $db->whitelist->register('C80000000001', 'MOKO', 'MKGW4', 'gateway', 1001, '', '', 'hitcare');
         $db->gatewayDeviceLinks->upsert('C80000000001', '861265061009822');
         $model = $db->models->find('Vivistar', 'L08 Pro');
         self::assertIsArray($model);

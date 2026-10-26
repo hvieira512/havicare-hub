@@ -7,6 +7,7 @@ namespace Tests\Integration\Api\Repository;
 use Hub\Infrastructure\Persistence\Repository\GatewayDeviceLinkRepository;
 use PDO;
 use Tests\Support\MysqlDashboardTestCase;
+use Tests\Support\TestInventory;
 
 /** O portão que decide se um gateway pode retransmitir uma pulseira, e a cache dele. */
 final class GatewayDeviceLinkRepositoryTest extends MysqlDashboardTestCase
@@ -150,10 +151,7 @@ final class GatewayDeviceLinkRepositoryTest extends MysqlDashboardTestCase
 
     private function register(string $imei, string $supplier, string $model, string $deviceType): void
     {
-        $this->pdo->prepare('
-            INSERT INTO whitelist (imei, supplier, model, device_type, license_id, company)
-            VALUES (?, ?, ?, ?, ?, ?)
-        ')->execute([$imei, $supplier, $model, $deviceType, 1001, 'hitcare']);
+        TestInventory::register($this->pdo, $imei, $supplier, $model, $deviceType, 1001, 'hitcare');
     }
 
     private function linkCount(): int

@@ -29,36 +29,41 @@ ON DUPLICATE KEY UPDATE name = VALUES(name);
 
 -- Os pares fornecedor x tipo de dispositivo não se semeiam: saem dos modelos.
 
--- Um dispositivo sem dono tem `NULL` nas duas colunas: o `0` e o `'null'` são sentinelas de
--- memória, que o `WhitelistRepository` converte na fronteira.
-INSERT IGNORE INTO whitelist (imei, supplier, model, device_type, license_id, sim_number, device_id, company) VALUES
-    ('351266770073676', '4P Touch', 'Y6M', 'watch', 1, '+351000000001', '6677007367', 'havicare'),
-    ('637507597567372', '4P Touch', 'D46', 'watch', NULL, '+351000000002', '0759756737', NULL),
-    ('861265061009822', 'Vivistar', 'L08 Pro', 'watch', 1, '+351000000003', '', 'havicare'),
-    ('861265061009830', 'Vivistar', 'L08 Pro', 'watch', 1, '', '', 'havicare'),
-    ('861265061274392', 'Vivistar', 'VL16P', 'watch', 1001, '+351000000004', '', 'hitcare'),
-    ('861265061323462', 'Vivistar', 'VL16P', 'watch', 1001, '+351000000005', '6506132346', 'hitcare'),
-    ('861265061386014', 'Vivistar', 'VL17', 'watch', NULL, '+351000000006', '', NULL),
-    ('861265062542599', 'Vivistar', 'VL17', 'watch', 1, '', '', 'havicare'),
-    ('861265062542615', 'Vivistar', 'VL17', 'watch', NULL, '+351000000007', '', NULL),
-    ('861265062544868', 'Vivistar', 'VL16P', 'watch', 1, '+351000000008', '', 'havicare'),
-    ('861728087056333', '4P Touch', 'Y6S', 'watch', 1, '', '2808705633', 'havicare'),
-    ('861728087060467', '4P Touch', 'D44S', 'watch', 1, '', '2808706046', 'havicare'),
-    ('861728087743062', '4P Touch', 'D41', 'watch', 1, '+351000000009', '2808774306', 'havicare'),
+-- O modelo e a licença resolvem-se pelo nome. Um dispositivo sem dono não tem licença.
+INSERT IGNORE INTO whitelist (imei, model_id, device_type, license_ref_id, sim_number, device_id)
+SELECT d.imei, m.id, d.device_type, l.id, d.sim_number, d.device_id FROM (
+    SELECT '351266770073676' AS imei, '4P Touch' AS supplier, 'Y6M' AS model, 'watch' AS device_type, 1 AS license_id, '+351000000001' AS sim_number, '6677007367' AS device_id, 'havicare' AS company
+    UNION ALL SELECT '637507597567372', '4P Touch', 'D46', 'watch', NULL, '+351000000002', '0759756737', NULL
+    UNION ALL SELECT '861265061009822', 'Vivistar', 'L08 Pro', 'watch', 1, '+351000000003', '', 'havicare'
+    UNION ALL SELECT '861265061009830', 'Vivistar', 'L08 Pro', 'watch', 1, '', '', 'havicare'
+    UNION ALL SELECT '861265061274392', 'Vivistar', 'VL16P', 'watch', 1001, '+351000000004', '', 'hitcare'
+    UNION ALL SELECT '861265061323462', 'Vivistar', 'VL16P', 'watch', 1001, '+351000000005', '6506132346', 'hitcare'
+    UNION ALL SELECT '861265061386014', 'Vivistar', 'VL17', 'watch', NULL, '+351000000006', '', NULL
+    UNION ALL SELECT '861265062542599', 'Vivistar', 'VL17', 'watch', 1, '', '', 'havicare'
+    UNION ALL SELECT '861265062542615', 'Vivistar', 'VL17', 'watch', NULL, '+351000000007', '', NULL
+    UNION ALL SELECT '861265062544868', 'Vivistar', 'VL16P', 'watch', 1, '+351000000008', '', 'havicare'
+    UNION ALL SELECT '861728087056333', '4P Touch', 'Y6S', 'watch', 1, '', '2808705633', 'havicare'
+    UNION ALL SELECT '861728087060467', '4P Touch', 'D44S', 'watch', 1, '', '2808706046', 'havicare'
+    UNION ALL SELECT '861728087743062', '4P Touch', 'D41', 'watch', 1, '+351000000009', '2808774306', 'havicare'
     -- A 1001 é da hitcare: uma licença não existe sem a empresa a que pertence.
-    ('863737079757376', '4P Touch', 'D46', 'watch', 1001, '+351000000002', '3707975737', 'hitcare'),
-    ('868160060298224', '4P Touch', 'D45 Pro', 'watch', NULL, '', '6006029822', NULL),
-    ('868705080304889', 'Wonlex', 'HW20PRO', 'watch', 1, '', '', 'havicare'),
-    ('868705080304962', 'Wonlex', 'HW20PRO', 'watch', 1, '', '', 'havicare'),
-    ('bea6c3dd8e02', 'Voerka', 'W812', 'ncs', 1001, '', 'bea6c3dd8e02', 'hitcare'),
-    ('594B3CF100A7', 'Qinglanst', 'HC2', 'radar', 1001, '', '594B3CF100A7', 'hitcare'),
-    ('9D8A3204F853', 'Qinglanst', 'HC2', 'radar', 1001, '', '9D8A3204F853', 'hitcare'),
-    ('AD8A613B0493', 'Qinglanst', 'HC2', 'radar', 1001, '', 'AD8A613B0493', 'hitcare'),
-    ('c5e390f30bce', 'MOKO', 'MKGW4', 'gateway', 1001, '', 'c5e390f30bce', 'hitcare'),
-    ('d48c49f7909c', 'MOKO', 'MKGW3', 'gateway', 1001, '', 'd48c49f7909c', 'hitcare'),
-    ('dc1603ecf1f7', 'MOKO', 'MKGW4', 'gateway', 1001, '', 'dc1603ecf1f7', 'hitcare'),
-    ('eec5000202f9', 'MONIT', 'MECS-PRO', 'diaper_sensor', 1001, '', 'eec5000202f9', 'hitcare'),
-    ('fbd87c59ba8b', 'MOKO', 'W6B', 'bracelet', 1001, '', 'fbd87c59ba8b', 'hitcare');
+    UNION ALL SELECT '863737079757376', '4P Touch', 'D46', 'watch', 1001, '+351000000002', '3707975737', 'hitcare'
+    UNION ALL SELECT '868160060298224', '4P Touch', 'D45 Pro', 'watch', NULL, '', '6006029822', NULL
+    UNION ALL SELECT '868705080304889', 'Wonlex', 'HW20PRO', 'watch', 1, '', '', 'havicare'
+    UNION ALL SELECT '868705080304962', 'Wonlex', 'HW20PRO', 'watch', 1, '', '', 'havicare'
+    UNION ALL SELECT 'bea6c3dd8e02', 'Voerka', 'W812', 'ncs', 1001, '', 'bea6c3dd8e02', 'hitcare'
+    UNION ALL SELECT '594B3CF100A7', 'Qinglanst', 'HC2', 'radar', 1001, '', '594B3CF100A7', 'hitcare'
+    UNION ALL SELECT '9D8A3204F853', 'Qinglanst', 'HC2', 'radar', 1001, '', '9D8A3204F853', 'hitcare'
+    UNION ALL SELECT 'AD8A613B0493', 'Qinglanst', 'HC2', 'radar', 1001, '', 'AD8A613B0493', 'hitcare'
+    UNION ALL SELECT 'c5e390f30bce', 'MOKO', 'MKGW4', 'gateway', 1001, '', 'c5e390f30bce', 'hitcare'
+    UNION ALL SELECT 'd48c49f7909c', 'MOKO', 'MKGW3', 'gateway', 1001, '', 'd48c49f7909c', 'hitcare'
+    UNION ALL SELECT 'dc1603ecf1f7', 'MOKO', 'MKGW4', 'gateway', 1001, '', 'dc1603ecf1f7', 'hitcare'
+    UNION ALL SELECT 'eec5000202f9', 'MONIT', 'MECS-PRO', 'diaper_sensor', 1001, '', 'eec5000202f9', 'hitcare'
+    UNION ALL SELECT 'fbd87c59ba8b', 'MOKO', 'W6B', 'bracelet', 1001, '', 'fbd87c59ba8b', 'hitcare'
+) d
+JOIN suppliers s ON s.name = d.supplier
+JOIN models m ON m.supplier_id = s.id AND m.internal_model = d.model
+LEFT JOIN companies c ON c.name = d.company
+LEFT JOIN licenses l ON l.company_id = c.id AND l.license_id = d.license_id;
 
 INSERT IGNORE INTO gateway_device_links (gateway_device_key, linked_device_key, enabled) VALUES
     ('c5e390f30bce', 'eec5000202f9', 1),

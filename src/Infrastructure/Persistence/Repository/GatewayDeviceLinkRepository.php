@@ -63,13 +63,17 @@ final class GatewayDeviceLinkRepository implements GatewayDeviceLinkLookup
                 l.created_at AS createdAt,
                 l.updated_at AS updatedAt,
                 CASE WHEN l.gateway_device_key = ? THEN l.linked_device_key ELSE l.gateway_device_key END AS deviceKey,
-                w.supplier, w.model, w.device_type AS deviceType,
-                w.license_id AS licenseId, w.company
+                s.name AS supplier, m.internal_model AS model, w.device_type AS deviceType,
+                lic.license_id AS licenseId, c.name AS company
             FROM gateway_device_links l
             JOIN whitelist w ON w.imei = CASE
                 WHEN l.gateway_device_key = ? THEN l.linked_device_key
                 ELSE l.gateway_device_key
             END
+            JOIN models m ON m.id = w.model_id
+            JOIN suppliers s ON s.id = m.supplier_id
+            LEFT JOIN licenses lic ON lic.id = w.license_ref_id
+            LEFT JOIN companies c ON c.id = lic.company_id
             WHERE l.gateway_device_key = ? OR l.linked_device_key = ?
             ORDER BY deviceKey
         ');

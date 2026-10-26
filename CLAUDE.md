@@ -208,9 +208,9 @@ promover para `main` é publicação, e essa é decisão dele.
   journal. Ainda assim serve de detetor: `journalctl -u mosquitto | grep
   "already connected"` denuncia identificadores repetidos.
 - **Sentinelas contra NULL.** Na base de dados, um dispositivo sem dono tem
-  `NULL` no `company` e no `license_id`. O texto `'null'` e o `0` são os
-  sentinelas que só valem em memória e no ficheiro da whitelist; o
-  `WhitelistRepository` converte-os na fronteira e não devem chegar às colunas.
+  `NULL` no `license_ref_id`, e a empresa vem da licença. O texto `'null'` e o
+  `0` são os sentinelas que só valem em memória e no tópico MQTT; o
+  `WhitelistRepository` resolve-os na fronteira.
 
 ## Segurança operacional
 

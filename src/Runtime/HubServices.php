@@ -130,7 +130,7 @@ final class HubServices
 
                 return [
                     'uid' => $uid !== '' ? $uid : $imei,
-                    'credentials' => $dataAccess->radarCredentials->findByLicenseId((int)$device['license_id']),
+                    'credentials' => $dataAccess->radarCredentials->findByLicenseRefId((int)($device['license_ref_id'] ?? 0)),
                 ];
             },
             $radarLayoutSync->syncDevice(...),

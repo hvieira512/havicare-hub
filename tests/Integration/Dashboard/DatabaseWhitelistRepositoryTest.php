@@ -7,13 +7,14 @@ namespace Tests\Integration\Dashboard;
 use Hub\Infrastructure\Persistence\Repository\ApiDataAccess;
 use Hub\Registry\Whitelist;
 use Tests\Support\MysqlDashboardTestCase;
+use Tests\Support\TestInventory;
 
 final class DatabaseWhitelistRepositoryTest extends MysqlDashboardTestCase
 {
     public function testWhitelistStoresNcsAliasInDeviceId(): void
     {
         $db = ApiDataAccess::fromDatabase($this->createDashboardDatabase());
-        $db->whitelist->register('bea6c3dd8e02', 'Voerka', 'W812', 'ncs', 0, '', 'bea6c3dd8e02');
+        TestInventory::registerVia($db, 'bea6c3dd8e02', 'Voerka', 'W812', 'ncs', 0, '', 'bea6c3dd8e02');
 
         $row = $db->whitelist->get('bea6c3dd8e02');
         self::assertIsArray($row);
@@ -24,8 +25,8 @@ final class DatabaseWhitelistRepositoryTest extends MysqlDashboardTestCase
     public function testTheCompanyScopeIgnoresLetterCase(): void
     {
         $db = ApiDataAccess::fromDatabase($this->createDashboardDatabase());
-        $db->whitelist->register('861265061009822', 'Vivistar', 'L08 Pro', 'watch', 1001, '', '', 'hitcare');
-        $db->whitelist->register('861265061009823', 'Vivistar', 'L08 Pro', 'watch', 2002, '', '', 'havicare');
+        TestInventory::registerVia($db, '861265061009822', 'Vivistar', 'L08 Pro', 'watch', 1001, '', '', 'hitcare');
+        TestInventory::registerVia($db, '861265061009823', 'Vivistar', 'L08 Pro', 'watch', 2002, '', '', 'havicare');
 
         foreach (['hitcare', 'HITCARE', 'HitCare'] as $scope) {
             $page = $db->whitelist->listPage([], 1, 50, null, $scope);
@@ -38,9 +39,9 @@ final class DatabaseWhitelistRepositoryTest extends MysqlDashboardTestCase
     public function testTheLegacyLicenseFilterFindsDevicesWithoutLicense(): void
     {
         $db = ApiDataAccess::fromDatabase($this->createDashboardDatabase());
-        $db->whitelist->register('861265061009822', 'Vivistar', 'L08 Pro', 'watch', 1001, '', '', 'hitcare');
-        $db->whitelist->register('861265061009823', 'Vivistar', 'L08 Pro', 'watch', 0, '', '', 'hitcare');
-        $db->whitelist->register('861265061009824', 'Vivistar', 'L08 Pro', 'watch', 0, '', '', 'null');
+        TestInventory::registerVia($db, '861265061009822', 'Vivistar', 'L08 Pro', 'watch', 1001, '', '', 'hitcare');
+        TestInventory::registerVia($db, '861265061009823', 'Vivistar', 'L08 Pro', 'watch', 0, '', '', 'hitcare');
+        TestInventory::registerVia($db, '861265061009824', 'Vivistar', 'L08 Pro', 'watch', 0, '', '', 'null');
 
         foreach (['none', '0'] as $filter) {
             $page = $db->whitelist->listPage(['licenseId' => $filter], 1, 50);
@@ -56,12 +57,12 @@ final class DatabaseWhitelistRepositoryTest extends MysqlDashboardTestCase
         self::assertSame('861265061009822', $page['items'][0]['imei'] ?? null);
     }
 
-    /** Já o `license=none` é a ausência de dono, e não só a de licença. */
+    /** O `license=none` é a ausência de dono: a empresa vem da licença, e sem ela não há nenhuma. */
     public function testTheLicensePairNoneOnlyFindsDevicesWithoutOwner(): void
     {
         $db = ApiDataAccess::fromDatabase($this->createDashboardDatabase());
-        $db->whitelist->register('861265061009823', 'Vivistar', 'L08 Pro', 'watch', 0, '', '', 'hitcare');
-        $db->whitelist->register('861265061009824', 'Vivistar', 'L08 Pro', 'watch', 0, '', '', 'null');
+        TestInventory::registerVia($db, '861265061009823', 'Vivistar', 'L08 Pro', 'watch', 1001, '', '', 'hitcare');
+        TestInventory::registerVia($db, '861265061009824', 'Vivistar', 'L08 Pro', 'watch', 0, '', '', 'null');
 
         $page = $db->whitelist->listPage(['license' => ['none']], 1, 50);
         self::assertSame(1, $page['total']);
@@ -73,7 +74,7 @@ final class DatabaseWhitelistRepositoryTest extends MysqlDashboardTestCase
         $db = ApiDataAccess::fromDatabase($this->createDashboardDatabase());
         $whitelist = new Whitelist($db->whitelist, 0);
 
-        $db->whitelist->register('canonical-imei', 'Voerka', 'W812', 'ncs', 22, '', 'gateway-uid', 'havicare');
+        TestInventory::registerVia($db, 'canonical-imei', 'Voerka', 'W812', 'ncs', 22, '', 'gateway-uid', 'havicare');
 
         self::assertTrue($whitelist->isAuthorized('canonical-imei'));
         self::assertSame('havicare', $whitelist->getMetadata('canonical-imei')?->company);

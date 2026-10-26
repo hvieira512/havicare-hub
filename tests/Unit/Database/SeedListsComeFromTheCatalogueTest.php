@@ -53,11 +53,12 @@ final class SeedListsComeFromTheCatalogueTest extends TestCase
         $block = substr($sql, (int)$start);
         $block = substr($block, 0, (int)strpos($block, ';'));
 
-        // Cada linha é `('<imei>', '<fornecedor>', '<modelo>', '<tipo>', ...)`: interessam o
-        // segundo e o terceiro campos.
+        // Cada linha é `SELECT '<imei>', '<fornecedor>', '<modelo>', ...`: interessam o segundo e o
+        // terceiro campos.
         $pairs = [];
         foreach (explode("\n", $block) as $line) {
-            if (preg_match("/^\s*\('[^']*',\s*'([^']+)',\s*'([^']+)'/", $line, $found) === 1) {
+            $line = preg_replace('/ AS \w+/', '', $line) ?? $line;
+            if (preg_match("/^\s*(?:UNION ALL )?SELECT '[^']*',\s*'([^']+)',\s*'([^']+)'/", $line, $found) === 1) {
                 $pairs[$found[1] . '|' . $found[2]] = true;
             }
         }

@@ -56,25 +56,46 @@ CREATE TABLE IF NOT EXISTS model_capabilities (
     CONSTRAINT fk_model_capabilities_device_type FOREIGN KEY (device_type) REFERENCES device_types(device_type)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS whitelist (
-    imei VARCHAR(64) NOT NULL PRIMARY KEY,
-    supplier VARCHAR(96) NOT NULL,
-    model VARCHAR(96) NOT NULL,
-    device_type VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin NOT NULL DEFAULT 'watch',
-    license_id INT UNSIGNED NULL DEFAULT NULL,
-    sim_number VARCHAR(64) NOT NULL DEFAULT '',
-    device_id VARCHAR(96) NOT NULL DEFAULT '',
-    company VARCHAR(96) NULL DEFAULT NULL,
+CREATE TABLE IF NOT EXISTS companies (
+    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(96) NOT NULL UNIQUE,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS licenses (
+    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    company_id BIGINT UNSIGNED NOT NULL,
+    license_id INT UNSIGNED NOT NULL,
+    name VARCHAR(96) NOT NULL,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    KEY idx_whitelist_supplier_model (supplier, model),
+    -- A chave única começa pelo `company_id` e satisfaz a chave estrangeira; um índice só
+    -- com essa coluna era o seu prefixo exacto.
+    UNIQUE KEY uq_licenses_company_license (company_id, license_id),
+    CONSTRAINT fk_licenses_company FOREIGN KEY (company_id) REFERENCES companies(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- O modelo e a licença pela chave: os nomes leem-se de lá, e mudar um leva os dispositivos junto.
+-- Sem licença, o dispositivo não tem dono; a empresa é a da licença.
+CREATE TABLE IF NOT EXISTS whitelist (
+    imei VARCHAR(64) NOT NULL PRIMARY KEY,
+    model_id BIGINT UNSIGNED NOT NULL,
+    device_type VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin NOT NULL DEFAULT 'watch',
+    license_ref_id BIGINT UNSIGNED NULL DEFAULT NULL,
+    sim_number VARCHAR(64) NOT NULL DEFAULT '',
+    device_id VARCHAR(96) NOT NULL DEFAULT '',
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    KEY idx_whitelist_model (model_id),
     -- A licença à cabeça: o âmbito do inquilino filtra por ela sozinha.
-    KEY idx_whitelist_license_device_type (license_id, device_type),
-    KEY idx_whitelist_company (company),
+    KEY idx_whitelist_license_device_type (license_ref_id, device_type),
     KEY idx_whitelist_device_id (device_id),
     -- Nenhum dos índices acima começa pelo `device_type`, e a chave estrangeira precisa de um.
     KEY idx_whitelist_device_type (device_type),
-    CONSTRAINT fk_whitelist_device_type FOREIGN KEY (device_type) REFERENCES device_types(device_type)
+    CONSTRAINT fk_whitelist_device_type FOREIGN KEY (device_type) REFERENCES device_types(device_type),
+    CONSTRAINT fk_whitelist_model FOREIGN KEY (model_id) REFERENCES models(id),
+    CONSTRAINT fk_whitelist_license FOREIGN KEY (license_ref_id) REFERENCES licenses(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS gateway_device_links (
@@ -153,26 +174,6 @@ CREATE TABLE IF NOT EXISTS device_configuration_operations (
     KEY idx_configuration_operation_change (change_id, sequence_number),
     CONSTRAINT fk_configuration_operation_change FOREIGN KEY (change_id)
         REFERENCES device_configuration_changes(change_id) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-CREATE TABLE IF NOT EXISTS companies (
-    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
-    name VARCHAR(96) NOT NULL UNIQUE,
-    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-CREATE TABLE IF NOT EXISTS licenses (
-    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
-    company_id BIGINT UNSIGNED NOT NULL,
-    license_id INT UNSIGNED NOT NULL,
-    name VARCHAR(96) NOT NULL,
-    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    -- A chave única começa pelo `company_id` e satisfaz a chave estrangeira; um índice só
-    -- com essa coluna era o seu prefixo exacto.
-    UNIQUE KEY uq_licenses_company_license (company_id, license_id),
-    CONSTRAINT fk_licenses_company FOREIGN KEY (company_id) REFERENCES companies(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- As credenciais da cloud do fabricante dos radares, uma linha por licença: a conta de uma

@@ -43,7 +43,7 @@ final class DeviceShowQueryCountTest extends MysqlDashboardTestCase
             1,
             count(array_filter(
                 $this->queries,
-                static fn (string $sql): bool => str_contains($sql, 'FROM whitelist w'),
+                static fn (string $sql): bool => preg_match('/FROM\s+whitelist w\b/', $sql) === 1,
             )),
             'o dispositivo é resolvido uma vez por pedido',
         );

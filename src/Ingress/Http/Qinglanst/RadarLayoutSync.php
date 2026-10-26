@@ -56,7 +56,7 @@ final class RadarLayoutSync
             return resolve($this->tally(failed: 1, error: 'device_is_not_a_radar'));
         }
 
-        $credentials = $this->credentials->findByLicenseId((int)$device['license_id']);
+        $credentials = $this->credentials->findByLicenseRefId((int)($device['license_ref_id'] ?? 0));
         if ($credentials === null) {
             return resolve($this->tally(failed: 1, error: 'license_has_no_radar_credentials'));
         }

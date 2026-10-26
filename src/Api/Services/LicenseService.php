@@ -9,12 +9,13 @@ use Hub\Api\Http\CollectionPresenter;
 use Hub\Api\Http\CollectionColumns;
 use Hub\Infrastructure\Persistence\Repository\ApiDataAccess;
 use Hub\Api\Request\LicenseWriteRequest;
+use Hub\Registry\Whitelist;
 
 class LicenseService
 {
     private CollectionPresenter $presenter;
 
-    public function __construct(private ApiDataAccess $db)
+    public function __construct(private ApiDataAccess $db, private ?Whitelist $whitelist = null)
     {
         $this->presenter = new CollectionPresenter();
     }
@@ -104,6 +105,7 @@ class LicenseService
             $request->licenseId ?? (int)$existing['license_id'],
             trim($request->name ?? (string)$existing['name']),
         );
+        $this->whitelist?->reload();
 
         return ['status' => 'ok'];
     }
@@ -130,6 +132,10 @@ class LicenseService
         $existing = $this->db->licenses->findById($id);
         if ($existing === null) {
             return ApiError::licenseNotFound()->toArray();
+        }
+        $devices = $this->db->whitelist->countForLicense($id);
+        if ($devices > 0) {
+            return ApiError::licenseInUse($devices)->toArray();
         }
         $this->db->licenses->delete($id);
 

@@ -15,6 +15,7 @@ use Hub\Domain\ProtocolRegistry;
 use Hub\Domain\DeviceMetadata;
 use Hub\Domain\Capability\CapabilityCatalog;
 use Hub\Domain\SupplierCapabilityTemplate;
+use Hub\Registry\Whitelist;
 
 class ModelService
 {
@@ -22,7 +23,7 @@ class ModelService
     private ModelImageUrl $imageUrl;
     private ModelImageStore $images;
 
-    public function __construct(private ApiDataAccess $db)
+    public function __construct(private ApiDataAccess $db, private ?Whitelist $whitelist = null)
     {
         $this->presenter = new CollectionPresenter();
         $this->imageUrl = new ModelImageUrl();
@@ -334,6 +335,7 @@ class ModelService
         }
 
         $this->db->models->update($id, $supplierId, $internalModel, $commercialName, $deviceType, $imagePath);
+        $this->whitelist?->reload();
         $this->db->modelCapabilities->replaceForModelId($id, $enabledCapabilities);
         if (is_array($requestableCapabilities)) {
             $this->db->modelCapabilities->replaceTelemetryRequestabilityForModelId($id, $requestableCapabilities);
@@ -351,6 +353,10 @@ class ModelService
         $model = $this->db->models->findById($id);
         if (!is_array($model)) {
             return ApiError::modelNotFound()->toArray();
+        }
+        $devices = $this->db->whitelist->countForModel($id);
+        if ($devices > 0) {
+            return ApiError::modelInUse($devices)->toArray();
         }
 
         $this->db->models->delete($id);

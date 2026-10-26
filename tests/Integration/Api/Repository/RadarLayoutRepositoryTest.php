@@ -7,6 +7,7 @@ namespace Tests\Integration\Api\Repository;
 use Hub\Infrastructure\Persistence\Repository\RadarLayoutRepository;
 use PDO;
 use Tests\Support\MysqlDashboardTestCase;
+use Tests\Support\TestInventory;
 
 final class RadarLayoutRepositoryTest extends MysqlDashboardTestCase
 {
@@ -18,10 +19,7 @@ final class RadarLayoutRepositoryTest extends MysqlDashboardTestCase
         parent::setUp();
         $this->pdo = $this->createDashboardDatabase()->pdo();
         $this->repository = new RadarLayoutRepository($this->pdo);
-        $this->pdo->exec("
-            INSERT INTO whitelist (imei, supplier, model, device_type, license_id)
-            VALUES ('594B3CCBA56B', 'Qinglanst', 'HC2', 'radar', 2103)
-        ");
+        TestInventory::register($this->pdo, '594B3CCBA56B', 'Qinglanst', 'HC2', 'radar', 2103, 'hitcare');
     }
 
     public function testStoresTheRoomAndItsAreas(): void
@@ -64,10 +62,7 @@ final class RadarLayoutRepositoryTest extends MysqlDashboardTestCase
     /** As plantas de vários radares de uma vez: é assim que o ecrã da lista as pede. */
     public function testReadsSeveralLayoutsAtOnce(): void
     {
-        $this->pdo->exec("
-            INSERT INTO whitelist (imei, supplier, model, device_type, license_id)
-            VALUES ('414D74184CBF', 'Qinglanst', 'HC2', 'radar', 2103)
-        ");
+        TestInventory::register($this->pdo, '414D74184CBF', 'Qinglanst', 'HC2', 'radar', 2103, 'hitcare');
         $this->repository->store('594B3CCBA56B', $this->layout(), '2026-09-17 15:00:00');
         $this->repository->store('414D74184CBF', $this->layout(), '2026-09-17 15:00:00');
 

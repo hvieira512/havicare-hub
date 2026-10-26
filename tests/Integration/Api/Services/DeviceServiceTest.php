@@ -187,7 +187,7 @@ final class DeviceServiceTest extends MysqlDashboardTestCase
     /** @return array{service: DeviceService, mqtt: RecordingHubMqttBridge, frame: \Closure(): void} */
     private function radarWithAFallAnnounced(): array
     {
-        $this->db->companies->create('other');
+        $this->db->licenses->create($this->db->companies->create('other'), 2002, 'other-2002');
         $whitelist = IngressFixtures::whitelist([self::RADAR => IngressFixtures::radar() + ['deviceId' => self::RADAR_UID]]);
         $mqtt = new RecordingHubMqttBridge();
         $bridge = new QinglanstBridge(new FakeMqttSubscriber(), $whitelist, $mqtt, alarms: new ActiveAlarms($this->redis));

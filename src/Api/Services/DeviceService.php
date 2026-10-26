@@ -429,6 +429,9 @@ class DeviceService
         if ($modelRecord === null) {
             return ApiError::modelNotFoundForSupplier()->toArray();
         }
+        if (!$this->db->whitelist->licenseExists($company, $licenseId)) {
+            return ApiError::licenseNotFound()->toArray();
+        }
         if ($this->whitelist->getMetadata($imei) !== null) {
             return ApiError::deviceExists()->toArray();
         }
@@ -495,6 +498,9 @@ class DeviceService
         }
         if ($modelRecord === null) {
             return $audit->reject(ApiError::modelNotFoundForSupplier());
+        }
+        if (!$this->db->whitelist->licenseExists($company, $licenseId)) {
+            return $audit->reject(ApiError::licenseNotFound());
         }
         if ($newImei !== $imei && $this->whitelist->getMetadata($newImei) !== null) {
             return $audit->reject(ApiError::deviceExists(), extra: ['new_imei' => $newImei]);

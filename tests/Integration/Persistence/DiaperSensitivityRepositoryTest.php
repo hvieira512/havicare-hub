@@ -8,6 +8,7 @@ use Hub\Infrastructure\Persistence\Repository\DiaperSensitivityRepository;
 use Hub\Domain\DiaperSensitivity;
 use PDO;
 use Tests\Support\MysqlDashboardTestCase;
+use Tests\Support\TestInventory;
 
 /** Há sempre um par de sensibilidade utilizável, e uma alteração pela API vê-se dentro do TTL da cache. */
 final class DiaperSensitivityRepositoryTest extends MysqlDashboardTestCase
@@ -17,10 +18,7 @@ final class DiaperSensitivityRepositoryTest extends MysqlDashboardTestCase
     private function pdoWithSensor(): PDO
     {
         $pdo = $this->createDashboardDatabase()->pdo();
-        $pdo->prepare('
-            INSERT INTO whitelist (imei, supplier, model, device_type, license_id, company)
-            VALUES (?, ?, ?, ?, ?, ?)
-        ')->execute([self::SENSOR, 'MONIT', 'MECS-PRO', 'diaper_sensor', 1001, 'hitcare']);
+        TestInventory::register($pdo, self::SENSOR, 'MONIT', 'MECS-PRO', 'diaper_sensor', 1001, 'hitcare');
 
         return $pdo;
     }

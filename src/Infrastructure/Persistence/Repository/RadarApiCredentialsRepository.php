@@ -20,22 +20,6 @@ final class RadarApiCredentialsRepository
         return $this->fetchOne('SELECT * FROM radar_api_credentials WHERE license_ref_id = ?', [$licenseRefId]);
     }
 
-    /**
-     * As credenciais pelo número da licença, que é o que a whitelist guarda num dispositivo --
-     * e não a referência à linha da licença, que é a chave desta tabela.
-     *
-     * @return array<string, mixed>|null
-     */
-    public function findByLicenseId(int $licenseId): ?array
-    {
-        return $this->fetchOne('
-            SELECT c.* FROM radar_api_credentials c
-            JOIN licenses l ON l.id = c.license_ref_id
-            WHERE l.license_id = ?
-            LIMIT 1
-        ', [$licenseId]);
-    }
-
     public function upsert(
         int $licenseRefId,
         string $baseUrl,

@@ -47,7 +47,7 @@ sítio, e confundi-las já causou um bug em produção.
 |---|---|---|
 | **Em memória** | `'null'` *(o texto)* | `0` |
 | **No tópico MQTT** | `null` | `0` |
-| **Na base de dados** | `NULL` *(SQL)* | `NULL` *(SQL)* |
+| **Na base de dados** | *(a empresa é a da licença)* | `license_ref_id` a `NULL` |
 | **Na API** | `null` | `null` |
 
 A razão de existirem sentinelas em memória é o tópico MQTT: um tópico é um
@@ -60,40 +60,31 @@ flowchart LR
     A["company: 'null'<br/>licenseId: 0"]
   end
   subgraph db["Base de dados"]
-    B["company: NULL<br/>license_id: NULL"]
+    B["license_ref_id: NULL"]
   end
-  A -->|"storedCompany()<br/>storedLicenseId()"| B
+  A -->|"licenseRef()"| B
   B -->|"normalizeDeviceRow()<br/>DeviceMetadata::fromArray()"| A
 ```
 
-**A fronteira é o `WhitelistRepository`**, e são duas funções de três linhas:
-`storedCompany()` troca `'null'` por `NULL`, `storedLicenseId()` troca `0` por
-`NULL`. Tudo o que escreve na tabela passa por elas.
+**A fronteira é o `WhitelistRepository`.** A tabela não guarda o nome da empresa
+nem o número da licença: guarda a referência à linha da licença, e a empresa sai
+dela. O `licenseRef()` resolve o par empresa e número para essa linha, e dá `NULL`
+quando falta um dos dois. Um par que não existe é recusado: a API responde
+`license_not_found`.
 
 A pergunta tem a mesma fronteira: o `licenseCondition()` converte a sentinela `0`
-em `w.license_id IS NULL`, porque uma comparação por igualdade nunca encontra os
-dispositivos sem licença.
+em `w.license_ref_id IS NULL`, porque uma comparação por igualdade nunca encontra
+os dispositivos sem licença.
 
-### Consequência de contornar a fronteira
+**Ou tem empresa e licença, ou não tem nenhuma das duas** — e o esquema não deixa
+outra coisa: sem licença não há de onde tirar a empresa. Renomear uma empresa,
+mudar o número de uma licença ou renomear um modelo leva os dispositivos junto, e
+apagar um deles com dispositivos é recusado (`company_in_use`, `license_in_use`,
+`model_in_use`).
 
-O `database/seed.sql` escrevia diretamente na tabela, **contornando a
-fronteira**, e gravava `'null'` na coluna `company` e `0` na coluna
-`license_id`.
-
-O efeito observado: o filtro de licenças da dashboard apresentava uma empresa
-designada "Sem empresa" contendo uma licença "Sem Licença". Para as restantes
-camadas do sistema, uma empresa cujo nome é o texto `null` é uma empresa válida
-— tem designação, agrupa dispositivos e integra as listagens.
-
-A anomalia manifestava-se apenas nas instalações onde o seed tinha sido
-executado. As bases de dados alimentadas exclusivamente pelo código nunca foram
-afetadas.
-
-Está trancado por `tests/Unit/Database/SeedWhitelistTest.php`, que lê o
-`seed.sql` como texto e falha se lá encontrar um sentinela. O mesmo teste
-verifica a outra regra do par: **ou tem empresa e licença, ou não tem nenhuma
-das duas.** Uma linha com licença 1001 e empresa a `NULL` é impossível no
-domínio, e existia.
+O `database/seed.sql` nomeia empresa e licença pelo nome e resolve-as na
+inserção; o `tests/Unit/Database/SeedWhitelistTest.php` lê-o como texto e falha
+se encontrar um sentinela ou uma linha com só um dos dois.
 
 ## 3. A grafia da empresa
 

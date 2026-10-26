@@ -9,12 +9,13 @@ use Hub\Api\Http\CollectionPresenter;
 use Hub\Api\Http\CollectionColumns;
 use Hub\Infrastructure\Persistence\Repository\ApiDataAccess;
 use Hub\Api\Request\CompanyWriteRequest;
+use Hub\Registry\Whitelist;
 
 class CompanyService
 {
     private CollectionPresenter $presenter;
 
-    public function __construct(private ApiDataAccess $db)
+    public function __construct(private ApiDataAccess $db, private ?Whitelist $whitelist = null)
     {
         $this->presenter = new CollectionPresenter();
     }
@@ -76,6 +77,7 @@ class CompanyService
         }
 
         $this->db->companies->update($id, $name);
+        $this->whitelist?->reload();
 
         return ['status' => 'ok'];
     }
@@ -86,6 +88,10 @@ class CompanyService
         $existing = $this->db->companies->findById($id);
         if ($existing === null) {
             return ApiError::companyNotFound()->toArray();
+        }
+        $devices = $this->db->whitelist->countForCompany($id);
+        if ($devices > 0) {
+            return ApiError::companyInUse($devices)->toArray();
         }
         $this->db->companies->delete($id);
 

@@ -6,7 +6,7 @@ namespace Tests\Unit\Database;
 
 use PHPUnit\Framework\TestCase;
 
-/** O `0` e o `'null'` convertem-se em `NULL` na fronteira do `WhitelistRepository`. */
+/** Cada dispositivo do seed nomeia a empresa e a licença juntas, ou nenhuma: o par resolve-se para a licença. */
 final class SeedWhitelistTest extends TestCase
 {
     private const SEED = __DIR__ . '/../../../database/seed.sql';
@@ -21,7 +21,8 @@ final class SeedWhitelistTest extends TestCase
         $block = substr($sql, $start);
         $block = substr($block, 0, (int)strpos($block, ';'));
 
-        preg_match_all("/\(\s*'([^']*)'\s*,[^,]*,[^,]*,[^,]*,\s*([^,]+),[^,]*,[^,]*,\s*([^)]+)\)/", $block, $m, PREG_SET_ORDER);
+        $block = preg_replace('/ AS \w+/', '', $block) ?? $block;
+        preg_match_all("/SELECT\s*'([^']*)'\s*,[^,]*,[^,]*,[^,]*,\s*([^,]+),[^,]*,[^,]*,\s*([^\n]+)/", $block, $m, PREG_SET_ORDER);
         self::assertNotEmpty($m, 'nenhuma linha reconhecida no bloco da whitelist');
 
         return array_map(static fn(array $row): array => [

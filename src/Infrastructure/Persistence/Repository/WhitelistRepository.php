@@ -11,6 +11,20 @@ final class WhitelistRepository
 {
     use FetchesRows;
 
+    /** O dispositivo com os nomes do modelo e do dono, que vivem nas tabelas deles. */
+    private const DEVICES = '
+        whitelist w
+        JOIN models m ON m.id = w.model_id
+        JOIN suppliers s ON s.id = m.supplier_id
+        LEFT JOIN licenses l ON l.id = w.license_ref_id
+        LEFT JOIN companies c ON c.id = l.company_id
+    ';
+
+    private const ROW_COLUMNS = '
+        w.imei, s.name AS supplier, m.internal_model AS model, w.device_type, l.license_id,
+        w.license_ref_id, w.sim_number, w.device_id, c.name AS company
+    ';
+
     public function __construct(private PDO $pdo)
     {
     }
@@ -19,14 +33,14 @@ final class WhitelistRepository
     public function all(): array
     {
         return $this->pdo
-            ->query('SELECT imei, supplier, model, device_type, license_id, sim_number, device_id, company FROM whitelist ORDER BY imei')
+            ->query('SELECT ' . self::ROW_COLUMNS . ' FROM ' . self::DEVICES . ' ORDER BY w.imei')
             ->fetchAll();
     }
 
     /** @return array<string, mixed>|null */
     public function get(string $imei): ?array
     {
-        return $this->fetchOne('SELECT * FROM whitelist WHERE imei = ?', [$imei]);
+        return $this->fetchOne('SELECT ' . self::ROW_COLUMNS . ' FROM ' . self::DEVICES . ' WHERE w.imei = ?', [$imei]);
     }
 
     /** @return array<string, mixed>|null */
@@ -64,8 +78,8 @@ final class WhitelistRepository
         // Três destes filtros pedem os mesmos valores com e sem contagem: sai uma consulta
         // por filtro e a lista simples é a projecção da contada.
         $deviceTypes = $this->countedValues('w.device_type', 'deviceType', $filters, 'deviceType', $licenseScope, $companyScope);
-        $suppliers = $this->countedValues('w.supplier', 'supplier', $filters, 'supplier', $licenseScope, $companyScope);
-        $models = $this->countedValues('w.model', 'model', $filters, 'model', $licenseScope, $companyScope);
+        $suppliers = $this->countedValues('s.name', 'supplier', $filters, 'supplier', $licenseScope, $companyScope);
+        $models = $this->countedValues('m.internal_model', 'model', $filters, 'model', $licenseScope, $companyScope);
 
         return [
             'items' => $items,
@@ -74,10 +88,10 @@ final class WhitelistRepository
             // cada um; os dois, porque o primeiro é contrato público.
             'available' => [
                 'deviceType' => self::optionValues($deviceTypes),
-                'licenseId' => $this->distinctValues('w.license_id', 'licenseId', $filters, 'licenseId', $licenseScope, $companyScope),
+                'licenseId' => $this->distinctValues('l.license_id', 'licenseId', $filters, 'licenseId', $licenseScope, $companyScope),
                 'supplier' => self::optionValues($suppliers),
                 'model' => self::optionValues($models),
-                'company' => $this->distinctValues('w.company', 'company', $filters, 'company', $licenseScope, $companyScope),
+                'company' => $this->distinctValues('c.name', 'company', $filters, 'company', $licenseScope, $companyScope),
             ],
             'counts' => [
                 'deviceType' => $deviceTypes,
@@ -122,7 +136,7 @@ final class WhitelistRepository
     public function countDevices(array $filters, ?int $licenseScope = null, ?string $companyScope = null): int
     {
         [$whereSql, $params] = $this->buildWhereClause($filters, $licenseScope, $companyScope);
-        $stmt = $this->pdo->prepare('SELECT COUNT(*) FROM whitelist w' . $whereSql);
+        $stmt = $this->pdo->prepare('SELECT COUNT(*) FROM ' . self::DEVICES . $whereSql);
         $stmt->execute($params);
 
         return (int)$stmt->fetchColumn();
@@ -139,16 +153,76 @@ final class WhitelistRepository
         string $company = 'null'
     ): void {
         $deviceType = DeviceMetadata::normalizeDeviceType($deviceType);
+        $modelId = $this->modelId($supplier, $model)
+            ?? throw new \InvalidArgumentException("Unknown model {$supplier}/{$model}");
+        $stmt = $this->pdo->prepare('
+            INSERT INTO whitelist (imei, model_id, device_type, license_ref_id, sim_number, device_id)
+            VALUES (?, ?, ?, ?, ?, ?)
+            ON DUPLICATE KEY UPDATE model_id = VALUES(model_id), device_type = VALUES(device_type),
+                license_ref_id = VALUES(license_ref_id), sim_number = VALUES(sim_number), device_id = VALUES(device_id)
+        ');
+        $stmt->execute([$imei, $modelId, $deviceType, $this->licenseRef($company, $licenseId), $simNumber, $deviceId]);
+    }
+
+    private function modelId(string $supplier, string $model): ?int
+    {
+        $row = $this->fetchOne('
+            SELECT m.id FROM models m JOIN suppliers s ON s.id = m.supplier_id
+            WHERE s.name = ? AND m.internal_model = ?
+        ', [$supplier, $model]);
+
+        return $row === null ? null : (int)$row['id'];
+    }
+
+    public function countForModel(int $modelId): int
+    {
+        return $this->countWhere('w.model_id = ?', $modelId);
+    }
+
+    public function countForLicense(int $licenseRef): int
+    {
+        return $this->countWhere('w.license_ref_id = ?', $licenseRef);
+    }
+
+    public function countForCompany(int $companyId): int
+    {
+        return $this->countWhere('l.company_id = ?', $companyId);
+    }
+
+    private function countWhere(string $condition, int $id): int
+    {
+        $stmt = $this->pdo->prepare('SELECT COUNT(*) FROM ' . self::DEVICES . ' WHERE ' . $condition);
+        $stmt->execute([$id]);
+
+        return (int)$stmt->fetchColumn();
+    }
+
+    /** A licença que o par empresa e número nomeia; sem número, o dispositivo não tem dono. */
+    public function licenseRef(string $company, int|string $licenseId): ?int
+    {
         $licenseId = self::storedLicenseId(DeviceMetadata::normalizeLicenseId($licenseId));
         $company = self::storedCompany(DeviceMetadata::normalizeCompany($company));
-        $stmt = $this->pdo->prepare('
-            INSERT INTO whitelist (imei, supplier, model, device_type, license_id, sim_number, device_id, company)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-            ON DUPLICATE KEY UPDATE supplier = VALUES(supplier), model = VALUES(model), device_type = VALUES(device_type),
-                license_id = VALUES(license_id), sim_number = VALUES(sim_number), device_id = VALUES(device_id),
-                company = VALUES(company)
-        ');
-        $stmt->execute([$imei, $supplier, $model, $deviceType, $licenseId, $simNumber, $deviceId, $company]);
+        if ($licenseId === null || $company === null) {
+            return null;
+        }
+        $row = $this->fetchOne('
+            SELECT l.id FROM licenses l JOIN companies c ON c.id = l.company_id
+            WHERE c.name = ? AND l.license_id = ?
+        ', [$company, $licenseId]);
+
+        return $row === null
+            ? throw new \InvalidArgumentException("Unknown license {$company}/{$licenseId}")
+            : (int)$row['id'];
+    }
+
+    public function licenseExists(string $company, int|string $licenseId): bool
+    {
+        try {
+            $this->licenseRef($company, $licenseId);
+            return true;
+        } catch (\InvalidArgumentException) {
+            return false;
+        }
     }
 
     /** A mesma linha com outra chave, para o `ON UPDATE CASCADE` levar o que lhe aponta. */
@@ -179,7 +253,7 @@ final class WhitelistRepository
     {
         $stored = self::storedLicenseId(DeviceMetadata::normalizeLicenseId($licenseId));
 
-        return $stored === null ? ['w.license_id IS NULL', []] : ['w.license_id = ?', [$stored]];
+        return $stored === null ? ['w.license_ref_id IS NULL', []] : ['l.license_id = ?', [$stored]];
     }
 
     /**
@@ -218,14 +292,8 @@ final class WhitelistRepository
 
     public function updateAssociation(string $imei, string $company, int $licenseId): bool
     {
-        $company = self::storedCompany(DeviceMetadata::normalizeCompany($company));
-        $licenseId = self::storedLicenseId(DeviceMetadata::normalizeLicenseId($licenseId));
-        $stmt = $this->pdo->prepare('
-            UPDATE whitelist
-            SET company = ?, license_id = ?
-            WHERE imei = ?
-        ');
-        $stmt->execute([$company, $licenseId, $imei]);
+        $stmt = $this->pdo->prepare('UPDATE whitelist SET license_ref_id = ? WHERE imei = ?');
+        $stmt->execute([$this->licenseRef($company, $licenseId), $imei]);
 
         return $stmt->rowCount() > 0;
     }
@@ -235,24 +303,15 @@ final class WhitelistRepository
         return '
             SELECT
                 w.imei,
-                w.supplier,
-                w.model,
+                s.name AS supplier,
+                m.internal_model AS model,
                 w.device_type AS deviceType,
-                w.license_id AS licenseId,
+                l.license_id AS licenseId,
                 w.sim_number AS simNumber,
                 w.device_id AS deviceId,
-                w.company,
+                c.name AS company,
                 l.name AS licenseName
-            FROM whitelist w
-        ' . $this->deviceJoinSql();
-    }
-
-    private function deviceJoinSql(): string
-    {
-        return '
-            LEFT JOIN companies c ON c.name = w.company
-            LEFT JOIN licenses l ON l.license_id = w.license_id AND l.company_id = c.id
-        ';
+            FROM ' . self::DEVICES;
     }
 
     /**
@@ -274,9 +333,8 @@ final class WhitelistRepository
         }
 
         if ($companyScope !== null && trim($companyScope) !== '') {
-            // Sem `LOWER()` dos dois lados: a coluna é `utf8mb4_unicode_ci` e já compara sem
-            // distinguir maiúsculas, e a função punha o `idx_whitelist_company` a varrer.
-            $clauses[] = 'w.company = ?';
+            // Sem `LOWER()`: a coluna é `utf8mb4_unicode_ci` e já compara sem distinguir maiúsculas.
+            $clauses[] = 'c.name = ?';
             $params[] = trim($companyScope);
         }
 
@@ -288,7 +346,7 @@ final class WhitelistRepository
 
         $suppliers = $this->filterValues($filters, 'supplier');
         if ($suppliers !== []) {
-            $clauses[] = 'w.supplier IN (' . $this->placeholders(count($suppliers)) . ')';
+            $clauses[] = 's.name IN (' . $this->placeholders(count($suppliers)) . ')';
             array_push($params, ...$suppliers);
         }
 
@@ -296,7 +354,7 @@ final class WhitelistRepository
         // traria também "L08 Pro Max".
         $models = $this->filterValues($filters, 'model');
         if ($models !== []) {
-            $clauses[] = 'w.model IN (' . $this->placeholders(count($models)) . ')';
+            $clauses[] = 'm.internal_model IN (' . $this->placeholders(count($models)) . ')';
             array_push($params, ...$models);
         }
 
@@ -316,16 +374,16 @@ final class WhitelistRepository
             foreach ($pairs as $pair) {
                 if ($pair['company'] === null) {
                     // Sem empresa é sem licença: uma não existe sem a outra.
-                    $pairClauses[] = 'w.company IS NULL';
+                    $pairClauses[] = 'w.license_ref_id IS NULL';
                     continue;
                 }
                 if ($pair['licenseId'] === null) {
-                    $pairClauses[] = 'w.company = ?';
+                    $pairClauses[] = 'c.name = ?';
                     $params[] = $pair['company'];
                     continue;
                 }
                 [$sql, $licenseParams] = self::licenseCondition($pair['licenseId']);
-                $pairClauses[] = '(w.company = ? AND ' . $sql . ')';
+                $pairClauses[] = '(c.name = ? AND ' . $sql . ')';
                 $params[] = $pair['company'];
                 $params = array_merge($params, $licenseParams);
             }
@@ -362,7 +420,7 @@ final class WhitelistRepository
                     continue;
                 }
 
-                $clauses[] = '(w.imei LIKE ? OR w.supplier LIKE ? OR w.model LIKE ? OR w.sim_number LIKE ? OR w.company LIKE ?)';
+                $clauses[] = '(w.imei LIKE ? OR s.name LIKE ? OR m.internal_model LIKE ? OR w.sim_number LIKE ? OR c.name LIKE ?)';
                 $needle = '%' . $token . '%';
                 array_push($params, $needle, $needle, $needle, $needle, $needle);
             }
@@ -472,7 +530,7 @@ final class WhitelistRepository
         unset($candidateFilters[$excludeKey]);
         [$whereSql, $params] = $this->buildWhereClause($candidateFilters, $licenseScope, $companyScope);
         $stmt = $this->pdo->prepare(
-            "SELECT {$column} AS {$alias}, COUNT(*) AS total FROM whitelist w"
+            "SELECT {$column} AS {$alias}, COUNT(*) AS total FROM " . self::DEVICES
             . $whereSql
             . " GROUP BY {$column} ORDER BY total DESC, {$column}"
         );
@@ -502,9 +560,9 @@ final class WhitelistRepository
         unset($candidateFilters['supplier'], $candidateFilters['model']);
         [$whereSql, $params] = $this->buildWhereClause($candidateFilters, $licenseScope, $companyScope);
         $stmt = $this->pdo->prepare(
-            'SELECT w.supplier AS supplier, w.model AS model, COUNT(*) AS total FROM whitelist w'
+            'SELECT s.name AS supplier, m.internal_model AS model, COUNT(*) AS total FROM ' . self::DEVICES
             . $whereSql
-            . ' GROUP BY w.supplier, w.model ORDER BY w.supplier, w.model'
+            . ' GROUP BY s.name, m.internal_model ORDER BY s.name, m.internal_model'
         );
         $stmt->execute($params);
 
@@ -558,9 +616,9 @@ final class WhitelistRepository
         unset($candidateFilters['license']);
         [$whereSql, $params] = $this->buildWhereClause($candidateFilters, $licenseScope, $companyScope);
         $stmt = $this->pdo->prepare(
-            'SELECT w.company AS company, w.license_id AS license_id, COUNT(*) AS total FROM whitelist w'
+            'SELECT c.name AS company, l.license_id AS license_id, COUNT(*) AS total FROM ' . self::DEVICES
             . $whereSql
-            . ' GROUP BY w.company, w.license_id ORDER BY w.company, w.license_id'
+            . ' GROUP BY c.name, l.license_id ORDER BY c.name, l.license_id'
         );
         $stmt->execute($params);
 

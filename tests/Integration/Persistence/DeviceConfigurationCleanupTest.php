@@ -7,6 +7,7 @@ namespace Tests\Integration\Persistence;
 use Hub\Infrastructure\Persistence\Repository\WhitelistRepository;
 use PDO;
 use Tests\Support\MysqlDashboardTestCase;
+use Tests\Support\TestInventory;
 
 /** O `unregister` apaga as configurações do dispositivo, que senão passavam ao próximo dono do IMEI. */
 final class DeviceConfigurationCleanupTest extends MysqlDashboardTestCase
@@ -16,10 +17,7 @@ final class DeviceConfigurationCleanupTest extends MysqlDashboardTestCase
     private function pdoWithConfiguredDevice(): PDO
     {
         $pdo = $this->createDashboardDatabase()->pdo();
-        $pdo->prepare('
-            INSERT INTO whitelist (imei, supplier, model, device_type, license_id, company)
-            VALUES (?, ?, ?, ?, ?, ?)
-        ')->execute([self::IMEI, 'Vivistar', 'L08 PRO', 'watch', 1001, 'hitcare']);
+        TestInventory::register($pdo, self::IMEI, 'Vivistar', 'L08 Pro', 'watch', 1001, 'hitcare');
 
         $pdo->prepare('
             INSERT INTO device_configuration_changes (

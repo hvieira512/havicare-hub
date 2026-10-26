@@ -65,6 +65,10 @@ final class ApiError
         'user_exists' => 409,
         // O nome de empresa repetido, que o `TenancyPaths` documenta como 409.
         'duplicate' => 409,
+        // Ainda há dispositivos a apontar para o que se quis apagar.
+        'company_in_use' => 409,
+        'license_in_use' => 409,
+        'model_in_use' => 409,
         // 429: foi o ritmo de quem pede que o travou.
         'too_many_attempts' => 429,
         'server_error' => 500,
@@ -260,6 +264,21 @@ final class ApiError
     public static function userExists(): self
     {
         return new self('user_exists', 'Username already exists');
+    }
+
+    public static function companyInUse(int $devices): self
+    {
+        return new self('company_in_use', "Company still has {$devices} device(s); move or delete them first");
+    }
+
+    public static function licenseInUse(int $devices): self
+    {
+        return new self('license_in_use', "License still has {$devices} device(s); move or delete them first");
+    }
+
+    public static function modelInUse(int $devices): self
+    {
+        return new self('model_in_use', "Model still has {$devices} device(s); move or delete them first");
     }
 
     public static function duplicateCompany(): self

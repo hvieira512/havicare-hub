@@ -14,6 +14,7 @@ use Hub\Ingress\Http\Qinglanst\RadarLayoutSync;
 use PDO;
 use React\Promise\PromiseInterface;
 use Tests\Support\MysqlDashboardTestCase;
+use Tests\Support\TestInventory;
 
 use function React\Promise\reject;
 use function React\Promise\resolve;
@@ -37,10 +38,7 @@ final class RadarLayoutSyncTest extends MysqlDashboardTestCase
         $this->pdo = $this->createDashboardDatabase()->pdo();
         $this->layouts = new RadarLayoutRepository($this->pdo);
         foreach (['594B3CCBA56B', '414D74184CBF'] as $imei) {
-            $this->pdo->exec("
-                INSERT INTO whitelist (imei, supplier, model, device_type, license_id)
-                VALUES ('$imei', 'Qinglanst', 'HC2', 'radar', 2103)
-            ");
+            TestInventory::register($this->pdo, $imei, 'Qinglanst', 'HC2', 'radar', 2103, 'hitcare');
         }
     }
 
@@ -217,10 +215,7 @@ final class RadarLayoutSyncTest extends MysqlDashboardTestCase
 
     public function testRefusesADeviceThatIsNotARadar(): void
     {
-        $this->pdo->exec("
-            INSERT INTO whitelist (imei, supplier, model, device_type, license_id)
-            VALUES ('351266770073676', '4P Touch', 'Y6M', 'watch', 2103)
-        ");
+        TestInventory::register($this->pdo, '351266770073676', '4P Touch', 'Y6M', 'watch', 2103, 'hitcare');
         $client = $this->clientAnswering([]);
 
         $result = $this->await($this->sync($client)->syncDevice('351266770073676'));
