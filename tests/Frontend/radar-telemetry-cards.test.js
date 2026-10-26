@@ -12,7 +12,7 @@ import { telemetryCard } from "../../src/Dashboard/dashboard/components/cards/sh
 
 test("breath rate shows the reading, not fixed text", () => {
     assert.equal(uplinkCardContent("breath_rate", { breathsPerMinute: 17 }).value, "17 rpm");
-    assert.equal(uplinkCardContent("breath_rate", {}).value, "- rpm");
+    assert.equal(uplinkCardContent("breath_rate", {}).value, "Frequência respiratória");
 });
 
 test("the radar heart rate uses the watch card", () => {

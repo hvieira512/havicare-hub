@@ -167,10 +167,10 @@ const UPLINK_CARD_RENDERERS = {
         value: zoneLabel("zone_exit", data),
         details: personDetails(data),
     }),
-    heart_rate_high: (data) => vitalValue(data?.bpm, "bpm", "heart_rate_high"),
-    heart_rate_low: (data) => vitalValue(data?.bpm, "bpm", "heart_rate_low"),
-    breath_rate_high: (data) => vitalValue(data?.breathsPerMinute, "rpm", "breath_rate_high"),
-    breath_rate_low: (data) => vitalValue(data?.breathsPerMinute, "rpm", "breath_rate_low"),
+    heart_rate_high: (data) => ({ value: measure("heart_rate_high", data, "bpm") }),
+    heart_rate_low: (data) => ({ value: measure("heart_rate_low", data, "bpm") }),
+    breath_rate_high: (data) => ({ value: measure("breath_rate_high", data, "breathsPerMinute") }),
+    breath_rate_low: (data) => ({ value: measure("breath_rate_low", data, "breathsPerMinute") }),
     position_minute_stats: (data) => ({
         value: radarPositionMinuteStatsValue(data),
         details: radarPositionMinuteStatsDetails(data),
@@ -180,33 +180,33 @@ const UPLINK_CARD_RENDERERS = {
         details: radarVitalsMinuteStatsDetails(data),
     }),
     heart_rate: (data) => ({
-        value: `${num(data.bpm)} bpm`,
+        value: measure("heart_rate", data, "bpm"),
     }),
     blood_pressure: (data) => ({
         value: `${num(data.systolicMmHg)} / ${num(data.diastolicMmHg)} mmHg`,
         details: compactDetails(data, ["irregularHeartbeat", "memoryGroup", "fromHistory"]),
     }),
     blood_oxygen: (data) => ({
-        value: `${data.spo2Percent ?? "-"}%`,
+        value: measure("blood_oxygen", data, "spo2Percent"),
     }),
     blood_sugar: (data) => ({
-        value: `${num(data.glucoseMgDl)} mg/dL`,
+        value: measure("blood_sugar", data, "glucoseMgDl"),
     }),
     // Nem toda a leitura traz a corporal: há aparelhos que só amostram a superfície.
     temperature: (data) => ({
         value:
             data.bodyCelsius != null
-                ? `${num(data.bodyCelsius)} °C`
+                ? fieldValue("bodyCelsius", data.bodyCelsius)
                 : data.surfaceCelsius != null
-                    ? `${num(data.surfaceCelsius)} °C na pele`
+                    ? `${fieldValue("surfaceCelsius", data.surfaceCelsius)} na pele`
                     : "-",
         details: compactDetails(data, ["site"]),
     }),
     ambient_temperature: (data) => ({
-        value: data.environmentCelsius != null ? `${num(data.environmentCelsius)} °C` : "-",
+        value: measure("ambient_temperature", data, "environmentCelsius"),
     }),
     ambient_humidity: (data) => ({
-        value: data.humidityPercent != null ? `${data.humidityPercent}%` : "-",
+        value: measure("ambient_humidity", data, "humidityPercent"),
     }),
     // Quantas doses faltam sair desde a posição do carrossel, com o total por denominador e o
     // nível do aparelho como legenda; a posição vai nos detalhes, para quem carrega o prato.
@@ -266,14 +266,14 @@ const UPLINK_CARD_RENDERERS = {
         value: fieldValue("fault", data.fault),
     }),
     stress: (data) => ({
-        value: data?.stressScore != null ? `${data.stressScore}` : capabilityLabel("stress"),
+        value: measure("stress", data, "stressScore"),
     }),
     // Equivalentes metabólicos: 1 é o gasto em repouso, e por isso o número vale por si.
     met: (data) => ({
-        value: data?.met != null ? `${num(data.met)} MET` : capabilityLabel("met"),
+        value: measure("met", data, "met"),
     }),
     cardiac_load: (data) => ({
-        value: data?.cardiacLoad != null ? `${data.cardiacLoad}` : capabilityLabel("cardiac_load"),
+        value: measure("cardiac_load", data, "cardiacLoad"),
     }),
     sleep_apnea: (data) => ({
         value:
@@ -283,13 +283,10 @@ const UPLINK_CARD_RENDERERS = {
         details: compactDetails(data, ["hypoxiaSeconds"]),
     }),
     uric_acid: (data) => ({
-        value: data?.umolPerL != null ? `${data.umolPerL} µmol/L` : capabilityLabel("uric_acid"),
+        value: measure("uric_acid", data, "umolPerL"),
     }),
     blood_lipids: (data) => ({
-        value:
-            data?.totalCholesterolMmolPerL != null
-                ? `${num(data.totalCholesterolMmolPerL)} mmol/L`
-                : capabilityLabel("blood_lipids"),
+        value: measure("blood_lipids", data, "totalCholesterolMmolPerL"),
         details: compactDetails(data, [
             "triglyceridesMmolPerL",
             "hdlMmolPerL",
@@ -306,22 +303,24 @@ const UPLINK_CARD_RENDERERS = {
             capabilityLabel("wear_state"),
     }),
     weight: (data) => ({
-        value: data?.weightKg != null ? `${num(data.weightKg)} kg` : capabilityLabel("weight"),
+        value: measure("weight", data, "weightKg"),
         details: compactDetails({ ...data, scaleUserId: scaleUserName(data?.scaleUserId) }, ["scaleUserId", "fromHistory"]),
     }),
     body_impedance: (data) => ({
-        value: data?.impedance50KhzOhm != null ? `${num(data.impedance50KhzOhm)} Ω` : capabilityLabel("body_impedance"),
+        value: measure("body_impedance", data, "impedance50KhzOhm"),
         details: compactDetails(data, ["impedance100KhzOhm"]),
     }),
     body_impedance_channel: (data) => ({
-        value: data?.impedanceOhm != null ? `Canal ${data.channel} · ${num(data.impedanceOhm)} Ω` : capabilityLabel("body_impedance_channel"),
+        value: data?.impedanceOhm != null
+            ? `Canal ${data.channel} · ${fieldValue("impedanceOhm", data.impedanceOhm)}`
+            : capabilityLabel("body_impedance_channel"),
     }),
     weighing_status: (data) => ({
         value: data?.shuttingDown
             ? "A desligar"
             : [valueLabel("heartRatePhase", data?.heartRatePhase), valueLabel("impedancePhase", data?.impedancePhase), valueLabel("weightPhase", data?.weightPhase)]
                     .find(Boolean) ?? capabilityLabel("weighing_status"),
-        details: data?.weightKg ? `${num(data.weightKg)} kg` : "",
+        details: data?.weightKg ? fieldValue("weightKg", data.weightKg) : "",
     }),
     // O IMC é o número que resume a medição; o resto cabe nos detalhes, com uma casa como na app.
     body_composition: (data) => ({
@@ -416,7 +415,7 @@ const UPLINK_CARD_RENDERERS = {
     // A frequência que o exame apurou, que não é a do sensor ótico; sem ela, o tamanho do lote.
     ecg: (data) => ({
         value: data?.heartRateBpm != null
-            ? `${num(data.heartRateBpm)} bpm`
+            ? fieldValue("heartRateBpm", data.heartRateBpm)
             : sampleCount(data),
         details: compactDetails(
             { ...data, sampleCount: sampleTotal(data) || null },
@@ -424,13 +423,10 @@ const UPLINK_CARD_RENDERERS = {
         ),
     }),
     hrv: (data) => ({
-        value:
-            data?.hrvMilliseconds != null
-                ? `${num(data.hrvMilliseconds)} ms`
-                : capabilityLabel("hrv"),
+        value: measure("hrv", data, "hrvMilliseconds"),
     }),
     breath_rate: (data) => ({
-        value: `${num(data.breathsPerMinute)} rpm`,
+        value: measure("breath_rate", data, "breathsPerMinute"),
     }),
     ppg: (data) => ({
         value: sampleCount(data),
@@ -442,17 +438,14 @@ const UPLINK_CARD_RENDERERS = {
     help_call: (data) => helpCallContent(data),
     // O máximo da janela é o que fez disparar; o gateway diz onde.
     proximity_alarm: (data) => ({
-        value: `${data?.rssiDbm ?? "-"} dBm`,
+        value: measure("proximity_alarm", data, "rssiDbm"),
         details: joinMarkup([
             html`gateway ${String(data?.gatewayId || "")}`,
             html`${countLabel(Number(data?.window?.samples) || 0, "leitura", "leituras")}`,
         ]),
     }),
     motion: (data) => ({
-        value:
-            data?.magnitudeMg != null
-                ? `${num(data.magnitudeMg)} mg`
-                : capabilityLabel("motion"),
+        value: measure("motion", data, "magnitudeMg"),
         details: compactDetails(data, ["xMg", "yMg", "zMg"]),
     }),
     reset: (data) => ncsPagerContent("reset", data),
@@ -583,6 +576,7 @@ function personDetails(data) {
 }
 
 /** O valor que levantou o evento; sem ele, o nome. */
-function vitalValue(value, unit, type) {
-    return { value: value == null ? capabilityLabel(type) : `${value} ${unit}` };
+/** O valor do campo com a unidade dele; sem leitura, o nome da capacidade. */
+function measure(type, data, key) {
+    return data?.[key] != null ? fieldValue(key, data[key]) : capabilityLabel(type);
 }

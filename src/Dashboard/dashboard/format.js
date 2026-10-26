@@ -163,6 +163,9 @@ const FIELD_UNIT = {
     hrvMilliseconds: "ms",
     rrIntervalMilliseconds: "ms",
     frequencyHz: "Hz",
+    glucoseMgDl: "mg/dL",
+    met: "MET",
+    rssiDbm: "dBm",
 };
 
 /** A unidade de um campo, pelo nome dele; vazia quando não a tem. */
