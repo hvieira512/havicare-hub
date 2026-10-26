@@ -6,6 +6,7 @@ namespace Hub\Infrastructure\Persistence;
 
 use Hub\Infrastructure\Persistence\Migration\DropCapabilitiesTable;
 use Hub\Infrastructure\Persistence\Migration\DropUnreadColumns;
+use Hub\Infrastructure\Persistence\Migration\GatewayLocationRemoved;
 use Hub\Infrastructure\Persistence\Migration\Migration;
 use Hub\Infrastructure\Persistence\Migration\PublicConfigurationShape;
 use Hub\Infrastructure\Persistence\Migration\VivistarWorkingModeNames;
@@ -26,6 +27,7 @@ final class DatabaseMigrationPlan
             new PublicConfigurationShape(),
             new VivistarWorkingModeNames(),
             new WonlexPushMessageRemoved(),
+            new GatewayLocationRemoved(),
         ];
     }
 

@@ -82,7 +82,7 @@ de mensagem são tratados:
 |---|---|
 | `3004` | Estado do gateway: hora, tipo de rede, qualidade do sinal, tensão da bateria, aceleração, IMEI |
 | `3011` | Alarme de bateria fraca, com a tensão: sai como o evento `low_battery`, com `voltageMv` |
-| `3089` | GPS do gateway: longitude e latitude ×10⁻⁷, antena, HDOP |
+| `3089` | GPS do gateway: descodifica-se mas não se publica, porque na prática o MKGW4 não o manda |
 | `30a0`, `30b2` | Relatórios de varrimento: tudo o que o gateway ouviu |
 
 Num relatório de varrimento, cada dispositivo ouvido traz o tipo de beacon, o

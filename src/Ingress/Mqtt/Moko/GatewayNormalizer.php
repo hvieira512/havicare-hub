@@ -29,26 +29,6 @@ final class GatewayNormalizer
             'source' => ['protocol' => $protocol, 'nativeType' => $messageId],
         ];
 
-        if ($messageId === '3089') {
-            if (!is_numeric($data['latitude'] ?? null) || !is_numeric($data['longitude'] ?? null)) {
-                return [];
-            }
-            $gpsValid = ($data['fix_result'] ?? null) === 'gps_success';
-            // O 0,0 de um fixo falhado é a falta de posição, e não uma posição.
-            $hasCoordinates = $gpsValid || (float)$data['latitude'] !== 0.0 || (float)$data['longitude'] !== 0.0;
-            return [[
-                'type' => 'location',
-                'data' => Values::withoutNulls([
-                    'source' => 'gps',
-                    'gpsValid' => $gpsValid,
-                    'hasCoordinates' => $hasCoordinates,
-                    'lat' => $hasCoordinates ? (float)$data['latitude'] : null,
-                    'lon' => $hasCoordinates ? (float)$data['longitude'] : null,
-                    'hdop' => is_numeric($data['hdop'] ?? null) ? (float)$data['hdop'] : null,
-                ]),
-            ] + $common];
-        }
-
         // O alarme de bateria fraca do MKGW4 é um acontecimento, com a tensão que o levantou.
         if ($messageId === '3011') {
             return [[

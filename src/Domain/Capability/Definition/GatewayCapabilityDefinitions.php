@@ -11,12 +11,11 @@ final class GatewayCapabilityDefinitions extends CapabilityDefinitions
         return 'gateway';
     }
 
-    /** O MKGW3 só diz por onde está ligado; o MKGW4 tem bateria e GPS. */
+    /** O MKGW3 só diz por onde está ligado; o MKGW4 tem bateria. */
     protected static function publishedBy(): array
     {
         return [
             'battery' => ['moko-mkgw4'],
-            'location' => ['moko-mkgw4'],
             'low_battery' => ['moko-mkgw4'],
         ];
     }
@@ -34,7 +33,6 @@ final class GatewayCapabilityDefinitions extends CapabilityDefinitions
                 'measurement' => [
                     'connectivity',
                     'battery',
-                    'location',
                 ],
             ],
             'alarms' => [
