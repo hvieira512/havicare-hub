@@ -30,6 +30,18 @@ final class DeleteOfSomethingAbsentTest extends MysqlDashboardTestCase
         self::assertSame(404, $this->statusOf($service->delete('865028000000999')));
     }
 
+    /** Um aparelho apagado com a ligação aberta perde-a logo, em vez de continuar a publicar. */
+    public function testDeletingAConnectedDeviceClosesItsSession(): void
+    {
+        $db = ApiDataAccess::fromDatabase($this->createDashboardDatabase());
+        $db->whitelist->register('865028000000308', 'Vivistar', 'VIVISTAR-CARE', 'watch', 1001, '', '', 'hitcare');
+        $hub = $this->createMock(DeviceHubServer::class);
+        $hub->expects(self::once())->method('disconnect')->with('865028000000308');
+        $service = new DeviceService(new DeviceStore(new InMemoryRedisClient()), new Whitelist($db->whitelist), $hub, $db);
+
+        self::assertSame('ok', $service->delete('865028000000308')['status'] ?? null);
+    }
+
     public function testDeletingAModelThatDoesNotExistIsNotFound(): void
     {
         $db = ApiDataAccess::fromDatabase($this->createDashboardDatabase());

@@ -104,12 +104,17 @@ class DeviceHubServer
         $session = $this->connections->get($from) ?? $this->connections->open($from);
         $this->connections->touch($from);
 
-        if (!$session->authenticated) {
-            $this->authenticate($from, $raw, $session);
-            return;
-        }
+        // Uma exceção que escape daqui termina o processo, e com ele todas as ligações.
+        try {
+            if (!$session->authenticated) {
+                $this->authenticate($from, $raw, $session);
+                return;
+            }
 
-        $this->handleAuthenticatedMessage($from, $session, $raw, (string)$rid);
+            $this->handleAuthenticatedMessage($from, $session, $raw, (string)$rid);
+        } catch (\Throwable $e) {
+            Logger::channel('hub')->error("TCP message failed connection id={$rid}: {$e->getMessage()}");
+        }
     }
 
     public function onClose(ConnectionInterface $conn): void
@@ -117,6 +122,11 @@ class DeviceHubServer
         $session = $this->connections->close($conn);
 
         if ($session === null || !$session->authenticated) {
+            return;
+        }
+        // Um aparelho apagado não se anuncia: o tópico dele já foi limpo.
+        if ($this->whitelist->getMetadata($session->imei) === null) {
+            Logger::channel('hub')->info("Removed device socket closed IMEI={$session->imei}");
             return;
         }
 
@@ -155,6 +165,11 @@ class DeviceHubServer
     }
 
     /** Um socket fechado ainda à espera de voltar conta como ligado: é o servidor que o anuncia. */
+    public function disconnect(string $imei): void
+    {
+        $this->connections->connectionFor($imei)?->close();
+    }
+
     public function isConnected(string $imei): bool
     {
         return $this->connections->connectionFor($imei) instanceof ConnectionInterface || isset($this->closed[$imei]);
@@ -352,13 +367,17 @@ class DeviceHubServer
 
         // Se a trama confirma uma configuração é conhecimento do protocolo: aqui serve-se
         // tudo o que fala TCP, e um `if` por fornecedor neste sítio cresce com a frota.
-        $this->deviceStore?->markCommandReply(
-            $session->imei,
-            (string)($message->decoded['type'] ?? ''),
-            $message->decoded['ident'] ?? null,
-            (string)($message->decoded['ref'] ?? ''),
-            $protocol->replyAccepted($message->decoded),
-        );
+        try {
+            $this->deviceStore?->markCommandReply(
+                $session->imei,
+                (string)($message->decoded['type'] ?? ''),
+                $message->decoded['ident'] ?? null,
+                (string)($message->decoded['ref'] ?? ''),
+                $protocol->replyAccepted($message->decoded),
+            );
+        } catch (\Throwable $e) {
+            Logger::channel('hub')->error("Command reply not recorded IMEI={$session->imei}: {$e->getMessage()}");
+        }
 
         $published = true;
         foreach ($message->telemetry as $event) {
@@ -586,7 +605,6 @@ class DeviceHubServer
     {
         $this->publishStatus($session, 'offline');
         $this->publishEvent($session, 'device.disconnected');
-        $this->deviceStore?->deviceOffline($session->imei);
     }
 
     private function publishStatus(DeviceSession $session, string $state): void
@@ -654,17 +672,21 @@ class DeviceHubServer
 
     private function markSeen(DeviceSession $session, string $connectionId): void
     {
-        $this->deviceStore?->deviceSeen($session->imei, [
-            'supplier' => $session->supplier,
-            'model' => $session->model,
-            'commercialName' => $session->commercialName,
-            'deviceType' => $session->deviceType,
-            ...$this->owner($session),
-            'protocol' => $session->protocol,
-            'transport' => 'tcp',
-            'online' => '1',
-            'lastConnectionId' => $connectionId,
-        ]);
+        try {
+            $this->deviceStore?->deviceSeen($session->imei, [
+                'supplier' => $session->supplier,
+                'model' => $session->model,
+                'commercialName' => $session->commercialName,
+                'deviceType' => $session->deviceType,
+                ...$this->owner($session),
+                'protocol' => $session->protocol,
+                'transport' => 'tcp',
+                'online' => '1',
+                'lastConnectionId' => $connectionId,
+            ]);
+        } catch (\Throwable $e) {
+            Logger::channel('hub')->error("Device not marked seen IMEI={$session->imei}: {$e->getMessage()}");
+        }
     }
 
     private function recordRaw(DeviceSession $session, string $raw, string $connectionId): void
@@ -696,7 +718,7 @@ class DeviceHubServer
         $licenseId = $metadata?->licenseId ?? 0;
         $company = $metadata?->company ?? '';
         $commercialName = $this->authorizer->commercialNameFor($metadata?->supplier ?? '', $metadata?->model ?? '');
-        $deviceType = $metadata?->deviceType ?? 'watch';
+        $deviceType = $metadata?->deviceType ?? '';
 
         return [
             'licenseId' => $licenseId !== 0 ? $licenseId : ($session?->licenseId ?? 0),

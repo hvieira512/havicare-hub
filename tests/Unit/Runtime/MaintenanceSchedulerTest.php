@@ -277,6 +277,19 @@ final class MaintenanceSchedulerTest extends TestCase
         self::assertSame(2, $this->mqtt->attempts);
     }
 
+    /** Uma exceção que escape a um temporizador do loop termina o processo do hub. */
+    public function testARedisFailureDoesNotEscapeTheTick(): void
+    {
+        $this->recordWaitingCommand();
+        $this->redis->failOn = 'smembers';
+
+        $this->tick();
+
+        $this->redis->failOn = null;
+        $this->tick();
+        self::assertCount(1, $this->hubServer->submitted, 'a passagem seguinte volta a trabalhar');
+    }
+
     /** Uma ligação TCP aberta decide-a o servidor: a manutenção não a apaga nem a anuncia. */
     public function testASilentConnectedTcpDeviceIsLeftToTheServer(): void
     {

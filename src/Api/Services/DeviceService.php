@@ -575,6 +575,7 @@ class DeviceService
         // Redis deixa uma entrada órfã que nada lista.
         $this->whitelist->unregister($imei);
         $this->store->deleteDevice($imei);
+        $this->hub->disconnect($imei);
 
         return ['status' => 'ok', 'imei' => $imei];
     }

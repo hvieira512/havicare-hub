@@ -6,8 +6,10 @@ namespace Hub\Runtime;
 
 use Hub\Api\Services\DeviceService;
 use Hub\Device\ConnectionAnnouncer;
+use Hub\Device\DeviceHubServer;
 use Hub\Device\DownlinkRetryContext;
 use Hub\Log\Logger;
+use Hub\State\DeviceStore;
 use React\EventLoop\LoopInterface;
 
 /**
@@ -34,24 +36,10 @@ final class MaintenanceScheduler
         $loop->addPeriodicTimer(
             self::INTERVAL_SECONDS,
             static function () use ($store, $hubServer, $connections, $commandTimeout, $services): void {
-                $store->retryWaitingCommands(
-                    self::COMMAND_RETRY_AFTER_SECONDS,
-                    $commandTimeout,
-                    self::COMMAND_MAX_ATTEMPTS,
-                    // O contexto volta com a repetição. Sem ele, o comando reentra na fila
-                    // sem o valor que o gateway precisa de executar.
-                    static fn (string $imei, string $bytes, array $command): string
-                        => $hubServer->submitDownlink($imei, $bytes, DownlinkRetryContext::forCommand($command))
-                );
-                $store->expireWaitingCommands($commandTimeout);
-                // Uma ligação TCP aberta decide-a o servidor, que a anuncia ao fechar o socket.
-                foreach ($store->runtime->expireStaleDevices(hasSession: $hubServer->isConnected(...)) as $imei) {
-                    try {
-                        $device = $store->runtime->device($imei);
-                        $connections->announce($imei, $services->commercialModelResolver->enrich($device), false, $store->runtime->relayedDisconnection($device));
-                    } catch (\Throwable $e) {
-                        $services->mqttBridge->logPublishFailure('hub', $imei, $e);
-                    }
+                try {
+                    self::sweep($store, $hubServer, $connections, $commandTimeout, $services);
+                } catch (\Throwable $e) {
+                    Logger::channel('hub')->error("Maintenance sweep failed: {$e->getMessage()}");
                 }
             }
         );
@@ -59,8 +47,12 @@ final class MaintenanceScheduler
         $loop->addPeriodicTimer(
             self::INTERVAL_SECONDS,
             static function () use ($hubServer): void {
-                $hubServer->expireIdleConnections();
-                $hubServer->announceClosedConnections();
+                try {
+                    $hubServer->expireIdleConnections();
+                    $hubServer->announceClosedConnections();
+                } catch (\Throwable $e) {
+                    Logger::channel('hub')->error("Connection sweep failed: {$e->getMessage()}");
+                }
             }
         );
 
@@ -82,5 +74,33 @@ final class MaintenanceScheduler
                 }
             }
         );
+    }
+
+    private static function sweep(
+        DeviceStore $store,
+        DeviceHubServer $hubServer,
+        ConnectionAnnouncer $connections,
+        int $commandTimeout,
+        HubServices $services,
+    ): void {
+        $store->retryWaitingCommands(
+            self::COMMAND_RETRY_AFTER_SECONDS,
+            $commandTimeout,
+            self::COMMAND_MAX_ATTEMPTS,
+            // O contexto volta com a repetição. Sem ele, o comando reentra na fila
+            // sem o valor que o gateway precisa de executar.
+            static fn (string $imei, string $bytes, array $command): string
+                => $hubServer->submitDownlink($imei, $bytes, DownlinkRetryContext::forCommand($command))
+        );
+        $store->expireWaitingCommands($commandTimeout);
+        // Uma ligação TCP aberta decide-a o servidor, que a anuncia ao fechar o socket.
+        foreach ($store->runtime->expireStaleDevices(hasSession: $hubServer->isConnected(...)) as $imei) {
+            try {
+                $device = $store->runtime->device($imei);
+                $connections->announce($imei, $services->commercialModelResolver->enrich($device), false, $store->runtime->relayedDisconnection($device));
+            } catch (\Throwable $e) {
+                $services->mqttBridge->logPublishFailure('hub', $imei, $e);
+            }
+        }
     }
 }
