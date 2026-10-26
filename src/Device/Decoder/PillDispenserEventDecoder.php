@@ -373,10 +373,15 @@ final class PillDispenserEventDecoder
             ];
         }
 
-        foreach (self::conditions($tlv) as $condition => $active) {
+        $conditions = self::conditions($tlv);
+        foreach ($conditions as $condition => $active) {
             if ($active) {
                 $events[] = ['nativeType' => $nativeType] + self::CONDITIONS[$condition];
             }
+        }
+        $state = self::conditionState($conditions);
+        if ($state !== []) {
+            $events[] = ['feature' => 'dispenser_conditions', 'nativeType' => $nativeType, 'value' => $state];
         }
 
         // A resposta ao `0x07` traz os nove e é leitura; tudo o resto traz o alarme que mudou
@@ -407,6 +412,32 @@ final class PillDispenserEventDecoder
         }
 
         return $events;
+    }
+
+    /**
+     * As condições como leitura: as avarias acesas, o ambiente e a chamada. O que o pacote não
+     * traz fica de fora.
+     *
+     * @param array<string, bool> $conditions
+     * @return array<string, mixed>
+     */
+    private static function conditionState(array $conditions): array
+    {
+        $faults = null;
+        foreach ($conditions as $condition => $active) {
+            if (str_starts_with($condition, 'device_fault:')) {
+                $faults ??= [];
+                if ($active) {
+                    $faults[] = substr($condition, strlen('device_fault:'));
+                }
+            }
+        }
+
+        return Values::withoutNulls([
+            'faults' => $faults,
+            'storageOutOfRange' => $conditions['storage_environment'] ?? null,
+            'helpCallActive' => $conditions['help_call'] ?? null,
+        ]);
     }
 
     /**

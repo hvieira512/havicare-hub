@@ -75,6 +75,61 @@ final class PillDispenserNormalizationTest extends TestCase
         self::assertSame(['remaining' => 16, 'total' => 28, 'current' => 12, 'level' => 'low'], $byFeature['cells_remaining']);
     }
 
+    /** O estado das condições sai a cada heartbeat, acesas ou não: é por ele que se vê que apagaram. */
+    public function testHeartbeatConditionsBecomeTelemetry(): void
+    {
+        $decoded = $this->decode([
+            'packetType' => 0x02,
+            'mac' => 'AABBCCDDEEFF',
+            'tlv' => [
+                0x8111 => ['value' => "\x00"],
+                0x8112 => ['value' => "\x00"],
+                0x8121 => ['value' => "\x00"],
+                0x8122 => ['value' => "\x00"],
+                0x8123 => ['value' => "\x01"],
+                0x8124 => ['value' => "\x00"],
+                0x8125 => ['value' => "\x01"],
+            ],
+        ]);
+
+        $conditions = $this->featureValues($decoded, 'dispenser_conditions');
+
+        self::assertSame([['faults' => ['pusher', 'keys'], 'storageOutOfRange' => false, 'helpCallActive' => false]], $conditions);
+    }
+
+    public function testAllClearConditionsSayNoFault(): void
+    {
+        $decoded = $this->decode([
+            'packetType' => 0x02,
+            'mac' => 'AABBCCDDEEFF',
+            'tlv' => [0x8111 => ['value' => "\x01"], 0x8121 => ['value' => "\x00"]],
+        ]);
+
+        self::assertSame([['faults' => [], 'storageOutOfRange' => true]], $this->featureValues($decoded, 'dispenser_conditions'));
+    }
+
+    public function testAPacketWithoutConditionTagsSaysNothingAboutThem(): void
+    {
+        $decoded = $this->decode([
+            'packetType' => 0x02,
+            'mac' => 'AABBCCDDEEFF',
+            'tlv' => [0x8103 => ['value' => "\x50"]],
+        ]);
+
+        self::assertSame([], $this->featureValues($decoded, 'dispenser_conditions'));
+    }
+
+    /**
+     * @param array<string, mixed> $decoded
+     * @return list<mixed>
+     */
+    private function featureValues(array $decoded, string $feature): array
+    {
+        $events = (new DeviceEventDecoder())->decode(PillDispenserFixtures::session(), $decoded);
+
+        return array_column(array_values(array_filter($events, static fn (array $event): bool => $event['feature'] === $feature)), 'value');
+    }
+
     public function testAStatusQueryAnswerIsReadLikeAHeartbeat(): void
     {
         // A resposta ao `0x07` traz as mesmas TAGs de estado que o heartbeat, e por isso é

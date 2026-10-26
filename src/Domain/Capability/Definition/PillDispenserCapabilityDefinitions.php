@@ -38,6 +38,9 @@ final class PillDispenserCapabilityDefinitions extends CapabilityDefinitions
                     // corporal, e por isso não partilha a chave `temperature`.
                     'ambient_temperature',
                     'ambient_humidity',
+                    // As avarias, o ambiente e a chamada saem como evento quando acendem; esta
+                    // leitura diz, a cada heartbeat, se ainda estão acesas.
+                    'dispenser_conditions',
                     // A mesma `connectivity` que os gateways publicam, e não um formato só
                     // deste.
                     'connectivity',

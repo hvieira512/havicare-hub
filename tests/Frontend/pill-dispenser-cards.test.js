@@ -29,6 +29,18 @@ test("humidity shows with its unit", () => {
     assert.match(card("ambient_humidity", { humidityPercent: 47 }), /47\s*%/);
 });
 
+test("the dispenser conditions name what is still on, in Portuguese", () => {
+    const html = card("dispenser_conditions", { faults: ["pusher"], storageOutOfRange: true, helpCallActive: false });
+
+    assert.match(html, /Empurrador/);
+    assert.match(html, /fora da gama/);
+    assert.doesNotMatch(html, /pusher|Chamada/);
+});
+
+test("dispenser conditions all clear say so", () => {
+    assert.match(card("dispenser_conditions", { faults: [], storageOutOfRange: false, helpCallActive: false }), /Sem avarias nem alertas/);
+});
+
 test("the medication level shows in Portuguese, not as a raw enum", () => {
     const html = card("medication_level", { level: "low" });
 

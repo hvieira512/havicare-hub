@@ -86,6 +86,7 @@ const CARD_STYLE = {
     medication_alarm_change: ["fa-pills", "primary"],
     cells_remaining: ["fa-table-cells", "info"],
     storage_environment: ["fa-triangle-exclamation", "danger"],
+    dispenser_conditions: ["fa-screwdriver-wrench", "secondary"],
     ambient_temperature: ["fa-temperature-half", "info"],
     ambient_humidity: ["fa-droplet", "info"],
     reset: ["fa-bell-slash", "warning"],
@@ -252,6 +253,15 @@ const UPLINK_CARD_RENDERERS = {
     storage_environment: () => ({
         value: "Temperatura ou humidade fora da gama",
     }),
+    dispenser_conditions: (data) => {
+        const on = [
+            ...(data?.faults ?? []).map((fault) => fieldValue("fault", fault)),
+            ...(data?.storageOutOfRange ? ["Temperatura ou humidade fora da gama"] : []),
+            ...(data?.helpCallActive ? ["Chamada em curso"] : []),
+        ];
+
+        return { value: on.length > 0 ? on.join(", ") : "Sem avarias nem alertas" };
+    },
     device_fault: (data) => ({
         value: fieldValue("fault", data.fault),
     }),
