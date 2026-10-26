@@ -392,10 +392,8 @@ produção para observar dispositivos reais. **Apenas em leitura**: a publicaç�
 partir de um ambiente de desenvolvimento para os tópicos de produção emite
 comandos para equipamento em serviço.
 
-> O ambiente local executa MySQL e a produção executa MariaDB 10.11. O esquema e
-> as consultas evitam sintaxe exclusiva de qualquer dos motores — condição que
-> nenhuma verificação automática prende, porque a suite não corre contra o
-> MariaDB em lado nenhum. Ver os [testes](16-testes.md).
+> O ambiente local executa o motor da produção, MariaDB 11.8. Ver os
+> [testes](16-testes.md).
 
 ## Implementação
 

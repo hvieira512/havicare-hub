@@ -125,17 +125,11 @@ O que se perdeu com o CI, e vale a pena ter presente:
 - **A exigência de base de dados.** A suite de integração ignora-se a si própria
   quando o MySQL não responde, e um verde por omissão não é verificação. Quem
   corre a suite é que tem de reparar nos testes ignorados.
-- **O MariaDB.** O CI corria a suite contra o motor da produção. Aqui a suite
-  corre contra o MySQL do compose, e por isso a divergência entre os dois
-  motores **não está provada em lado nenhum**.
 
 ## Motores de base de dados
 
-O ambiente local executa MySQL 8.4 e a produção executa MariaDB 10.11. O volume
-local contém ficheiros escritos pelo MySQL que o MariaDB não lê, o que impede a
-substituição.
-
-O esquema e as consultas evitam sintaxe exclusiva de qualquer dos motores.
+O ambiente local e a produção executam o mesmo motor, MariaDB 11.8: a suite de
+integração e os cenários correm contra a base de dados da produção.
 
 ## Testes de invariantes
 

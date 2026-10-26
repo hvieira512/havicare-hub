@@ -20,7 +20,7 @@ services:
     restart: !override "no"
     ports: !reset []
     volumes: !override
-      - scenario_mysql_data:/var/lib/mysql
+      - scenario_mariadb_data:/var/lib/mysql
 
   hub:
     container_name: !reset null
@@ -32,4 +32,4 @@ services:
       - "8181:8081"
 
 volumes:
-  scenario_mysql_data:
+  scenario_mariadb_data:

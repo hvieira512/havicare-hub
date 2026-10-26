@@ -28,9 +28,8 @@ services:
     restart: unless-stopped
 
   mysql:
-    # A produção corre MariaDB 10.11; aqui fica MySQL porque o volume `mysql_data` foi escrito
-    # pelo MySQL e o MariaDB não o lê. Nenhuma verificação cobre a diferença de motor.
-    image: mysql:8.4
+    # O motor da produção, para os testes correrem contra ele.
+    image: mariadb:11.8
     container_name: havicare-mysql
     environment:
       MYSQL_DATABASE: ${MYSQL_DB_NAME:-havicare_hub}
@@ -40,9 +39,9 @@ services:
     ports:
       - "3306:3306"
     volumes:
-      - mysql_data:/var/lib/mysql
+      - mariadb_data:/var/lib/mysql
     healthcheck:
-      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p\"$$MYSQL_ROOT_PASSWORD\" --silent"]
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
       interval: 5s
       timeout: 5s
       retries: 30
@@ -110,4 +109,4 @@ services:
     restart: unless-stopped
 
 volumes:
-  mysql_data:
+  mariadb_data:
