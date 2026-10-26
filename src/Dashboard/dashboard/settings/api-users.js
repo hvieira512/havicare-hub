@@ -142,20 +142,6 @@ const run = (work) => void work.catch(showError);
 
 const reload = () => loadSettingsApiUsersSection(currentPage);
 
-async function fetchApiUsers(params) {
-    const response = await apiGetApiUsers(params);
-    if (response.error) {
-        throw new Error(apiError(response));
-    }
-
-    users = response.data || [];
-    // A contagem da faceta, e não das linhas desta página: o resumo fala da lista toda.
-    adminCount = (response.filters?.counts?.role || [])
-        .find((option) => option.value === "hub_admin")?.count ?? 0;
-
-    return response;
-}
-
 /** Só a última leitura pedida escreve a lista: duas teclas seguidas põem dois pedidos no ar. */
 let generation = 0;
 
@@ -165,20 +151,25 @@ export async function loadSettingsApiUsersSection(page = 1) {
     generation += 1;
     const current = generation;
 
-    try {
-        // As licenças são só do formulário de criar, e vêm da cache partilhada.
-        const [response, loaded] = await Promise.all([
-            fetchApiUsers({ page, sort: "username:asc", ...appliedFilters() }),
-            ensureLicensesLoaded(),
-        ]);
-        if (current !== generation) {
-            return;
-        }
-        licenses = loaded ?? [];
-        renderApiUsers(response);
-    } catch (error) {
-        showError(error);
+    // As licenças são só do formulário de criar, e vêm da cache partilhada.
+    const [response, loaded] = await Promise.all([
+        apiGetApiUsers({ page, sort: "username:asc", ...appliedFilters() }),
+        ensureLicensesLoaded(),
+    ]);
+    if (current !== generation) {
+        return;
     }
+    if (response.error) {
+        toast("error", apiError(response));
+        return;
+    }
+
+    users = response.data || [];
+    // A contagem da faceta, e não das linhas desta página: o resumo fala da lista toda.
+    adminCount = (response.filters?.counts?.role || [])
+        .find((option) => option.value === "hub_admin")?.count ?? 0;
+    licenses = loaded ?? [];
+    renderApiUsers(response);
 }
 
 const appliedFilters = () =>
@@ -255,7 +246,7 @@ export function licenseRefIdFor(role, value) {
     return Number(value);
 }
 
-/** O `PUT` substitui o registo: vai a linha inteira. */
+/** O `PUT` substitui o registo: vai a linha inteira. Um erro sai num aviso, e devolve `false`. */
 async function saveUser(user, changes = {}) {
     const body = {
         username: user.username,
@@ -267,13 +258,14 @@ async function saveUser(user, changes = {}) {
 
     const result = await apiSaveApiUser(user.id, body);
     if (result.error) {
-        throw new Error(apiError(result));
+        toast("error", apiError(result));
+        return false;
     }
+    return true;
 }
 
 async function toggleApiUser(user) {
-    await saveUser(user, { enabled: !isEnabled(user) });
-    await reload();
+    if (await saveUser(user, { enabled: !isEnabled(user) })) await reload();
 }
 
 async function changeApiUserPassword(user) {
@@ -281,8 +273,7 @@ async function changeApiUserPassword(user) {
     if (!isConfirmed) {
         return;
     }
-    await saveUser(user, { password: value });
-    toast("success", "Palavra-passe alterada");
+    if (await saveUser(user, { password: value })) toast("success", "Palavra-passe alterada");
 }
 
 export async function deleteApiUser(user) {
