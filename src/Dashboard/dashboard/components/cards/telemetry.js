@@ -1,4 +1,4 @@
-import { displayPersonIndex, fieldLabel, fieldValue, formatNumber, timeOnly } from "../../format.js";
+import { displayPersonIndex, fieldLabel, fieldValue, formatNumber, hhmm, timeOnly } from "../../format.js";
 import { fallLabel, zoneLabel } from "../../domain.js";
 import { html } from "../../html.js";
 import { compactDetails, joinMarkup } from "./shared.js";
@@ -490,8 +490,6 @@ function reportedSettingsBody(settings) {
     return html`<div class="reported-settings mt-3">${rows}</div>`;
 }
 
-const HOUR = (hour, minute) => `${String(hour ?? 0).padStart(2, "0")}:${String(minute ?? 0).padStart(2, "0")}`;
-
 /** O que uma definição reportada tem lá dentro, sem o nome do campo a repetir o da definição. */
 function settingSummary(key, value) {
     if (value === null || typeof value !== "object") {
@@ -503,12 +501,12 @@ function settingSummary(key, value) {
     if (key === "medication_reminders") {
         const marked = (value.plans || [])
             .filter((plan) => plan?.enabled !== false)
-            .map((plan) => HOUR(plan?.hour, plan?.minute))
+            .map((plan) => hhmm(plan?.hour, plan?.minute))
             .sort();
         return marked.length === 0 ? "Sem alarmes marcados" : marked.join(" · ");
     }
     if (key === "do_not_disturb") {
-        const window = `${HOUR(value.startHour, value.startMinute)}–${HOUR(value.endHour, value.endMinute)}`;
+        const window = `${hhmm(value.startHour, value.startMinute)}–${hhmm(value.endHour, value.endMinute)}`;
         return value.enabled === false ? `Desligado (${window})` : window;
     }
 

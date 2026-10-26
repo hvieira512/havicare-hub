@@ -19,7 +19,7 @@ const NIGHT = {
 };
 
 test("the night shows how long was slept, not fixed text", () => {
-    assert.equal(uplinkCardContent("sleep", NIGHT).value, "6h 39m");
+    assert.equal(uplinkCardContent("sleep", NIGHT).value, "6 h 39 min");
 });
 
 test("the details give each stage's time, which is what the night card adds", () => {
@@ -39,7 +39,7 @@ test("without trusted timestamps the night still shows the durations", () => {
         segments: [{ durationMinutes: 120, type: "light_sleep" }],
     });
 
-    assert.equal(card.value, "2h 0m");
+    assert.equal(card.value, "2 h");
     assert.doesNotMatch(card.details, /Invalid Date|NaN|undefined/);
 });
 

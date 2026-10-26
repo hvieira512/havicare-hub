@@ -1,3 +1,4 @@
+import { duration } from "../format.js";
 import { html } from "../html.js";
 import { resolvePaginationPage } from "../pagination.js";
 import { disposeTooltips, refreshTooltips } from "../tooltips.js";
@@ -119,7 +120,7 @@ function historyHtml(history, view, endsNow, totalPages) {
         const left = ((from - history.start) / span) * 100;
         const width = ((to - from) / span) * 100;
         const until = to === history.end && endsNow ? "agora" : backAt(from, to);
-        const title = `${connected ? "Ligado" : "Desligado"} ${shortWhen(from)} → ${until} · ${duration(from, to)}`;
+        const title = `${connected ? "Ligado" : "Desligado"} ${shortWhen(from)} → ${until} · ${elapsed(from, to)}`;
         return html`<span class="${connected ? "connection-band-on" : "connection-band-gap"} position-absolute top-0 bottom-0"
             style="left:${left}%;width:${connected ? `${width}%` : `max(3px,${width}%)`}"
             data-bs-toggle="tooltip" data-bs-trigger="hover" data-bs-placement="top" data-bs-title="${title}"></span>`;
@@ -189,7 +190,7 @@ function outageList(history, view, totalPages) {
                 <span class="connection-outage-dot rounded-circle"></span>
                 <span class="connection-outage-from"><span class="d-lg-none">Caiu </span>${shortWhen(from)}</span>
                 <span class="connection-outage-to text-secondary"><span class="d-lg-none">Voltou </span>${backAt(from, to)}</span>
-                <span class="connection-outage-span text-end${emphasis ? " fw-semibold text-danger" : ""}">${duration(from, to ?? history.end)}</span>
+                <span class="connection-outage-span text-end${emphasis ? " fw-semibold text-danger" : ""}">${elapsed(from, to ?? history.end)}</span>
             </div>`;
     });
 
@@ -230,11 +231,4 @@ function backAt(from, to) {
         : shortWhen(to);
 }
 
-function duration(from, to) {
-    const minutes = Math.round((to - from) / MINUTE);
-    if (minutes < 1) return "< 1 min";
-    if (minutes < 60) return `${minutes} min`;
-    const hours = Math.floor(minutes / 60);
-    if (hours < 24) return minutes % 60 ? `${hours} h ${minutes % 60} min` : `${hours} h`;
-    return `${Math.floor(hours / 24)} d ${hours % 24} h`;
-}
+const elapsed = (from, to) => duration((to - from) / MINUTE);

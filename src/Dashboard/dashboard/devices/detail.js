@@ -14,6 +14,7 @@ import {
     eventTime,
     rowPayload,
     ago,
+    duration,
     timeOnly,
     when,
 } from "../format.js";
@@ -573,9 +574,7 @@ function commandTiming(command) {
     if (Number.isNaN(acked)) return `Pedido às ${at}`;
 
     const seconds = Math.max(0, Math.round((acked - requested) / 1000));
-    const elapsed = seconds < 60
-        ? `${seconds} s`
-        : `${Math.round(seconds / 60)} min`;
+    const elapsed = seconds < 60 ? `${seconds} s` : duration(seconds / 60);
 
     return `Pedido às ${at}, respondeu ${elapsed} depois`;
 }

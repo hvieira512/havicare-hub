@@ -1,4 +1,4 @@
-import { fieldValue } from "../../format.js";
+import { fieldValue, hhmm } from "../../format.js";
 import { medicationPlanTimes } from "../../devices/medication-plan.js";
 import { html } from "../../html.js";
 import { runoutAt, runoutLabel } from "../../devices/medication-runout.js";
@@ -35,7 +35,7 @@ function planHours() {
         }
         hours.set(
             entry.slot,
-            `${String(entry.hour).padStart(2, "0")}:${String(entry.minute).padStart(2, "0")}`,
+            hhmm(entry.hour, entry.minute),
         );
     });
 

@@ -4,6 +4,7 @@
  */
 
 import { medicationPlanTimes } from "./medication-plan.js";
+import { hhmm } from "../format.js";
 
 const WEEKDAYS = ["dom.", "seg.", "ter.", "qua.", "qui.", "sex.", "sáb."];
 const MONTHS = [
@@ -82,7 +83,7 @@ export function runoutLabel(when, now = new Date()) {
         return "";
     }
 
-    const time = `${String(when.getHours()).padStart(2, "0")}:${String(when.getMinutes()).padStart(2, "0")}`;
+    const time = hhmm(when.getHours(), when.getMinutes());
     const days = daysBetween(now, when);
     if (days === 0) {
         return `hoje às ${time}`;

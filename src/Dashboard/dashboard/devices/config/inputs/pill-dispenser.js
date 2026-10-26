@@ -1,5 +1,6 @@
 import { field } from "../../../components/form-field.js";
 import { medicationPlanTimes } from "../../medication-plan.js";
+import { hhmm } from "../../../format.js";
 import { html } from "../../../html.js";
 import { choiceField, enabledSwitch, entryFieldLabel, entryText, fieldChoices, readChoice } from "./shared.js";
 import { readCheckbox, readText } from "../readers.js";
@@ -10,12 +11,10 @@ import { readCheckbox, readText } from "../readers.js";
 const UNSET_HOUR = 24;
 const UNSET_MINUTE = 60;
 
-const pad = (value) => String(value).padStart(2, "0");
-
 const toTimeValue = (hour, minute) =>
     hour === undefined || hour === null || hour >= UNSET_HOUR || minute >= UNSET_MINUTE
         ? ""
-        : `${pad(hour)}:${pad(minute)}`;
+        : hhmm(hour, minute);
 
 const fromTimeValue = (value) => {
     const [hour, minute] = String(value ?? "").split(":");
@@ -71,7 +70,7 @@ function readAlarms(section) {
         plans.push({
             ...(name === "" ? {} : { name }),
             times: [{
-                time: `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`,
+                time: hhmm(hour, minute),
                 enabled: true,
                 slot: index + 1,
                 recurrence: { kind: "daily" },

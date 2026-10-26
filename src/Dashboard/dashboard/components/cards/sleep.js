@@ -1,3 +1,4 @@
+import { duration, timeOnly } from "../../format.js";
 import { html } from "../../html.js";
 import { joinMarkup } from "./shared.js";
 import { valueLabel, countLabel } from "../../i18n.js";
@@ -7,22 +8,6 @@ const PHASE_ORDER = ["deep_sleep", "light_sleep", "rem", "insomnia", "awake"];
 
 /** As estrelas da app do fabricante vão até cinco; um "3" sozinho não diz de quantas é. */
 const QUALITY_STARS_MAX = 5;
-
-const duration = (minutes) =>
-    minutes >= 60
-        ? `${Math.floor(minutes / 60)}h ${Math.round(minutes % 60)}m`
-        : `${Math.round(minutes)} min`;
-
-/** A hora, ou nada: ao contrário do `timeOnly`, a frase «Das ... às ...» ou sai inteira ou não sai. */
-const clock = (value) => {
-    const parsed = Date.parse(value ?? "");
-    return Number.isNaN(parsed)
-        ? ""
-        : new Date(parsed).toLocaleTimeString("pt-PT", {
-                hour: "2-digit",
-                minute: "2-digit",
-            });
-};
 
 const segments = (data) =>
     Array.isArray(data?.segments) ? data.segments : [];
@@ -51,10 +36,9 @@ export function sleepValue(data) {
 export function sleepDetails(data) {
     const parts = [];
 
-    const from = clock(data?.startTime);
-    const to = clock(data?.endTime);
-    if (from && to) {
-        parts.push(html`Das ${from} às ${to}`);
+    // A frase «Das ... às ...» ou sai inteira ou não sai.
+    if (!Number.isNaN(Date.parse(data?.startTime ?? "")) && !Number.isNaN(Date.parse(data?.endTime ?? ""))) {
+        parts.push(html`Das ${timeOnly(data.startTime)} às ${timeOnly(data.endTime)}`);
     }
 
     const totals = phaseMinutes(data);

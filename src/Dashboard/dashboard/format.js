@@ -42,6 +42,19 @@ export const timeOnly = (value) => {
     return parsedDate(value)?.toLocaleTimeString("pt-PT", { hour: "2-digit", minute: "2-digit" }) ?? String(value);
 };
 
+/** Horas e minutos com dois dígitos: «07:05». */
+export const hhmm = (hour, minute) => `${String(hour ?? 0).padStart(2, "0")}:${String(minute ?? 0).padStart(2, "0")}`;
+
+/** Uma duração em minutos, na forma das unidades dos campos: «45 min», «7 h 30 min», «2 d 3 h». */
+export const duration = (minutes) => {
+    const total = Math.round(minutes);
+    if (total < 1) return "< 1 min";
+    if (total < 60) return `${total} min`;
+    const hours = Math.floor(total / 60);
+    if (hours < 24) return total % 60 ? `${hours} h ${total % 60} min` : `${hours} h`;
+    return `${Math.floor(hours / 24)} d ${hours % 24} h`;
+};
+
 /** O dia de um instante, para agrupar. Local e não UTC: o corte é à meia-noite de cá. */
 export const dayKey = (value) => {
     const date = parsedDate(value);
