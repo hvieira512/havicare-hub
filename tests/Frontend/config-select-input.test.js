@@ -48,6 +48,7 @@ test("a time zone is named by its id and its offset now", () => {
         META,
     ));
 
-    assert.match(html, />Asia\/Tokyo — GMT\+09:00</);
+    // A posição do «GMT» muda com a versão dos dados ICU do browser; o desvio não.
+    assert.match(html, />Asia\/Tokyo — [^<]*\+0?9(:00)?[^<]*</);
     assert.match(html, /value="Asia\/Tokyo"\s+selected/);
 });
