@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import "./support/browser-env.js";
-import { renderVitals } from "../../src/Dashboard/dashboard/devices/radar-vitals.js";
+import { renderVitals } from "../../src/Dashboard/dashboard/devices/radar/radar-vitals.js";
 
 const PREFIXES = ["radarHeartRate", "radarBreathRate"];
 

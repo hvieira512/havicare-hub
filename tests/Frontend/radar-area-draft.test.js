@@ -10,7 +10,7 @@ import {
     moveArea,
     resizeArea,
     toggleDelete,
-} from "../../src/Dashboard/dashboard/devices/radar-area-draft.js";
+} from "../../src/Dashboard/dashboard/devices/radar/radar-area-draft.js";
 
 const area = (key, type, name, xMinDm, yMinDm, xMaxDm, yMaxDm) => ({ key, type, name, xMinDm, yMinDm, xMaxDm, yMaxDm });
 const BED = area(0, "monitoring_bed", "Cama", -4, -6, 6, 13);

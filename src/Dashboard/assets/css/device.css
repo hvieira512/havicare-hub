@@ -800,7 +800,7 @@
 }
 
 /* ===== a planta da divisão de um radar =====
-   Ver `devices/radar-map-modal.js`, `radar-scene.js` e `radar-vitals.js`. */
+   Ver `devices/radar/radar-map-modal.js`, `radar-scene.js` e `radar-vitals.js`. */
 
 /* Mais largo do que o `modal-xl`, para a planta ter altura; o `min()` com `vw` não o deixa
    passar do ecrã num portátil. */
@@ -931,7 +931,7 @@
     border-bottom: 4px solid var(--radar-vital-tooltip-bg);
 }
 
-/* O editor das áreas: ver `devices/radar-area-editor.js`. A cor do tipo vem na borda esquerda. */
+/* O editor das áreas: ver `devices/radar/radar-area-editor.js`. A cor do tipo vem na borda esquerda. */
 .radar-area-chip {
     gap: 0;
     line-height: 1.2;

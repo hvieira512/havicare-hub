@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { stageHeightFor } from "../../src/Dashboard/dashboard/devices/radar-scene.js";
+import { stageHeightFor } from "../../src/Dashboard/dashboard/devices/radar/radar-scene.js";
 
 /**
  * A tela toma a proporção da divisão, mas não passa do que sobra do ecrã; apertada, a escala

@@ -42,7 +42,7 @@ import {
     openRadarMap,
     resizeRadarMap,
     syncRadarMap,
-} from "../devices/radar-map-modal.js";
+} from "../devices/radar/radar-map-modal.js";
 import { editWizardAnswered } from "../devices/edit-wizard.js";
 import {
     configPanelIfLoaded,

@@ -34,7 +34,7 @@ import {
     statusBadge,
 } from "../components/cards/request.js";
 import { fallSummaryCard, helpCallSummaryCard, proximityAlarmSummaryCard } from "./event-summary-cards.js";
-import { onRadarPresence } from "./radar-map-modal.js";
+import { onRadarPresence } from "./radar/radar-map-modal.js";
 import { activityTable } from "./activity-table.js";
 import { protocolHelpCallPressModes } from "./config/protocol-catalog.js";
 import { renderPagination } from "../pagination.js";

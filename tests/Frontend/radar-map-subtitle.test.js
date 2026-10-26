@@ -4,7 +4,7 @@ import { autoEls } from "./support/els.js";
 import { cacheElements } from "../../src/Dashboard/dashboard/dom.js";
 
 const { initRadarMapModal, openRadarMap } =
-    await import("../../src/Dashboard/dashboard/devices/radar-map-modal.js");
+    await import("../../src/Dashboard/dashboard/devices/radar/radar-map-modal.js");
 
 test("the radar map subtitle shows the identifier once escaped, not twice", () => {
     const els = autoEls();

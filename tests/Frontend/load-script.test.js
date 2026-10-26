@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { loadScript } from "../../src/Dashboard/dashboard/load-script.js";
+import { loadScript } from "../../src/Dashboard/dashboard/devices/radar/load-script.js";
 
 const tagsFor = (src) => document.querySelectorAll(`script[src="${src}"]`);
 

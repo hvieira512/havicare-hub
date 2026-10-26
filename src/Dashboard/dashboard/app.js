@@ -26,7 +26,7 @@ import { configPanelIfLoaded, initDeviceModal, loadConfigPanel } from "./devices
 import { initCreateWizard, openWizard } from "./devices/create-wizard.js";
 import { refreshGatewayOptions } from "./devices/gateway-links-ui.js";
 import { initNotifications } from "./notifications.js";
-import { initRadarMapModal } from "./devices/radar-map-modal.js";
+import { initRadarMapModal } from "./devices/radar/radar-map-modal.js";
 import { initSettings, loadSettingsModal } from "./settings/index.js";
 
 const DEVICE_REFRESH_MS = 30000;

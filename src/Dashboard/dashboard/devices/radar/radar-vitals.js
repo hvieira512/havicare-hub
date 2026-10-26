@@ -1,5 +1,5 @@
-import { fieldValue } from "../format.js";
-import { html } from "../html.js";
+import { fieldValue } from "../../format.js";
+import { html } from "../../html.js";
 
 /**
  * Os sinais vitais de um radar ao lado da planta; os pontos vêm do histórico do stream e das

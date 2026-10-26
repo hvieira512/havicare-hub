@@ -19,7 +19,7 @@ import {
 import { syncWorkingModeExtra } from "./inputs/vivistar.js";
 import { handleScaleUserAction } from "./inputs/scale.js";
 import { applyFactoryBoundary, syncSwitchValueDim } from "./inputs/radar.js";
-import { openRadarMap } from "../radar-map-modal.js";
+import { openRadarMap } from "../radar/radar-map-modal.js";
 import {
     clearTakePillsRecording,
     loadTakePillsAudio,

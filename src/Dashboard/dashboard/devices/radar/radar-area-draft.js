@@ -1,4 +1,4 @@
-import { areaName, areaTypeStyle } from "../radar-style.js";
+import { areaName, areaTypeStyle } from "../../radar-style.js";
 
 /**
  * O rascunho das áreas de um radar, em decímetros e no formato do contrato (`xMinDm`…). O `key`
