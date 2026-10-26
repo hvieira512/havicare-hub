@@ -467,7 +467,7 @@ O catálogo vive só no código: uma capacidade que ele declare é associada, a 
 | Ficheiro | Responsabilidade |
 |---|---|
 | `src/Device/FeatureNormalizer.php` | As capacidades dos relógios e as suas formas |
-| `src/Device/DeviceEventDecoder.php` | Tipo nativo → capacidades, por protocolo |
+| `src/Ingress/Tcp/DeviceEventDecoder.php` | Tipo nativo → capacidades, por protocolo |
 | `src/Device/TelemetryEnvelope.php` | Monta os envelopes: medições e alarmes, `raw`, `status` e ciclo de vida |
 | `src/Domain/Capability/CapabilityCatalog.php` | O que cada tipo de aparelho declara ter |
 | `src/Ingress/Mqtt/*/…Normalizer.php` | O mesmo trabalho, do lado do MQTT |

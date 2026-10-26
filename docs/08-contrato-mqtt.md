@@ -629,6 +629,6 @@ marcado com um comentário `hitcare:`.
 | `src/Device/LowBatteryTransitions.php` | O `low_battery` de quem repete a bandeira em cada leitura |
 | `src/Ingress/Mqtt/Qinglanst/ActiveDetections.php` | As detecções do radar que duram saem uma vez |
 | `src/State/ActiveAlarms.php` | O que já saiu dos alarmes que duram, no Redis e com prazo |
-| `src/Device/DeviceHubServer.php` | A escolha do canal na ingestão TCP, que pergunta ao `CapabilityCatalog::isEventType()` |
+| `src/Ingress/Tcp/DeviceHubServer.php` | A escolha do canal na ingestão TCP, que pergunta ao `CapabilityCatalog::isEventType()` |
 | `src/Domain/Capability/CapabilityCatalog.php` | O `isEvent` de cada definição, que é quem decide o canal |
 | `src/Mqtt/BrokerSettings.php` · `ConnectionFactory.php` | Ligação, TLS, identificadores de cliente |

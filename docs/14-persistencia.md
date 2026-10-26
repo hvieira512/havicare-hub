@@ -405,8 +405,8 @@ que se carregou.
 | `src/Domain/VoiceDataMarker.php` | A marca do áudio, no histórico e na resposta |
 | `src/Infrastructure/Persistence/DatabaseSchemaGuard.php` | Recusa arrancar atrasado |
 | `src/Infrastructure/Persistence/ReferenceCatalogSeeder.php` | Fornecedores, modelos e capacidades |
-| `src/Api/Repository/` | Um repositório por assunto |
-| `src/Dashboard/DeviceRuntimeStore.php` · `DeviceEventStore.php` · `DeviceCommandStore.php` | Os três espaços de `hub:dashboard` |
+| `src/Infrastructure/Persistence/Repository/` | Um repositório por assunto |
+| `src/State/DeviceRuntimeStore.php` · `DeviceEventStore.php` · `DeviceCommandStore.php` | Os três espaços de `hub:dashboard` |
 | `src/Runtime/HubServices.php` | Onde o prefixo do Redis é aplicado |
 | `src/Domain/Liveness.php` | O intervalo e o prazo de cada protocolo, e os estados de presença |
 | `src/Runtime/MaintenanceScheduler.php` | A varredura que dá por desligado quem passou o prazo |

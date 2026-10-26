@@ -180,8 +180,8 @@ aparelho.
 
 | Ficheiro | Responsabilidade |
 |---|---|
-| `src/Device/DeviceHubServer.php` | `submitDownlink()`, `sendDownlink()`, `flushPendingDownlinks()` |
-| `src/Device/RedisPendingDownlinkQueue.php` | A fila e a chave de de-duplicação |
+| `src/Ingress/Tcp/DeviceHubServer.php` | `submitDownlink()`, `sendDownlink()`, `flushPendingDownlinks()` |
+| `src/Command/Downlink/RedisPendingDownlinkQueue.php` | A fila e a chave de de-duplicação |
 | `src/Api/Services/DeviceFeatureRequestService.php` | O `POST /requests` |
 | `src/Api/Services/DeviceConfigurationUpdateService.php` | O `PATCH /configurations` |
 | `src/Command/DeviceCommandCatalog.php` | Construir os bytes, por protocolo |

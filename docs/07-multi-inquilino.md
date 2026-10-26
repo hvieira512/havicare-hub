@@ -190,10 +190,10 @@ Os detalhes estão no [capítulo da API](09-api.md).
 | Ficheiro | Responsabilidade |
 |---|---|
 | `src/Domain/DeviceMetadata.php` | Os normalizadores canónicos: empresa, licença, tipo |
-| `src/Api/Repository/WhitelistRepository.php` | A fronteira sentinela ↔ `NULL`, e o SQL |
+| `src/Infrastructure/Persistence/Repository/WhitelistRepository.php` | A fronteira sentinela ↔ `NULL`, e o SQL |
 | `src/Registry/Whitelist.php` | A cache do lado do hub e a resolução por alias |
-| `src/Device/DeviceAuthorizer.php` | A decisão de deixar entrar |
-| `src/Device/DeviceHubServer.php` | `currentLicenseId()` e `currentCompany()` — a releitura |
+| `src/Ingress/Tcp/DeviceAuthorizer.php` | A decisão de deixar entrar |
+| `src/Ingress/Tcp/DeviceHubServer.php` | `currentLicenseId()` e `currentCompany()` — a releitura |
 | `src/Device/HubMqttBridge.php` | `clearRetainedStatus()` — apagar o rasto do cliente antigo |
 | `src/Api/Auth/ApiAuthContext.php` | `canAccessTenant()` |
 | `tests/Unit/Database/SeedWhitelistTest.php` | Tranca o seed contra os sentinelas |

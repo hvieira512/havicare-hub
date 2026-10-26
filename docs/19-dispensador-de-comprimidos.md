@@ -455,9 +455,9 @@ o protocolo está descrito aqui e as três listas de referência também.
 A resposta `0x86` fecha o ciclo de vida de uma escrita: uma configuração escrita
 fica em `confirmed` com `applied_at` quando o aparelho a reconhece.
 
-**Onde está.** `src/Protocol/Adapter/PillDispenserAdapter.php` (a trama),
-`src/Device/Decoder/PillDispenserEventDecoder.php` (as TAGs), o protocolo de sessão em
-`src/Ingress/Tcp/Supplier/Zayata/`, e as capacidades em
+**Onde está.** `src/Ingress/Tcp/Zayata/PillDispenserAdapter.php` (a trama),
+`src/Ingress/Tcp/Zayata/PillDispenserEventDecoder.php` (as TAGs), o protocolo de sessão em
+`src/Ingress/Tcp/Zayata/PillDispenserTcpProtocol.php`, e as capacidades em
 `src/Domain/Capability/Definition/PillDispenserCapabilityDefinitions.php`.
 
 ## 7. A API de parceiro (Case 1)
@@ -678,8 +678,8 @@ No hub, a transferência vive em três peças e num comando de linha:
 
 | Ficheiro | Responsabilidade |
 |---|---|
-| `src/Device/Firmware/FirmwareUpgrade.php` | O ficheiro, o checksum e o pacote seguinte a partir de um offset |
-| `src/Device/Firmware/FirmwareUpgradeStore.php` | Onde a transferência em curso é guardada, em Redis, que sobrevive a um reinício do hub |
+| `src/Ingress/Tcp/Zayata/FirmwareUpgrade.php` | O ficheiro, o checksum e o pacote seguinte a partir de um offset |
+| `src/Ingress/Tcp/Zayata/FirmwareUpgradeStore.php` | Onde a transferência em curso é guardada, em Redis, que sobrevive a um reinício do hub |
 | `bin/upgrade-firmware.php` | Põe um ficheiro em fila para um aparelho |
 
 **Como se sabe que correu bem:** o `0x8002` é a versão, e passa a valer a nova

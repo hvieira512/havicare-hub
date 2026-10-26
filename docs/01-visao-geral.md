@@ -176,5 +176,5 @@ executa duas instâncias, descritas na íntegra no [`CLAUDE.md`](../CLAUDE.md).
 | `src/Runtime/MaintenanceScheduler.php` | Temporizadores de manutenção |
 | `src/Runtime/CrashWatch.php` | Deteção de terminação anómala |
 | `src/Ingress/Mqtt/IngressRunner.php` | Execução das ingestões MQTT no event loop partilhado |
-| `src/Device/DeviceHubServer.php` | Identidade, autorização, sessão e publicação na ingestão TCP |
+| `src/Ingress/Tcp/DeviceHubServer.php` | Identidade, autorização, sessão e publicação na ingestão TCP |
 | `src/Device/HubMqttBridge.php` | Composição de tópicos e publicação MQTT |

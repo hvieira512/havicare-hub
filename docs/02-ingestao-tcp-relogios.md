@@ -83,7 +83,7 @@ dois últimos do CRC. E os dois inteiros lêem-se em ordem do anfitrião
 é descartado na íntegra, com registo de aviso. Sem este limite, uma ligação que
 transmitisse dados sem delimitadores consumiria memória indefinidamente.
 
-> `src/Device/HubTcpIngress.php` — `onData()`, `nextPacketLength()`
+> `src/Ingress/Tcp/HubTcpIngress.php` — `onData()`, `nextPacketLength()`
 
 ## 2. Protocolos
 
@@ -338,14 +338,13 @@ O simulador implementa só o protocolo `vivistar-iw`.
 
 | Ficheiro | Responsabilidade |
 |---|---|
-| `src/Device/HubTcpIngress.php` | Socket, buffers e delimitação de mensagens |
-| `src/Tcp/TcpDeviceConnection.php` | Abstração da ligação |
-| `src/Device/DeviceHubServer.php` | Autenticação, sessão, publicação e downlink |
-| `src/Device/DeviceIdentityExtractor.php` | Extração do IMEI |
-| `src/Device/DeviceAuthorizer.php` | Decisão de autorização |
-| `src/Protocol/AdapterRegistry.php` | Deteção do protocolo |
-| `src/Protocol/Adapter/{Wonlex,Vivistar,FourPTouch}Adapter.php` | Codificação e descodificação de tramas |
-| `src/Device/Tcp/TcpProtocolRegistry.php` | Os protocolos que falam TCP, pelo nome do protocolo |
-| `src/Device/Tcp/Supplier/*/` | Respostas e confirmações por fornecedor |
-| `src/Device/DeviceEventDecoder.php` | Correspondência entre tipo nativo e capacidades |
-| `src/Device/ConnectionRegistry.php` | Ligações abertas e expiração por inatividade |
+| `src/Ingress/Tcp/HubTcpIngress.php` | Socket, buffers e delimitação de mensagens |
+| `src/Ingress/Tcp/TcpDeviceConnection.php` | Abstração da ligação |
+| `src/Ingress/Tcp/DeviceHubServer.php` | Autenticação, sessão, publicação e downlink |
+| `src/Ingress/Tcp/DeviceIdentityExtractor.php` | Extração do IMEI |
+| `src/Ingress/Tcp/DeviceAuthorizer.php` | Decisão de autorização |
+| `src/Ingress/Tcp/AdapterRegistry.php` | Deteção do protocolo |
+| `src/Ingress/Tcp/TcpProtocolRegistry.php` | Os protocolos que falam TCP, pelo nome do protocolo |
+| `src/Ingress/Tcp/<Fornecedor>/` | Por fornecedor: o adaptador (tramas), o protocolo (respostas e confirmações), o descodificador e o downlink |
+| `src/Ingress/Tcp/DeviceEventDecoder.php` | Correspondência entre tipo nativo e capacidades |
+| `src/Ingress/Tcp/ConnectionRegistry.php` | Ligações abertas e expiração por inatividade |

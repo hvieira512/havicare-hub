@@ -58,7 +58,7 @@ fabricante em [`fornecedores/`](fornecedores/).
 Evidência: o `deviceConfig` (Wonlex.pdf, p. 33–34: `BPEarlyWarning`,
 `HR Overtop Remind`, `bloodOxygenWarn`, `TemperatureExceedRemind`,
 `TemperatureBelowRemind`, `HeartRateBelowRemind`); as tramas de subida (p. 16–17)
-só trazem o valor (`src/Device/Decoder/WonlexEventDecoder.php`). Os avisos de
+só trazem o valor (`src/Ingress/Tcp/Wonlex/WonlexEventDecoder.php`). Os avisos de
 pulso continuam a ser configurações do aparelho (`heart_rate_high_alert` e as
 outras), separadas de tudo o que alarma.
 
@@ -74,7 +74,7 @@ outras), separadas de tudo o que alarma.
 
 Evidência: 4PTouch.html, «III. Heart Rate and Blood Pressure protocol» e
 «VI. Body Temperature Measure»; a tabela de bits do estado. No hub:
-`src/Protocol/Adapter/FourPTouchAdapter.php`, `src/Device/FeatureNormalizer.php`.
+`src/Ingress/Tcp/FourPTouch/FourPTouchAdapter.php`, `src/Device/FeatureNormalizer.php`.
 
 **Vivistar VL17, VL16P, L08 Pro** (`vivistar-iw`)
 
@@ -83,7 +83,7 @@ Evidência: 4PTouch.html, «III. Heart Rate and Blood Pressure protocol» e
 | `heart_rate`, `blood_pressure` (PPG), `blood_oxygen`, `temperature` (VL16P, L08 Pro) | Não | — | Quem consome |
 | queda | Sim, configurável | Sim, `AP10` estado `06` | Nativo (como hoje) |
 
-Evidência: VIVISTAR.pdf, p. 9–12; `src/Device/Decoder/VivistarEventDecoder.php`.
+Evidência: VIVISTAR.pdf, p. 9–12; `src/Ingress/Tcp/Vivistar/VivistarEventDecoder.php`.
 
 ### Radar
 
@@ -282,7 +282,7 @@ Verificado no código, condição a condição:
 | `device.disconnected` | `status` `online` (retido) e `device.connected` | [08](08-contrato-mqtt.md) §5 |
 | `zone_exit` da 4P Touch | `zone_entry` | nativo |
 | `help_call` do NCS | `reset` com o mesmo `pagerId` | `src/Ingress/Mqtt/Ncs/MessageNormalizer.php` |
-| `device_fault`, `storage_environment`, `help_call` do dispensador | `dispenser_conditions` (secção 6) | `src/Device/Decoder/PillDispenserEventDecoder.php` |
+| `device_fault`, `storage_environment`, `help_call` do dispensador | `dispenser_conditions` (secção 6) | `src/Ingress/Tcp/Zayata/PillDispenserEventDecoder.php` |
 | `dose_missed` | Instante: não há normal | — |
 
 ### Vários do mesmo tipo no mesmo dispositivo

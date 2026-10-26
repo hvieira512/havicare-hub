@@ -185,5 +185,5 @@ genérico por não conhecer o descritor que lhe chega.
 | `src/Dashboard/dashboard/api/` | O único sítio que fala HTTP |
 | `src/Dashboard/dashboard/components/` | As peças de interface puras, uma por ficheiro |
 | `src/Dashboard/dashboard/auth/session.js` | Tokens, inatividade, renovação |
-| `src/Dashboard/DashboardStore.php` | O estado em Redis que a interface lê |
+| `src/State/` | O estado em Redis que a interface lê |
 | `src/Runtime/DashboardServerFactory.php` | Servidor, limites, CORS e registo |

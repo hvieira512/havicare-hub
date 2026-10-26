@@ -346,13 +346,13 @@ pelo `POST /api/devices/{imei}/radar-layout/sync`.
 
 | Ficheiro | Responsabilidade |
 |---|---|
-| `src/Ingress/Http/Qinglanst/RadarLayoutSync.php` | O pedido, as credenciais da licença e a escrita da planta |
-| `src/Ingress/Http/Qinglanst/QinglanstApiClient.php` | O cliente HTTP da cloud, com login e sessão |
-| `src/Ingress/Http/Qinglanst/RequestSignature.php` | A assinatura que o fornecedor exige em cada pedido |
-| `src/Ingress/Http/Qinglanst/LayoutParser.php` | A planta crua para a forma que a dashboard desenha |
-| `src/Ingress/Http/Qinglanst/QinglanstApiException.php` | As avarias da cloud, distintas das recusas do pedido |
-| `src/Ingress/Http/Qinglanst/QinglanstCloudCommands.php` | As configurações de e para os campos do `deviceProp` e os pedidos de escrita |
-| `src/Ingress/Http/Qinglanst/QinglanstCloudDownlinks.php` | A entrega pela cloud, e o fecho pela resposta |
-| `src/Ingress/Http/Qinglanst/RadarStateAbsorber.php` | Uma leitura do radar guardada como configuração e telemetria |
+| `src/Ingress/Mqtt/Qinglanst/Cloud/RadarLayoutSync.php` | O pedido, as credenciais da licença e a escrita da planta |
+| `src/Ingress/Mqtt/Qinglanst/Cloud/QinglanstApiClient.php` | O cliente HTTP da cloud, com login e sessão |
+| `src/Ingress/Mqtt/Qinglanst/Cloud/RequestSignature.php` | A assinatura que o fornecedor exige em cada pedido |
+| `src/Ingress/Mqtt/Qinglanst/Cloud/LayoutParser.php` | A planta crua para a forma que a dashboard desenha |
+| `src/Ingress/Mqtt/Qinglanst/Cloud/QinglanstApiException.php` | As avarias da cloud, distintas das recusas do pedido |
+| `src/Ingress/Mqtt/Qinglanst/Cloud/QinglanstCloudCommands.php` | As configurações de e para os campos do `deviceProp` e os pedidos de escrita |
+| `src/Ingress/Mqtt/Qinglanst/Cloud/QinglanstCloudDownlinks.php` | A entrega pela cloud, e o fecho pela resposta |
+| `src/Ingress/Mqtt/Qinglanst/Cloud/RadarStateAbsorber.php` | Uma leitura do radar guardada como configuração e telemetria |
 | `src/Command/Configuration/Definition/QinglanstConfigurationDefinitions.php` | O catálogo das configurações |
 | `src/Command/Configuration/Payload/QinglanstPayloadBuilder.php` | Os limites da API |
