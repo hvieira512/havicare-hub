@@ -147,6 +147,30 @@ o acumulado do dia é `activity` em toda a frota, e os passos de uma janela são
 | `breath_rate` | `breathsPerMinute` |
 | `temperature` | `bodyCelsius`, `surfaceCelsius`, `environmentCelsius`. O termómetro de testa junta `site` (`ear`, `forehead`), e da memória `fromHistory: true` — ver o [capítulo 24](24-termometro.md) |
 
+#### As leituras que não contam
+
+Quem consome aplica os seus limites a cada leitura. O hub marca as que não
+servem para isso, e deixa de publicar as que não são uma medição.
+
+- **`fromHistory: true`** — a leitura não é de agora: lida da memória do
+  aparelho, entregue no lote `upBatch` da Wonlex, ou com o `occurredAt` mais de
+  30 minutos antes de chegar (só acontece onde o `occurredAt` é a hora do
+  aparelho). Vale para toda a telemetria.
+- **`implausible: true`** — um número medido que não é de uma pessoa viva: a
+  `temperature` com `bodyCelsius` abaixo de 34,0 °C, em qualquer `site`.
+- **Um sentinela não sai.** Um sinal vital a zero dos relógios (`bpm`,
+  `spo2Percent`, `systolicMmHg`, `diastolicMmHg`, `breathsPerMinute`,
+  `bodyCelsius`) e o `temp=0` e `temp=1` da 4P Touch dizem «medição falhada», e
+  ficam só no `raw`. A Veepoo já descartava os seus.
+
+Os dois campos só aparecem a `true`, e põem-se à saída
+(`src/Domain/Capability/ReadingMarks.php`), no MQTT e no histórico.
+
+```json
+{ "type": "temperature", "data": { "bodyCelsius": 32.6, "implausible": true } }
+{ "type": "blood_oxygen", "occurredAt": "2026-10-26T03:00:00Z", "data": { "spo2Percent": 88, "fromHistory": true } }
+```
+
 > **A capacidade `blood_pressure` não inclui a frequência de pulso.** Um valor
 > transmitido como `"120/80/74"` é decomposto nos três números, mas o terceiro é
 > emitido como evento `heart_rate` **independente**, com o mesmo `nativeType`.
@@ -237,6 +261,7 @@ sair depois de ela ter apagado.
 | `ambient_temperature` | dispensador | `environmentCelsius` — o ar onde a caixa está, e não uma pessoa |
 | `ambient_humidity` | dispensador | `humidityPercent` — a humidade do ar onde a caixa está, e não a da fralda |
 | `device_fault` | dispensador | `fault`: `rotation` · `tray_reset` · `pusher` · `cell_door` · `keys` |
+| `dispenser_conditions` | dispensador | `faults` (as avarias acesas, `[]` sem nenhuma), `storageOutOfRange`, `helpCallActive` — em cada pacote de estado, cada campo só quando o pacote traz a TAG. É por ela que se vê que uma avaria, o ambiente ou a chamada apagaram |
 
 ### Capacidade `sleep`
 

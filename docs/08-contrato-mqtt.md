@@ -122,6 +122,7 @@ havicare-hub/hitcare/1001/watch/861265061009822/# um dispositivo, todos os canai
 ```json
 {
   "type": "device.connected",
+  "severity": "info",
   "occurredAt": "2026-09-01T10:35:10Z",
   "device": { "id": "861265061009822", "supplier": "Vivistar", "model": "L08 Pro" }
 }
@@ -139,7 +140,7 @@ um `configuration` — nos `device.configuration.*` — ou um `error`. Os segund
 | `type` | Condição de emissão |
 |---|---|
 | `device.connected` | Um aparelho autenticou-se, um NCS reportou-se online, ou um radar ou aparelho retransmitido voltou a falar |
-| `device.disconnected` | Ligação fechada, dois sinais de vida falhados, ou uma sessão GATT que acabou. Adormecer não é desligar: a pulseira Tuya a dormir não o emite |
+| `device.disconnected` | Ligação fechada há 60 s sem uma nova, dois sinais de vida falhados, ou uma sessão GATT que acabou. Adormecer não é desligar: a pulseira Tuya a dormir não o emite |
 | `device.rejected` | Um aparelho não registado tentou entrar |
 | `device.downlink.queued` | O aparelho estava offline; o comando ficou em fila. Sai uma vez por pedido: renovar a fila enquanto o aparelho não volta não o repete |
 | `device.downlink.sent` | O comando saiu para o aparelho, por socket, por gateway ou pela cloud do fabricante. Sai a cada tentativa |
@@ -151,6 +152,34 @@ um `configuration` — nos `device.configuration.*` — ou um `error`. Os segund
 | `device.configuration.failed` | Uma alteração de configuração não ficou aplicada |
 | `device.configuration.confirmation_unavailable` | O aparelho recebeu a alteração, mas não tem forma de confirmar que a aplicou |
 | `device.measurement_failed` | Pulseira — uma medição pedida não produziu valor, e o aparelho disse porquê |
+
+**A ligação leva gravidade.** O `device.connected` é `info`. O
+`device.disconnected` é `alert` — um aparelho calado deixa a pessoa sem proteção —,
+salvo nos que só se ligam para medir (balança, tensiómetro, termómetro, oxímetro),
+que se desligam no fim de cada medição e levam `info`.
+
+**Um socket que volta não é um desligado.** Um relógio que fecha a ligação TCP e
+volta dentro de 60 s não publica nem o `device.disconnected` nem o
+`device.connected`; o `status` fica `online`.
+
+**O desligado atrás de um gateway.** O `device.disconnected` de um aparelho
+retransmitido — as pulseiras e o sensor de fralda atrás de um MOKO, a Veepoo e os
+aparelhos de medição atrás do gateway da Havicare — leva no `data`:
+
+| Campo | Quando | O que é |
+|---|---|---|
+| `gatewayId` | sempre | O último gateway que o ouviu |
+| `cause: "gateway_offline"` | o gateway já está desligado, ou calou-se ao mesmo tempo que o aparelho | A queda é do gateway, e não do aparelho |
+
+```json
+{ "type": "device.disconnected", "severity": "alert",
+  "device": { "id": "d48c49f7909c", "supplier": "MOKO", "model": "W6B" },
+  "data": { "gatewayId": "c5e390f30bce", "cause": "gateway_offline" } }
+```
+
+Sem `cause`, o gateway estava de pé e o aparelho é que deixou de ser ouvido — saiu
+do alcance, ficou sem bateria. Uma falha de gateway agrupa-se pelos
+`device.disconnected` com o mesmo `gatewayId` e `cause`.
 
 ### O ciclo de um comando
 
@@ -281,8 +310,9 @@ conhecer nenhum dos dois. O `data` traz o pormenor, e a `severity` diz quão gra
 
 #### A gravidade
 
-Todo o evento de domínio leva `severity`, logo a seguir ao `type`. Os eventos de
-ligação (`device.*`) não a levam.
+Todo o evento de domínio leva `severity`, logo a seguir ao `type`, e também o
+`device.connected` e o `device.disconnected`. Os outros eventos de ciclo de vida
+não a levam.
 
 | `severity` | Quer dizer |
 |---|---|
@@ -304,8 +334,8 @@ eventos guardados no histórico da dashboard levam-na igual.
 | `heart_rate_low` | `bpm`, quando há | radar | `alarm` abaixo de 20 bpm, `alert` acima ou sem valor |
 | `heart_rate_abnormal` | — | relógio 4P Touch | `alert` |
 | `breath_rate_high` · `breath_rate_low` | `breathsPerMinute`, quando há | radar | `alert` |
-| `apnea` | — | radar | `alarm` |
-| `weak_vital_signs` | — | radar | `alert` |
+| `apnea` | — | radar | `alert`: o fabricante diz que menos de cinco por hora é normal, e que não pede alarme imediato |
+| `weak_vital_signs` | — | radar | `alarm`: dez minutos sem batimento na cama de monitorização, o único estado de minuto que o fabricante manda alarmar logo |
 | `zone_entry` · `zone_exit` | `zone` (`room` · `area` · `geofence`), `personIndex`, `areaId`, `areaName`, `areaType` | radar, relógio 4P Touch | `alert` a sair da cerca; `info` o resto |
 | `device_removed` | — | relógio | `alert` |
 | `low_battery` | `percent` ou `voltageMv`, quando há | relógios, pulseira Veepoo, dispensador, MKGW4 | `info`: carregar é manutenção, e a falta de proteção é o `device.disconnected` |
@@ -313,9 +343,9 @@ eventos guardados no histórico da dashboard levam-na igual.
 | `check_required` | `previousState` | sensor de fralda | `alert` |
 | `device_fault` | `fault` | dispensador | `alert` |
 | `storage_environment` | `outOfRange` | dispensador | `alert` |
-| `device_state` | `state` | relógio Wonlex | `alert` |
-| `medication_alarm_change` | `slot`, `state`, `scheduledAt`, `doseDate` | dispensador | `alert` numa dose falhada (`missed`, `timed_out`, `retrieval_timed_out`); `info` o resto |
-| `medication_intake` | `slot`, `result`, `scheduledAt`, `takenAt`, `cellNumber`, `method` | dispensador | `alert` numa toma anormal ou falhada (`abnormal`, `missed`); `info` o resto |
+| `device_state` | `state` | relógio Wonlex | `info`: o que pede alguém é o aparelho calado, que é o `device.disconnected` |
+| `medication_alarm_change` | `slot`, `state`, `scheduledAt`, `doseDate` | dispensador | `info` |
+| `medication_intake` | `slot`, `result`, `scheduledAt`, `takenAt`, `cellNumber`, `method` | dispensador | `info` |
 | `reset` | `pagerId` | NCS | `info` |
 
 #### As horas das tomas do dispensador
@@ -410,52 +440,16 @@ entrada tem prazo e renova-se com a repetição, e um aparelho calado para lá d
 volta a anunciar o que trouxer. Mudar o dono do aparelho esquece-as, e o que
 estiver ativo sai de novo, no tópico do dono novo.
 
-#### Proposta: alarmes clínicos
+#### Por construir: `dose_missed`
 
-> **Por aprovar e por construir.** Nada desta subsecção está em vigor: as tabelas
-> acima continuam a ser o contrato. O desenho completo, com o inventário que o
-> justifica, está no [capítulo 26](26-alarmes-clinicos.md).
+> **Aprovado, retido até a Havicare o ler.** Ainda não sai.
 
-O hub continua a ser um normalizador: publica as leituras e os acontecimentos
-que o aparelho levanta, com a gravidade que lhes dá. Os limites dos sinais vitais
-e o ciclo de vida dos alertas são de quem consome, que já recebe as leituras
-todas. Uma regra só fica no hub quando precisa de dados que só ele tem, como o
-`proximity_alarm`.
-
-Gravidades que mudam:
-
-| `type` | Hoje | Proposta |
-|---|---|---|
-| `apnea` | `alarm` | `alert` |
-| `weak_vital_signs` | `alert` | `alarm` |
-| `device_state` | `alert` | `info` |
-| `medication_alarm_change` · `medication_intake` | `alert` numa dose falhada ou toma anormal | `info`; a dose falhada passa a `dose_missed` |
-| `device.disconnected` | sem `severity` | `alert`; `info` nos aparelhos que só se ligam para medir |
-| `device.connected` | sem `severity` | `info` |
-
-Tipos novos:
-
-| `type` | Canal | `data` | `severity` |
-|---|---|---|---|
-| `dose_missed` | `events` | `slot`, `scheduledAt`, `doseDate` — um por dose, sem evento de fim | `alert` |
-| `dispenser_conditions` | `telemetry` | `faults` (lista das avarias acesas), `storageOutOfRange`, `helpCallActive` — a cada heartbeat do M228 | — |
-
-**O desligado.** Num socket fechado, o `device.disconnected` espera 60 s por uma
-nova ligação antes de sair. O de um aparelho retransmitido por um gateway MOKO ou
-da Havicare leva `data.gatewayId`, o último gateway que o ouviu, e
-`data.cause: "gateway_offline"` quando esse gateway já estava `offline`.
-
-**As leituras que não contam.** `fromHistory: true` passa a marcar todas as
-leituras clínicas que não são ao vivo — da memória, de um lote, ou com a hora do
-aparelho mais de 30 minutos antes da chegada. Um sentinela de «medição falhada»
-(o `temp=0` da 4P Touch) deixa de sair como leitura; uma temperatura corporal
-abaixo de 34,0 °C sai com `implausible: true`.
-
-Os limiares nativos do radar, as cercas da 4P Touch e o `proximity_alarm` ficam
-como estão. Nenhuma gravidade nem nenhum `type` que o hitCare lê muda; a
-`severity` e o `data` nos `device.*` vão coordenados com ele (ver
-[«Pendente do hitCare»](#pendente-do-hitcare) e a secção 8 do
-[capítulo 26](26-alarmes-clinicos.md#8-o-hitcare-e-a-compatibilidade)).
+Um evento `alert` por dose dada como falhada, pela primeira via que chegar — a
+mudança do alarme para `missed`, `timed_out` ou `retrieval_timed_out`, ou a toma
+com `result: "missed"` —, com `slot`, `scheduledAt` e `doseDate` no `data`, e sem
+evento de fim. Enquanto não sai, a dose falhada vê-se no `medication_alarm_change`
+e no `medication_intake`, ambos `info`. O desenho está no
+[capítulo 26](26-alarmes-clinicos.md#dose_missed).
 
 ## 5. `status`
 

@@ -1,9 +1,9 @@
 # 26 — Alarmes clínicos
 
-> **Proposta de desenho, por aprovar.** Nada neste capítulo está implementado,
-> salvo onde diz que já está em produção. O contrato em vigor é o do
-> [capítulo 08](08-contrato-mqtt.md#os-tipos); o que aqui se propõe só passa para
-> lá depois de aprovado e construído.
+> **Aprovado e construído**, salvo o `dose_missed`, retido até a Havicare o ler.
+> O contrato em vigor está no [capítulo 08](08-contrato-mqtt.md#os-tipos) e na
+> [normalização](06-normalizacao.md#as-leituras-que-não-contam); este capítulo
+> guarda o inventário e as razões.
 
 ## Âmbito
 
@@ -137,12 +137,12 @@ movimento e proximidade. Nem `voerka-ncs`, `monit-mecs-pro-ble`, os gateways e o
 
 Só sobre acontecimentos que o aparelho levanta, ou sobre o ciclo de ligação.
 
-| `type` | Hoje | Proposta |
+| `type` | Antes | Agora |
 |---|---|---|
 | `apnea` | `alarm` | **`alert`**, pela nota da ficha do radar |
 | `weak_vital_signs` | `alert` | **`alarm`**: é o *sudden death* do fabricante (`suddenDeathSwitch`), dez minutos sem batimento, e o único estado de minuto que a ficha manda alarmar logo |
 | `device_state` | `alert` | **`info`**. O desligar e a reposição de fábrica da Wonlex são factos; o que pede alguém é o aparelho calado, e esse é o `device.disconnected` |
-| `medication_alarm_change` | `alert` numa dose falhada | **`info`** sempre. A dose falhada passa a ser o `dose_missed` |
+| `medication_alarm_change` | `alert` numa dose falhada | **`info`** sempre. A dose falhada vai ser o `dose_missed` |
 | `medication_intake` | `alert` com `abnormal` ou `missed` | **`info`** sempre |
 | `device.disconnected` | sem `severity` | **`alert`**; **`info`** nos que só se ligam para medir (balança, tensiómetro, termómetro, oxímetro) |
 | `device.connected` | sem `severity` | **`info`** |
@@ -151,6 +151,10 @@ Só sobre acontecimentos que o aparelho levanta, ou sobre o ciclo de ligação.
 A gravidade do `heart_rate_high`/`heart_rate_low` do radar fica como está.
 
 ### `dose_missed`
+
+> **Retido.** Ainda não sai: a Havicare abre hoje o seu alerta de dose falhada a
+> partir do `medication_alarm_change` e do `medication_intake`, e publicá-lo já
+> dava dois alertas por dose. Sai quando ela passar a lê-lo.
 
 Novo, `alert`. **Um por dose**, quando ela é dada como falhada pela primeira via
 que chegar: a mudança do alarme para `missed`, `timed_out` ou
@@ -212,13 +216,14 @@ uma medição.
 ### Não é de agora: `fromHistory`
 
 O `fromHistory: true` já existe nos aparelhos de medição para as leituras da
-memória ([06](06-normalizacao.md#campo-occurredat)). Passa a valer para **todas**
-as leituras clínicas que não são ao vivo:
+memória ([06](06-normalizacao.md#campo-occurredat)). Passa a valer para **toda**
+a telemetria que não é ao vivo:
 
-- lidas da memória do aparelho (como hoje: tensiómetro, termómetro, balança);
-- entregues num lote do que o aparelho guardou sem rede (o `upBatch` da Wonlex);
-- com a hora do aparelho **mais de 30 minutos antes da chegada**, onde o aparelho
-  a manda.
+- lida da memória do aparelho (tensiómetro, termómetro, balança);
+- entregue no lote `upBatch` da Wonlex, que traz o que o relógio guardou;
+- com a hora do aparelho **mais de 30 minutos antes da chegada**, onde o
+  `occurredAt` é a hora do aparelho (os aparelhos de medição, os blocos da
+  Veepoo, os alarmes da 4P Touch, a Tuya).
 
 Uma leitura com `fromHistory: true` é verdadeira e entra no histórico de quem
 consome, mas um alerta por ela já passou. Sem o campo, a leitura é ao vivo.
@@ -226,10 +231,10 @@ consome, mas um alerta por ela já passou. Sem o campo, a leitura é ao vivo.
 ### Não é uma medição: os sentinelas saem, o implausível marca-se
 
 - **Um sentinela não sai.** O `temp=0` e o `temp=1` da 4P Touch dizem «medição
-  falhada», e hoje saem como `bodyCelsius: 0`. Um zero que quer dizer «sem
-  leitura» não é um valor, e um consumidor que não conheça o sentinela alarma
-  por ele. Deixa de sair como telemetria, como a Veepoo já faz
-  (`src/Ingress/Mqtt/Veepoo/MeasurementNormalizer.php`); fica no `raw`.
+  falhada», e um sinal vital a zero de um relógio quer dizer «sem leitura». Não
+  são valores, e um consumidor que não conheça o sentinela alarma por eles.
+  Deixam de sair como telemetria, como a Veepoo já fazia
+  (`src/Ingress/Mqtt/Veepoo/MeasurementNormalizer.php`); ficam no `raw`.
 - **Um valor implausível sai com `implausible: true`.** É um número que o aparelho
   mediu, mas que não é de uma pessoa viva: a temperatura corporal abaixo de
   34,0 °C, em qualquer `site` — o pulso e a testa descem com o quarto frio, e a
@@ -279,7 +284,7 @@ Verificado no código, condição a condição:
 | `device.disconnected` | `status` `online` (retido) e `device.connected` | [08](08-contrato-mqtt.md) §5 |
 | `zone_exit` da 4P Touch | `zone_entry` | nativo |
 | `help_call` do NCS | `reset` com o mesmo `pagerId` | `src/Ingress/Mqtt/Ncs/MessageNormalizer.php` |
-| `device_fault`, `storage_environment`, `help_call` do dispensador | `dispenser_conditions` (secção 6) | proposta |
+| `device_fault`, `storage_environment`, `help_call` do dispensador | `dispenser_conditions` (secção 6) | `src/Device/Decoder/PillDispenserEventDecoder.php` |
 | `dose_missed` | Instante: não há normal | — |
 
 ### Vários do mesmo tipo no mesmo dispositivo

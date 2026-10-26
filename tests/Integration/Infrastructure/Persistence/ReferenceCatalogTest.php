@@ -69,6 +69,7 @@ final class ReferenceCatalogTest extends MysqlDashboardTestCase
             // única pedível entre elas, e pede-se como qualquer outra.
             'device_status',
             'dispense_now',
+            'dispenser_conditions',
             'do_not_disturb',
             // A janela configura-se; o estado é outra coisa, e o terceiro valor dele — ligado
             // e a silenciar agora — é o que a configuração sozinha não sabe dizer.

@@ -308,11 +308,12 @@ que impede um `0xAA` perdido numa dessincronização de passar por trama.
 | `0x810A` / `0x810B` | `connectivity` | `interface` (`cellular` · `wifi`), `signalStrengthDbm` — a mesma capacidade que os gateways publicam, sempre em dBm, com o CSQ do 4G convertido na fronteira. O `0x810D` é uma contagem de barras de 0 a 3 e fica de fora: o `signalQuality` do contrato é o CSQ de 0 a 31, e as barras são um arredondamento do dBm |
 | `0x8102` | `device_config` | `settings.child_lock.enabled` — não é telemetria: o que ele diz é o que nós lá pusemos, e por isso viaja como configuração reportada |
 | `0x8105` | — | Nada. Sabe o ligado/desligado do «não incomodar» mas não a janela, e as duas escreviam na mesma chave: como o `saveReported` substitui o payload inteiro, meia configuração apagava a outra metade. A janela completa — interruptor incluído — vem só na resposta ao `0x05` |
-| `0x8111` | `storage_environment` | `outOfRange` — o juízo do aparelho sobre a temperatura e a humidade que ele mede. **Só é publicado quando dispara**: como leitura, enchia o histórico com linhas a dizer que estava tudo bem |
+| `0x8111` | `storage_environment` | `outOfRange` — o juízo do aparelho sobre a temperatura e a humidade que ele mede. O evento só sai quando dispara; o estado, aceso ou não, vai no `dispenser_conditions` |
 | `0x8131`–`0x8139` **num `0x87`** | `medication_alarm_status` | `takenCount`, `missedCount`, `alarms[{slot, state}]` — a leitura dos nove, que só a resposta ao `0x07` traz |
 | `0x8131`–`0x8139` **num `0x04`/`0x02`** | `medication_alarm_change` | `slot`, `state` — o alarme que mudou, um evento por alarme. O hub junta-lhe o `scheduledAt` e o `doseDate` da dose, do plano e do fuso confirmados |
 | `0x8121`–`0x8125` | `device_fault` | `fault`: `rotation` · `tray_reset` · `pusher` · `cell_door` · `keys` |
-| `0x8112` | `help_call` | — · o `1` (chamada em curso) é o pedido de ajuda; o `0` não gera nada |
+| `0x8112` | `help_call` | — · o `1` (chamada em curso) é o pedido de ajuda; o `0` não gera evento |
+| `0x8111`, `0x8112`, `0x8121`–`0x8125` | `dispenser_conditions` | `faults` (as avarias acesas), `storageOutOfRange`, `helpCallActive` — em cada pacote que traga as TAGs, acesas ou não. É por ela que se vê que apagaram |
 | `0x8002` **num `0x01`** | `firmware_version` | `version` — em hexadecimal, `0x0502`. Só o registo a traz, e por isso não é pedível |
 
 **Por que canal sai cada coisa.** O que o `CapabilityCatalog` declara com
