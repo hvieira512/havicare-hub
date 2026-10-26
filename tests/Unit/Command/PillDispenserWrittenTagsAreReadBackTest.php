@@ -6,7 +6,7 @@ namespace Tests\Unit\Command;
 
 use Hub\Command\DeviceCommandCatalog;
 use Hub\Command\DeviceConfigurationCatalog;
-use Hub\Protocol\Adapter\PillDispenserAdapter;
+use Hub\Ingress\Tcp\Zayata\PillDispenserAdapter;
 use PHPUnit\Framework\TestCase;
 
 /** O `0x05` pede todas as TAGs que o `0x06` escreve, senão o ecrã mostra a intenção e não o que o aparelho tem. */

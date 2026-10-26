@@ -6,7 +6,7 @@ namespace Tests\Unit\Command;
 
 use Hub\Command\DeviceCommandCatalog;
 use Hub\Command\DeviceConfigurationCatalog;
-use Hub\Protocol\Adapter\PillDispenserAdapter;
+use Hub\Ingress\Tcp\Zayata\PillDispenserAdapter;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 

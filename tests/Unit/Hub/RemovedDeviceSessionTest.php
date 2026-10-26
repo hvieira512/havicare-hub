@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Tests\Unit\Hub;
 
 use Hub\Device\DeviceHubServer;
-use Hub\Protocol\Adapter\PillDispenserAdapter;
+use Hub\Ingress\Tcp\Zayata\PillDispenserAdapter;
 use Hub\Registry\Whitelist;
 use PHPUnit\Framework\TestCase;
 use Tests\Support\Doubles\FakeConnection;

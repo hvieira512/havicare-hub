@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Hub;
 
-use Hub\Device\Decoder\FourPTouchEventDecoder;
 use Hub\Domain\Capability\CapabilityCatalog;
-use Hub\Protocol\Adapter\FourPTouchAdapter;
+use Hub\Ingress\Tcp\FourPTouch\FourPTouchAdapter;
+use Hub\Ingress\Tcp\FourPTouch\FourPTouchEventDecoder;
 use PHPUnit\Framework\TestCase;
 
 /** Resposta real de um D45 Pro ao `TS`; nem todos os modelos respondem, e o Y6M e o Y6L devolvem o comando tal e qual. */

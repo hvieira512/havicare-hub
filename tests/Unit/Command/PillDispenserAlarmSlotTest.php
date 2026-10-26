@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Tests\Unit\Command;
 
 use Hub\Command\DeviceCommandCatalog;
-use Hub\Protocol\Adapter\PillDispenserAdapter;
+use Hub\Ingress\Tcp\Zayata\PillDispenserAdapter;
 use PHPUnit\Framework\TestCase;
 
 /** O slot vai em cada plano, e um plano sem slot, como os já guardados, é colocado por posição. */

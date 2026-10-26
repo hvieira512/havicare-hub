@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Device;
 
-use Hub\Device\DeviceEventDecoder;
-use Hub\Device\Firmware\FirmwareUpgrade;
-use Hub\Device\Firmware\FirmwareUpgradeStore;
-use Hub\Ingress\Tcp\Supplier\Zayata\PillDispenserTcpProtocol;
-use Hub\Protocol\Adapter\PillDispenserAdapter;
+use Hub\Ingress\Tcp\DeviceEventDecoder;
+use Hub\Ingress\Tcp\Zayata\FirmwareUpgrade;
+use Hub\Ingress\Tcp\Zayata\FirmwareUpgradeStore;
+use Hub\Ingress\Tcp\Zayata\PillDispenserAdapter;
+use Hub\Ingress\Tcp\Zayata\PillDispenserTcpProtocol;
 use PHPUnit\Framework\TestCase;
 use Tests\Support\Doubles\InMemoryRedisClient;
 use Tests\Support\Doubles\PillDispenserFixtures;

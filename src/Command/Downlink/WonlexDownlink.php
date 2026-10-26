@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Hub\Command\Downlink;
 
-use Hub\Protocol\Adapter\WonlexAdapter;
+use Hub\Ingress\Tcp\Wonlex\WonlexAdapter;
 
 /** A descida dos relógios Wonlex, em JSON. */
 final class WonlexDownlink

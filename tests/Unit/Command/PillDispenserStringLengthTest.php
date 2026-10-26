@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Command;
 
-use Hub\Protocol\Adapter\PillDispenserAdapter;
+use Hub\Ingress\Tcp\Zayata\PillDispenserAdapter;
 use PHPUnit\Framework\TestCase;
 
 /** A especificação declara `STRING` de 20 para todas, e mandar o comprimento do texto dá `011`, «comprimento não corresponde». */

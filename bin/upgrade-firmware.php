@@ -10,8 +10,8 @@ declare(strict_types=1);
 
 require __DIR__ . '/../vendor/autoload.php';
 
-use Hub\Device\Firmware\FirmwareUpgrade;
-use Hub\Device\Firmware\FirmwareUpgradeStore;
+use Hub\Ingress\Tcp\Zayata\FirmwareUpgrade;
+use Hub\Ingress\Tcp\Zayata\FirmwareUpgradeStore;
 use Hub\Runtime\CliBootstrap;
 use Hub\Runtime\HubServices;
 use Predis\Client as RedisClient;

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Hub\Command\Downlink;
 
-use Hub\Protocol\Adapter\PillDispenserAdapter;
+use Hub\Ingress\Tcp\Zayata\PillDispenserAdapter;
 
 /**
  * A descida do M228: a configuração vai num pacote `0x06` e o controlo num `0x08`, ambos em

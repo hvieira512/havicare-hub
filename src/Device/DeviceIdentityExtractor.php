@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Hub\Device;
 
-use Hub\Protocol\AdapterRegistry;
+use Hub\Ingress\Tcp\AdapterRegistry;
 
 class DeviceIdentityExtractor
 {

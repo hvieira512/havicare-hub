@@ -546,7 +546,7 @@ final class DeviceConfigurationApiTest extends MysqlDashboardTestCase
 
         self::assertSame('ok', $response['status'] ?? null);
         self::assertCount(6, $submitted);
-        $adapter = new \Hub\Protocol\Adapter\WonlexAdapter();
+        $adapter = new \Hub\Ingress\Tcp\Wonlex\WonlexAdapter();
         $frames = array_map(
             static fn(array $item): array => $adapter->decodeIncoming($item['bytes']) ?? [],
             $submitted

@@ -6,7 +6,7 @@ namespace Tests\Unit\Command;
 
 use Hub\Command\DeviceCommandCatalog;
 use Hub\Command\DeviceConfigurationCatalog;
-use Hub\Protocol\Adapter\PillDispenserAdapter;
+use Hub\Ingress\Tcp\Zayata\PillDispenserAdapter;
 use PHPUnit\Framework\TestCase;
 
 /** A especificação descreve a série M2 inteira, e este firmware recusa as TAGs fora das doze que o `0x0C` devolve. */

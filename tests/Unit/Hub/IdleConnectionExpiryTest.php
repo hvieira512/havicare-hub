@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Tests\Unit\Hub;
 
 use Hub\Device\DeviceHubServer;
-use Hub\Protocol\Adapter\PillDispenserAdapter;
-use Hub\Protocol\Adapter\WonlexAdapter;
+use Hub\Ingress\Tcp\Wonlex\WonlexAdapter;
+use Hub\Ingress\Tcp\Zayata\PillDispenserAdapter;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Tests\Support\Doubles\FakeConnection;

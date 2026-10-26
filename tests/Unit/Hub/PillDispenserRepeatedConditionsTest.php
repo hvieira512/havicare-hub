@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Hub;
 
-use Hub\Device\DeviceEventDecoder;
-use Hub\Ingress\Tcp\Supplier\Zayata\PillDispenserTcpProtocol;
-use Hub\Protocol\Adapter\PillDispenserAdapter;
+use Hub\Ingress\Tcp\DeviceEventDecoder;
+use Hub\Ingress\Tcp\Zayata\PillDispenserAdapter;
+use Hub\Ingress\Tcp\Zayata\PillDispenserTcpProtocol;
 use Hub\State\ActiveAlarms;
 use PHPUnit\Framework\TestCase;
 use Tests\Support\Doubles\InMemoryRedisClient;

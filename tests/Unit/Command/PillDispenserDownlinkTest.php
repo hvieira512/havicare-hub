@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Tests\Unit\Command;
 
 use Hub\Command\DeviceCommandCatalog;
-use Hub\Protocol\Adapter\PillDispenserAdapter;
+use Hub\Ingress\Tcp\Zayata\PillDispenserAdapter;
 use PHPUnit\Framework\TestCase;
 
 /** Sem o aparelho à mão, o descodificador do próprio hub ler a trama de volta é a única prova de que ela está certa. */

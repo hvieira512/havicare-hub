@@ -46,9 +46,9 @@ parameters:
             identifier: notIdentical.alwaysTrue
             paths:
                 - src/Api/Routing/ApiRoute.php
-                - src/Device/DeviceEventDecoder.php
-                - src/Device/Decoder/VivistarEventDecoder.php
-                - src/Protocol/Adapter/VivistarAdapter.php
+                - src/Ingress/Tcp/DeviceEventDecoder.php
+                - src/Ingress/Tcp/Vivistar/VivistarEventDecoder.php
+                - src/Ingress/Tcp/Vivistar/VivistarAdapter.php
         # O Predis declara o pipeline() no Client e não no ClientInterface, e os duplos dos testes
         # implementam a interface.
         -

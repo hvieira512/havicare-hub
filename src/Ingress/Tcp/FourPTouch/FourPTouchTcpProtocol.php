@@ -1,0 +1,75 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Hub\Ingress\Tcp\FourPTouch;
+
+use Hub\Device\DeviceSession;
+use Hub\Ingress\Tcp\DeviceAdapterInterface;
+use Hub\Ingress\Tcp\DeviceEventDecoder;
+use Hub\Ingress\Tcp\TcpProtocol;
+use Hub\Ingress\Tcp\TcpResponse;
+
+final class FourPTouchTcpProtocol extends TcpProtocol
+{
+    public function __construct(
+        DeviceAdapterInterface $adapter,
+        DeviceEventDecoder $eventDecoder,
+    ) {
+        parent::__construct($adapter, $eventDecoder);
+    }
+
+    /**
+     * Só o `TAKEPILLS` confirma uma configuração: `1` aceitou, `0` recusou, o resto não diz.
+     *
+     * @param array<string, mixed> $decoded
+     */
+    public function replyAccepted(array $decoded): ?bool
+    {
+        if (($decoded['type'] ?? null) !== 'TAKEPILLS') {
+            return null;
+        }
+
+        return match ((string)($decoded['data']['configAck'] ?? '')) {
+            '1' => true,
+            '0' => false,
+            default => null,
+        };
+    }
+
+    protected function responsesForDecoded(DeviceSession $session, array $decoded): array
+    {
+        $type = (string)($decoded['type'] ?? '');
+        $ackFields = $this->ackFields($type);
+        if ($ackFields === null) {
+            return [];
+        }
+
+        return [new TcpResponse($this->adapter->encodeOutgoing([
+            'type' => $type,
+            'imei' => $decoded['ident'] ?? $session->imei,
+            'deviceId' => $decoded['ident'] ?? $session->imei,
+            'manufacturer' => $decoded['data']['manufacturer'] ?? '3G',
+            'data' => ['fields' => $ackFields],
+        ]))];
+    }
+
+    /**
+     * @return array<int, string>|null
+     */
+    private function ackFields(string $type): ?array
+    {
+        if ($type === 'LK' || $type === 'bphrt' || $type === 'btemp2' || $type === 'TKQ' || $type === 'TKQ2') {
+            return [];
+        }
+
+        if (in_array($type, FourPTouchAdapter::ALARM_FRAME_TYPES, true)) {
+            return [];
+        }
+
+        return match ($type) {
+            'CONFIG', 'oxygen', 'WIFIINFOUP', 'TK' => ['1'],
+            default => null,
+        };
+    }
+}

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Hub\Command\Downlink;
 
-use Hub\Protocol\Adapter\VivistarAdapter;
+use Hub\Ingress\Tcp\Vivistar\VivistarAdapter;
 
 final class VivistarDownlink
 {

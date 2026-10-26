@@ -8,7 +8,7 @@ use Hub\Command\Downlink\FourPTouchDownlink;
 use Hub\Command\Downlink\VivistarDownlink;
 use Hub\Command\Downlink\WonlexDownlink;
 use Hub\Command\Downlink\ZayataDownlink;
-use Hub\Protocol\Adapter\FourPTouchAdapter;
+use Hub\Ingress\Tcp\FourPTouch\FourPTouchAdapter;
 
 final class DeviceCommandCatalog
 {

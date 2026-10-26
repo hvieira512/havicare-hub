@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Tests\Unit\Command;
 
 use Hub\Command\DeviceCommandCatalog;
-use Hub\Protocol\Adapter\PillDispenserAdapter;
+use Hub\Ingress\Tcp\Zayata\PillDispenserAdapter;
 use PHPUnit\Framework\TestCase;
 
 /** O aparelho deixa cair em silêncio uma trama maior do que o `0x8003` declara, e a leitura da configuração cresce com cada definição. */

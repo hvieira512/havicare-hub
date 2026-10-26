@@ -9,8 +9,8 @@ use Hub\Domain\Capability\CapabilityCatalog;
 use Hub\Domain\Capability\CapabilityRegistry;
 use Hub\Domain\Capability\ConfigurationInputDefaults;
 use Hub\Domain\ProtocolRegistry;
+use Hub\Ingress\Tcp\AdapterRegistry;
 use Hub\Ingress\Tcp\TcpProtocolRegistry;
-use Hub\Protocol\AdapterRegistry;
 use PHPUnit\Framework\TestCase;
 
 /** Um protocolo vive em cinco registos que nada liga, e um fornecedor registado em quatro compila e falha num caminho só. */

@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Hub\Command\Configuration\Payload;
 
 use Hub\Domain\Capability\TimeZoneOffset;
-use Hub\Protocol\Adapter\PillDispenserAdapter;
+use Hub\Ingress\Tcp\Zayata\PillDispenserAdapter;
 use Hub\Support\Values;
 
 /**

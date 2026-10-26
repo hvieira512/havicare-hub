@@ -4,10 +4,8 @@ declare(strict_types=1);
 
 namespace Hub\Ingress\Tcp;
 
-use Hub\Device\DeviceEventDecoder;
 use Hub\Device\DeviceSession;
 use Hub\Device\TelemetryEnvelope;
-use Hub\Protocol\Adapter\DeviceAdapterInterface;
 
 abstract class TcpProtocol
 {

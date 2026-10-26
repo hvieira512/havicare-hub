@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Tests\Support\Doubles;
 
-use Hub\Device\DeviceEventDecoder;
 use Hub\Device\DeviceSession;
-use Hub\Protocol\Adapter\PillDispenserAdapter;
+use Hub\Ingress\Tcp\DeviceEventDecoder;
+use Hub\Ingress\Tcp\Zayata\PillDispenserAdapter;
 
 /** A sessão do dispensador M228 e as tramas TLV que os testes lhe dão a descodificar. */
 final class PillDispenserFixtures

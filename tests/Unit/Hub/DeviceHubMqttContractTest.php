@@ -7,10 +7,10 @@ namespace Tests\Unit\Hub;
 use Hub\Device\DeviceHubServer;
 use Hub\Device\HubMqttBridge;
 use Hub\Device\RedisPendingDownlinkQueue;
+use Hub\Ingress\Tcp\Wonlex\WonlexAdapter;
 use Hub\Location\BeaconDbRequestBuilder;
 use Hub\Location\BeaconDbTelemetryEnricher;
 use Hub\Location\RedisLocationResolutionCache;
-use Hub\Protocol\Adapter\WonlexAdapter;
 use Hub\Registry\Denylist;
 use Hub\Registry\Whitelist;
 use Hub\State\DeviceStore;
@@ -645,7 +645,7 @@ final class DeviceHubMqttContractTest extends TestCase
         $mqtt = new ContractRecordingHubMqttBridge();
         $hub = new DeviceHubServer($this->whitelist, $mqtt);
         $connection = new FakeConnection(8);
-        $adapter = new \Hub\Protocol\Adapter\FourPTouchAdapter();
+        $adapter = new \Hub\Ingress\Tcp\FourPTouch\FourPTouchAdapter();
 
         $hub->onOpen($connection);
         $hub->onMessage($connection, '[3G*7597567372*000D*LK,50,100,100]');

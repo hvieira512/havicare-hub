@@ -6,7 +6,7 @@ namespace Tests\Unit\Command;
 
 use Hub\Command\DeviceConfigurationCatalog;
 use Hub\Domain\Capability\CapabilityCatalog;
-use Hub\Protocol\Adapter\PillDispenserAdapter;
+use Hub\Ingress\Tcp\Zayata\PillDispenserAdapter;
 use PHPUnit\Framework\TestCase;
 
 /** Uma reposição devolve o M228 ao servidor do fornecedor, e o firmware não deixa desligar a cifra. */

@@ -1,0 +1,420 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Hub\Ingress\Tcp\FourPTouch;
+
+use Hub\Ingress\Tcp\DeviceAdapterInterface;
+use Hub\Support\Values;
+
+class FourPTouchAdapter implements DeviceAdapterInterface
+{
+    /**
+     * Os tipos de trama de posição e de alarme do 4P Touch, por rede, num só sítio: um `_LTE` em
+     * falta chegava em `raw` sem virar telemetria.
+     */
+    public const LOCATION_FRAME_TYPES = ['UD', 'UD2', 'UD_WCDMA', 'UD_LTE'];
+    public const ALARM_FRAME_TYPES = ['AL', 'AL_WCDMA', 'AL_LTE'];
+
+    public function protocol(): string
+    {
+        return 'four-p-touch';
+    }
+
+    public function canDecode(string $raw): bool
+    {
+        return $this->parseFrame($raw) !== null;
+    }
+
+    public function decodeIncoming(string $raw, array $context = []): ?array
+    {
+        $frame = $this->parseFrame($raw);
+        if ($frame === null) {
+            return null;
+        }
+
+        $fields = $frame['content'] === '' ? [] : explode(',', $frame['content']);
+        $type = (string)($fields[0] ?? '');
+        if ($type === '') {
+            return null;
+        }
+
+        $data = [
+            'manufacturer' => $frame['manufacturer'],
+            'deviceId' => $frame['deviceId'],
+            'length' => $frame['length'],
+            'raw' => $frame['content'],
+            'fields' => array_slice($fields, 1),
+        ];
+
+        $this->enrichData($type, $data['fields'], $data);
+
+        $decoded = [
+            'type' => $type,
+            'ident' => $frame['deviceId'],
+            'ref' => 'w:update',
+            'imei' => $frame['deviceId'],
+            'data' => $data,
+            'timestamp' => (int) round(microtime(true) * 1000),
+        ];
+
+        // O relógio reenvia o alarme até ter resposta; o instante é o da trama, não o da chegada.
+        $occurredAt = $this->isAlarmType($type) ? self::frameTime($data['fields']) : null;
+        if ($occurredAt !== null) {
+            $decoded['occurredAt'] = $occurredAt;
+        }
+
+        return $decoded;
+    }
+
+    /**
+     * A data e a hora UTC da trama (`ddmmyy`, `hhmmss`), ou `null` quando não são plausíveis:
+     * mais de 5 minutos no futuro, ou mais de 7 dias atrás — um relógio sem hora acertada
+     * arranca numa data de fábrica, e um alarme por entregar não fica tanto tempo na fila.
+     *
+     * @param list<string> $fields
+     */
+    private static function frameTime(array $fields): ?string
+    {
+        $stamp = ($fields[0] ?? '') . ($fields[1] ?? '');
+        $at = \DateTimeImmutable::createFromFormat('!dmyHis', $stamp, new \DateTimeZone('UTC'));
+        if ($at === false || $at->format('dmyHis') !== $stamp) {
+            return null;
+        }
+
+        $age = time() - $at->getTimestamp();
+        return $age < -300 || $age > 7 * 86400 ? null : $at->format('Y-m-d\TH:i:s\Z');
+    }
+
+    public function encodeOutgoing(array $payload, array $context = []): string
+    {
+        $manufacturer = $this->frameValue((string)($payload['manufacturer'] ?? $context['manufacturer'] ?? '3G'));
+        $deviceId = $this->frameValue((string)($payload['deviceId'] ?? $payload['imei'] ?? $context['deviceId'] ?? ''));
+        $type = $this->frameValue((string)($payload['type'] ?? ''));
+        if ($deviceId === '' || $type === '') {
+            return '';
+        }
+
+        $fields = isset($payload['data']['fields']) && is_array($payload['data']['fields'])
+            ? $payload['data']['fields']
+            : [];
+        $content = $type;
+        if ($fields !== []) {
+            $content .= ',' . implode(',', array_map(static fn (mixed $value): string => (string) $value, $fields));
+        }
+
+        $contentLength = strlen($content);
+        if ($contentLength > 0xFFFF) {
+            throw new \InvalidArgumentException('4P Touch content exceeds the protocol maximum of 65535 bytes');
+        }
+
+        return sprintf('[%s*%s*%04X*%s]', $manufacturer, $deviceId, $contentLength, $content);
+    }
+
+    /** @return array<string, mixed>|null */
+    private function parseFrame(string $raw): ?array
+    {
+        $message = trim($raw);
+        if (preg_match('/^\[(CS|3G)\*(\d{10})\*([0-9A-Fa-f]{4})\*(.*)\]$/s', $message, $matches) !== 1) {
+            return null;
+        }
+
+        $content = $matches[4];
+        $length = hexdec($matches[3]);
+        if ($length !== strlen($content)) {
+            return null;
+        }
+
+        return [
+            'manufacturer' => $matches[1],
+            'deviceId' => $matches[2],
+            'length' => strtoupper($matches[3]),
+            'content' => $content,
+        ];
+    }
+
+    private function frameValue(string $value): string
+    {
+        return str_replace(['[', ']', '*'], '', trim($value));
+    }
+
+    /**
+     * @param list<string> $fields
+     * @param array<string, mixed> $data
+     */
+    private function enrichData(string $type, array $fields, array &$data): void
+    {
+        if ($this->isPositionType($type) || $this->isAlarmType($type)) {
+            $this->enrichPosition($type, $fields, $data);
+            if ($this->isAlarmType($type)) {
+                // O campo[15] é o mesmo em posição e em alarme; só no frame `AL` é
+                // que conta como código de alarme e alimenta a decodificação dos bits.
+                $data['alarmCode'] = isset($fields[15]) ? strtoupper((string) $fields[15]) : null;
+                $this->enrichAlarm($data);
+            }
+            return;
+        }
+
+        $data = array_merge($data, match ($type) {
+            'LK' => [
+                'steps' => Values::int($fields[0] ?? null),
+                'tumblingCount' => Values::int($fields[1] ?? null),
+                'batteryPercent' => Values::int($fields[2] ?? null),
+            ],
+            'bphrt' => [
+                'systolic' => Values::int($fields[0] ?? null),
+                'diastolic' => Values::int($fields[1] ?? null),
+                'heartRate' => Values::int($fields[2] ?? null),
+                'heightCm' => Values::int($fields[3] ?? null),
+                'gender' => $this->gender($fields[4] ?? null),
+                'age' => Values::int($fields[5] ?? null),
+                'weightKg' => Values::int($fields[6] ?? null),
+            ],
+            'oxygen' => ['measureType' => Values::int($fields[0] ?? null), 'spo2' => Values::int($fields[1] ?? null)],
+            'btemp2' => ['measureType' => Values::int($fields[0] ?? null), 'temp' => Values::float($fields[1] ?? null)],
+            'CONFIG' => ['configAck' => $fields[0] ?? null] + self::configs($fields),
+            'TAKEPILLS' => ['configAck' => $fields[0] ?? null],
+            // A palavra-passe da rede, no campo 1, não se descodifica nem se repete.
+            'WIFIINFOUP' => [
+                'wifiNameHex' => $fields[0] ?? null,
+                'wifiSsid' => $fields[2] ?? null,
+                'wifiName' => $this->hexAscii($fields[0] ?? null),
+            ],
+            'TK' => ['audioData' => $fields[0] ?? null],
+            'VERNO' => ['firmware' => $fields[0] ?? null],
+            'TS' => self::deviceStatus($fields[0] ?? null),
+            default => [],
+        });
+    }
+
+    /**
+     * Os campos `chave:valor` da resposta ao `CONFIG`, em `configs` quando há algum.
+     *
+     * @param list<string> $fields
+     * @return array{configs?: array<string, string>}
+     */
+    private static function configs(array $fields): array
+    {
+        $configs = [];
+        foreach ($fields as $field) {
+            if (!str_contains($field, ':')) {
+                continue;
+            }
+
+            [$key, $value] = array_map('trim', explode(':', $field, 2));
+            if ($key !== '') {
+                $configs[$key] = $value;
+            }
+        }
+
+        return $configs === [] ? [] : ['configs' => $configs];
+    }
+
+    /**
+     * O bloco `chave:valor` da resposta ao `TS`, separado por `;`. O `GPS:OK(n)` e o `NET:OK(n)`
+     * ficam de fora, porque a especificação não diz o que os números são.
+     *
+     * @return array<string, mixed>
+     */
+    private static function deviceStatus(?string $block): array
+    {
+        $values = [];
+        foreach (explode(';', (string)$block) as $pair) {
+            [$key, $value] = array_pad(explode(':', trim($pair), 2), 2, null);
+            $key = trim((string)$key);
+            if ($key !== '' && $value !== null) {
+                $values[$key] = trim($value);
+            }
+        }
+
+        $boolean = static fn(string $key): ?bool => isset($values[$key])
+            ? strtolower($values[$key]) === 'true'
+            : null;
+
+        return Values::withoutNulls([
+            'firmware' => $values['ver'] ?? null,
+            'batteryPercent' => isset($values['batlevel']) ? (int)$values['batlevel'] : null,
+            'uploadIntervalSeconds' => isset($values['upload']) ? (int)$values['upload'] : null,
+            'heartbeatIntervalSeconds' => isset($values['lk']) ? (int)$values['lk'] : null,
+            'language' => $values['language'] ?? null,
+            // O `explode` leva limite 2 por causa deste: o fuso é `+01:00` e tem dois pontos.
+            'timeZone' => $values['zone'] ?? null,
+            'soundProfile' => isset($values['profile']) ? (int)$values['profile'] : null,
+            'wifiEnabled' => $boolean('wifiOpen'),
+            'wifiConnected' => $boolean('wifiConnect'),
+            'cellularEnabled' => $boolean('gprsOpen'),
+        ]);
+    }
+
+    /**
+     * @param list<string> $fields
+     * @param array<string, mixed> $data
+     */
+    private function enrichPosition(string $type, array $fields, array &$data): void
+    {
+        $gpsValid = strtoupper((string) ($fields[2] ?? '')) === 'A';
+        $baseStationCount = max(0, Values::int($fields[16] ?? null) ?? 0);
+
+        $data['date'] = $fields[0] ?? null;
+        $data['timeUtc'] = $fields[1] ?? null;
+        $data['gpsValid'] = $gpsValid;
+        $data['source'] = $gpsValid ? 'gps' : 'lbs_wifi';
+        $data['lat'] = $this->coordinate($fields[3] ?? null, $fields[4] ?? null);
+        $data['lon'] = $this->coordinate($fields[5] ?? null, $fields[6] ?? null);
+        $data['speed'] = Values::float($fields[7] ?? null);
+        $data['direction'] = Values::float($fields[8] ?? null);
+        $data['altitude'] = Values::float($fields[9] ?? null);
+        $data['satellites'] = Values::int($fields[10] ?? null);
+        $data['gsmSignal'] = Values::int($fields[11] ?? null);
+        $data['batteryPercent'] = Values::int($fields[12] ?? null);
+        $data['steps'] = Values::int($fields[13] ?? null);
+        $data['tumblingCount'] = Values::int($fields[14] ?? null);
+        $data['baseStationCount'] = $fields[16] ?? null;
+        $data['connectedBaseStationCount'] = Values::int($fields[17] ?? null);
+        $data['networkType'] = $this->networkTypeFromType($type);
+        $data['mcc'] = isset($fields[18]) ? (string) $fields[18] : null;
+        $data['mnc'] = isset($fields[19]) ? (string) $fields[19] : null;
+
+        // Os 16 bits baixos do campo 15 são condições; cada uma tem o seu alarme nos 16 bits altos,
+        // que o `enrichAlarm` lê do frame `AL`. Só a de bateria fraca se usa: o bit 0.
+        if (isset($fields[15]) && ctype_xdigit((string) $fields[15])) {
+            $data['batteryLow'] = (hexdec((string) $fields[15]) & 0x1) !== 0;
+        }
+
+        $cursor = 20;
+        $baseStations = [];
+        for ($index = 0; $index < $baseStationCount; $index++) {
+            if (!array_key_exists($cursor + 2, $fields)) {
+                break;
+            }
+
+            $baseStations[] = array_filter([
+                'lac' => $this->stringField($fields[$cursor] ?? null),
+                'cellId' => $this->stringField($fields[$cursor + 1] ?? null),
+                'gsmSignal' => Values::int($fields[$cursor + 2] ?? null),
+            ], static fn (mixed $value): bool => $value !== null && $value !== '');
+
+            $cursor += 3;
+        }
+
+        if ($baseStations !== []) {
+            $data['baseStations'] = $baseStations;
+            $firstBase = $baseStations[0];
+            $data['lac'] = $data['lac'] ?? ($firstBase['lac'] ?? null);
+            $data['cellId'] = $data['cellId'] ?? ($firstBase['cellId'] ?? null);
+            $data['cellSignal'] = $data['cellSignal'] ?? ($firstBase['gsmSignal'] ?? null);
+        }
+
+        $remaining = array_slice($fields, $cursor);
+        $accuracy = null;
+        if ($remaining !== []) {
+            $last = end($remaining);
+            if (is_numeric((string) $last)) {
+                $accuracy = Values::float($last);
+                array_pop($remaining);
+            }
+        }
+
+        if ($accuracy !== null) {
+            $data['accuracy'] = $accuracy;
+        }
+
+        if ($remaining !== []) {
+            $wifiCount = Values::int($remaining[0] ?? null);
+            if ($wifiCount !== null) {
+                $data['wifiCount'] = $wifiCount;
+                $wifiFields = array_slice($remaining, 1);
+                $wifi = [];
+                for ($index = 0; $index < $wifiCount; $index++) {
+                    $offset = $index * 3;
+                    if (!array_key_exists($offset + 2, $wifiFields)) {
+                        break;
+                    }
+
+                    $wifi[] = array_filter([
+                        'label' => $this->stringField($wifiFields[$offset] ?? null),
+                        'mac' => $this->stringField($wifiFields[$offset + 1] ?? null),
+                        'signal' => Values::int($wifiFields[$offset + 2] ?? null),
+                    ], static fn (mixed $value): bool => $value !== null && $value !== '');
+                }
+
+                if ($wifi !== []) {
+                    $data['wifi'] = $wifi;
+                }
+            }
+        }
+    }
+
+    /** @param array<string, mixed> $data */
+    private function enrichAlarm(array &$data): void
+    {
+        $alarm = isset($data['alarmCode']) ? hexdec((string) $data['alarmCode']) : 0;
+        $data['sos'] = ($alarm & 0x00010000) !== 0;
+        $data['lowBattery'] = ($alarm & 0x00020000) !== 0;
+        $data['outFenceAlarm'] = ($alarm & 0x00040000) !== 0;
+        $data['inFenceAlarm'] = ($alarm & 0x00080000) !== 0;
+        $data['removeAlarm'] = ($alarm & 0x00100000) !== 0;
+        $data['fall'] = ($alarm & 0x00200000) !== 0;
+        $data['abnormalHeartRateAlarm'] = ($alarm & 0x00400000) !== 0;
+    }
+
+    private function coordinate(mixed $value, mixed $direction): ?float
+    {
+        $float = Values::float($value);
+        if ($float === null) {
+            return null;
+        }
+
+        $direction = strtoupper((string) $direction);
+        return in_array($direction, ['S', 'W'], true) ? -abs($float) : $float;
+    }
+
+    private function isPositionType(string $type): bool
+    {
+        return in_array($type, self::LOCATION_FRAME_TYPES, true);
+    }
+
+    private function isAlarmType(string $type): bool
+    {
+        return in_array($type, self::ALARM_FRAME_TYPES, true);
+    }
+
+    private function networkTypeFromType(string $type): ?string
+    {
+        return match (true) {
+            str_ends_with($type, '_LTE') => 'LTE',
+            str_ends_with($type, '_WCDMA') => 'WCDMA',
+            default => 'GSM',
+        };
+    }
+
+    private function gender(mixed $value): ?string
+    {
+        return match ((string) $value) {
+            '1' => 'male',
+            '2' => 'female',
+            default => null,
+        };
+    }
+
+    private function stringField(mixed $value): ?string
+    {
+        $value = trim((string) $value);
+        return $value === '' ? null : $value;
+    }
+
+    private function hexAscii(mixed $value): ?string
+    {
+        $value = trim((string) $value);
+        if ($value === '' || preg_match('/^[0-9A-Fa-f]+$/', $value) !== 1 || strlen($value) % 2 !== 0) {
+            return null;
+        }
+
+        $decoded = @hex2bin($value);
+        if ($decoded === false) {
+            return null;
+        }
+
+        return trim($decoded);
+    }
+}

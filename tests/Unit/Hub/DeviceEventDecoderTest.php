@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Hub;
 
-use Hub\Device\DeviceEventDecoder;
 use Hub\Device\DeviceSession;
+use Hub\Ingress\Tcp\DeviceEventDecoder;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Tests\Support\Doubles\FakeConnection;

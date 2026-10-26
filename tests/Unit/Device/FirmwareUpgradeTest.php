@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Device;
 
-use Hub\Device\Firmware\FirmwareUpgrade;
+use Hub\Ingress\Tcp\Zayata\FirmwareUpgrade;
 use PHPUnit\Framework\TestCase;
 
 /** Cada pacote só sai depois de o aparelho confirmar o anterior, e é o offset no corpo que sequencia a transferência. */

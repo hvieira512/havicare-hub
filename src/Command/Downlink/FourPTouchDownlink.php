@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Hub\Command\Downlink;
 
-use Hub\Protocol\Adapter\FourPTouchAdapter;
+use Hub\Ingress\Tcp\FourPTouch\FourPTouchAdapter;
 
 final class FourPTouchDownlink
 {

@@ -6,7 +6,7 @@ namespace Tests\Unit\Command;
 
 use Hub\Command\DeviceCommandCatalog;
 use Hub\Domain\Capability\CapabilityCatalog;
-use Hub\Protocol\Adapter\PillDispenserAdapter;
+use Hub\Ingress\Tcp\Zayata\PillDispenserAdapter;
 use PHPUnit\Framework\TestCase;
 
 /** O `0x07` pede sempre as 31 TAGs do `STATUS_TAGS` e enche as sete leituras de uma vez: um botão por pergunta, não por grandeza. */

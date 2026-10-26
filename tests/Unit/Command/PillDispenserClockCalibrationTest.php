@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Tests\Unit\Command;
 
 use Hub\Command\DeviceCommandCatalog;
-use Hub\Protocol\Adapter\PillDispenserAdapter;
+use Hub\Ingress\Tcp\Zayata\PillDispenserAdapter;
 use PHPUnit\Framework\TestCase;
 
 /** A TAG `0xA101` não leva fuso e os alarmes são locais: o fuso do hub vai em INT16S HHMM como na `0x1015`, `+100` é uma hora. */

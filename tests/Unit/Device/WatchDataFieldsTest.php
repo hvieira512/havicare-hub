@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Device;
 
-use Hub\Device\Decoder\FourPTouchEventDecoder;
-use Hub\Device\Decoder\VivistarEventDecoder;
-use Hub\Device\Decoder\WonlexEventDecoder;
 use Hub\Device\FeatureNormalizer;
+use Hub\Ingress\Tcp\FourPTouch\FourPTouchEventDecoder;
+use Hub\Ingress\Tcp\Vivistar\VivistarEventDecoder;
+use Hub\Ingress\Tcp\Wonlex\WonlexEventDecoder;
 use PHPUnit\Framework\TestCase;
 
 /** Os nomes do `data` de cada tipo que os relógios publicam: são contrato, e mudar um é revisão. */

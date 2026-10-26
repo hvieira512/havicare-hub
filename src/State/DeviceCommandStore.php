@@ -7,7 +7,7 @@ namespace Hub\State;
 use Hub\Command\Configuration\Payload\FourPTouchPhonebookFallback;
 use Hub\Command\DeliveryStatus;
 use Hub\Command\DeviceCommandCatalog;
-use Hub\Protocol\Adapter\FourPTouchAdapter;
+use Hub\Ingress\Tcp\FourPTouch\FourPTouchAdapter;
 use Predis\ClientInterface;
 
 final class DeviceCommandStore

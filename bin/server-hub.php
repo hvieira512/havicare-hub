@@ -6,7 +6,6 @@ declare(strict_types=1);
 require __DIR__ . '/../vendor/autoload.php';
 
 use Hub\Ingress\Tcp\HubTcpIngress;
-use Hub\Ingress\Mqtt\MqttIngressFactory;
 use Hub\Log\Logger;
 use Hub\Mqtt\BrokerSettings;
 use Hub\Mqtt\ConnectionFactory;
@@ -15,6 +14,7 @@ use Hub\Runtime\CrashWatch;
 use Hub\Runtime\DashboardServerFactory;
 use Hub\Runtime\HubServices;
 use Hub\Runtime\MaintenanceScheduler;
+use Hub\Runtime\MqttIngressFactory;
 use Hub\Runtime\StartupBanner;
 use Hub\Runtime\SystemdWatchdog;
 use React\EventLoop\Loop;

@@ -4,13 +4,11 @@ declare(strict_types=1);
 
 namespace Hub\Ingress\Tcp;
 
-use Hub\Device\DeviceEventDecoder;
-use Hub\Device\Firmware\FirmwareUpgradeStore;
-use Hub\Ingress\Tcp\Supplier\FourPTouch\FourPTouchTcpProtocol;
-use Hub\Ingress\Tcp\Supplier\Vivistar\VivistarTcpProtocol;
-use Hub\Ingress\Tcp\Supplier\Wonlex\WonlexTcpProtocol;
-use Hub\Ingress\Tcp\Supplier\Zayata\PillDispenserTcpProtocol;
-use Hub\Protocol\AdapterRegistry;
+use Hub\Ingress\Tcp\FourPTouch\FourPTouchTcpProtocol;
+use Hub\Ingress\Tcp\Vivistar\VivistarTcpProtocol;
+use Hub\Ingress\Tcp\Wonlex\WonlexTcpProtocol;
+use Hub\Ingress\Tcp\Zayata\FirmwareUpgradeStore;
+use Hub\Ingress\Tcp\Zayata\PillDispenserTcpProtocol;
 use Hub\State\ActiveAlarms;
 
 /**

@@ -409,7 +409,7 @@ final class DeviceDetailApiTest extends MysqlDashboardTestCase
 
         self::assertSame('ok', $updated['status'] ?? null);
         self::assertCount(1, $submitted);
-        $frame = (new \Hub\Protocol\Adapter\WonlexAdapter())->decodeIncoming($submitted[0]['bytes']);
+        $frame = (new \Hub\Ingress\Tcp\Wonlex\WonlexAdapter())->decodeIncoming($submitted[0]['bytes']);
         self::assertSame(
             0,
             $frame['data']['configs']['FallWarnSwitch']['switchState'] ?? null

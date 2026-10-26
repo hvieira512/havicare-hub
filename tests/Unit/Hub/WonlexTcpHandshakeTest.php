@@ -6,7 +6,7 @@ namespace Tests\Unit\Hub;
 
 use Hub\Device\DeviceHubServer;
 use Hub\Ingress\Tcp\HubTcpIngress;
-use Hub\Protocol\Adapter\WonlexAdapter;
+use Hub\Ingress\Tcp\Wonlex\WonlexAdapter;
 use Hub\Registry\Whitelist;
 use PHPUnit\Framework\TestCase;
 use React\EventLoop\StreamSelectLoop;
