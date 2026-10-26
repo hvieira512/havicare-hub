@@ -14,7 +14,7 @@ final class DeviceCommandStore
     /** Os estados de que um comando não sai. */
     private const FINISHED = ['acked', 'failed', 'dropped', 'superseded'];
 
-    /** Os estados que deixam o aparelho no índice dos pendentes. */
+    /** Os estados que deixam o aparelho no índice depois da passagem de repetição. */
     private const PENDING = ['queued', 'waiting'];
 
     private bool $pendingIndexed = false;
@@ -79,9 +79,9 @@ final class DeviceCommandStore
         }
         $this->redis->hset(RedisKeys::commandRecords($imei), $id, $encoded);
         $this->redis->hset(RedisKeys::commandIndex(), $id, $imei);
-        if (in_array((string)($record['status'] ?? ''), self::PENDING, true)) {
-            $this->redis->sadd(RedisKeys::pendingCommands(), [$imei]);
-        }
+        // Qualquer escrita marca o aparelho: a passagem de repetição seguinte vê-o uma vez, e é ela
+        // que o tira, depois do recuo da lista telefónica.
+        $this->redis->sadd(RedisKeys::pendingCommands(), [$imei]);
         $this->redis->lrem(RedisKeys::list($imei, 'commands'), 0, $id);
         $this->redis->lpush(RedisKeys::list($imei, 'commands'), [$id]);
         $evictedIds = array_map(

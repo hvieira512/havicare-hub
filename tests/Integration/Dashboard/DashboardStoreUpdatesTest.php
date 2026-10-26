@@ -118,21 +118,25 @@ final class DashboardStoreUpdatesTest extends MysqlDashboardTestCase
         $store->recordCommand(self::DEVICE, 'cmd-1', [
             'protocol' => 'moko-w6b',
             'command' => 'test',
+            'nativeType' => 'test',
+            'expectedReplyTypes' => ['test'],
             'status' => 'queued',
         ]);
         $before = $count();
 
         $store->markCommand(self::DEVICE, 'cmd-1', ['status' => 'sent']);
-        $store->markLatestCommand(self::DEVICE, 'test', ['status' => 'delivered']);
+        $store->markLatestCommand(self::DEVICE, 'test', ['status' => 'waiting']);
         $store->markCommandReply(self::DEVICE, 'test', null, '', true);
 
         self::assertSame(1, $before, 'gravar um comando anuncia uma vez');
         self::assertSame(4, $count(), 'cada transição do ciclo de vida anuncia');
     }
 
-    public function testSweepsAnnounceToEveryListenerSinceTheyNameNoDevice(): void
+    /** Uma varredura acorda só os streams dos aparelhos com comandos que percorreu. */
+    public function testSweepsAnnounceOnlyTheDevicesTheyVisit(): void
     {
         $store = $this->store();
+        $store->recordCommand(self::DEVICE, 'cmd-1', ['protocol' => 'moko-w6b', 'command' => 'test', 'status' => 'queued']);
         $calls = [];
         $store->updates()->subscribe(self::DEVICE, static function () use (&$calls): void {
             $calls[] = self::DEVICE;
@@ -143,8 +147,7 @@ final class DashboardStoreUpdatesTest extends MysqlDashboardTestCase
 
         $store->expireWaitingCommands(3600);
 
-        sort($calls);
-        self::assertSame(['fbd87c59ba8b', 'other'], $calls);
+        self::assertSame([self::DEVICE], $calls);
     }
 
     public function testOtherDevicesAreNotWokenByAnUnrelatedWrite(): void

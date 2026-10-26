@@ -26,8 +26,8 @@ final class PendingCommandsIndexTest extends TestCase
         }
         $this->store->recordCommand(self::WAITING, 'one', $this->command('waiting'));
         $this->store->recordCommand(self::IDLE, 'two', $this->command('acked'));
-        // A primeira leitura semeia o índice a partir de tudo o que está guardado, uma vez só.
-        $this->store->expireWaitingCommands(3600);
+        // A passagem de repetição tira do índice quem já não tem nada pendente.
+        $this->store->retryWaitingCommands(60, 3600, 3, static fn (): string => 'sent');
     }
 
     public function testAFrameFromADeviceWithNothingPendingReadsNoCommands(): void
@@ -64,10 +64,14 @@ final class PendingCommandsIndexTest extends TestCase
     /** Comandos gravados antes de o índice existir continuam a ser repetidos. */
     public function testCommandsRecordedBeforeTheIndexExistedAreStillRetried(): void
     {
-        $this->redis->del(['hub:dashboard:devices-with-pending-commands', 'hub:dashboard:pending-commands-indexed']);
+        $redis = new InMemoryRedisClient();
+        $store = new DeviceStore($redis);
+        $store->runtime->registerDevice(self::WAITING, 'Wonlex', 'HW20PRO');
+        $store->recordCommand(self::WAITING, 'one', $this->command('waiting'));
+        $redis->del(['hub:dashboard:devices-with-pending-commands', 'hub:dashboard:pending-commands-indexed']);
         $dispatched = [];
 
-        (new DeviceStore($this->redis))->retryWaitingCommands(
+        (new DeviceStore($redis))->retryWaitingCommands(
             60,
             3600,
             3,
