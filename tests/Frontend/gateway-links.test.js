@@ -38,3 +38,19 @@ test("gateway link changes support multiple additions and removals", () => {
         { add: ["gateway-c"], remove: ["gateway-a"] },
     );
 });
+
+test("syncing links tries every gateway and reports each one that failed", async () => {
+    const { syncGatewayLinks } = await import("../../src/Dashboard/dashboard/devices/gateway-links-ui.js");
+    let calls = 0;
+    globalThis.fetch = async (url) => {
+        calls += 1;
+        return String(url).includes("/gw-ok/")
+            ? Response.json({ status: "ok" })
+            : Response.json({ error: { code: "gateway_gone" } }, { status: 500 });
+    };
+
+    const failed = await syncGatewayLinks("sensor", ["gw-old"], ["gw-a", "gw-ok", "gw-b"]);
+
+    assert.equal(calls, 4);
+    assert.deepEqual(failed.map((failure) => failure.gatewayKey), ["gw-a", "gw-b", "gw-old"]);
+});

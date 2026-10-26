@@ -440,7 +440,7 @@ export async function saveDevice() {
         ? selectedGatewayKeys()
         : [];
 
-    const result = await apiSaveDevice(
+    const result = await apiSaveDevice({
         imei,
         supplier,
         model,
@@ -450,7 +450,7 @@ export async function saveDevice() {
         deviceId,
         originalImei,
         company,
-    );
+    });
     if (result.error) {
         const identity = identifiedByImei ? els.deviceImei : els.deviceDeviceId;
         if (!markApiFields(result, (field) => ({ imei: identity, deviceId: els.deviceDeviceId })[field])) {
@@ -463,14 +463,15 @@ export async function saveDevice() {
         const currentGatewayKeys = originalImei !== imei
             ? []
             : state.deviceModal.linkedGatewayKeys || [];
-        const linkError = await syncGatewayLinks(
+        const failed = await syncGatewayLinks(
             imei,
             currentGatewayKeys,
             desiredGatewayKeys,
         );
-        if (linkError) {
+        if (failed.length > 0) {
+            const reasons = failed.map(({ gatewayKey, error }) => `${gatewayKey}: ${error}`).join("; ");
             setDeviceFormError(
-                `Dispositivo guardado, mas não foi possível atualizar os gateways: ${linkError}`,
+                `Dispositivo guardado, mas não foi possível atualizar os gateways: ${reasons}`,
             );
             return;
         }

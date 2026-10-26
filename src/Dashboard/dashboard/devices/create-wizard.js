@@ -1,6 +1,5 @@
 import { html } from "../html.js";
 import {
-    createDeviceLink as apiCreateDeviceLink,
     getDevices as apiGetDevices,
     saveDevice as apiSaveDevice,
 } from "../api/index.js";
@@ -22,6 +21,7 @@ import {
     suppliersForDeviceType,
 } from "../domain.js";
 import { createWizard } from "../wizard.js";
+import { syncGatewayLinks } from "./gateway-links-ui.js";
 import {
     licenseBadgeValue,
     licensePickerHtml,
@@ -478,28 +478,22 @@ export async function createDeviceFromWizard(answers) {
     const identity = String(answers.identity || "").trim();
     const byImei = fields.identity.field === "imei";
 
-    const result = await apiSaveDevice(
-        identity,
-        answers.model.supplier,
-        answers.model.model,
-        answers.type,
-        String(answers.owner?.licenseId ?? ""),
-        fields.sim ? String(answers.sim || "") : "",
-        byImei ? "" : identity,
-        "",
-        answers.owner?.company || "",
-    );
+    const result = await apiSaveDevice({
+        imei: identity,
+        supplier: answers.model.supplier,
+        model: answers.model.model,
+        deviceType: answers.type,
+        licenseId: String(answers.owner?.licenseId ?? ""),
+        simNumber: fields.sim ? String(answers.sim || "") : "",
+        deviceId: byImei ? "" : identity,
+        company: answers.owner?.company || "",
+    });
     if (result?.error) {
         return apiError(result);
     }
 
-    const unauthorized = [];
-    for (const gatewayKey of answers.gateways || []) {
-        const linked = await apiCreateDeviceLink(gatewayKey, identity);
-        if (linked?.error) {
-            unauthorized.push(gatewayKey);
-        }
-    }
+    const unauthorized = (await syncGatewayLinks(identity, [], answers.gateways || []))
+        .map((failure) => failure.gatewayKey);
 
     wizardModal.hide();
     await loadSummary();

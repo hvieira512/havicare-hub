@@ -174,15 +174,15 @@ export async function refreshGatewayOptions(selectedKeys = null) {
         : "Não existem gateways para esta empresa e licença.";
 }
 
+/** Tenta todas as ligações e devolve as que falharam, `{ gatewayKey, error }`. */
 export async function syncGatewayLinks(sensorKey, currentKeys, desiredKeys) {
     const changes = gatewayLinkChanges(currentKeys, desiredKeys);
-    for (const gatewayKey of changes.add) {
-        const result = await apiCreateDeviceLink(gatewayKey, sensorKey);
-        if (result?.error) return apiError(result);
+    const failed = [];
+    for (const [keys, request] of [[changes.add, apiCreateDeviceLink], [changes.remove, apiDeleteDeviceLink]]) {
+        for (const gatewayKey of keys) {
+            const result = await request(gatewayKey, sensorKey);
+            if (result?.error) failed.push({ gatewayKey, error: apiError(result) });
+        }
     }
-    for (const gatewayKey of changes.remove) {
-        const result = await apiDeleteDeviceLink(gatewayKey, sensorKey);
-        if (result?.error) return apiError(result);
-    }
-    return "";
+    return failed;
 }

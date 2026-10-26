@@ -31,7 +31,17 @@ export const requestCapability = (imei, capability, value) =>
         body: JSON.stringify({ capability, value }),
     });
 /** Sem dono, a empresa e a licença vão as duas a `null`. */
-export const saveDevice = (imei, supplier, model, deviceType = "watch", licenseId = "", simNumber = "", deviceId = "", originalImei = "", company = "") =>
+export const saveDevice = ({
+    imei,
+    supplier,
+    model,
+    deviceType = "watch",
+    licenseId = "",
+    simNumber = "",
+    deviceId = "",
+    originalImei = "",
+    company = "",
+}) =>
     requestJson(originalImei ? `/api/devices/${id(originalImei)}` : "/api/devices", {
         method: originalImei ? "PUT" : "POST",
         body: JSON.stringify({
