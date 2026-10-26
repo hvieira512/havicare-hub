@@ -1,5 +1,5 @@
 import { esc } from "../../format.js";
-import { normalizePhoneControl } from "../../phone.js";
+import { normalizePhoneControl } from "../phone.js";
 
 export function firstFieldName(section) {
     return (

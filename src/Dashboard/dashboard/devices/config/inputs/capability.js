@@ -1,12 +1,12 @@
 import { html } from "../../../html.js";
 import { field } from "../../../components/form-field.js";
-import { renderPhoneControl } from "../../../phone.js";
+import { renderPhoneControl } from "../../phone.js";
 import { optionLabel } from "../../../i18n.js";
 import { addAlarmButton, alarmClockRow, readAlarmRows, RECURRENCES } from "../alarm-fields.js";
 import { boolValue } from "../normalizers.js";
 import { contactsInput } from "./generic.js";
-import { deviceCheckCard } from "../../device-check-card.js";
-import { linkSignal } from "../../gateway-signal.js";
+import { deviceCheckCard } from "../../gateways/device-check-card.js";
+import { linkSignal } from "../../gateways/gateway-signal.js";
 import {
     boundedNumber,
     choiceField,

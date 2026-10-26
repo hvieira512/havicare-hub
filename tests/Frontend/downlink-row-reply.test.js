@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 
 const { state } = await import("../../src/Dashboard/dashboard/state.js");
 const { downlinkActivityRow: buildRow } = await import(
-    "../../src/Dashboard/dashboard/devices/detail.js",
+    "../../src/Dashboard/dashboard/devices/detail/detail.js",
 );
 
 const downlinkActivityRow = (payload) => {

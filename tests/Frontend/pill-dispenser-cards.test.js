@@ -5,7 +5,7 @@ import { requestCardShell as buildCard } from "../../src/Dashboard/dashboard/com
 
 const requestCardShell = asText(buildCard);
 import { cardContent } from "./support/cards.js";
-import { allDetailItems } from "../../src/Dashboard/dashboard/devices/detail-filters.js";
+import { allDetailItems } from "../../src/Dashboard/dashboard/devices/detail/detail-filters.js";
 import { state } from "../../src/Dashboard/dashboard/state.js";
 import { asText } from "./support/dom.js";
 

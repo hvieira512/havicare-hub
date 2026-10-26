@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 const { connectionOutages, renderConnectionHistory, handleConnectionHistoryClick } = await import(
-    "../../src/Dashboard/dashboard/devices/connection-history.js",
+    "../../src/Dashboard/dashboard/devices/detail/connection-history.js",
 );
 
 const NOW = Date.parse("2026-10-07T16:40:00Z");

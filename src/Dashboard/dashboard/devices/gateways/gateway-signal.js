@@ -1,5 +1,5 @@
-import { ago } from "../format.js";
-import { html } from "../html.js";
+import { ago } from "../../format.js";
+import { html } from "../../html.js";
 import { normalizeKey } from "./gateway-links.js";
 
 /** O último sinal de cada ligação a um gateway: o RSSI é do par, e viaja em `source.rssiDbm`. */

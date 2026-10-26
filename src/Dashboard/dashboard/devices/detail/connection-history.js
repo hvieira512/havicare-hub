@@ -1,8 +1,8 @@
-import { duration } from "../format.js";
-import { html } from "../html.js";
-import { resolvePaginationPage } from "../pagination.js";
+import { duration } from "../../format.js";
+import { html } from "../../html.js";
+import { resolvePaginationPage } from "../../pagination.js";
 import { disposeTooltips, refreshTooltips } from "../tooltips.js";
-import { loadMoreButton, pagedRows, paginationControls } from "../components/pagination.js";
+import { loadMoreButton, pagedRows, paginationControls } from "../../components/pagination.js";
 
 /** As ligações do dispositivo: uma faixa com as quebras e, por baixo, a lista delas. */
 

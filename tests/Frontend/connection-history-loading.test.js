@@ -5,7 +5,7 @@ import { cacheElements } from "../../src/Dashboard/dashboard/dom.js";
 
 const { setSelectedDetail, state } = await import("../../src/Dashboard/dashboard/state.js");
 const { renderSelection } = await import(
-    "../../src/Dashboard/dashboard/devices/detail.js",
+    "../../src/Dashboard/dashboard/devices/detail/detail.js",
 );
 
 /** Antes do primeiro `snapshot` do stream não se sabe nada das ligações, nem que não há. */

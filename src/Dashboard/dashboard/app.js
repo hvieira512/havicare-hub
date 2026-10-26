@@ -18,13 +18,13 @@ import {
     initDeviceList,
     restoreSelectedDevice,
 } from "./devices/list.js";
-import { renderSelection } from "./devices/detail.js";
-import { initDetailFilters } from "./devices/detail-filters.js";
+import { renderSelection } from "./devices/detail/detail.js";
+import { initDetailFilters } from "./devices/detail/detail-filters.js";
 import { initDeviceStream } from "./devices/stream.js";
 import { initEditWizard } from "./devices/edit-wizard.js";
 import { configPanelIfLoaded, initDeviceModal, loadConfigPanel } from "./devices/device-modal.js";
 import { initCreateWizard, openWizard } from "./devices/create-wizard.js";
-import { refreshGatewayOptions } from "./devices/gateway-links-ui.js";
+import { refreshGatewayOptions } from "./devices/gateways/gateway-links-ui.js";
 import { initNotifications } from "./notifications.js";
 import { initRadarMapModal } from "./devices/radar/radar-map-modal.js";
 import { initSettings, loadSettingsModal } from "./settings/index.js";

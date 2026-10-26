@@ -4,7 +4,7 @@ import { cacheElements } from "../../src/Dashboard/dashboard/dom.js";
 
 const { state } = await import("../../src/Dashboard/dashboard/state.js");
 const { renderDownlinkRequests } = await import(
-    "../../src/Dashboard/dashboard/devices/detail.js",
+    "../../src/Dashboard/dashboard/devices/detail/detail.js",
 );
 
 /** Radares, gateways e medidores de fralda não recebem pedidos: o painel deles sai. */

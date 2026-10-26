@@ -2,17 +2,17 @@ import {
     createDeviceLink as apiCreateDeviceLink,
     deleteDeviceLink as apiDeleteDeviceLink,
     getDevices as apiGetDevices,
-} from "../api/index.js";
-import { allPages } from "../api/http.js";
-import { apiError } from "../dialogs.js";
-import { esc } from "../format.js";
-import { state } from "../state.js";
-import { linksToGateway, normalizeDeviceType } from "../domain.js";
+} from "../../api/index.js";
+import { allPages } from "../../api/http.js";
+import { apiError } from "../../dialogs.js";
+import { esc } from "../../format.js";
+import { state } from "../../state.js";
+import { linksToGateway, normalizeDeviceType } from "../../domain.js";
 import { eligibleGateways, gatewayLinkChanges, normalizeKey } from "./gateway-links.js";
 import { disposeTooltips, refreshTooltips } from "../tooltips.js";
 import { linkSignal } from "./gateway-signal.js";
 import { deviceCheckCard } from "./device-check-card.js";
-import { els } from "../dom.js";
+import { els } from "../../dom.js";
 
 /** O escolhedor de gateways do modal do dispositivo: com que gateways um sensor pode falar. */
 

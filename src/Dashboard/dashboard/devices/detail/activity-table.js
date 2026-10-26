@@ -1,7 +1,7 @@
-import { html } from "../html.js";
-import { emptyPanel } from "../components/empty-panel.js";
-import { renderInto } from "../dom.js";
-import { dayKey, dayLabel } from "../format.js";
+import { html } from "../../html.js";
+import { emptyPanel } from "../../components/empty-panel.js";
+import { renderInto } from "../../dom.js";
+import { dayKey, dayLabel } from "../../format.js";
 
 /** Tabela de atividade da telemetria e dos pedidos: pinta as linhas e trata da gaveta. */
 

@@ -21,7 +21,7 @@ import {
     suppliersForDeviceType,
 } from "../domain.js";
 import { createWizard } from "../wizard.js";
-import { syncGatewayLinks } from "./gateway-links-ui.js";
+import { syncGatewayLinks } from "./gateways/gateway-links-ui.js";
 import {
     licenseBadgeValue,
     licensePickerHtml,
@@ -35,8 +35,8 @@ import {
     wizardProgressHtml,
     wizardTrailHtml,
 } from "../components/wizard-cards.js";
-import { deviceCheckCard } from "./device-check-card.js";
-import { eligibleGateways, normalizeKey } from "./gateway-links.js";
+import { deviceCheckCard } from "./gateways/device-check-card.js";
+import { eligibleGateways, normalizeKey } from "./gateways/gateway-links.js";
 import {
     ensureDeviceTypeSuppliersModelsLoaded,
     loadSummary,

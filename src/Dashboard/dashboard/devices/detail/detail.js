@@ -1,13 +1,13 @@
 import {
     requestFeature as apiRequestFeature,
-} from "../api/index.js";
+} from "../../api/index.js";
 import {
     resetDetailFiltersDraft,
     setDownlinkPage,
     setTelemetryPage,
     state,
-} from "../state.js";
-import { deviceTypeLabel, normalizeDeviceType } from "../domain.js";
+} from "../../state.js";
+import { deviceTypeLabel, normalizeDeviceType } from "../../domain.js";
 import {
     commandError,
     commandLabel,
@@ -17,30 +17,30 @@ import {
     duration,
     timeOnly,
     when,
-} from "../format.js";
-import { html } from "../html.js";
-import { optionLabel } from "../i18n.js";
-import { joinMarkup } from "../components/cards/shared.js";
-import { els, renderInto } from "../dom.js";
-import { capabilityLabel } from "../capability-catalog.js";
-import { apiError, toast } from "../dialogs.js";
-import { deviceLicenseBlock, deviceLicenseLabel } from "../components/device-license.js";
-import { presenceBadge, presenceOf, PRESENCE_LABEL } from "../components/state-badge.js";
-import { cardTone, uplinkCardContent } from "../components/cards/telemetry.js";
-import { telemetryCard } from "../components/cards/shell.js";
+} from "../../format.js";
+import { html } from "../../html.js";
+import { optionLabel } from "../../i18n.js";
+import { joinMarkup } from "../../components/cards/shared.js";
+import { els, renderInto } from "../../dom.js";
+import { capabilityLabel } from "../../capability-catalog.js";
+import { apiError, toast } from "../../dialogs.js";
+import { deviceLicenseBlock, deviceLicenseLabel } from "../../components/device-license.js";
+import { presenceBadge, presenceOf, PRESENCE_LABEL } from "../../components/state-badge.js";
+import { cardTone, uplinkCardContent } from "../../components/cards/telemetry.js";
+import { telemetryCard } from "../../components/cards/shell.js";
 import {
     requestCardContent,
     requestCardShell,
     statusBadge,
-} from "../components/cards/request.js";
+} from "../../components/cards/request.js";
 import { fallSummaryCard, helpCallSummaryCard, proximityAlarmSummaryCard } from "./event-summary-cards.js";
-import { onRadarPresence } from "./radar/radar-map-modal.js";
+import { onRadarPresence } from "../radar/radar-map-modal.js";
 import { activityTable } from "./activity-table.js";
-import { protocolHelpCallPressModes } from "./config/protocol-catalog.js";
-import { renderPagination } from "../pagination.js";
-import { loadMoreButton, pagedRows } from "../components/pagination.js";
+import { protocolHelpCallPressModes } from "../config/protocol-catalog.js";
+import { renderPagination } from "../../pagination.js";
+import { loadMoreButton, pagedRows } from "../../components/pagination.js";
 import { disposeTooltips, refreshTooltips } from "../tooltips.js";
-import { gatewaySignalRows } from "./gateway-signal.js";
+import { gatewaySignalRows } from "../gateways/gateway-signal.js";
 import { renderConnectionHistory } from "./connection-history.js";
 import {
     allDetailItems,

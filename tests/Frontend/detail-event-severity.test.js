@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 
 const { state } = await import("../../src/Dashboard/dashboard/state.js");
 const { allDetailItems, detailFilterChipLabels, filterDetailItems } =
-    await import("../../src/Dashboard/dashboard/devices/detail-filters.js");
+    await import("../../src/Dashboard/dashboard/devices/detail/detail-filters.js");
 
 const event = (type, severity, data = {}) => ({
     type,

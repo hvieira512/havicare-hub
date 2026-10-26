@@ -7,7 +7,7 @@ import {
     signalBand,
     signalLabel,
     signalMeter as buildMeter,
-} from "../../src/Dashboard/dashboard/devices/gateway-signal.js";
+} from "../../src/Dashboard/dashboard/devices/gateways/gateway-signal.js";
 import { asText } from "./support/dom.js";
 
 const signalMeter = asText(buildMeter);

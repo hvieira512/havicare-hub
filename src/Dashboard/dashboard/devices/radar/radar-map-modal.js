@@ -7,7 +7,7 @@ import { areaTypeStyle } from "../../radar-style.js";
 import { when } from "../../format.js";
 import { html } from "../../html.js";
 import { apiError, confirmDestructive, toast } from "../../dialogs.js";
-import { refreshTooltips } from "../../tooltips.js";
+import { refreshTooltips } from "../tooltips.js";
 import { createRadarScene } from "./radar-scene.js";
 import { createAreaEditor } from "./radar-area-editor.js";
 import { renderVitals } from "./radar-vitals.js";

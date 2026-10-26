@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { asText } from "./support/dom.js";
 
 const { telemetryRequestCards, renderRequestCardGroup: buildGroup } = await import(
-    "../../src/Dashboard/dashboard/devices/detail.js",
+    "../../src/Dashboard/dashboard/devices/detail/detail.js",
 );
 
 const renderRequestCardGroup = asText(buildGroup);

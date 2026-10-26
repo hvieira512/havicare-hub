@@ -5,7 +5,7 @@ import {
     eligibleGateways,
     gatewayKeysFromLinks,
     gatewayLinkChanges,
-} from "../../src/Dashboard/dashboard/devices/gateway-links.js";
+} from "../../src/Dashboard/dashboard/devices/gateways/gateway-links.js";
 
 test("gateway selector only offers gateways from the sensor company and license", () => {
     const devices = [
@@ -40,7 +40,7 @@ test("gateway link changes support multiple additions and removals", () => {
 });
 
 test("syncing links tries every gateway and reports each one that failed", async () => {
-    const { syncGatewayLinks } = await import("../../src/Dashboard/dashboard/devices/gateway-links-ui.js");
+    const { syncGatewayLinks } = await import("../../src/Dashboard/dashboard/devices/gateways/gateway-links-ui.js");
     let calls = 0;
     globalThis.fetch = async (url) => {
         calls += 1;

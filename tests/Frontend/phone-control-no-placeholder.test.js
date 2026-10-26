@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { renderPhoneControl } from "../../src/Dashboard/dashboard/phone.js";
+import { renderPhoneControl } from "../../src/Dashboard/dashboard/devices/phone.js";
 import { parseFragment } from "./support/dom.js";
 
 /** Um número cinzento num campo vazio lê-se como um número lá escrito. */

@@ -6,7 +6,7 @@ const { state } = await import("../../src/Dashboard/dashboard/state.js");
 const {
     renderTelemetryList,
     renderDownlinkRequests,
-} = await import("../../src/Dashboard/dashboard/devices/detail.js");
+} = await import("../../src/Dashboard/dashboard/devices/detail/detail.js");
 
 /**
  * Os dois paginadores saem do mesmo `renderPagination`, e cada um leva o seu prefixo nas

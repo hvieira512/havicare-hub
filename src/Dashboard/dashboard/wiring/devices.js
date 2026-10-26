@@ -1,6 +1,6 @@
 /** Os ouvintes da coluna dos dispositivos; raiz de composição, pode importar de onde precisar. */
 import { state } from "../state.js";
-import { syncPhoneControl } from "../phone.js";
+import { syncPhoneControl } from "../devices/phone.js";
 import { normalizeDeviceType } from "../domain.js";
 import { confirmDestructive } from "../dialogs.js";
 import { emptyPanel } from "../components/empty-panel.js";
@@ -21,7 +21,7 @@ import {
 } from "../devices/list.js";
 import {
     requestTelemetryFeature,
-} from "../devices/detail.js";
+} from "../devices/detail/detail.js";
 import {
     applyDetailFilters,
     applyDetailSearch,
@@ -33,9 +33,9 @@ import {
     SIDE_BY_SIDE_QUERY,
     syncDetailSearchPlaceholder,
     updateDetailFilterDraft,
-} from "../devices/detail-filters.js";
-import { toggleActivityRow } from "../devices/activity-table.js";
-import { handleConnectionHistoryClick } from "../devices/connection-history.js";
+} from "../devices/detail/detail-filters.js";
+import { toggleActivityRow } from "../devices/detail/activity-table.js";
+import { handleConnectionHistoryClick } from "../devices/detail/connection-history.js";
 import { DEVICE_CARD_ACTION } from "../devices/device-card.js";
 import {
     closeRadarMap,
@@ -61,7 +61,7 @@ import { openWizard } from "../devices/create-wizard.js";
 import {
     refreshGatewayOptions,
     updateGatewayLinkSelection,
-} from "../devices/gateway-links-ui.js";
+} from "../devices/gateways/gateway-links-ui.js";
 import { countLabel } from "../i18n.js";
 import { els } from "../dom.js";
 

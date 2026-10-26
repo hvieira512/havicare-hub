@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 const { activityTable } =
-    await import("../../src/Dashboard/dashboard/devices/activity-table.js");
+    await import("../../src/Dashboard/dashboard/devices/detail/activity-table.js");
 
 /**
  * A data sobe para um cabeçalho por dia e a linha fica só com a hora: a largura que sobra vai

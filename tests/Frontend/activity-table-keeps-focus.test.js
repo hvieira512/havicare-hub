@@ -1,10 +1,10 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { activityTable } from "../../src/Dashboard/dashboard/devices/activity-table.js";
+import { activityTable } from "../../src/Dashboard/dashboard/devices/detail/activity-table.js";
 
 const { state } = await import("../../src/Dashboard/dashboard/state.js");
-const { telemetryActivityRow } = await import("../../src/Dashboard/dashboard/devices/detail.js");
+const { telemetryActivityRow } = await import("../../src/Dashboard/dashboard/devices/detail/detail.js");
 
 /** O stream redesenha a cada mensagem, e o `innerHTML` deita fora o elemento com o foco. */
 const rows = [

@@ -1,6 +1,6 @@
 import { html } from "../../../html.js";
 import { field } from "../../../components/form-field.js";
-import { renderPhoneControl } from "../../../phone.js";
+import { renderPhoneControl } from "../../phone.js";
 import { boolValue } from "../normalizers.js";
 import {
     boundedNumber,

@@ -1,5 +1,5 @@
 import { state } from "../../state.js";
-import { syncPhoneControl } from "../../phone.js";
+import { syncPhoneControl } from "../phone.js";
 import {
     dismissConfigFeedback,
     saveDeviceConfiguration,

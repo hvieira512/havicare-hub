@@ -26,7 +26,7 @@ import {
     renderDeviceFilterControls,
     renderDeviceFilterSkeleton,
 } from "./list-filters.js";
-import { renderSelection as renderSelectionDetail } from "./detail.js";
+import { renderSelection as renderSelectionDetail } from "./detail/detail.js";
 import { connectDeviceStream, disconnectDeviceStream, isDeviceStreamFor } from "./stream.js";
 import { els } from "../dom.js";
 

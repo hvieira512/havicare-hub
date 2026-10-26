@@ -13,7 +13,7 @@ import {
 } from "./index.js";
 import { emptyPanel } from "../../components/empty-panel.js";
 import { apiError, confirmDestructive, toast } from "../../dialogs.js";
-import { resetPhoneControls } from "../../phone.js";
+import { resetPhoneControls } from "../phone.js";
 import { state } from "../../state.js";
 import { CONFIG_INPUTS } from "./inputs/index.js";
 import { countLabel } from "../../i18n.js";

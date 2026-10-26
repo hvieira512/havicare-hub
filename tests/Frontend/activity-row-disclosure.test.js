@@ -4,9 +4,9 @@ import { cacheElements } from "../../src/Dashboard/dashboard/dom.js";
 
 const { state } = await import("../../src/Dashboard/dashboard/state.js");
 const { renderTelemetryList } =
-    await import("../../src/Dashboard/dashboard/devices/detail.js");
+    await import("../../src/Dashboard/dashboard/devices/detail/detail.js");
 const { toggleActivityRow } =
-    await import("../../src/Dashboard/dashboard/devices/activity-table.js");
+    await import("../../src/Dashboard/dashboard/devices/detail/activity-table.js");
 
 /**
  * Os detalhes cortam-se numa linha, o que fica de fora abre-se, e a linha aberta continua

@@ -7,7 +7,7 @@ import { cacheElements } from "../../src/Dashboard/dashboard/dom.js";
 
 const { state } = await import("../../src/Dashboard/dashboard/state.js");
 const { refreshGatewayOptions } =
-    await import("../../src/Dashboard/dashboard/devices/gateway-links-ui.js");
+    await import("../../src/Dashboard/dashboard/devices/gateways/gateway-links-ui.js");
 
 const els = autoEls((name) => (name.endsWith("Btn")
     ? "button"

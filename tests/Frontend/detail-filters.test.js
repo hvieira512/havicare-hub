@@ -15,7 +15,7 @@ const {
     initDetailFilters,
     populateDetailFilterTypes,
     syncDetailFilterControls,
-} = await import("../../src/Dashboard/dashboard/devices/detail-filters.js");
+} = await import("../../src/Dashboard/dashboard/devices/detail/detail-filters.js");
 
 const els = autoEls((name) => (name === "detailFilterType" || name === "detailFilterSeverity"
     ? "select"

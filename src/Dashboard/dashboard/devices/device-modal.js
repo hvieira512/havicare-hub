@@ -16,15 +16,15 @@ import {
 } from "./edit-wizard.js";
 import {
     renderSelection,
-} from "./detail.js";
+} from "./detail/detail.js";
 import {
     refreshGatewayOptions,
     selectedGatewayKeys,
     syncGatewayLinks,
-} from "./gateway-links-ui.js";
+} from "./gateways/gateway-links-ui.js";
 import {
     gatewayKeysFromLinks,
-} from "./gateway-links.js";
+} from "./gateways/gateway-links.js";
 import {
     companyLabel,
     deviceTypeFields,
@@ -54,7 +54,7 @@ import {
     normalizePhoneControl,
     renderPhoneControl,
     resetPhoneControls,
-} from "../phone.js";
+} from "./phone.js";
 import {
     modelImageHtml,
     modelPreviewHtml,

@@ -1,4 +1,4 @@
-import { resetPhoneControls } from "../../phone.js";
+import { resetPhoneControls } from "../phone.js";
 import { refreshAlarmLine, syncAlarmClockCustomVisibility } from "./alarm-fields.js";
 import { nextUid, syncSwitchLabel } from "./inputs/shared.js";
 

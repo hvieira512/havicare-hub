@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 
 const { state } = await import("../../src/Dashboard/dashboard/state.js");
 const { telemetryActivityRow } =
-    await import("../../src/Dashboard/dashboard/devices/detail.js");
+    await import("../../src/Dashboard/dashboard/devices/detail/detail.js");
 
 /**
  * Há mais para ver quando o renderizador declara um `detailsTitle` (a linha é um resumo) ou

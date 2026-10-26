@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { helpCallSummaryCard as buildCard } from "../../src/Dashboard/dashboard/devices/event-summary-cards.js";
+import { helpCallSummaryCard as buildCard } from "../../src/Dashboard/dashboard/devices/detail/event-summary-cards.js";
 import { asText } from "./support/dom.js";
 
 const helpCallSummaryCard = asText(buildCard);

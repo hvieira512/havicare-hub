@@ -7,9 +7,9 @@ const { state } = await import("../../src/Dashboard/dashboard/state.js");
 const {
     handleDownlinkPagerClick,
     handleTelemetryPagerClick,
-} = await import("../../src/Dashboard/dashboard/devices/detail-filters.js");
+} = await import("../../src/Dashboard/dashboard/devices/detail/detail-filters.js");
 const { renderTelemetryList } = await import(
-    "../../src/Dashboard/dashboard/devices/detail.js",
+    "../../src/Dashboard/dashboard/devices/detail/detail.js",
 );
 
 const pagerClick = (action, page = "") => {
