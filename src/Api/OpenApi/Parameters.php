@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Hub\Api\OpenApi;
 
+use Hub\Api\Http\CollectionPresenter;
+
 /**
  * Construtores de parâmetros OpenAPI reutilizáveis, partilhados pelas definições de rotas.
  */
@@ -94,11 +96,13 @@ final class Parameters
     /**
      * @return array<int, array<string, mixed>> os parâmetros de query `page` e `limit`
      */
-    public static function pagination(int $defaultLimit = 20): array
+    public static function pagination(?int $maximum = null): array
     {
+        $limit = ['type' => 'integer', 'default' => CollectionPresenter::DEFAULT_LIMIT];
+
         return [
             self::query('page', ['type' => 'integer', 'default' => 1]),
-            self::query('limit', ['type' => 'integer', 'default' => $defaultLimit]),
+            self::query('limit', $maximum === null ? $limit : $limit + ['maximum' => $maximum]),
         ];
     }
 }

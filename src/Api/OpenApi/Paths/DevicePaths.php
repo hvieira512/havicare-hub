@@ -28,7 +28,7 @@ final class DevicePaths
                     'summary' => 'List devices',
                     // Os filtros de conjunto aceitam `deviceType[]=a&deviceType[]=b` ou `deviceType=a,b`. `license`
                     // escolhe `empresa`, `empresa:número` ou `none`; `company` e `licenseId` continuam a funcionar.
-                    'parameters' => array_merge(Parameters::pagination(5), [
+                    'parameters' => array_merge(Parameters::pagination(maximum: 200), [
                         Parameters::stringList('deviceType'),
                         Parameters::stringList('supplier'),
                         Parameters::stringList('model'),

@@ -430,7 +430,8 @@ token que o hitCare lê (ver o [Pendente do hitCare](08-contrato-mqtt.md#pendent
 }
 ```
 
-O `limit` por omissão é **20**, com uma exceção: o `/api/devices` usa **5**.
+O `limit` por omissão é **20**. O `/api/devices` aceita no máximo **200**: um
+valor maior ajusta-se a 200, e a resposta diz o `limit` que valeu.
 
 Toda a coleção que cresce com o uso devolve este envelope. Ficam de fora quatro,
 por serem outra coisa: o `/api/capabilities` e o `/api/protocols` são catálogos

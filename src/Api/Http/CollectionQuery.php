@@ -25,9 +25,9 @@ final class CollectionQuery
     }
 
     /** @param array<string, mixed> $params */
-    public function limit(array $params, int $default): int
+    public function limit(array $params, int $default, int $max = PHP_INT_MAX): int
     {
-        return max(1, (int)($params['limit'] ?? $default));
+        return min($max, max(1, (int)($params['limit'] ?? $default)));
     }
 
     /** @param array<string, mixed> $params */

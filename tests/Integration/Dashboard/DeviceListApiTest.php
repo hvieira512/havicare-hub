@@ -29,6 +29,22 @@ final class DeviceListApiTest extends MysqlDashboardTestCase
         self::assertSame('9300000011', $api->show('864293000000111', null, '')['device']['deviceId'] ?? null);
     }
 
+    /** Uma página da lista custa uma leitura do Redis por linha: o tamanho tem tecto, e acima dele ajusta-se. */
+    public function testThePageSizeIsClampedAtTwoHundred(): void
+    {
+        [$api] = $this->makeApi();
+
+        self::assertSame(200, $api->list('page=1&limit=100000', null, '')['pagination']['limit'] ?? null);
+    }
+
+    /** A lista segue o tamanho de página por omissão das outras coleções. */
+    public function testThePageSizeDefaultsToTwenty(): void
+    {
+        [$api] = $this->makeApi();
+
+        self::assertSame(20, $api->list('', null, '')['pagination']['limit'] ?? null);
+    }
+
     /** O filtro de modelo compara o nome inteiro: «L08» não traz o «L08 Pro». */
     public function testListModelFilterMatchesTheWholeNameAndNotAPrefix(): void
     {
@@ -37,6 +53,7 @@ final class DeviceListApiTest extends MysqlDashboardTestCase
         self::assertSame(0, $api->list('page=1&limit=5&model=L08', null, '')['pagination']['total'] ?? null);
         self::assertSame(1, $api->list('page=1&limit=5&model=L08 Pro', null, '')['pagination']['total'] ?? null);
         self::assertSame(1, $api->list('page=1&limit=5&q=L08', null, '')['pagination']['total'] ?? null);
+        self::assertSame(1, $api->list('page=1&limit=5&q=l08', null, '')['pagination']['total'] ?? null, 'a pesquisa ignora maiúsculas');
     }
 
     public function testListAcceptsSeveralValuesForTheSameFilter(): void
@@ -96,11 +113,11 @@ final class DeviceListApiTest extends MysqlDashboardTestCase
      */
     public function testTheOnlineFilterGroupsByPresence(): void
     {
-        [$api, $db, $store] = $this->makeApi();
-        $db->whitelist->register('900000000000011', 'Vivistar', 'L08 Pro');
-        $db->whitelist->register('748b34830e5b', 'JoyTech', 'HC-3018B', 'thermometer');
-        $db->whitelist->register('748b34838278', 'JoyTech', 'HC-101', 'pulse_oximeter');
-        $db->whitelist->register('bf7cbe84a6199e98168qvb', 'PST', 'CF103W', 'bracelet');
+        [$api, , $store, $whitelist] = $this->makeApi();
+        $whitelist->register('900000000000011', 'Vivistar', 'L08 Pro');
+        $whitelist->register('748b34830e5b', 'JoyTech', 'HC-3018B', 'thermometer');
+        $whitelist->register('748b34838278', 'JoyTech', 'HC-101', 'pulse_oximeter');
+        $whitelist->register('bf7cbe84a6199e98168qvb', 'PST', 'CF103W', 'bracelet');
         $store->deviceSeen('861265061009822', ['online' => '1', 'protocol' => 'vivistar-iw']);
         $store->deviceSeen('748b34838278', ['online' => '1', 'protocol' => 'joytech-spo2']);
         $store->deviceSeen('bf7cbe84a6199e98168qvb', ['online' => '1', 'protocol' => 'tuya-cloud']);

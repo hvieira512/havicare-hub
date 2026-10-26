@@ -10,7 +10,7 @@ namespace Hub\Api\Http;
  */
 final class CollectionPresenter
 {
-    private const DEFAULT_LIMIT = 20;
+    public const DEFAULT_LIMIT = 20;
 
     public function __construct(private CollectionQuery $query = new CollectionQuery())
     {

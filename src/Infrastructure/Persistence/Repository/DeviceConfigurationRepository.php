@@ -369,8 +369,10 @@ final class DeviceConfigurationRepository
             ORDER BY config_key
         ");
         $stmt->execute([$imei]);
+        $rows = $stmt->fetchAll();
+        $operations = $this->operationsOf(array_map(static fn (array $row): string => (string)$row['change_id'], $rows));
         $changes = [];
-        foreach ($stmt->fetchAll() as $change) {
+        foreach ($rows as $change) {
             $change['desired_payload'] = $this->decode((string)$change['desired_payload']);
             $change['effective_payload'] = $change['effective_payload'] === null
                 ? null : $this->decode((string)$change['effective_payload']);
@@ -380,7 +382,7 @@ final class DeviceConfigurationRepository
                 $change,
                 ['created_at', 'updated_at', 'confirmed_at', 'superseded_at']
             );
-            $change['operations'] = $this->operations((string)$change['change_id']);
+            $change['operations'] = $operations[(string)$change['change_id']] ?? [];
             $changes[] = $change;
         }
         return $changes;
@@ -465,23 +467,34 @@ final class DeviceConfigurationRepository
     }
 
     /** @return list<array<string,mixed>> */
-    private function operations(string $changeId): array
+    /**
+     * As operações de várias alterações numa consulta, por alteração e pela ordem de envio.
+     *
+     * @param list<string> $changeIds
+     * @return array<string, list<array<string, mixed>>>
+     */
+    private function operationsOf(array $changeIds): array
     {
+        if ($changeIds === []) {
+            return [];
+        }
         $stmt = $this->pdo->prepare('
-            SELECT operation_id, native_key, native_type, target, confirmation_mode, delivery_status,
+            SELECT change_id, operation_id, native_key, native_type, target, confirmation_mode, delivery_status,
                    error_code, attempts, created_at, updated_at, sent_at, acknowledged_at
             FROM device_configuration_operations
-            WHERE change_id = ? ORDER BY sequence_number
+            WHERE change_id IN (' . implode(',', array_fill(0, count($changeIds), '?')) . ')
+            ORDER BY change_id, sequence_number
         ');
-        $stmt->execute([$changeId]);
+        $stmt->execute($changeIds);
 
-        return array_map(
-            static fn(array $row): array => TimestampFormatter::isoColumns(
-                $row,
-                ['created_at', 'updated_at', 'sent_at', 'acknowledged_at']
-            ),
-            $stmt->fetchAll()
-        );
+        $byChange = [];
+        foreach ($stmt->fetchAll() as $row) {
+            $changeId = (string)$row['change_id'];
+            unset($row['change_id']);
+            $byChange[$changeId][] = TimestampFormatter::isoColumns($row, ['created_at', 'updated_at', 'sent_at', 'acknowledged_at']);
+        }
+
+        return $byChange;
     }
 
     private function refreshChangeForOperation(string $operationId): void
@@ -494,7 +507,7 @@ final class DeviceConfigurationRepository
         }
         // Numa alteração em curso, uma operação substituída deu lugar a outras da mesma alteração.
         $operations = array_values(array_filter(
-            $this->operations($changeId),
+            $this->operationsOf([$changeId])[$changeId] ?? [],
             static fn (array $operation): bool => $operation['delivery_status'] !== 'superseded',
         ));
         $statuses = array_column($operations, 'delivery_status');

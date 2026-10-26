@@ -122,7 +122,7 @@ final class WhitelistRepository
     public function countDevices(array $filters, ?int $licenseScope = null, ?string $companyScope = null): int
     {
         [$whereSql, $params] = $this->buildWhereClause($filters, $licenseScope, $companyScope);
-        $stmt = $this->pdo->prepare('SELECT COUNT(*) FROM whitelist w' . $this->deviceJoinSql() . $whereSql);
+        $stmt = $this->pdo->prepare('SELECT COUNT(*) FROM whitelist w' . $whereSql);
         $stmt->execute($params);
 
         return (int)$stmt->fetchColumn();
@@ -362,7 +362,7 @@ final class WhitelistRepository
                     continue;
                 }
 
-                $clauses[] = '(LOWER(w.imei) LIKE LOWER(?) OR LOWER(w.supplier) LIKE LOWER(?) OR LOWER(w.model) LIKE LOWER(?) OR LOWER(w.sim_number) LIKE LOWER(?) OR LOWER(w.company) LIKE LOWER(?))';
+                $clauses[] = '(w.imei LIKE ? OR w.supplier LIKE ? OR w.model LIKE ? OR w.sim_number LIKE ? OR w.company LIKE ?)';
                 $needle = '%' . $token . '%';
                 array_push($params, $needle, $needle, $needle, $needle, $needle);
             }
@@ -473,7 +473,7 @@ final class WhitelistRepository
         [$whereSql, $params] = $this->buildWhereClause($candidateFilters, $licenseScope, $companyScope);
         $stmt = $this->pdo->prepare(
             "SELECT {$column} AS {$alias}, COUNT(*) AS total FROM whitelist w"
-            . $this->deviceJoinSql() . $whereSql
+            . $whereSql
             . " GROUP BY {$column} ORDER BY total DESC, {$column}"
         );
         $stmt->execute($params);
@@ -503,7 +503,7 @@ final class WhitelistRepository
         [$whereSql, $params] = $this->buildWhereClause($candidateFilters, $licenseScope, $companyScope);
         $stmt = $this->pdo->prepare(
             'SELECT w.supplier AS supplier, w.model AS model, COUNT(*) AS total FROM whitelist w'
-            . $this->deviceJoinSql() . $whereSql
+            . $whereSql
             . ' GROUP BY w.supplier, w.model ORDER BY w.supplier, w.model'
         );
         $stmt->execute($params);
@@ -559,7 +559,7 @@ final class WhitelistRepository
         [$whereSql, $params] = $this->buildWhereClause($candidateFilters, $licenseScope, $companyScope);
         $stmt = $this->pdo->prepare(
             'SELECT w.company AS company, w.license_id AS license_id, COUNT(*) AS total FROM whitelist w'
-            . $this->deviceJoinSql() . $whereSql
+            . $whereSql
             . ' GROUP BY w.company, w.license_id ORDER BY w.company, w.license_id'
         );
         $stmt->execute($params);

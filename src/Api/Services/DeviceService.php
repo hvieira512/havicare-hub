@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Hub\Api\Services;
 
 use Hub\Api\Http\ApiError;
+use Hub\Api\Http\CollectionPresenter;
 use Hub\Api\Http\CollectionQuery;
 use Hub\Api\Http\DevicePresentation;
 use Hub\Api\Http\ModelImageUrl;
@@ -85,7 +86,7 @@ class DeviceService
     {
         $params = $this->query->params($query);
         $page = $this->query->page($params);
-        $limit = $this->query->limit($params, 5);
+        $limit = $this->query->limit($params, CollectionPresenter::DEFAULT_LIMIT, max: 200);
         // Todos aceitam vários valores menos o estado, que é uma escolha de três.
         $filters = [
             'deviceType' => $this->query->filterList($params, 'deviceType'),
@@ -180,11 +181,11 @@ class DeviceService
     private function onDemandImeis(): array
     {
         $onDemand = array_filter(
-            $this->db->whitelist->all(),
-            static fn (array $row): bool => Liveness::isOnDemand(ProtocolRegistry::forModel((string)$row['supplier'], (string)$row['model'])),
+            $this->whitelist->all(),
+            static fn (DeviceMetadata $device): bool => Liveness::isOnDemand(ProtocolRegistry::forModel($device->supplier, $device->model)),
         );
 
-        return array_map(static fn (array $row): string => (string)$row['imei'], array_values($onDemand));
+        return array_map(strval(...), array_keys($onDemand));
     }
 
     /** @return array<string, mixed> */

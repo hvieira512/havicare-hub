@@ -19,7 +19,7 @@ use Tests\Support\Doubles\InMemoryRedisClient;
 trait DevicesApiFixture
 {
     /**
-     * @return array{0: DeviceService, 1: ApiDataAccess, 2: DeviceStore}
+     * @return array{0: DeviceService, 1: ApiDataAccess, 2: DeviceStore, 3: Whitelist}
      */
     private function makeApi(?DeviceHubServer $hub = null): array
     {
@@ -34,7 +34,7 @@ trait DevicesApiFixture
         $submitted = [];
         $api = new DeviceService($store, $whitelist, $hub ?? $this->recordingHub($submitted), $db);
 
-        return [$api, $db, $store];
+        return [$api, $db, $store, $whitelist];
     }
 
     /**
