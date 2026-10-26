@@ -167,7 +167,7 @@ export async function saveDeviceConfigurations(container) {
         toast("error", error instanceof Error ? error.message : "Não foi possível enviar as alterações");
     } finally {
         if (button) button.dataset.configPhase = "idle";
-        renderDeviceConfigurationModal();
+        renderDeviceConfigurationModal({ keepEditedExcept: Object.keys(changed) });
     }
 }
 
@@ -210,7 +210,7 @@ export async function saveDeviceConfiguration(section, actionValue = "") {
     }
 
     setConfigUi(key, { phase: "submitting" });
-    renderDeviceConfigurationModal();
+    renderDeviceConfigurationModal({ keepEditedExcept: [key] });
 
     const imei = state.deviceModal.imei;
     try {
@@ -233,7 +233,7 @@ export async function saveDeviceConfiguration(section, actionValue = "") {
                     message: apiError(result),
                 },
             });
-            renderDeviceConfigurationModal();
+            renderDeviceConfigurationModal({ keepEditedExcept: [key] });
             return;
         }
 
@@ -260,10 +260,10 @@ export async function saveDeviceConfiguration(section, actionValue = "") {
 
         // Sem mensagem: o destino do pedido conta-o a pastilha. Limpa-se o erro anterior.
         setConfigUi(key, { phase: "sent", feedback: null });
-        renderDeviceConfigurationModal();
+        renderDeviceConfigurationModal({ keepEditedExcept: [key] });
         transitionConfigPhase(key, "sent", 1200, () => {
             clearConfigUi(key, "phase", "sent");
-            renderDeviceConfigurationModal();
+            renderDeviceConfigurationModal({ keepEditedExcept: [key] });
         });
     } catch (error) {
         setConfigUi(key, {
@@ -276,7 +276,7 @@ export async function saveDeviceConfiguration(section, actionValue = "") {
                         : "Falha ao enviar configuração",
             },
         });
-        renderDeviceConfigurationModal();
+        renderDeviceConfigurationModal({ keepEditedExcept: [key] });
     }
 }
 
@@ -431,10 +431,15 @@ export function resetConfigUiState() {
     configPhaseTimers.clear();
 }
 
-export function renderDeviceConfigurationModal() {
+/**
+ * Com `keepEditedExcept`, os blocos com edição por enviar sobrevivem ao redesenho, salvo os das
+ * chaves indicadas: enviar uma definição não apaga o que se escreveu noutra.
+ */
+export function renderDeviceConfigurationModal({ keepEditedExcept = null } = {}) {
     if (!els.deviceConfigRoot) {
         return;
     }
+    const kept = keepEditedExcept ? editedBlocksExcept(els.deviceConfigRoot, keepEditedExcept) : [];
 
     if (state.deviceModal.loading || state.deviceModal.catalogLoading) {
         els.deviceConfigRoot.innerHTML = emptyPanel(
@@ -475,8 +480,25 @@ export function renderDeviceConfigurationModal() {
     });
     resetPhoneControls(els.deviceConfigRoot);
     captureConfigPristine(els.deviceConfigRoot);
+    for (const block of kept) {
+        els.deviceConfigRoot.querySelector(blockSelector(block))?.replaceWith(block);
+    }
     syncConfigCounts(els.deviceConfigRoot);
     armConfigFeedbackAutoClose();
+}
+
+function editedBlocksExcept(root, keys) {
+    const sections = [...root.querySelectorAll("[data-config-section]")]
+        .filter((section) => section.dataset.configTransient !== "1" && isConfigBlockEdited(section));
+    const rows = [...root.querySelectorAll("[data-config-group] [data-config-row]")]
+        .filter((row) => isConfigBlockEdited(row) && !sections.some((section) => section.contains(row)));
+
+    return [...sections, ...rows].filter((block) => !keys.includes(block.dataset.configKey || ""));
+}
+
+function blockSelector(block) {
+    const kind = "configSection" in block.dataset ? "[data-config-section]" : "[data-config-group] [data-config-row]";
+    return `${kind}[data-config-key="${CSS.escape(block.dataset.configKey || "")}"]`;
 }
 
 /** Conta edições por submeter, não entregas; as nunca gravadas à parte, que viajam sem lhes tocarem. */

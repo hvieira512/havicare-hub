@@ -415,8 +415,6 @@ function renderRequestCards(
     const falls = fallSummaryCard(events);
     const proximityAlarms = proximityAlarmSummaryCard(events);
 
-    disposeTooltips(els.requestGrid);
-
     // Com um grupo só, a faixa com o nome do grupo não separa nada.
     const cards = totalCards
         ? groups

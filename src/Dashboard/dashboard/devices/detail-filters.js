@@ -221,10 +221,16 @@ function telemetryFilterLabel(type) {
 
 /** O rascunho manda mesmo vazio, daí o `??` e não o `||`: um campo apagado é uma escolha. */
 export function syncDetailFilterControls() {
-    els.detailFilterFrom.value = state.detailFiltersDraft?.from ?? state.detailFilters.from;
-    els.detailFilterTo.value = state.detailFiltersDraft?.to ?? state.detailFilters.to;
-    els.detailFilterType.value = state.detailFiltersDraft?.type ?? state.detailFilters.type;
-    els.detailFilterSeverity.value = state.detailFiltersDraft?.severity ?? state.detailFilters.severity;
+    for (const [field, element] of [
+        ["from", els.detailFilterFrom],
+        ["to", els.detailFilterTo],
+        ["type", els.detailFilterType],
+        ["severity", els.detailFilterSeverity],
+    ]) {
+        // O campo em que se está a escrever ainda não chegou ao rascunho, e o redesenho apagava-o.
+        if (element === document.activeElement) continue;
+        element.value = state.detailFiltersDraft?.[field] ?? state.detailFilters[field];
+    }
     syncDetailRangeButtons();
     renderDetailActiveFilters();
 }

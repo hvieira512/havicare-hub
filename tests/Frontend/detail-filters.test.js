@@ -38,6 +38,19 @@ describe("draft", () => {
         assert.equal(els.detailFilterFrom.value, "", "o campo devia ficar vazio");
     });
 
+    /** O stream redesenha várias vezes por segundo, e uma data a meio de ser escrita não chega ao rascunho. */
+    test("a field being typed in is not overwritten by a render", () => {
+        document.body.append(els.detailFilterFrom);
+        els.detailFilterFrom.type = "datetime-local";
+        els.detailFilterFrom.focus();
+        els.detailFilterFrom.value = "2026-09-22T07:15";
+
+        syncDetailFilterControls();
+
+        assert.equal(els.detailFilterFrom.value, "2026-09-22T07:15");
+        els.detailFilterFrom.blur();
+    });
+
     test("without a draft the fields show what is applied", () => {
         state.detailFiltersDraft = null;
 
