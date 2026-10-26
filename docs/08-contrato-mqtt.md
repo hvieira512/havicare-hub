@@ -192,9 +192,10 @@ relógio a cada ligação, não têm ciclo publicado.
 
 Três regras dizem quando é que um comando acaba:
 
-- **Em fila, espera.** Um comando para um aparelho desligado fica `queued` o tempo
-  que for preciso, e só acaba quando o aparelho volta e responde, ou quando um
-  pedido mais recente para a mesma coisa o substitui (`superseded`).
+- **Em fila, espera sete dias.** Um comando para um aparelho desligado fica
+  `queued` até o aparelho voltar e responder, ou até um pedido mais recente para a
+  mesma coisa o substituir (`superseded`). Sete dias depois do pedido sem nada
+  disso, acaba em `failed` com `retry_exhausted`.
 - **Entregue, tem três tentativas.** Um comando que saiu e ficou sem resposta é
   repetido de minuto a minuto; à terceira entrega sem resposta acaba em `failed`
   com `retry_exhausted`. Vale igual por socket, por gateway e pela cloud. Quando o
@@ -233,7 +234,7 @@ O `error.code` de um `failed` é sempre uma enumeração em snake_case:
 | --- | --- |
 | `device_rejected` | O aparelho recusou |
 | `response_timeout` | Não respondeu a tempo |
-| `retry_exhausted` | Esgotou as três entregas sem resposta |
+| `retry_exhausted` | Esgotou as três entregas sem resposta, ou esperou sete dias na fila pelo aparelho |
 | `delivery_failed` | Não chegou ao aparelho |
 | `invalid_payload` | O valor não cabe no que o aparelho aceita; o motivo vem em `error.message` quando o há |
 | `mode_not_supported`, `cloud_rejected` | Radar — a cloud do fabricante recusou |

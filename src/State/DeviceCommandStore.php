@@ -17,6 +17,9 @@ final class DeviceCommandStore
     /** Os estados que deixam o aparelho no índice depois da passagem de repetição. */
     private const PENDING = ['queued', 'waiting'];
 
+    /** Quanto tempo um comando em fila espera que o aparelho volte. */
+    private const QUEUED_LIFETIME_SECONDS = 7 * 86400;
+
     private bool $pendingIndexed = false;
 
     /** @var null|\Closure(string, string, array<string, mixed>): void */
@@ -402,9 +405,13 @@ final class DeviceCommandStore
                 if (!in_array($status, ['waiting', 'queued'], true)) {
                     continue;
                 }
-                // Em fila e repetível quer dizer "à espera de o dispositivo voltar": esse é
-                // da varredura de repetição, que o reenvia o tempo que for preciso.
+                // Em fila e repetível quer dizer "à espera de o dispositivo voltar": a varredura de
+                // repetição reenvia-o, até sete dias depois do pedido.
                 if ($status === 'queued' && ($command['retryable'] ?? false)) {
+                    $requestedAt = strtotime((string)($command['requestedAt'] ?? '')) ?: 0;
+                    if ($requestedAt > 0 && $requestedAt <= time() - self::QUEUED_LIFETIME_SECONDS) {
+                        $this->finish($imei, $command, 'failed', 'retry_exhausted');
+                    }
                     continue;
                 }
                 $startedAt = $this->commandStartedAt($command);

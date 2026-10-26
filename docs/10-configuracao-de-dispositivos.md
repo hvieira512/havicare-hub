@@ -87,6 +87,7 @@ stateDiagram-v2
     created --> sent: dispositivo ligado
     created --> queued: dispositivo offline
     queued --> sent: voltou a ligar-se
+    queued --> failed: sete dias sem voltar
     sent --> waiting: à espera de resposta
     waiting --> acked: o aparelho respondeu
     waiting --> failed: recusou
