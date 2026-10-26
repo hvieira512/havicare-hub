@@ -9,7 +9,7 @@ use Hub\Api\Http\ApiError;
 use Hub\Command\Configuration\Payload\QinglanstPayloadBuilder;
 use Hub\Domain\DeviceMetadata;
 use Hub\Infrastructure\Persistence\Repository\ApiDataAccess;
-use Hub\Ingress\Http\Qinglanst\RadarLayoutSync;
+use Hub\Ingress\Mqtt\Qinglanst\Cloud\RadarLayoutSync;
 use React\Promise\PromiseInterface;
 
 use function React\Promise\resolve;

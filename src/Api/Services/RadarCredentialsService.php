@@ -7,7 +7,7 @@ namespace Hub\Api\Services;
 use Hub\Api\Http\ApiError;
 use Hub\Api\Request\RadarCredentialsWriteRequest;
 use Hub\Infrastructure\Persistence\Repository\ApiDataAccess;
-use Hub\Ingress\Http\Qinglanst\RadarLayoutSync;
+use Hub\Ingress\Mqtt\Qinglanst\Cloud\RadarLayoutSync;
 use React\Promise\PromiseInterface;
 
 use function React\Promise\resolve;

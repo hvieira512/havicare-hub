@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Tests\Unit\Ingress\Http\Qinglanst;
+namespace Tests\Unit\Ingress\Mqtt\Qinglanst\Cloud;
 
-use Hub\Ingress\Http\Qinglanst\LayoutParser;
+use Hub\Ingress\Mqtt\Qinglanst\Cloud\LayoutParser;
 use PHPUnit\Framework\TestCase;
 
 /** Respostas reais do `thirdparty/v2/deviceProp` de dois radares: um com as chaves das áreas seguidas e outro com buracos. */

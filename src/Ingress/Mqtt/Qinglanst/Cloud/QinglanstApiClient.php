@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Hub\Ingress\Http\Qinglanst;
+namespace Hub\Ingress\Mqtt\Qinglanst\Cloud;
 
 use Psr\Http\Message\ResponseInterface;
 use React\Http\Browser;

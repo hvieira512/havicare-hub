@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Tests\Integration\Ingress\Http\Qinglanst;
+namespace Tests\Integration\Ingress\Mqtt\Qinglanst\Cloud;
 
 use Hub\Infrastructure\Persistence\Repository\ApiDataAccess;
-use Hub\Ingress\Http\Qinglanst\QinglanstCloudCommands;
-use Hub\Ingress\Http\Qinglanst\RadarStateAbsorber;
+use Hub\Ingress\Mqtt\Qinglanst\Cloud\QinglanstCloudCommands;
+use Hub\Ingress\Mqtt\Qinglanst\Cloud\RadarStateAbsorber;
 use Tests\Support\Doubles\RecordingHubMqttBridge;
 use Tests\Support\MysqlDashboardTestCase;
 use Tests\Support\TestInventory;

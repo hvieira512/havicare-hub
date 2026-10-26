@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Tests\Unit\Ingress\Http\Qinglanst;
+namespace Tests\Unit\Ingress\Mqtt\Qinglanst\Cloud;
 
-use Hub\Ingress\Http\Qinglanst\RequestSignature;
+use Hub\Ingress\Mqtt\Qinglanst\Cloud\RequestSignature;
 use PHPUnit\Framework\TestCase;
 
 /** Os esperados são constantes para apanhar uma mudança na cadeia assinada, que o fabricante recusa com um 401 seco. */

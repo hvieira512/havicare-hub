@@ -2,15 +2,15 @@
 
 declare(strict_types=1);
 
-namespace Tests\Integration\Ingress\Http\Qinglanst;
+namespace Tests\Integration\Ingress\Mqtt\Qinglanst\Cloud;
 
 use Hub\Infrastructure\Persistence\Repository\RadarApiCredentialsRepository;
 use Hub\Infrastructure\Persistence\Repository\RadarLayoutRepository;
 use Hub\Infrastructure\Persistence\Repository\WhitelistRepository;
-use Hub\Ingress\Http\Qinglanst\LayoutParser;
-use Hub\Ingress\Http\Qinglanst\QinglanstApiClient;
-use Hub\Ingress\Http\Qinglanst\QinglanstApiException;
-use Hub\Ingress\Http\Qinglanst\RadarLayoutSync;
+use Hub\Ingress\Mqtt\Qinglanst\Cloud\LayoutParser;
+use Hub\Ingress\Mqtt\Qinglanst\Cloud\QinglanstApiClient;
+use Hub\Ingress\Mqtt\Qinglanst\Cloud\QinglanstApiException;
+use Hub\Ingress\Mqtt\Qinglanst\Cloud\RadarLayoutSync;
 use PDO;
 use React\Promise\PromiseInterface;
 use Tests\Support\MysqlDashboardTestCase;

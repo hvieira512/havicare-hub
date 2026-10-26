@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace Tests\Unit\Ingress\Http\Qinglanst;
+namespace Tests\Unit\Ingress\Mqtt\Qinglanst\Cloud;
 
 use Hub\Command\Downlink\PendingDownlink;
 use Hub\Command\Downlink\RedisPendingDownlinkQueue;
-use Hub\Ingress\Http\Qinglanst\QinglanstApiClient;
-use Hub\Ingress\Http\Qinglanst\QinglanstCloudCommands;
-use Hub\Ingress\Http\Qinglanst\QinglanstCloudDownlinks;
+use Hub\Ingress\Mqtt\Qinglanst\Cloud\QinglanstApiClient;
+use Hub\Ingress\Mqtt\Qinglanst\Cloud\QinglanstCloudCommands;
+use Hub\Ingress\Mqtt\Qinglanst\Cloud\QinglanstCloudDownlinks;
 use PHPUnit\Framework\TestCase;
 use React\Promise\PromiseInterface;
 use Tests\Support\Doubles\InMemoryRedisClient;

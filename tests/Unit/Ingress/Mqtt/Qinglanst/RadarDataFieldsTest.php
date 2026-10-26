@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Ingress\Mqtt\Qinglanst;
 
-use Hub\Ingress\Http\Qinglanst\QinglanstCloudCommands;
+use Hub\Ingress\Mqtt\Qinglanst\Cloud\QinglanstCloudCommands;
 use Hub\Ingress\Mqtt\Qinglanst\MessageNormalizer;
 use Hub\Ingress\Mqtt\Qinglanst\PayloadDecoder;
 use Hub\Ingress\Mqtt\Qinglanst\QinglanstTopic;

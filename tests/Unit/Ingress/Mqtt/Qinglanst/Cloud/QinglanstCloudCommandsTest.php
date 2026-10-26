@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Tests\Unit\Ingress\Http\Qinglanst;
+namespace Tests\Unit\Ingress\Mqtt\Qinglanst\Cloud;
 
-use Hub\Ingress\Http\Qinglanst\QinglanstCloudCommands;
+use Hub\Ingress\Mqtt\Qinglanst\Cloud\QinglanstCloudCommands;
 use PHPUnit\Framework\TestCase;
 
 /** Mapeia as configurações do hub para os campos do `deviceProp` e para os quatro pedidos de escrita da cloud. */
