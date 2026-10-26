@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Support\Doubles;
 
-use Hub\Device\ConnectionInterface;
+use Hub\Ingress\Tcp\ConnectionInterface;
 
 /** Escrita à mão porque o `resourceId` é uma propriedade com hook que o `createStub` não sabe implementar. */
 final class FakeConnection implements ConnectionInterface

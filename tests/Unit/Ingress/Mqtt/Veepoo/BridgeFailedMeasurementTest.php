@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Ingress\Mqtt\Veepoo;
 
-use Hub\Device\PendingDownlink;
-use Hub\Device\RedisPendingDownlinkQueue;
+use Hub\Command\Downlink\PendingDownlink;
+use Hub\Command\Downlink\RedisPendingDownlinkQueue;
 use Hub\State\DeviceStoreContract;
 use PHPUnit\Framework\TestCase;
 use Tests\Support\Doubles\IngressFixtures;
@@ -163,7 +163,7 @@ final class BridgeFailedMeasurementTest extends TestCase
     /** Vibrar e parar são a mesma operação: a falha de um não leva o outro. */
     public function testAFailedCommandTakesOnlyItsOwnKeyOutOfTheQueue(): void
     {
-        $queue = new \Hub\Device\RedisPendingDownlinkQueue(new \Tests\Support\Doubles\InMemoryRedisClient());
+        $queue = new \Hub\Command\Downlink\RedisPendingDownlinkQueue(new \Tests\Support\Doubles\InMemoryRedisClient());
         $start = $queue->enqueue(self::BRACELET, 'config:find_device', ['command' => 'config:find_device', 'payload' => ['enabled' => true]], 300);
         $stop = $queue->enqueue(self::BRACELET, 'config:find_device', ['command' => 'config:find_device', 'payload' => ['enabled' => false]], 300);
         $bridge = VeepooFixtures::bridge(new RecordingHubMqttBridge(), $queue);

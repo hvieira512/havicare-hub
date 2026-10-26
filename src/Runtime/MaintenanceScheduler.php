@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Hub\Runtime;
 
+use Hub\Command\Downlink\DownlinkRetryContext;
 use Hub\Device\ConnectionAnnouncer;
-use Hub\Device\DeviceHubServer;
-use Hub\Device\DownlinkRetryContext;
+use Hub\Ingress\Tcp\DeviceHubServer;
 use Hub\Log\Logger;
 use Hub\State\DeviceStore;
 use React\EventLoop\LoopInterface;

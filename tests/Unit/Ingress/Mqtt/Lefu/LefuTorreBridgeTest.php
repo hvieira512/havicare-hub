@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Ingress\Mqtt\Lefu;
 
-use Hub\Device\RedisPendingDownlinkQueue;
+use Hub\Command\Downlink\RedisPendingDownlinkQueue;
 use Hub\Ingress\Mqtt\JoyTech\RecentMeasurementKeys;
 use Hub\Ingress\Mqtt\Lefu\LefuTorreBridge;
 use Hub\Ingress\Mqtt\Lefu\ScaleOnlineUsers;
@@ -186,7 +186,7 @@ final class LefuTorreBridgeTest extends TestCase
     public function testASilentSessionEnds(): void
     {
         $mqtt = new RecordingHubMqttBridge();
-        $queue = new \Hub\Device\RedisPendingDownlinkQueue(new \Tests\Support\Doubles\InMemoryRedisClient());
+        $queue = new \Hub\Command\Downlink\RedisPendingDownlinkQueue(new \Tests\Support\Doubles\InMemoryRedisClient());
         $bridge = $this->bridge($mqtt, $queue);
         IngressFixtures::relay($bridge, self::TOPIC, self::message('session', ['connected' => true, 'mtu' => 61]));
         $mqtt->gatewayCommands = [];

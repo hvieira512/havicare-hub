@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Hub\Ingress\Mqtt\Gateway;
 
 use DateTimeImmutable;
+use Hub\Command\Downlink\PendingDownlink;
+use Hub\Command\Downlink\RedisPendingDownlinkQueue;
 use Hub\Device\HubMqttBridge;
-use Hub\Device\PendingDownlink;
-use Hub\Device\RedisPendingDownlinkQueue;
 use Hub\Log\Logger;
 use Hub\State\DeviceCommandLog;
 

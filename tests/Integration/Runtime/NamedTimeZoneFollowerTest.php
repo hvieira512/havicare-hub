@@ -18,7 +18,7 @@ final class NamedTimeZoneFollowerTest extends DashboardHttpTestCase
     public function testTheZoneIsRewrittenAndTheClockSetOnlyWhenTheOffsetChanged(): void
     {
         $sent = [];
-        $hub = $this->createMock(\Hub\Device\DeviceHubServer::class);
+        $hub = $this->createMock(\Hub\Ingress\Tcp\DeviceHubServer::class);
         $hub->method('submitDownlink')->willReturnCallback(function (string $_imei, string $_bytes, ?array $context = null) use (&$sent): string {
             $sent[] = (string)($context['command'] ?? '');
             return 'sent';

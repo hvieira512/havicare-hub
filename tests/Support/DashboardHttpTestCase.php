@@ -5,10 +5,10 @@ namespace Tests\Support;
 use GuzzleHttp\Psr7\ServerRequest;
 use Hub\Api\Auth\ApiTokenStore;
 use Hub\Api\Auth\LoginThrottle;
+use Hub\Command\Downlink\RedisPendingDownlinkQueue;
 use Hub\Dashboard\DashboardHttpOptions;
 use Hub\Dashboard\DashboardHttpServer;
 use Hub\Device\MessageFanout;
-use Hub\Device\RedisPendingDownlinkQueue;
 use Hub\Infrastructure\Persistence\Repository\ApiDataAccess;
 use Hub\Log\Logger;
 use Hub\Registry\Whitelist;
@@ -74,7 +74,7 @@ abstract class DashboardHttpTestCase extends MysqlDashboardTestCase
      * @return array{0: callable, 1: ApiDataAccess, 2: DeviceStore, 3: MessageFanout}
      */
     protected function makeServerWithDatabase(
-        ?\Hub\Device\DeviceHubServer $hub = null,
+        ?\Hub\Ingress\Tcp\DeviceHubServer $hub = null,
         ?RedisPendingDownlinkQueue $queue = null,
         bool $apiAuthRequired = true,
         int $apiTokenTtlSeconds = 3600,
@@ -106,7 +106,7 @@ abstract class DashboardHttpTestCase extends MysqlDashboardTestCase
         $store->runtime->registerDevice('861265061009844', 'Vivistar', 'L08 Pro', 'watch', 0, '', '', 'null');
 
         if ($hub === null) {
-            $hub = $this->createMock(\Hub\Device\DeviceHubServer::class);
+            $hub = $this->createMock(\Hub\Ingress\Tcp\DeviceHubServer::class);
             $hub->method('submitDownlink')->willReturn('sent');
         }
 

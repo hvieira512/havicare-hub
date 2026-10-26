@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Device;
 
-use Hub\Device\RedisPendingDownlinkQueue;
+use Hub\Command\Downlink\RedisPendingDownlinkQueue;
 use PHPUnit\Framework\TestCase;
 use Tests\Support\Doubles\InMemoryRedisClient;
 

@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Ingress\Tcp;
 
-use Hub\Device\DeviceSession;
 use Hub\Ingress\Tcp\DeviceEventDecoder;
+use Hub\Ingress\Tcp\DeviceSession;
 use Hub\Ingress\Tcp\FourPTouch\FourPTouchAdapter;
 use Hub\Ingress\Tcp\FourPTouch\FourPTouchTcpProtocol;
 use Hub\Ingress\Tcp\Wonlex\WonlexAdapter;

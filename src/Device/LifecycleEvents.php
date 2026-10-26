@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Hub\Device;
 
+use Hub\Ingress\Tcp\DeviceAuthorizer;
 use Hub\Registry\Whitelist;
 
 /**

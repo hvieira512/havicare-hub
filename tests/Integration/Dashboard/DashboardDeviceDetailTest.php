@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Tests\Integration\Dashboard;
 
 use GuzzleHttp\Psr7\ServerRequest;
-use Hub\Device\RedisPendingDownlinkQueue;
+use Hub\Command\Downlink\RedisPendingDownlinkQueue;
 use Tests\Support\ConfigurationFixtures;
 use Tests\Support\DashboardHttpTestCase;
 use Tests\Support\Doubles\InMemoryRedisClient;
@@ -90,7 +90,7 @@ final class DashboardDeviceDetailTest extends DashboardHttpTestCase
     public function testDeviceDetailAndGenericConfigurationPutExposeNewPendingShape(): void
     {
         $submitted = [];
-        $hub = $this->createMock(\Hub\Device\DeviceHubServer::class);
+        $hub = $this->createMock(\Hub\Ingress\Tcp\DeviceHubServer::class);
         $hub->method('submitDownlink')->willReturnCallback(function (string $imei, string $bytes) use (&$submitted): string {
             $submitted[] = ['imei' => $imei, 'bytes' => $bytes];
             return 'sent';
@@ -142,7 +142,7 @@ final class DashboardDeviceDetailTest extends DashboardHttpTestCase
     public function testResyncSendsAnUnchangedValueAgain(): void
     {
         $submitted = 0;
-        $hub = $this->createMock(\Hub\Device\DeviceHubServer::class);
+        $hub = $this->createMock(\Hub\Ingress\Tcp\DeviceHubServer::class);
         $hub->method('submitDownlink')->willReturnCallback(function () use (&$submitted): string {
             $submitted++;
             return 'sent';

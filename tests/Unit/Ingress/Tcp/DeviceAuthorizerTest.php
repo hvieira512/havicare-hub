@@ -1,0 +1,93 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Tests\Unit\Ingress\Tcp;
+
+use Hub\Ingress\Tcp\DeviceAuthorizer;
+use Hub\Ingress\Tcp\DeviceIdentity;
+use Hub\Registry\Whitelist;
+use PHPUnit\Framework\TestCase;
+use Tests\Support\Doubles\IngressFixtures;
+
+final class DeviceAuthorizerTest extends TestCase
+{
+    private Whitelist $whitelist;
+
+    protected function setUp(): void
+    {
+        $this->whitelist = IngressFixtures::whitelist([
+            '865028000000306' => ['supplier' => 'Wonlex', 'model' => 'HW20PRO'],
+            '865028000000307' => ['supplier' => 'Wonlex', 'model' => 'WONLEX-HEALTH'],
+            '637507597567372' => ['supplier' => '4P Touch', 'model' => '4P-TOUCH', 'deviceId' => '7597567372'],
+        ]);
+    }
+
+    public function testAllowsAuthorizedDeviceAndReturnsExpectedModel(): void
+    {
+        $authorizer = new DeviceAuthorizer(
+            $this->whitelist,
+            $this->commercialResolver()
+        );
+
+        $result = $authorizer->authorize(new DeviceIdentity('865028000000306', 'wonlex-json'));
+
+        self::assertTrue($result->allowed);
+        self::assertSame('Wonlex', $result->supplier);
+        self::assertSame('HW20PRO', $result->model);
+        self::assertSame('Wonlex HW20 Pro', $result->commercialName);
+    }
+
+    public function testRejectsUnknownDevice(): void
+    {
+        $authorizer = new DeviceAuthorizer(
+            $this->whitelist,
+            $this->commercialResolver()
+        );
+
+        self::assertSame(
+            'device_not_authorized',
+            $authorizer->authorize(new DeviceIdentity('865028000000999', 'wonlex-json'))->reason
+        );
+    }
+
+    public function testResolvesFourPTouchProtocolIdToCanonicalImei(): void
+    {
+        $authorizer = new DeviceAuthorizer(
+            $this->whitelist,
+            $this->commercialResolver()
+        );
+
+        $result = $authorizer->authorize(new DeviceIdentity('7597567372', 'four-p-touch', ident: '7597567372'));
+
+        self::assertTrue($result->allowed);
+        self::assertSame('637507597567372', $result->imei);
+        self::assertSame('4P Touch', $result->supplier);
+        self::assertSame('4P-TOUCH', $result->model);
+        self::assertSame('4P Touch D46', $result->commercialName);
+    }
+
+    private function commercialResolver(): \Hub\Device\CommercialModelResolver
+    {
+        return new class extends \Hub\Device\CommercialModelResolver {
+            public function __construct()
+            {
+            }
+
+            public function resolveCommercialName(string $supplier, string $model): string
+            {
+                if ($supplier === 'Wonlex' && $model === 'HW20PRO') {
+                    return 'Wonlex HW20 Pro';
+                }
+                if ($supplier === 'Wonlex' && $model === 'WONLEX-HEALTH') {
+                    return 'Wonlex Health';
+                }
+                if ($supplier === '4P Touch' && $model === '4P-TOUCH') {
+                    return '4P Touch D46';
+                }
+
+                return '';
+            }
+        };
+    }
+}

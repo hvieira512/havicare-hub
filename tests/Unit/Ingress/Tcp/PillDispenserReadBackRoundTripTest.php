@@ -1,0 +1,142 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Tests\Unit\Ingress\Tcp;
+
+use Hub\Command\DeviceCommandCatalog;
+use Hub\Ingress\Tcp\DeviceEventDecoder;
+use Hub\Ingress\Tcp\Zayata\PillDispenserAdapter;
+use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\TestCase;
+use Tests\Support\Doubles\PillDispenserFixtures;
+
+/** O `0x06` montado pelo construtor real lê-se como se fosse a resposta `0x86`. */
+final class PillDispenserReadBackRoundTripTest extends TestCase
+{
+    private const IMEI = '869243062262262';
+
+    public function testTheWarningTimeComesBackInMinutes(): void
+    {
+        $settings = $this->roundTrip('retrievalWarning', ['minutes' => 45]);
+
+        self::assertSame(['minutes' => 45], $settings['retrieval_warning'] ?? null);
+    }
+
+    public function testTheMissedTimeComesBackInMinutes(): void
+    {
+        $settings = $this->roundTrip('retrievalTimeout', ['minutes' => 90]);
+
+        self::assertSame(['minutes' => 90], $settings['retrieval_timeout'] ?? null);
+    }
+
+    public function testTheLoadedCellCountComesBack(): void
+    {
+        $settings = $this->roundTrip('loadedCells', ['cells' => 14]);
+
+        self::assertSame(['cells' => 14], $settings['loaded_cells'] ?? null);
+    }
+
+    /** O ano do período viaja em INT16U, e lê-lo como INT16S não dá erro porque 2026 cabe nos dois. */
+    public function testThePlanPeriodComesBackWithBothDates(): void
+    {
+        $settings = $this->roundTrip('medicationPeriod', [
+            'enabled' => true,
+            'startDate' => '2026-09-02',
+            'endDate' => '2026-09-04',
+        ]);
+
+        self::assertSame([
+            'enabled' => true,
+            'startDate' => '2026-09-02',
+            'endDate' => '2026-09-04',
+        ], $settings['medication_period'] ?? null);
+    }
+
+    public function testTheAlarmPlanComesBackWithTheHoursItWasGiven(): void
+    {
+        $settings = $this->roundTrip('medicationPlan', [
+            'plans' => [
+                ['slot' => 1, 'hour' => 9, 'minute' => 35],
+                ['slot' => 4, 'hour' => 20, 'minute' => 0],
+            ],
+        ]);
+
+        self::assertSame(['plans' => [
+            ['slot' => 1, 'hour' => 9, 'minute' => 35],
+            ['slot' => 4, 'hour' => 20, 'minute' => 0],
+        ]], $settings['medication_reminders'] ?? null);
+    }
+
+    /**
+     * As configurações de um só valor: a TAG escrita volta na resposta com o mesmo tipo e escala.
+     *
+     * @return iterable<string, array{string, array<string, mixed>, string, array<string, mixed>}>
+     */
+    public static function singleValueSettings(): iterable
+    {
+        yield 'volume' => ['alarmVolume', ['volume' => 2], 'alarm_volume', ['volume' => 2]];
+        yield 'ringtone' => ['alarmRingtone', ['ringtone' => 3], 'alarm_ringtone', ['ringtone' => 3]];
+        yield 'language' => ['deviceLanguage', ['language' => 1], 'device_language', ['language' => 1]];
+        yield 'time zone' => ['timeZone', ['timeZone' => 100], 'time_zone', ['timeZone' => 100]];
+        yield 'time zone to the west' => ['timeZone', ['timeZone' => -300], 'time_zone', ['timeZone' => -300]];
+        yield 'lock' => ['childLock', ['enabled' => true], 'child_lock', ['enabled' => true]];
+        yield 'early dispense' => ['earlyRetrieval', ['enabled' => false], 'early_dispense', ['enabled' => false]];
+        yield 'dispense after missing' =>
+            ['missedDispense', ['enabled' => true], 'missed_dispense', ['enabled' => true]];
+        yield 'emergency call' =>
+            ['emergencyCall', ['enabled' => false], 'emergency_call', ['enabled' => false]];
+        yield 'date format' => ['dateFormat', ['format' => 1], 'date_format', ['format' => 1]];
+        // O terceiro valor da gama: o aparelho declara máximo 2 e a ficha descreve dois.
+        yield 'US date format' =>
+            ['dateFormat', ['format' => 2], 'date_format', ['format' => 2]];
+        yield 'time format' => ['timeFormat', ['format' => 0], 'time_format', ['format' => 0]];
+        yield 'key sound' => ['keyTone', ['enabled' => true], 'key_tone', ['enabled' => true]];
+        yield 'automatic clock sync' =>
+            ['autoClock', ['enabled' => true], 'auto_clock', ['enabled' => true]];
+    }
+
+    /**
+     * @param array<string, mixed> $payload
+     * @param array<string, mixed> $expected
+     */
+    #[DataProvider('singleValueSettings')]
+    public function testASingleValueSettingComesBackUnchanged(
+        string $command,
+        array $payload,
+        string $key,
+        array $expected,
+    ): void {
+        self::assertSame($expected, $this->roundTrip($command, $payload)[$key] ?? null);
+    }
+
+    /**
+     * Monta o `0x06` que a escrita produz e lê-o de volta como a resposta `0x86`.
+     *
+     * @param array<string, mixed> $payload
+     * @return array<string, array<string, mixed>>
+     */
+    private function roundTrip(string $command, array $payload): array
+    {
+        $adapter = new PillDispenserAdapter();
+        $written = $adapter->decodeIncoming(
+            DeviceCommandCatalog::buildDownlink('zayata-m228', self::IMEI, $command, $payload)
+        );
+        self::assertIsArray($written);
+        self::assertSame(0x06, $written['packetType']);
+
+        $answer = $adapter->decodeIncoming($adapter->encodeOutgoing([
+            'packetType' => 0x86,
+            'mac' => 'AABBCCDDEEFF',
+            'tlv' => $written['tlv'],
+        ]));
+
+        foreach ((new DeviceEventDecoder())->decode(PillDispenserFixtures::session(), $answer) as $event) {
+            if ($event['feature'] === 'device_config') {
+                return $event['value']['settings'] ?? [];
+            }
+        }
+
+        self::fail('a resposta não saiu como configuração reportada');
+    }
+}

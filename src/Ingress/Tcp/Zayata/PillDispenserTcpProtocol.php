@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Hub\Ingress\Tcp\Zayata;
 
-use Hub\Device\DeviceSession;
 use Hub\Domain\Liveness;
 use Hub\Ingress\Tcp\DeviceAdapterInterface;
 use Hub\Ingress\Tcp\DeviceEventDecoder;
+use Hub\Ingress\Tcp\DeviceSession;
 use Hub\Ingress\Tcp\TcpMessage;
 use Hub\Ingress\Tcp\TcpProtocol;
 use Hub\Ingress\Tcp\TcpResponse;

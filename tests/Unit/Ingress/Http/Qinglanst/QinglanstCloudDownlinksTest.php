@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Ingress\Http\Qinglanst;
 
-use Hub\Device\PendingDownlink;
-use Hub\Device\RedisPendingDownlinkQueue;
+use Hub\Command\Downlink\PendingDownlink;
+use Hub\Command\Downlink\RedisPendingDownlinkQueue;
 use Hub\Ingress\Http\Qinglanst\QinglanstApiClient;
 use Hub\Ingress\Http\Qinglanst\QinglanstCloudCommands;
 use Hub\Ingress\Http\Qinglanst\QinglanstCloudDownlinks;

@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Tests\Unit\Runtime;
 
 use Hub\Device\CommercialModelResolver;
-use Hub\Device\DeviceHubServer;
+use Hub\Ingress\Tcp\DeviceHubServer;
 use Hub\Runtime\HubServices;
 use Hub\Runtime\MaintenanceScheduler;
 use Hub\State\DeviceStore;

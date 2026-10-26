@@ -117,7 +117,7 @@ final class DeviceConfigurationApiTest extends MysqlDashboardTestCase
     {
         // O MONITOR faz o relógio ligar de imediato para o número, em escuta silenciosa.
         // Não há forma de o gravar sem disparar a chamada, logo não é configuração.
-        $hub = $this->createMock(\Hub\Device\DeviceHubServer::class);
+        $hub = $this->createMock(\Hub\Ingress\Tcp\DeviceHubServer::class);
         $hub->expects(self::never())->method('submitDownlink');
         [$api, $db, $store] = $this->makeApi(hub: $hub);
         $model = $db->models->find('4P Touch', 'D46');
@@ -713,7 +713,7 @@ final class DeviceConfigurationApiTest extends MysqlDashboardTestCase
 
     public function testQueuedTelemetryRequestIsRedispatchedWhenDeliveryBecomesAvailable(): void
     {
-        $hub = $this->createMock(\Hub\Device\DeviceHubServer::class);
+        $hub = $this->createMock(\Hub\Ingress\Tcp\DeviceHubServer::class);
         $hub->method('submitDownlink')->willReturn('queued');
         [$api, $db, $store] = $this->makeApi(hub: $hub);
         $model = $db->models->find('Vivistar', 'L08 Pro');

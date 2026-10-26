@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Ingress\Mqtt;
 
+use Hub\Command\Downlink\RedisPendingDownlinkQueue;
 use Hub\Device\HubMqttBridge;
-use Hub\Device\RedisPendingDownlinkQueue;
 use Hub\Ingress\Mqtt\Gateway\GatewayRelay;
 use Hub\Ingress\Mqtt\JoyTech\BloodPressureHistoryMarks;
 use Hub\Ingress\Mqtt\JoyTech\JoyTechBpBridge;

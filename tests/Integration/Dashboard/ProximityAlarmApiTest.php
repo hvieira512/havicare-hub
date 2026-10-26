@@ -29,7 +29,7 @@ final class ProximityAlarmApiTest extends MysqlDashboardTestCase
         $db = ApiDataAccess::fromDatabase($database);
         $this->store = new DeviceStore(new InMemoryRedisClient());
         $this->store->setDataAccess($db);
-        $hub = $this->createMock(\Hub\Device\DeviceHubServer::class);
+        $hub = $this->createMock(\Hub\Ingress\Tcp\DeviceHubServer::class);
         $hub->method('submitDownlink')->willReturn('sent');
 
         $api = new DeviceService($this->store, new Whitelist($db->whitelist), $hub, $db);

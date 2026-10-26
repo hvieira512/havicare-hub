@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Device;
 
-use Hub\Device\DownlinkRetryContext;
+use Hub\Command\Downlink\DownlinkRetryContext;
 use PHPUnit\Framework\TestCase;
 
 /** Nos protocolos de gateway os bytes em fila são só o nome da operação, e repetir sem o valor executa com o interruptor a falso. */

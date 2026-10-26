@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Ingress\Mqtt\JoyTech;
 
-use Hub\Device\RedisPendingDownlinkQueue;
+use Hub\Command\Downlink\RedisPendingDownlinkQueue;
 use Hub\Ingress\Mqtt\JoyTech\BloodPressureHistoryMarks;
 use Hub\Ingress\Mqtt\JoyTech\JoyTechBpBridge;
 use Hub\Ingress\Mqtt\JoyTech\JoyTechFrame;
@@ -362,7 +362,7 @@ final class JoyTechBpBridgeTest extends TestCase
     public function testASilentSessionEnds(): void
     {
         $mqtt = new RecordingHubMqttBridge();
-        $queue = new \Hub\Device\RedisPendingDownlinkQueue(new \Tests\Support\Doubles\InMemoryRedisClient());
+        $queue = new \Hub\Command\Downlink\RedisPendingDownlinkQueue(new \Tests\Support\Doubles\InMemoryRedisClient());
         $bridge = $this->bridge($mqtt, $queue);
         IngressFixtures::relay($bridge, self::TOPIC, self::message('session', ['connected' => true]));
         $mqtt->gatewayCommands = [];

@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Hub\Ingress\Tcp;
 
-use Hub\Device\DeviceHubServer;
 use Hub\Log\Logger;
 use React\EventLoop\LoopInterface;
 use React\Socket\ConnectionInterface as ReactConnection;

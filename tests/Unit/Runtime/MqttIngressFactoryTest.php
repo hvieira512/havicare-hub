@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Runtime;
 
+use Hub\Command\Downlink\RedisPendingDownlinkQueue;
 use Hub\Device\CommercialModelResolver;
-use Hub\Device\RedisPendingDownlinkQueue;
 use Hub\Infrastructure\Persistence\Repository\ApiDataAccess;
 use Hub\Infrastructure\Persistence\Repository\DiaperSensitivityRepository;
 use Hub\Infrastructure\Persistence\Repository\GatewayDeviceLinkRepository;

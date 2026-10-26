@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Hub\Ingress\Mqtt\Lefu;
 
 use Hub\Command\Configuration\Payload\LefuTorreScaleUsers;
+use Hub\Command\Downlink\RedisPendingDownlinkQueue;
 use Hub\Device\CommercialModelResolver;
 use Hub\Device\HubMqttBridge;
-use Hub\Device\RedisPendingDownlinkQueue;
 use Hub\Domain\GatewayDeviceLinkLookup;
 use Hub\Ingress\Mqtt\Gateway\GattBridge;
 use Hub\Ingress\Mqtt\Gateway\GattDeviceContext;

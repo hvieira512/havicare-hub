@@ -1,0 +1,124 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Tests\Unit\Ingress\Tcp;
+
+use Hub\Ingress\Tcp\DeviceEventDecoder;
+use Hub\Ingress\Tcp\Zayata\PillDispenserAdapter;
+use Hub\Ingress\Tcp\Zayata\PillDispenserTcpProtocol;
+use Hub\State\ActiveAlarms;
+use PHPUnit\Framework\TestCase;
+use Tests\Support\Doubles\InMemoryRedisClient;
+use Tests\Support\Doubles\PillDispenserFixtures;
+
+/** O heartbeat do M228 repete as TAGs de estado a cada minuto, e uma condição que dura dá um evento só quando começa. */
+final class PillDispenserRepeatedConditionsTest extends TestCase
+{
+    private const FAULT_TRAY = 0x8122;
+    private const FAULT_PUSHER = 0x8123;
+    private const EMERGENCY = 0x8112;
+    private const ENVIRONMENT = 0x8111;
+
+    public function testAFaultThatLastsRaisesOneEvent(): void
+    {
+        $protocol = $this->protocol();
+
+        $types = [
+            ...$this->conditions($protocol, [self::FAULT_TRAY => 1]),
+            ...$this->conditions($protocol, [self::FAULT_TRAY => 1]),
+            ...$this->conditions($protocol, [self::FAULT_TRAY => 1]),
+        ];
+
+        self::assertSame(['device_fault:tray_reset'], $types);
+    }
+
+    /** O que já saiu fica no Redis: o hub que arranca não volta a anunciar a avaria acesa. */
+    public function testAFaultStillOnAfterARestartIsNotRaisedAgain(): void
+    {
+        $redis = new InMemoryRedisClient();
+
+        $types = [
+            ...$this->conditions($this->protocol(new ActiveAlarms($redis)), [self::FAULT_TRAY => 1]),
+            ...$this->conditions($this->protocol(new ActiveAlarms($redis)), [self::FAULT_TRAY => 1]),
+        ];
+
+        self::assertSame(['device_fault:tray_reset'], $types);
+    }
+
+    /** Limpa no aparelho e volta: é uma avaria nova. */
+    public function testAFaultThatClearsAndReturnsRaisesItAgain(): void
+    {
+        $protocol = $this->protocol();
+
+        $types = [
+            ...$this->conditions($protocol, [self::FAULT_TRAY => 1]),
+            ...$this->conditions($protocol, [self::FAULT_TRAY => 0]),
+            ...$this->conditions($protocol, [self::FAULT_TRAY => 1]),
+        ];
+
+        self::assertSame(['device_fault:tray_reset', 'device_fault:tray_reset'], $types);
+    }
+
+    /** Um pacote que não traz a TAG não diz que a avaria passou. */
+    public function testAPacketWithoutTheTagDoesNotClearIt(): void
+    {
+        $protocol = $this->protocol();
+
+        $types = [
+            ...$this->conditions($protocol, [self::FAULT_TRAY => 1]),
+            ...$this->conditions($protocol, [self::FAULT_PUSHER => 0]),
+            ...$this->conditions($protocol, [self::FAULT_TRAY => 1]),
+        ];
+
+        self::assertSame(['device_fault:tray_reset'], $types);
+    }
+
+    public function testEachConditionHasItsOwnState(): void
+    {
+        $protocol = $this->protocol();
+
+        $types = [
+            ...$this->conditions($protocol, [self::FAULT_TRAY => 1, self::EMERGENCY => 1]),
+            ...$this->conditions($protocol, [self::FAULT_TRAY => 1, self::EMERGENCY => 1, self::FAULT_PUSHER => 1, self::ENVIRONMENT => 1]),
+        ];
+
+        self::assertSame(
+            ['help_call:', 'device_fault:tray_reset', 'storage_environment:', 'device_fault:pusher'],
+            $types,
+        );
+    }
+
+    /**
+     * @param array<int, int> $tags
+     * @return list<string>
+     */
+    private function conditions(PillDispenserTcpProtocol $protocol, array $tags): array
+    {
+        $adapter = new PillDispenserAdapter();
+        $tlv = [];
+        foreach ($tags as $tag => $value) {
+            $tlv[$tag] = ['value' => chr($value)];
+        }
+        $message = $protocol->handleIncoming(PillDispenserFixtures::session(), $adapter->encodeOutgoing([
+            'packetType' => 0x02,
+            'mac' => 'AABBCCDDEEFF',
+            'tlv' => $tlv,
+        ]));
+        self::assertNotNull($message);
+
+        $types = [];
+        foreach ($message->telemetry as $event) {
+            if (in_array($event['type'], ['device_fault', 'help_call', 'storage_environment'], true)) {
+                $types[] = $event['type'] . ':' . ($event['data']['fault'] ?? '');
+            }
+        }
+
+        return $types;
+    }
+
+    private function protocol(ActiveAlarms $alarms = new ActiveAlarms()): PillDispenserTcpProtocol
+    {
+        return new PillDispenserTcpProtocol(new PillDispenserAdapter(), new DeviceEventDecoder(), alarms: $alarms);
+    }
+}

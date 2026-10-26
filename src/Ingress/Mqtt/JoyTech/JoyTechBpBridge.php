@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Hub\Ingress\Mqtt\JoyTech;
 
+use Hub\Command\Downlink\RedisPendingDownlinkQueue;
 use Hub\Device\CommercialModelResolver;
 use Hub\Device\HubMqttBridge;
-use Hub\Device\RedisPendingDownlinkQueue;
 use Hub\Domain\GatewayDeviceLinkLookup;
 use Hub\Domain\ProtocolRegistry;
 use Hub\Ingress\Mqtt\Gateway\GattBridge;

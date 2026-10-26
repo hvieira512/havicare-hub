@@ -15,7 +15,7 @@ final class ScaleUsersApiTest extends DashboardHttpTestCase
     public function testTheListIsStoredWithIdentifiersAndChangesBecomeRegistersAndDeletes(): void
     {
         $sent = [];
-        $hub = $this->createMock(\Hub\Device\DeviceHubServer::class);
+        $hub = $this->createMock(\Hub\Ingress\Tcp\DeviceHubServer::class);
         $hub->method('submitDownlink')->willReturnCallback(function (string $_imei, string $bytes) use (&$sent): string {
             $sent[] = $bytes;
             return 'queued';

@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Hub\Ingress\Tcp\Wonlex;
 
-use Hub\Device\DeviceSession;
 use Hub\Ingress\Tcp\DeviceAdapterInterface;
 use Hub\Ingress\Tcp\DeviceEventDecoder;
+use Hub\Ingress\Tcp\DeviceSession;
 use Hub\Ingress\Tcp\TcpProtocol;
 use Hub\Ingress\Tcp\TcpResponse;
 

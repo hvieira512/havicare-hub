@@ -11,13 +11,13 @@ use Hub\Command\Configuration\Payload\LefuTorreScaleUsers;
 use Hub\Command\DeliveryStatus;
 use Hub\Command\DeviceCommandCatalog;
 use Hub\Command\DeviceConfigurationCatalog;
-use Hub\Device\DeviceHubServer;
 use Hub\Domain\Capability\CapabilityCatalog;
 use Hub\Domain\Capability\CapabilityHelpers;
 use Hub\Domain\Capability\CapabilityRegistry;
 use Hub\Domain\Capability\Contacts\WonlexContactCodec;
 use Hub\Domain\Capability\Medication\PillDispenserMedicationRemindersHandler;
 use Hub\Infrastructure\Persistence\Repository\ApiDataAccess;
+use Hub\Ingress\Tcp\DeviceHubServer;
 use Hub\Log\Logger;
 use Hub\State\DeviceCommandLog;
 

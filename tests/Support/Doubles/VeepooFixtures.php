@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Tests\Support\Doubles;
 
+use Hub\Command\Downlink\RedisPendingDownlinkQueue;
 use Hub\Device\CommercialModelResolver;
-use Hub\Device\RedisPendingDownlinkQueue;
 use Hub\Ingress\Mqtt\Gateway\ObservationStateStore;
 use Hub\Ingress\Mqtt\Veepoo\VeepooBridge;
 use Hub\State\DeviceStoreContract;

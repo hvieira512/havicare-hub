@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Hub\Command;
 
-use Hub\Command\Downlink\FourPTouchDownlink;
-use Hub\Command\Downlink\VivistarDownlink;
-use Hub\Command\Downlink\WonlexDownlink;
-use Hub\Command\Downlink\ZayataDownlink;
 use Hub\Ingress\Tcp\FourPTouch\FourPTouchAdapter;
+use Hub\Ingress\Tcp\FourPTouch\FourPTouchDownlink;
+use Hub\Ingress\Tcp\Vivistar\VivistarDownlink;
+use Hub\Ingress\Tcp\Wonlex\WonlexDownlink;
+use Hub\Ingress\Tcp\Zayata\ZayataDownlink;
 
 final class DeviceCommandCatalog
 {
