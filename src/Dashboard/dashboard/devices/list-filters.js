@@ -1,7 +1,7 @@
 import { changeDeviceFilter, setDeviceFilters, state } from "../core/state.js";
 import { html } from "../core/html.js";
 import { filterChips } from "../components/chips.js";
-import { filterBranch, filterOption } from "../components/filter-tree.js";
+import { filterBranch, filterOption } from "./filter-tree.js";
 import { deviceTypeTiles } from "../components/device-type-tiles.js";
 import {
     companyLabel,

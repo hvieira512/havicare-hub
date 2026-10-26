@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { deviceLicenseBlock as buildBlock } from "../../src/Dashboard/dashboard/components/device-license.js";
+import { deviceLicenseBlock as buildBlock } from "../../src/Dashboard/dashboard/devices/device-license.js";
 import { asText } from "./support/dom.js";
 
 const deviceLicenseBlock = asText(buildBlock);

@@ -6,7 +6,7 @@ import {
 } from "../core/domain.js";
 import { modelPreviewHtml } from "../components/model-image.js";
 import { cardGrid } from "../components/wizard-cards.js";
-import { filterBranch, filterOption } from "../components/filter-tree.js";
+import { filterBranch, filterOption } from "./filter-tree.js";
 
 /** Tipo, modelo e licença do assistente de adicionar e do modal de editar: só HTML, sem estado. */
 

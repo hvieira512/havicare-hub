@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import { parseFragment } from "./support/dom.js";
-import { buttonGroup } from "../../src/Dashboard/dashboard/components/button-group.js";
+import { buttonGroup } from "../../src/Dashboard/dashboard/settings/button-group.js";
 
 /**
  * Um grupo de botões que devolve HTML em vez de o escrever no elemento que recebeu: escrever

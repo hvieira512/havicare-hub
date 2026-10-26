@@ -1,7 +1,7 @@
 import { loadModelFilters } from "./shell.js";
 import { state } from "../core/state.js";
 import { html } from "../core/html.js";
-import { buttonGroup } from "../components/button-group.js";
+import { buttonGroup } from "./button-group.js";
 import { sectionStrip } from "../components/chips.js";
 import { deviceTypeTiles } from "../components/device-type-tiles.js";
 import { cardIcon } from "../components/cards/telemetry.js";

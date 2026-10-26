@@ -24,7 +24,7 @@ import { joinMarkup } from "../../components/cards/shared.js";
 import { els, renderInto } from "../../core/dom.js";
 import { capabilityLabel } from "../../core/capability-catalog.js";
 import { apiError, toast } from "../../core/dialogs.js";
-import { deviceLicenseBlock, deviceLicenseLabel } from "../../components/device-license.js";
+import { deviceLicenseBlock, deviceLicenseLabel } from "../device-license.js";
 import { presenceBadge, presenceOf, PRESENCE_LABEL } from "../../components/state-badge.js";
 import { cardTone, uplinkCardContent } from "../../components/cards/telemetry.js";
 import { telemetryCard } from "../../components/cards/shell.js";

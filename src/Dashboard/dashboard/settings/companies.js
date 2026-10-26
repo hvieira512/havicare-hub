@@ -9,7 +9,7 @@ import {
 import { ensureLicensesLoaded, invalidateLicenses } from "../core/licenses.js";
 import { state } from "../core/state.js";
 import { html } from "../core/html.js";
-import { rowActionsMenu } from "../components/row-actions-menu.js";
+import { rowActionsMenu } from "./row-actions-menu.js";
 import { apiError, confirmDestructive, reportApiError, toast } from "../core/dialogs.js";
 import { clearInvalid } from "../core/validation.js";
 import { handleSettingsPaginationClick, setSettingsNavCount } from "./shell.js";

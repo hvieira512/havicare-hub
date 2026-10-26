@@ -5,7 +5,7 @@ import {
 } from "../api/index.js";
 import { ensureLicensesLoaded } from "../core/licenses.js";
 import { stateBadge } from "../components/state-badge.js";
-import { rowActionsMenu } from "../components/row-actions-menu.js";
+import { rowActionsMenu } from "./row-actions-menu.js";
 import { state } from "../core/state.js";
 import { html } from "../core/html.js";
 import { apiError, confirmDestructive, promptPassword, reportApiError, toast } from "../core/dialogs.js";

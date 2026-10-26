@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 import { parseFragment } from "./support/dom.js";
 import { html, raw } from "../../src/Dashboard/dashboard/core/html.js";
 import { field } from "../../src/Dashboard/dashboard/components/form-field.js";
-import { deviceLicenseBlock } from "../../src/Dashboard/dashboard/components/device-license.js";
+import { deviceLicenseBlock } from "../../src/Dashboard/dashboard/devices/device-license.js";
 import { uplinkCardContent } from "../../src/Dashboard/dashboard/components/cards/telemetry.js";
 import { telemetryCard } from "../../src/Dashboard/dashboard/components/cards/shell.js";
 import { compactDetails, joinMarkup } from "../../src/Dashboard/dashboard/components/cards/shared.js";
