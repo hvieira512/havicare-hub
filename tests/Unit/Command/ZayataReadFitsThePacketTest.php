@@ -5,11 +5,11 @@ declare(strict_types=1);
 namespace Tests\Unit\Command;
 
 use Hub\Command\DeviceCommandCatalog;
-use Hub\Ingress\Tcp\Zayata\PillDispenserAdapter;
+use Hub\Ingress\Tcp\Zayata\ZayataAdapter;
 use PHPUnit\Framework\TestCase;
 
 /** O aparelho deixa cair em silêncio uma trama maior do que o `0x8003` declara, e a leitura da configuração cresce com cada definição. */
-final class PillDispenserReadFitsThePacketTest extends TestCase
+final class ZayataReadFitsThePacketTest extends TestCase
 {
     private const IMEI = '869243062262262';
 
@@ -19,7 +19,7 @@ final class PillDispenserReadFitsThePacketTest extends TestCase
 
         foreach (self::readCommands() as $command) {
             $bytes = strlen(DeviceCommandCatalog::buildDownlink('zayata-m228', self::IMEI, $command, []));
-            if ($bytes > PillDispenserAdapter::MAX_FRAME_BYTES) {
+            if ($bytes > ZayataAdapter::MAX_FRAME_BYTES) {
                 $oversized[] = sprintf('%s produz %d bytes', $command, $bytes);
             }
         }
@@ -30,7 +30,7 @@ final class PillDispenserReadFitsThePacketTest extends TestCase
     /** Partir a leitura em duas e esquecer metade devolve configuração que nunca se confirma. */
     public function testTheReadCommandsCoverEveryConfigurationTagExactlyOnce(): void
     {
-        $adapter = new PillDispenserAdapter();
+        $adapter = new ZayataAdapter();
         $seen = [];
 
         foreach (self::readCommands() as $command) {
@@ -44,7 +44,7 @@ final class PillDispenserReadFitsThePacketTest extends TestCase
         }
 
         sort($seen);
-        $expected = PillDispenserAdapter::CONFIGURATION_TAGS;
+        $expected = ZayataAdapter::CONFIGURATION_TAGS;
         sort($expected);
 
         self::assertSame($expected, $seen);

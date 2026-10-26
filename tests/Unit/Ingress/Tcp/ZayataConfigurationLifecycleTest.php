@@ -6,24 +6,24 @@ namespace Tests\Unit\Ingress\Tcp;
 
 use Hub\Command\DeviceCommandCatalog;
 use Hub\Ingress\Tcp\DeviceEventDecoder;
-use Hub\Ingress\Tcp\Zayata\PillDispenserAdapter;
-use Hub\Ingress\Tcp\Zayata\PillDispenserTcpProtocol;
+use Hub\Ingress\Tcp\Zayata\ZayataAdapter;
+use Hub\Ingress\Tcp\Zayata\ZayataTcpProtocol;
 use PHPUnit\Framework\TestCase;
 
 /** Uma configuração escrita passa a «confirmada» quando o aparelho a confirma. */
-final class PillDispenserConfigurationLifecycleTest extends TestCase
+final class ZayataConfigurationLifecycleTest extends TestCase
 {
     private const IMEI = '869243062262262';
 
-    private function protocol(): PillDispenserTcpProtocol
+    private function protocol(): ZayataTcpProtocol
     {
-        return new PillDispenserTcpProtocol(new PillDispenserAdapter(), new DeviceEventDecoder());
+        return new ZayataTcpProtocol(new ZayataAdapter(), new DeviceEventDecoder());
     }
 
     /** @return array<string, mixed> */
     private function decodeFrame(string $frame): array
     {
-        $decoded = (new PillDispenserAdapter())->decodeIncoming($frame);
+        $decoded = (new ZayataAdapter())->decodeIncoming($frame);
         self::assertIsArray($decoded);
 
         return $decoded;
@@ -33,7 +33,7 @@ final class PillDispenserConfigurationLifecycleTest extends TestCase
     {
         $protocol = $this->protocol();
 
-        $aceite = (new PillDispenserAdapter())->encodeOutgoing([
+        $aceite = (new ZayataAdapter())->encodeOutgoing([
             'imei' => self::IMEI,
             'packetType' => 0x86,
             'tlv' => [
@@ -50,7 +50,7 @@ final class PillDispenserConfigurationLifecycleTest extends TestCase
         $protocol = $this->protocol();
 
         // `001` é «TAG inválida».
-        $recusado = (new PillDispenserAdapter())->encodeOutgoing([
+        $recusado = (new ZayataAdapter())->encodeOutgoing([
             'imei' => self::IMEI,
             'packetType' => 0x86,
             'tlv' => [
@@ -67,7 +67,7 @@ final class PillDispenserConfigurationLifecycleTest extends TestCase
     {
         $protocol = $this->protocol();
 
-        $reading = (new PillDispenserAdapter())->encodeOutgoing([
+        $reading = (new ZayataAdapter())->encodeOutgoing([
             'imei' => self::IMEI,
             'packetType' => 0x87,
             'tlv' => [

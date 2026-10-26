@@ -6,15 +6,15 @@ namespace Tests\Unit\Command;
 
 use Hub\Command\DeviceCommandCatalog;
 use Hub\Command\DeviceConfigurationCatalog;
-use Hub\Ingress\Tcp\Zayata\PillDispenserAdapter;
+use Hub\Ingress\Tcp\Zayata\ZayataAdapter;
 use PHPUnit\Framework\TestCase;
 
 /** O `0x05` pede todas as TAGs que o `0x06` escreve, senão o ecrã mostra a intenção e não o que o aparelho tem. */
-final class PillDispenserWrittenTagsAreReadBackTest extends TestCase
+final class ZayataWrittenTagsAreReadBackTest extends TestCase
 {
     public function testEveryConfigurationTagTheHubWritesIsAlsoReadBack(): void
     {
-        $adapter = new PillDispenserAdapter();
+        $adapter = new ZayataAdapter();
         $missing = [];
         $seen = 0;
 
@@ -30,7 +30,7 @@ final class PillDispenserWrittenTagsAreReadBackTest extends TestCase
 
             $seen++;
             foreach (array_keys($decoded['tlv'] ?? []) as $tag) {
-                if (!in_array($tag, PillDispenserAdapter::CONFIGURATION_TAGS, true)) {
+                if (!in_array($tag, ZayataAdapter::CONFIGURATION_TAGS, true)) {
                     $missing[] = sprintf('%s escreve 0x%04X e o 0x05 nunca a pede', $command, $tag);
                 }
             }

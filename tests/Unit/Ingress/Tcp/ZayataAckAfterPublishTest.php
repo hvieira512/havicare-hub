@@ -7,7 +7,7 @@ namespace Tests\Unit\Ingress\Tcp;
 use Hub\Command\Downlink\RedisPendingDownlinkQueue;
 use Hub\Ingress\Tcp\DeviceHubServer;
 use Hub\Ingress\Tcp\Zayata\FirmwareUpgradeStore;
-use Hub\Ingress\Tcp\Zayata\PillDispenserAdapter;
+use Hub\Ingress\Tcp\Zayata\ZayataAdapter;
 use Hub\State\DeviceStore;
 use PHPUnit\Framework\TestCase;
 use Tests\Support\Doubles\FakeConnection;
@@ -16,7 +16,7 @@ use Tests\Support\Doubles\InMemoryRedisClient;
 use Tests\Support\Doubles\RecordingHubMqttBridge;
 
 /** O M228 apaga o evento quando recebe a confirmação: ela só sai com o evento publicado. */
-final class PillDispenserAckAfterPublishTest extends TestCase
+final class ZayataAckAfterPublishTest extends TestCase
 {
     private const IMEI = '869243062262262';
 
@@ -71,7 +71,7 @@ final class PillDispenserAckAfterPublishTest extends TestCase
 
     private function undecryptable(): string
     {
-        return (new PillDispenserAdapter())->encodeOutgoing(['packetType' => 0x03, 'serial' => 2, 'imei' => self::IMEI, 'tlv' => [], 'flag' => 0x04, 'appDataRaw' => str_repeat("\x5A", 32)]);
+        return (new ZayataAdapter())->encodeOutgoing(['packetType' => 0x03, 'serial' => 2, 'imei' => self::IMEI, 'tlv' => [], 'flag' => 0x04, 'appDataRaw' => str_repeat("\x5A", 32)]);
     }
 
     /** O histórico da dashboard é um extra: sem o Redis, o evento publicado confirma-se na mesma. */
@@ -189,7 +189,7 @@ final class PillDispenserAckAfterPublishTest extends TestCase
         }
 
         return array_map(
-            static fn (string $bytes): string => (string)((new PillDispenserAdapter())->decodeIncoming($bytes)['type'] ?? '?'),
+            static fn (string $bytes): string => (string)((new ZayataAdapter())->decodeIncoming($bytes)['type'] ?? '?'),
             $connection->sent,
         );
     }
@@ -197,6 +197,6 @@ final class PillDispenserAckAfterPublishTest extends TestCase
     /** @param array<int, array{value: string}> $tlv */
     private function frame(int $packetType, int $serial, array $tlv = []): string
     {
-        return (new PillDispenserAdapter())->encodeOutgoing(['packetType' => $packetType, 'serial' => $serial, 'imei' => self::IMEI, 'tlv' => $tlv]);
+        return (new ZayataAdapter())->encodeOutgoing(['packetType' => $packetType, 'serial' => $serial, 'imei' => self::IMEI, 'tlv' => $tlv]);
     }
 }

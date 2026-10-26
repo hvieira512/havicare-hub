@@ -7,11 +7,11 @@ namespace Tests\Unit\Device;
 use Hub\Ingress\Tcp\DeviceEventDecoder;
 use Hub\Ingress\Tcp\Zayata\FirmwareUpgrade;
 use Hub\Ingress\Tcp\Zayata\FirmwareUpgradeStore;
-use Hub\Ingress\Tcp\Zayata\PillDispenserAdapter;
-use Hub\Ingress\Tcp\Zayata\PillDispenserTcpProtocol;
+use Hub\Ingress\Tcp\Zayata\ZayataAdapter;
+use Hub\Ingress\Tcp\Zayata\ZayataTcpProtocol;
 use PHPUnit\Framework\TestCase;
 use Tests\Support\Doubles\InMemoryRedisClient;
-use Tests\Support\Doubles\PillDispenserFixtures;
+use Tests\Support\Doubles\ZayataFixtures;
 
 /** O aparelho é que liga ao hub, e cada trama que manda é a oportunidade de enviar o pacote seguinte pela sessão dele. */
 final class FirmwareUpgradeOverTheSessionTest extends TestCase
@@ -33,12 +33,12 @@ final class FirmwareUpgradeOverTheSessionTest extends TestCase
     public function testTheHeartbeatIsStillAcknowledgedWhileTheUpgradeStarts(): void
     {
         $store = $this->store(['status' => 'requested', 'offset' => 0]);
-        $protocol = new PillDispenserTcpProtocol(new PillDispenserAdapter(), new DeviceEventDecoder(), $store);
+        $protocol = new ZayataTcpProtocol(new ZayataAdapter(), new DeviceEventDecoder(), $store);
 
-        $message = $protocol->handleIncoming(PillDispenserFixtures::session(self::IMEI), $this->frame(0x02, 0));
+        $message = $protocol->handleIncoming(ZayataFixtures::session(self::IMEI), $this->frame(0x02, 0));
 
         $types = array_map(
-            fn ($response): string => (string)(new PillDispenserAdapter())->decodeIncoming($response->bytes)['type'],
+            fn ($response): string => (string)(new ZayataAdapter())->decodeIncoming($response->bytes)['type'],
             $message?->responses ?? [],
         );
 
@@ -49,8 +49,8 @@ final class FirmwareUpgradeOverTheSessionTest extends TestCase
     public function testTheUpgradePacketsCarryNoSubpacketFields(): void
     {
         $store = $this->store(['status' => 'starting', 'offset' => 0]);
-        $protocol = new PillDispenserTcpProtocol(new PillDispenserAdapter(), new DeviceEventDecoder(), $store);
-        $message = $protocol->handleIncoming(PillDispenserFixtures::session(self::IMEI), $this->frame(0x8E, 0));
+        $protocol = new ZayataTcpProtocol(new ZayataAdapter(), new DeviceEventDecoder(), $store);
+        $message = $protocol->handleIncoming(ZayataFixtures::session(self::IMEI), $this->frame(0x8E, 0));
 
         $bytes = ($message?->responses ?? [])[0]->bytes ?? '';
 
@@ -62,9 +62,9 @@ final class FirmwareUpgradeOverTheSessionTest extends TestCase
     public function testARefusalStopsTheTransfer(): void
     {
         $store = $this->store(['status' => 'sending', 'offset' => 252]);
-        $protocol = new PillDispenserTcpProtocol(new PillDispenserAdapter(), new DeviceEventDecoder(), $store);
+        $protocol = new ZayataTcpProtocol(new ZayataAdapter(), new DeviceEventDecoder(), $store);
 
-        $message = $protocol->handleIncoming(PillDispenserFixtures::session(self::IMEI), $this->frame(0x8F, 0x08));
+        $message = $protocol->handleIncoming(ZayataFixtures::session(self::IMEI), $this->frame(0x8F, 0x08));
 
         self::assertSame([], $message?->responses);
         self::assertSame('failed', $store->load(self::IMEI)['status'] ?? null);
@@ -74,26 +74,26 @@ final class FirmwareUpgradeOverTheSessionTest extends TestCase
     /** Sem transferência pedida, o heartbeat continua a ser confirmado como sempre. */
     public function testWithoutAnUpgradeTheHeartbeatIsStillAcknowledged(): void
     {
-        $protocol = new PillDispenserTcpProtocol(new PillDispenserAdapter(), new DeviceEventDecoder());
+        $protocol = new ZayataTcpProtocol(new ZayataAdapter(), new DeviceEventDecoder());
 
-        $message = $protocol->handleIncoming(PillDispenserFixtures::session(self::IMEI), $this->frame(0x02, 0));
+        $message = $protocol->handleIncoming(ZayataFixtures::session(self::IMEI), $this->frame(0x02, 0));
 
         self::assertCount(1, $message?->responses ?? []);
-        $ack = (new PillDispenserAdapter())->decodeIncoming($message->responses[0]->bytes);
+        $ack = (new ZayataAdapter())->decodeIncoming($message->responses[0]->bytes);
         self::assertSame('heartbeat_ack', $ack['type']);
     }
 
     /** @return array{type: string, body: string} */
     private function respondTo(FirmwareUpgradeStore $store, int $packetType, int $status): array
     {
-        $protocol = new PillDispenserTcpProtocol(new PillDispenserAdapter(), new DeviceEventDecoder(), $store);
-        $message = $protocol->handleIncoming(PillDispenserFixtures::session(self::IMEI), $this->frame($packetType, $status));
+        $protocol = new ZayataTcpProtocol(new ZayataAdapter(), new DeviceEventDecoder(), $store);
+        $message = $protocol->handleIncoming(ZayataFixtures::session(self::IMEI), $this->frame($packetType, $status));
 
         $responses = $message?->responses ?? [];
         self::assertNotSame([], $responses, 'a transferência tem de mandar um pacote');
         // A confirmação vai à frente quando a trama a pede; o pacote do upgrade é o último.
         $bytes = $responses[count($responses) - 1]->bytes;
-        $decoded = (new PillDispenserAdapter())->decodeIncoming($bytes);
+        $decoded = (new ZayataAdapter())->decodeIncoming($bytes);
 
         return [
             'type' => (string)$decoded['type'],
@@ -104,7 +104,7 @@ final class FirmwareUpgradeOverTheSessionTest extends TestCase
 
     private function frame(int $packetType, int $status): string
     {
-        return (new PillDispenserAdapter())->encodeOutgoing([
+        return (new ZayataAdapter())->encodeOutgoing([
             'packetType' => $packetType,
             'imei' => self::IMEI,
             'status' => $status,

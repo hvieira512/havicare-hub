@@ -8,7 +8,7 @@ use Hub\Ingress\Tcp\FourPTouch\FourPTouchTcpProtocol;
 use Hub\Ingress\Tcp\Vivistar\VivistarTcpProtocol;
 use Hub\Ingress\Tcp\Wonlex\WonlexTcpProtocol;
 use Hub\Ingress\Tcp\Zayata\FirmwareUpgradeStore;
-use Hub\Ingress\Tcp\Zayata\PillDispenserTcpProtocol;
+use Hub\Ingress\Tcp\Zayata\ZayataTcpProtocol;
 use Hub\State\ActiveAlarms;
 
 /**
@@ -37,7 +37,7 @@ final class TcpProtocolRegistry
         ));
         $this->register(new VivistarTcpProtocol($adapters->require('vivistar-iw'), $eventDecoder));
         $this->register(new FourPTouchTcpProtocol($adapters->require('four-p-touch'), $eventDecoder));
-        $this->register(new PillDispenserTcpProtocol(
+        $this->register(new ZayataTcpProtocol(
             $adapters->require('zayata-m228'),
             $eventDecoder,
             $firmwareUpgrades,

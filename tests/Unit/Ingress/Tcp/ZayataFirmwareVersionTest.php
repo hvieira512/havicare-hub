@@ -6,12 +6,12 @@ namespace Tests\Unit\Ingress\Tcp;
 
 use Hub\Domain\Capability\CapabilityCatalog;
 use Hub\Ingress\Tcp\DeviceEventDecoder;
-use Hub\Ingress\Tcp\Zayata\PillDispenserAdapter;
+use Hub\Ingress\Tcp\Zayata\ZayataAdapter;
 use PHPUnit\Framework\TestCase;
-use Tests\Support\Doubles\PillDispenserFixtures;
+use Tests\Support\Doubles\ZayataFixtures;
 
 /** A versão do firmware chega no pacote de registo e sai pela capacidade que os relógios e as pulseiras já usam. */
-final class PillDispenserFirmwareVersionTest extends TestCase
+final class ZayataFirmwareVersionTest extends TestCase
 {
     public function testTheRegistrationPacketCarriesTheFirmwareVersion(): void
     {
@@ -67,10 +67,10 @@ final class PillDispenserFirmwareVersionTest extends TestCase
      */
     private function decodeAndNormalize(array $payload): array
     {
-        $adapter = new PillDispenserAdapter();
+        $adapter = new ZayataAdapter();
         $decoded = $adapter->decodeIncoming($adapter->encodeOutgoing($payload));
         self::assertIsArray($decoded);
 
-        return (new DeviceEventDecoder())->decode(PillDispenserFixtures::session(), $decoded);
+        return (new DeviceEventDecoder())->decode(ZayataFixtures::session(), $decoded);
     }
 }

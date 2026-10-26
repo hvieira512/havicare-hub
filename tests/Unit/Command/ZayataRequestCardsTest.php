@@ -6,11 +6,11 @@ namespace Tests\Unit\Command;
 
 use Hub\Command\DeviceCommandCatalog;
 use Hub\Domain\Capability\CapabilityCatalog;
-use Hub\Ingress\Tcp\Zayata\PillDispenserAdapter;
+use Hub\Ingress\Tcp\Zayata\ZayataAdapter;
 use PHPUnit\Framework\TestCase;
 
 /** O `0x07` pede sempre as 31 TAGs do `STATUS_TAGS` e enche as sete leituras de uma vez: um botão por pergunta, não por grandeza. */
-final class PillDispenserRequestCardsTest extends TestCase
+final class ZayataRequestCardsTest extends TestCase
 {
     /**
      * @return array<string, list<array<string, mixed>>>
@@ -108,7 +108,7 @@ final class PillDispenserRequestCardsTest extends TestCase
     /** A trama que cada pedido manda leva o tipo de pacote que o protocolo exige. */
     public function testEachRequestBuildsTheFrameItsPacketTypeRequires(): void
     {
-        $adapter = new PillDispenserAdapter();
+        $adapter = new ZayataAdapter();
         $expected = ['readStatus' => 0x07, 'readConfiguration' => 0x05, 'readConfiguration2' => 0x05];
 
         foreach ($this->requests() as $entries) {

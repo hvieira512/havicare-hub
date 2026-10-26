@@ -13,7 +13,7 @@ use Hub\Ingress\Tcp\DeviceAdapterInterface;
  * DeviceType · DeviceNumber(8) · PacketType · dados TFLV · CRC16(2). Os inteiros vão em
  * little-endian e o CRC é o de MODBUS, calculado de Length ao fim dos dados.
  */
-class PillDispenserAdapter implements DeviceAdapterInterface
+class ZayataAdapter implements DeviceAdapterInterface
 {
     private const HEADER = 0xAA;
     private const DEVICE_TYPE = 0x02;

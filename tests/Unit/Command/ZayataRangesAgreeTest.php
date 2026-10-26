@@ -10,7 +10,7 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 /** O validador recusa à entrada da API e o construtor da trama à saída, com os limites escritos nos dois. */
-final class PillDispenserRangesAgreeTest extends TestCase
+final class ZayataRangesAgreeTest extends TestCase
 {
     private const IMEI = '869243062262262';
 

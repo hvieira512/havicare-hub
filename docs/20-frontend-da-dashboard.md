@@ -218,7 +218,7 @@ dashboard/
 │       │   ├── shared.js       o contador de ids, o campo numérico, o interruptor
 │       │   ├── generic.js      o que mais do que um fornecedor declara
 │       │   ├── capability.js   alarmes, contactos SOS, lista branca, dados pessoais
-│       │   └── four-p-touch.js · vivistar.js · wonlex.js · pill-dispenser.js · radar.js · scale.js
+│       │   └── four-p-touch.js · vivistar.js · wonlex.js · zayata.js · radar.js · scale.js
 │       ├── readers.js      as primitivas que lêem o payload de volta do DOM
 │       ├── normalizers.js  as formas que os protocolos usam
 │       ├── row-editing.js  adicionar e remover linhas (contactos, alarmes, planos)

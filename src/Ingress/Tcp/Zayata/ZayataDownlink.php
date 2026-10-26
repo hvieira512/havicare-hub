@@ -48,11 +48,11 @@ final class ZayataDownlink
         // partidas porque não cabem numa trama, e um teste exige que cubram as TAGs todas.
         $chunk = ['readConfiguration' => 0, 'readConfiguration2' => 1][$command] ?? null;
         if ($chunk !== null) {
-            $chunks = PillDispenserAdapter::configurationReadChunks();
-            return self::pillFrame($imei, 0x05, PillDispenserAdapter::readRequestTlv($chunks[$chunk] ?? []));
+            $chunks = ZayataAdapter::configurationReadChunks();
+            return self::pillFrame($imei, 0x05, ZayataAdapter::readRequestTlv($chunks[$chunk] ?? []));
         }
         if ($command === 'readStatus') {
-            return self::pillFrame($imei, 0x07, PillDispenserAdapter::readRequestTlv(PillDispenserAdapter::STATUS_TAGS));
+            return self::pillFrame($imei, 0x07, ZayataAdapter::readRequestTlv(ZayataAdapter::STATUS_TAGS));
         }
 
         $tlv = match ($command) {
@@ -104,7 +104,7 @@ final class ZayataDownlink
     private static function pillMedicationPlan(array $payload): array
     {
         $plans = array_values(array_filter($payload['plans'] ?? [], 'is_array'));
-        if (count($plans) > PillDispenserAdapter::ALARM_SLOTS) {
+        if (count($plans) > ZayataAdapter::ALARM_SLOTS) {
             throw new \InvalidArgumentException('the M228 has nine alarms, and the plan has ' . count($plans));
         }
 
@@ -122,16 +122,16 @@ final class ZayataDownlink
         }
 
         $tlv = [];
-        for ($offset = 0; $offset < PillDispenserAdapter::ALARM_SLOTS; $offset++) {
+        for ($offset = 0; $offset < ZayataAdapter::ALARM_SLOTS; $offset++) {
             $plan = $bySlot[$offset + 1] ?? null;
             // Um plano com o interruptor desligado vai como slot vazio: o vazio é o que cala o alarme.
             $set = $plan !== null && ($plan['enabled'] ?? true) !== false;
             $tlv[0x1021 + $offset] = ['value' => $set
                 ? self::pillByte($plan['hour'] ?? 0, 23)
-                : chr(PillDispenserAdapter::ALARM_UNSET_HOUR)];
+                : chr(ZayataAdapter::ALARM_UNSET_HOUR)];
             $tlv[0x1031 + $offset] = ['value' => $set
                 ? self::pillByte($plan['minute'] ?? 0, 59)
-                : chr(PillDispenserAdapter::ALARM_UNSET_MINUTE)];
+                : chr(ZayataAdapter::ALARM_UNSET_MINUTE)];
             $tlv[0x1041 + $offset] = ['value' => self::pillBool($set)];
         }
 
@@ -176,13 +176,13 @@ final class ZayataDownlink
     /** @param array<int, array{value: string}> $tlv */
     private static function pillFrame(string $imei, int $packetType, array $tlv): string
     {
-        $adapter = new PillDispenserAdapter();
+        $adapter = new ZayataAdapter();
         self::$pillSerial = self::$pillSerial % 65535 + 1;
 
         return $adapter->encodeOutgoing([
             'packetType' => $packetType,
             'serial' => self::$pillSerial,
-            'deviceNumber' => PillDispenserAdapter::deviceNumberFor($imei),
+            'deviceNumber' => ZayataAdapter::deviceNumberFor($imei),
             'tlv' => $tlv,
         ]);
     }

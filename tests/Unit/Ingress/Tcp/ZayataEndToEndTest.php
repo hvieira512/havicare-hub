@@ -6,7 +6,7 @@ namespace Tests\Unit\Ingress\Tcp;
 
 use Hub\Ingress\Tcp\DeviceHubServer;
 use Hub\Ingress\Tcp\HubTcpIngress;
-use Hub\Ingress\Tcp\Zayata\PillDispenserAdapter;
+use Hub\Ingress\Tcp\Zayata\ZayataAdapter;
 use Hub\Registry\Whitelist;
 use PHPUnit\Framework\TestCase;
 use React\EventLoop\StreamSelectLoop;
@@ -17,7 +17,7 @@ use Tests\Support\Doubles\LocalTcpPort;
 use Tests\Support\Doubles\RecordingHubMqttBridge;
 
 /** Do socket ao canal do MQTT, com as tramas na forma em que o aparelho as manda: cifradas. */
-final class PillDispenserEndToEndTest extends TestCase
+final class ZayataEndToEndTest extends TestCase
 {
     private const IMEI = '869243062262262';
 
@@ -49,7 +49,7 @@ final class PillDispenserEndToEndTest extends TestCase
         self::assertSame('device.connected', $mqtt->events[0]['payload']['type']);
 
         // O primeiro ACK mede-se pelo seu campo de comprimento: o 0xAA também aparece dentro da trama.
-        $ack = (new PillDispenserAdapter())->decodeIncoming(
+        $ack = (new ZayataAdapter())->decodeIncoming(
             substr($received, 0, 3 + unpack('v', substr($received, 1, 2))[1] + 2)
         );
         self::assertIsArray($ack);
@@ -223,7 +223,7 @@ final class PillDispenserEndToEndTest extends TestCase
             $payload += ['flag' => $flag, 'appDataRaw' => $appDataRaw];
         }
 
-        return (new PillDispenserAdapter())->encodeOutgoing($payload);
+        return (new ZayataAdapter())->encodeOutgoing($payload);
     }
 
     /**

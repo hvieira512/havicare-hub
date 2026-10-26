@@ -6,11 +6,11 @@ namespace Tests\Unit\Command;
 
 use Hub\Command\DeviceConfigurationCatalog;
 use Hub\Domain\Capability\CapabilityCatalog;
-use Hub\Ingress\Tcp\Zayata\PillDispenserAdapter;
+use Hub\Ingress\Tcp\Zayata\ZayataAdapter;
 use PHPUnit\Framework\TestCase;
 
 /** Uma reposição devolve o M228 ao servidor do fornecedor, e o firmware não deixa desligar a cifra. */
-final class PillDispenserNoFactoryResetTest extends TestCase
+final class ZayataNoFactoryResetTest extends TestCase
 {
     public function testTheDispenserCatalogDoesNotOfferThem(): void
     {
@@ -31,8 +31,8 @@ final class PillDispenserNoFactoryResetTest extends TestCase
     /** O fornecedor respondeu «0x8005 cannot be set»: o hub nem pergunta pela TAG da cifra. */
     public function testTheHubNeverEvenAsksAboutTheCipherTag(): void
     {
-        self::assertNotContains(0x8005, PillDispenserAdapter::CONFIGURATION_TAGS);
-        self::assertNotContains(0x8005, PillDispenserAdapter::STATUS_TAGS);
+        self::assertNotContains(0x8005, ZayataAdapter::CONFIGURATION_TAGS);
+        self::assertNotContains(0x8005, ZayataAdapter::STATUS_TAGS);
     }
 
     /** São de uma versão da série M2 posterior à do aparelho de ensaio, que as recusa com «TAG inválida». */

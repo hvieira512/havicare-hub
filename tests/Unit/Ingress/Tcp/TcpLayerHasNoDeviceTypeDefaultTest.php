@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Tests\Unit\Ingress\Tcp;
 
 use Hub\Ingress\Tcp\DeviceHubServer;
-use Hub\Ingress\Tcp\Zayata\PillDispenserAdapter;
+use Hub\Ingress\Tcp\Zayata\ZayataAdapter;
 use PHPUnit\Framework\TestCase;
 use Tests\Support\Doubles\FakeConnection;
 use Tests\Support\Doubles\IngressFixtures;
@@ -20,7 +20,7 @@ final class TcpLayerHasNoDeviceTypeDefaultTest extends TestCase
         $hub = new DeviceHubServer(IngressFixtures::whitelist([
             'AABBCCDDEEFF' => IngressFixtures::device('Zayata', 'M228', 'pill_dispenser'),
         ]), $mqtt);
-        $adapter = new PillDispenserAdapter();
+        $adapter = new ZayataAdapter();
         $connection = new FakeConnection();
 
         $hub->onOpen($connection);
@@ -45,7 +45,7 @@ final class TcpLayerHasNoDeviceTypeDefaultTest extends TestCase
         $connection = new FakeConnection();
 
         $hub->onOpen($connection);
-        $hub->onMessage($connection, (new PillDispenserAdapter())->encodeOutgoing(['packetType' => 0x01, 'serial' => 1, 'mac' => 'AABBCCDDEEFF']));
+        $hub->onMessage($connection, (new ZayataAdapter())->encodeOutgoing(['packetType' => 0x01, 'serial' => 1, 'mac' => 'AABBCCDDEEFF']));
 
         $published = [...$mqtt->statuses, ...$mqtt->events];
         self::assertNotSame([], $published, 'a recusa tem de sair no broker');

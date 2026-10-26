@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Ingress\Tcp;
 
-use Hub\Ingress\Tcp\Zayata\PillDispenserAdapter;
+use Hub\Ingress\Tcp\Zayata\ZayataAdapter;
 use PHPUnit\Framework\TestCase;
 
 /** O M228 cifra em AES128-CFB o que envia por iniciativa própria (bit 2 do Flag), com chave e IV no Device Number em hexadecimal. */
-final class PillDispenserDecryptionTest extends TestCase
+final class ZayataDecryptionTest extends TestCase
 {
     /** Heartbeat cifrado: bateria, sinal, temperatura e humidade. */
     private const HEARTBEAT = 'AA30000001031F000004026222266230246948021EB35A0509D9B171F6D2BB1C'
@@ -47,10 +47,10 @@ final class PillDispenserDecryptionTest extends TestCase
     /** A cifra anuncia-se no bit 2 do Flag, e o que vem sem ele não se toca. */
     public function testAClearFrameIsNotTouched(): void
     {
-        $clear = (new PillDispenserAdapter())->encodeOutgoing([
+        $clear = (new ZayataAdapter())->encodeOutgoing([
             'packetType' => 0x87,
             'serial' => 1,
-            'deviceNumber' => PillDispenserAdapter::deviceNumberFor('869243062262262'),
+            'deviceNumber' => ZayataAdapter::deviceNumberFor('869243062262262'),
             'tlv' => [0x8101 => ['value' => "\x01"]],
         ]);
 
@@ -62,11 +62,11 @@ final class PillDispenserDecryptionTest extends TestCase
     {
         // Trama bem formada — CRC válido, identidade certa — com o bit da cifra ligado e um
         // corpo que a chave deste aparelho não abre.
-        $broken = (new PillDispenserAdapter())->encodeOutgoing([
+        $broken = (new ZayataAdapter())->encodeOutgoing([
             'packetType' => 0x02,
             'serial' => 1,
             'flag' => 0x04,
-            'deviceNumber' => PillDispenserAdapter::deviceNumberFor('869243062262262'),
+            'deviceNumber' => ZayataAdapter::deviceNumberFor('869243062262262'),
             'appDataRaw' => random_bytes(24),
         ]);
         $decoded = $this->decode(bin2hex($broken));
@@ -79,7 +79,7 @@ final class PillDispenserDecryptionTest extends TestCase
     /** @return array<string, mixed> */
     private function decode(string $hex): array
     {
-        $decoded = (new PillDispenserAdapter())->decodeIncoming((string)hex2bin($hex));
+        $decoded = (new ZayataAdapter())->decodeIncoming((string)hex2bin($hex));
         self::assertIsArray($decoded);
 
         return $decoded;

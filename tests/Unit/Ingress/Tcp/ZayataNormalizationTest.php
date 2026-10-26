@@ -5,11 +5,11 @@ declare(strict_types=1);
 namespace Tests\Unit\Ingress\Tcp;
 
 use Hub\Ingress\Tcp\DeviceEventDecoder;
-use Hub\Ingress\Tcp\Zayata\PillDispenserAdapter;
+use Hub\Ingress\Tcp\Zayata\ZayataAdapter;
 use PHPUnit\Framework\TestCase;
-use Tests\Support\Doubles\PillDispenserFixtures;
+use Tests\Support\Doubles\ZayataFixtures;
 
-final class PillDispenserNormalizationTest extends TestCase
+final class ZayataNormalizationTest extends TestCase
 {
     public function testMedicationEventBecomesMedicationIntake(): void
     {
@@ -26,7 +26,7 @@ final class PillDispenserNormalizationTest extends TestCase
             ],
         ]);
 
-        $events = (new DeviceEventDecoder())->decode(PillDispenserFixtures::session(), $decoded);
+        $events = (new DeviceEventDecoder())->decode(ZayataFixtures::session(), $decoded);
 
         self::assertCount(1, $events);
         self::assertSame('medication_intake', $events[0]['feature']);
@@ -59,7 +59,7 @@ final class PillDispenserNormalizationTest extends TestCase
             ],
         ]);
 
-        $events = (new DeviceEventDecoder())->decode(PillDispenserFixtures::session(), $decoded);
+        $events = (new DeviceEventDecoder())->decode(ZayataFixtures::session(), $decoded);
         $byFeature = [];
         foreach ($events as $event) {
             $byFeature[$event['feature']] = $event['value'];
@@ -125,7 +125,7 @@ final class PillDispenserNormalizationTest extends TestCase
      */
     private function featureValues(array $decoded, string $feature): array
     {
-        $events = (new DeviceEventDecoder())->decode(PillDispenserFixtures::session(), $decoded);
+        $events = (new DeviceEventDecoder())->decode(ZayataFixtures::session(), $decoded);
 
         return array_column(array_values(array_filter($events, static fn (array $event): bool => $event['feature'] === $feature)), 'value');
     }
@@ -143,7 +143,7 @@ final class PillDispenserNormalizationTest extends TestCase
             ],
         ]);
 
-        $events = (new DeviceEventDecoder())->decode(PillDispenserFixtures::session(), $decoded);
+        $events = (new DeviceEventDecoder())->decode(ZayataFixtures::session(), $decoded);
         $byFeature = [];
         foreach ($events as $event) {
             $byFeature[$event['feature']] = $event['value'];
@@ -157,7 +157,7 @@ final class PillDispenserNormalizationTest extends TestCase
     {
         // O aparelho responde ao `0x06` com o mesmo corpo e o resultado de cada TAG nos bits
         // de estado do Flag.
-        $adapter = new PillDispenserAdapter();
+        $adapter = new ZayataAdapter();
         $frame = $adapter->encodeOutgoing([
             'packetType' => 0x86,
             'mac' => 'AABBCCDDEEFF',
@@ -169,7 +169,7 @@ final class PillDispenserNormalizationTest extends TestCase
         $decoded = $adapter->decodeIncoming($frame);
         self::assertIsArray($decoded);
 
-        $events = (new DeviceEventDecoder())->decode(PillDispenserFixtures::session(), $decoded);
+        $events = (new DeviceEventDecoder())->decode(ZayataFixtures::session(), $decoded);
 
         self::assertSame('device_config', $events[0]['feature']);
         self::assertSame(['0x1031'], $events[0]['value']['refusedTags']);
@@ -186,7 +186,7 @@ final class PillDispenserNormalizationTest extends TestCase
             ],
         ]);
 
-        $events = (new DeviceEventDecoder())->decode(PillDispenserFixtures::session(), $decoded);
+        $events = (new DeviceEventDecoder())->decode(ZayataFixtures::session(), $decoded);
         $byFeature = [];
         foreach ($events as $event) {
             $byFeature[$event['feature']] = $event['value'];
@@ -212,7 +212,7 @@ final class PillDispenserNormalizationTest extends TestCase
         ]);
 
         $events = [];
-        foreach ((new DeviceEventDecoder())->decode(PillDispenserFixtures::session(), $decoded) as $event) {
+        foreach ((new DeviceEventDecoder())->decode(ZayataFixtures::session(), $decoded) as $event) {
             $events[$event['feature']] = $event['value'];
         }
 
@@ -232,7 +232,7 @@ final class PillDispenserNormalizationTest extends TestCase
      */
     private function decode(array $payload): array
     {
-        $adapter = new PillDispenserAdapter();
+        $adapter = new ZayataAdapter();
         $decoded = $adapter->decodeIncoming($adapter->encodeOutgoing($payload));
         self::assertIsArray($decoded);
 

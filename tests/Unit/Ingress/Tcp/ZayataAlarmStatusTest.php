@@ -4,16 +4,16 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Ingress\Tcp;
 
-use Hub\Ingress\Tcp\Zayata\PillDispenserAdapter;
+use Hub\Ingress\Tcp\Zayata\ZayataAdapter;
 use PHPUnit\Framework\TestCase;
-use Tests\Support\Doubles\PillDispenserFixtures;
+use Tests\Support\Doubles\ZayataFixtures;
 
 /** As TAGs `0x8131`--`0x8139` pedidas num `0x07` vêm em claro, mas sem a hora nem a célula do evento cifrado `0x03`. */
-final class PillDispenserAlarmStatusTest extends TestCase
+final class ZayataAlarmStatusTest extends TestCase
 {
     public function testEachAlarmStateBecomesTelemetry(): void
     {
-        $events = PillDispenserFixtures::features(0x87, [
+        $events = ZayataFixtures::features(0x87, [
             0x8131 => "\x07",   // alarme 1: tomado
             0x8132 => "\x02",   // alarme 2: à espera de sair
             0x8133 => "\x06",   // alarme 3: falhado
@@ -45,7 +45,7 @@ final class PillDispenserAlarmStatusTest extends TestCase
     /** Sem nenhuma das nove TAGs não há capacidade nenhuma a publicar. */
     public function testNothingIsPublishedWhenNoAlarmReports(): void
     {
-        $events = PillDispenserFixtures::features(0x87, [0x8101 => "\x00"]);
+        $events = ZayataFixtures::features(0x87, [0x8101 => "\x00"]);
 
         self::assertArrayNotHasKey('medication_alarm_status', $events);
     }
@@ -53,7 +53,7 @@ final class PillDispenserAlarmStatusTest extends TestCase
     /** Uma TAG recusada volta com os zeros que mandámos, e só o estado nos bits 5--7 do Flag a distingue de um alarme inactivo. */
     public function testARefusedTagIsNotReportedAsIdle(): void
     {
-        $events = PillDispenserFixtures::features(0x87, [
+        $events = ZayataFixtures::features(0x87, [
             0x8131 => "\x07",
             0x8132 => ['value' => "\x00", 'state' => 1],
         ]);
@@ -68,7 +68,7 @@ final class PillDispenserAlarmStatusTest extends TestCase
     public function testTheStatusQueryAsksForAllNine(): void
     {
         foreach (range(0x8131, 0x8139) as $tag) {
-            self::assertContains($tag, PillDispenserAdapter::STATUS_TAGS, sprintf('0x%04X', $tag));
+            self::assertContains($tag, ZayataAdapter::STATUS_TAGS, sprintf('0x%04X', $tag));
         }
     }
 }

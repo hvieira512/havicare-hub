@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Hub\Command\Configuration\Payload;
 
 use Hub\Domain\Capability\TimeZoneOffset;
-use Hub\Ingress\Tcp\Zayata\PillDispenserAdapter;
+use Hub\Ingress\Tcp\Zayata\ZayataAdapter;
 use Hub\Support\Values;
 
 /**
@@ -119,8 +119,8 @@ final class ZayataPayloadBuilder extends ConfigurationPayloadBuilder
         if (!is_array($plans)) {
             throw new \InvalidArgumentException('plans must be a list');
         }
-        if (count($plans) > PillDispenserAdapter::ALARM_SLOTS) {
-            throw new \InvalidArgumentException('the M228 has ' . PillDispenserAdapter::ALARM_SLOTS . ' alarms');
+        if (count($plans) > ZayataAdapter::ALARM_SLOTS) {
+            throw new \InvalidArgumentException('the M228 has ' . ZayataAdapter::ALARM_SLOTS . ' alarms');
         }
 
         $out = [];
@@ -132,7 +132,7 @@ final class ZayataPayloadBuilder extends ConfigurationPayloadBuilder
             // plano pela posição, que é a única leitura que um plano antigo permite.
             $out[] = Values::withoutNulls([
                 'slot' => isset($plan['slot'])
-                    ? self::intInRange($plan['slot'], "plans[{$index}].slot", 1, PillDispenserAdapter::ALARM_SLOTS)
+                    ? self::intInRange($plan['slot'], "plans[{$index}].slot", 1, ZayataAdapter::ALARM_SLOTS)
                     : null,
                 'hour' => self::intInRange($plan['hour'] ?? 0, "plans[{$index}].hour", 0, 23),
                 'minute' => self::intInRange($plan['minute'] ?? 0, "plans[{$index}].minute", 0, 59),

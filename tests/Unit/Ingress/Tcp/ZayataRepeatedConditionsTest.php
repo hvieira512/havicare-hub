@@ -5,15 +5,15 @@ declare(strict_types=1);
 namespace Tests\Unit\Ingress\Tcp;
 
 use Hub\Ingress\Tcp\DeviceEventDecoder;
-use Hub\Ingress\Tcp\Zayata\PillDispenserAdapter;
-use Hub\Ingress\Tcp\Zayata\PillDispenserTcpProtocol;
+use Hub\Ingress\Tcp\Zayata\ZayataAdapter;
+use Hub\Ingress\Tcp\Zayata\ZayataTcpProtocol;
 use Hub\State\ActiveAlarms;
 use PHPUnit\Framework\TestCase;
 use Tests\Support\Doubles\InMemoryRedisClient;
-use Tests\Support\Doubles\PillDispenserFixtures;
+use Tests\Support\Doubles\ZayataFixtures;
 
 /** O heartbeat do M228 repete as TAGs de estado a cada minuto, e uma condição que dura dá um evento só quando começa. */
-final class PillDispenserRepeatedConditionsTest extends TestCase
+final class ZayataRepeatedConditionsTest extends TestCase
 {
     private const FAULT_TRAY = 0x8122;
     private const FAULT_PUSHER = 0x8123;
@@ -93,14 +93,14 @@ final class PillDispenserRepeatedConditionsTest extends TestCase
      * @param array<int, int> $tags
      * @return list<string>
      */
-    private function conditions(PillDispenserTcpProtocol $protocol, array $tags): array
+    private function conditions(ZayataTcpProtocol $protocol, array $tags): array
     {
-        $adapter = new PillDispenserAdapter();
+        $adapter = new ZayataAdapter();
         $tlv = [];
         foreach ($tags as $tag => $value) {
             $tlv[$tag] = ['value' => chr($value)];
         }
-        $message = $protocol->handleIncoming(PillDispenserFixtures::session(), $adapter->encodeOutgoing([
+        $message = $protocol->handleIncoming(ZayataFixtures::session(), $adapter->encodeOutgoing([
             'packetType' => 0x02,
             'mac' => 'AABBCCDDEEFF',
             'tlv' => $tlv,
@@ -117,8 +117,8 @@ final class PillDispenserRepeatedConditionsTest extends TestCase
         return $types;
     }
 
-    private function protocol(ActiveAlarms $alarms = new ActiveAlarms()): PillDispenserTcpProtocol
+    private function protocol(ActiveAlarms $alarms = new ActiveAlarms()): ZayataTcpProtocol
     {
-        return new PillDispenserTcpProtocol(new PillDispenserAdapter(), new DeviceEventDecoder(), alarms: $alarms);
+        return new ZayataTcpProtocol(new ZayataAdapter(), new DeviceEventDecoder(), alarms: $alarms);
     }
 }

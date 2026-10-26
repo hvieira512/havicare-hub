@@ -6,7 +6,7 @@ namespace Tests\Unit\Ingress\Tcp;
 
 use Hub\Ingress\Tcp\DeviceHubServer;
 use Hub\Ingress\Tcp\Wonlex\WonlexAdapter;
-use Hub\Ingress\Tcp\Zayata\PillDispenserAdapter;
+use Hub\Ingress\Tcp\Zayata\ZayataAdapter;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Tests\Support\Doubles\FakeConnection;
@@ -24,7 +24,7 @@ final class IdleConnectionExpiryTest extends TestCase
         yield 'wonlex' => ['868705080300697', (new WonlexAdapter())->encodeOutgoing(['type' => 'login', 'imei' => '868705080300697']), 300];
         yield 'four p touch' => ['637507597567372', '[3G*7597567372*000D*LK,50,100,100]', 300];
         yield 'vivistar' => ['865028000000308', 'IWAP00865028000000308#', 480];
-        yield 'pill dispenser' => ['AABBCCDDEEFF', (new PillDispenserAdapter())->encodeOutgoing(['packetType' => 0x01, 'serial' => 1, 'mac' => 'AABBCCDDEEFF']), 60];
+        yield 'pill dispenser' => ['AABBCCDDEEFF', (new ZayataAdapter())->encodeOutgoing(['packetType' => 0x01, 'serial' => 1, 'mac' => 'AABBCCDDEEFF']), 60];
     }
 
     #[DataProvider('protocols')]

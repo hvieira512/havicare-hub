@@ -15,7 +15,7 @@ use Hub\Domain\Capability\CapabilityCatalog;
 use Hub\Domain\Capability\CapabilityHelpers;
 use Hub\Domain\Capability\CapabilityRegistry;
 use Hub\Domain\Capability\Contacts\WonlexContactCodec;
-use Hub\Domain\Capability\Medication\PillDispenserMedicationRemindersHandler;
+use Hub\Domain\Capability\Medication\ZayataMedicationRemindersHandler;
 use Hub\Infrastructure\Persistence\Repository\ApiDataAccess;
 use Hub\Ingress\Tcp\DeviceHubServer;
 use Hub\Log\Logger;
@@ -220,8 +220,8 @@ final class DeviceConfigurationUpdateService
                     && $existingPayload !== null
                     && in_array($existingStatus, ['acked', 'confirmed'], true)
                     && $this->valuesEqual(
-                        PillDispenserMedicationRemindersHandler::withoutNames($existingPayload),
-                        PillDispenserMedicationRemindersHandler::withoutNames($nativePayload),
+                        ZayataMedicationRemindersHandler::withoutNames($existingPayload),
+                        ZayataMedicationRemindersHandler::withoutNames($nativePayload),
                     )
                     && !isset($prepared['error'])
                 ) {

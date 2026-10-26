@@ -6,12 +6,12 @@ namespace Tests\Unit\Command;
 
 use Hub\Command\DeviceCommandCatalog;
 use Hub\Command\DeviceConfigurationCatalog;
-use Hub\Ingress\Tcp\Zayata\PillDispenserAdapter;
+use Hub\Ingress\Tcp\Zayata\ZayataAdapter;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 /** As TAGs esperadas são escritas à mão da secção 5 da especificação, para o teste não concordar consigo próprio. */
-final class PillDispenserDownlinkEndToEndTest extends TestCase
+final class ZayataDownlinkEndToEndTest extends TestCase
 {
     private const IMEI = '869243062262262';
 
@@ -165,7 +165,7 @@ final class PillDispenserDownlinkEndToEndTest extends TestCase
                 (string)$entry['command'],
                 self::sampleFor($key),
             );
-            $decoded = (new PillDispenserAdapter())->decodeIncoming($bytes);
+            $decoded = (new ZayataAdapter())->decodeIncoming($bytes);
             self::assertIsArray($decoded, $key);
 
             $packetType = (int)$decoded['packetType'];
@@ -199,7 +199,7 @@ final class PillDispenserDownlinkEndToEndTest extends TestCase
         $built = DeviceConfigurationCatalog::commandPayloads('zayata-m228', $key, $payload);
         self::assertCount(1, $built, $key);
 
-        $decoded = (new PillDispenserAdapter())->decodeIncoming(DeviceCommandCatalog::buildDownlink(
+        $decoded = (new ZayataAdapter())->decodeIncoming(DeviceCommandCatalog::buildDownlink(
             'zayata-m228',
             self::IMEI,
             $built[0]['command'],

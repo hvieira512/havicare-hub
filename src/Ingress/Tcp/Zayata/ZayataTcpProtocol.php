@@ -18,7 +18,7 @@ use Hub\State\ActiveAlarms;
  * O M228 espera confirmação de cada pacote `0x01`–`0x04`: o mesmo tipo com o bit alto, a ecoar
  * a identidade e o número de série. O bit 1 do Flag dispensa a resposta.
  */
-final class PillDispenserTcpProtocol extends TcpProtocol
+final class ZayataTcpProtocol extends TcpProtocol
 {
     private const ACKNOWLEDGED_TYPES = ['register', 'heartbeat', 'event', 'change'];
 
@@ -93,7 +93,7 @@ final class PillDispenserTcpProtocol extends TcpProtocol
 
         $tlv = is_array($message->decoded['tlv'] ?? null) ? $message->decoded['tlv'] : [];
         $raised = [];
-        foreach (PillDispenserEventDecoder::conditions($tlv) as $condition => $active) {
+        foreach (ZayataEventDecoder::conditions($tlv) as $condition => $active) {
             if ($active && $this->alarms->get($session->imei, $condition) === null) {
                 $raised[$condition] = true;
             }
@@ -107,7 +107,7 @@ final class PillDispenserTcpProtocol extends TcpProtocol
             static function (array $event) use ($raised): bool {
                 $condition = array_search(
                     ['feature' => $event['type'], 'value' => $event['data']],
-                    PillDispenserEventDecoder::CONDITIONS,
+                    ZayataEventDecoder::CONDITIONS,
                     true,
                 );
 

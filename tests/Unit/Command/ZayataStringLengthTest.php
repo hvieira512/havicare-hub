@@ -4,16 +4,16 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Command;
 
-use Hub\Ingress\Tcp\Zayata\PillDispenserAdapter;
+use Hub\Ingress\Tcp\Zayata\ZayataAdapter;
 use PHPUnit\Framework\TestCase;
 
 /** A especificação declara `STRING` de 20 para todas, e mandar o comprimento do texto dá `011`, «comprimento não corresponde». */
-final class PillDispenserStringLengthTest extends TestCase
+final class ZayataStringLengthTest extends TestCase
 {
     /** O valor vai preenchido até ao comprimento que a especificação declara. */
     public function testAStringIsPaddedToItsDeclaredLength(): void
     {
-        $packed = PillDispenserAdapter::packTlv([
+        $packed = ZayataAdapter::packTlv([
             0xA101 => ['value' => '2026-09-22T09:49:28'],
         ]);
 
@@ -30,7 +30,7 @@ final class PillDispenserStringLengthTest extends TestCase
     /** E volta a ler-se sem o enchimento, senão o valor trazia zeros colados. */
     public function testTheParsedValueHasNoPadding(): void
     {
-        $parsed = PillDispenserAdapter::parseTlv(PillDispenserAdapter::packTlv([
+        $parsed = ZayataAdapter::parseTlv(ZayataAdapter::packTlv([
             0xA101 => ['value' => '2026-09-22T09:49:28'],
         ]));
 
@@ -40,7 +40,7 @@ final class PillDispenserStringLengthTest extends TestCase
     /** O pedido de leitura leva o valor a zeros com o comprimento da TAG de texto, e não com um byte. */
     public function testAReadRequestReservesTheFullStringLength(): void
     {
-        $request = PillDispenserAdapter::readRequestTlv([0x8009]);
+        $request = ZayataAdapter::readRequestTlv([0x8009]);
 
         self::assertSame(20, strlen((string)$request[0x8009]['value']));
     }

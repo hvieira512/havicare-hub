@@ -5,12 +5,12 @@ declare(strict_types=1);
 namespace Tests\Unit\Ingress\Tcp;
 
 use Hub\Ingress\Tcp\DeviceEventDecoder;
-use Hub\Ingress\Tcp\Zayata\PillDispenserAdapter;
+use Hub\Ingress\Tcp\Zayata\ZayataAdapter;
 use PHPUnit\Framework\TestCase;
-use Tests\Support\Doubles\PillDispenserFixtures;
+use Tests\Support\Doubles\ZayataFixtures;
 
 /** A resposta ao `0x05` usa as chaves e formas do envio, para o reportado se desenhar com o mesmo componente que o desejado. */
-final class PillDispenserReportedConfigurationTest extends TestCase
+final class ZayataReportedConfigurationTest extends TestCase
 {
     public function testEachConfigurationComesBackUnderItsOwnKey(): void
     {
@@ -104,7 +104,7 @@ final class PillDispenserReportedConfigurationTest extends TestCase
     /** Uma TAG que o aparelho recusa não pode voltar como valor: é o que não sabemos. */
     public function testARefusedTagDoesNotBecomeAValue(): void
     {
-        $adapter = new PillDispenserAdapter();
+        $adapter = new ZayataAdapter();
         $decoded = $adapter->decodeIncoming($adapter->encodeOutgoing([
             'packetType' => 0x85,
             'mac' => 'AABBCCDDEEFF',
@@ -126,7 +126,7 @@ final class PillDispenserReportedConfigurationTest extends TestCase
      */
     private function readConfiguration(array $tlv): array
     {
-        return $this->settingsOf(PillDispenserFixtures::frame(0x85, $tlv));
+        return $this->settingsOf(ZayataFixtures::frame(0x85, $tlv));
     }
 
     /**
@@ -135,7 +135,7 @@ final class PillDispenserReportedConfigurationTest extends TestCase
      */
     private function settingsOf(array $decoded): array
     {
-        $events = (new DeviceEventDecoder())->decode(PillDispenserFixtures::session(), $decoded);
+        $events = (new DeviceEventDecoder())->decode(ZayataFixtures::session(), $decoded);
         self::assertCount(1, $events);
         self::assertSame('device_config', $events[0]['feature']);
 

@@ -5,11 +5,11 @@ declare(strict_types=1);
 namespace Tests\Unit\Command;
 
 use Hub\Command\DeviceCommandCatalog;
-use Hub\Ingress\Tcp\Zayata\PillDispenserAdapter;
+use Hub\Ingress\Tcp\Zayata\ZayataAdapter;
 use PHPUnit\Framework\TestCase;
 
 /** O slot vai em cada plano, e um plano sem slot, como os já guardados, é colocado por posição. */
-final class PillDispenserAlarmSlotTest extends TestCase
+final class ZayataAlarmSlotTest extends TestCase
 {
     private const IMEI = '869243062262262';
 
@@ -95,7 +95,7 @@ final class PillDispenserAlarmSlotTest extends TestCase
             ['plans' => $plans],
         );
 
-        return (new PillDispenserAdapter())->decodeIncoming($bytes)['tlv'] ?? [];
+        return (new ZayataAdapter())->decodeIncoming($bytes)['tlv'] ?? [];
     }
 
     /** @param array<int, array{value?: string}> $tlv */

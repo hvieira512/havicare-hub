@@ -20,11 +20,11 @@ final class MedicationRemindersCapability implements CapabilityContract
 
     public function __construct(
         ?MedicationRemindersHandler $fourPTouch = null,
-        ?MedicationRemindersHandler $pillDispenser = null,
+        ?MedicationRemindersHandler $zayata = null,
     ) {
         $this->handlers = [
             'four-p-touch' => $fourPTouch ?? new FourPTouchMedicationRemindersHandler(),
-            'zayata-m228' => $pillDispenser ?? new PillDispenserMedicationRemindersHandler(),
+            'zayata-m228' => $zayata ?? new ZayataMedicationRemindersHandler(),
         ];
     }
 

@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Tests\Unit\Ingress\Tcp;
 
 use Hub\Ingress\Tcp\DeviceHubServer;
-use Hub\Ingress\Tcp\Zayata\PillDispenserAdapter;
+use Hub\Ingress\Tcp\Zayata\ZayataAdapter;
 use Hub\Registry\Whitelist;
 use PHPUnit\Framework\TestCase;
 use Tests\Support\Doubles\FakeConnection;
@@ -36,7 +36,7 @@ final class RemovedDeviceSessionTest extends TestCase
     /** O tipo que a sessão conheceu vale quando a whitelist já não sabe o do aparelho. */
     public function testAnEventAboutItKeepsTheTypeOfItsSession(): void
     {
-        $connection = $this->connect(1, (new PillDispenserAdapter())->encodeOutgoing(['packetType' => 0x01, 'serial' => 1, 'mac' => self::DISPENSER]));
+        $connection = $this->connect(1, (new ZayataAdapter())->encodeOutgoing(['packetType' => 0x01, 'serial' => 1, 'mac' => self::DISPENSER]));
         $this->whitelist->unregister(self::DISPENSER);
 
         $this->hub->sendDownlink(self::DISPENSER, 'ping');

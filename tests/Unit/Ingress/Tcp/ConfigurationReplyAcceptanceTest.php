@@ -9,8 +9,8 @@ use Hub\Ingress\Tcp\FourPTouch\FourPTouchAdapter;
 use Hub\Ingress\Tcp\FourPTouch\FourPTouchTcpProtocol;
 use Hub\Ingress\Tcp\Vivistar\VivistarAdapter;
 use Hub\Ingress\Tcp\Vivistar\VivistarTcpProtocol;
-use Hub\Ingress\Tcp\Zayata\PillDispenserAdapter;
-use Hub\Ingress\Tcp\Zayata\PillDispenserTcpProtocol;
+use Hub\Ingress\Tcp\Zayata\ZayataAdapter;
+use Hub\Ingress\Tcp\Zayata\ZayataTcpProtocol;
 use PHPUnit\Framework\TestCase;
 
 /** Saber se o aparelho aceitou uma configuração é conhecimento do protocolo, e não do servidor TCP. */
@@ -43,7 +43,7 @@ final class ConfigurationReplyAcceptanceTest extends TestCase
     public function testOtherProtocolsDoNotClaimAnAnswerTheyNeverGave(): void
     {
         $vivistar = new VivistarTcpProtocol(new VivistarAdapter(), new DeviceEventDecoder());
-        $dispenser = new PillDispenserTcpProtocol(new PillDispenserAdapter(), new DeviceEventDecoder());
+        $dispenser = new ZayataTcpProtocol(new ZayataAdapter(), new DeviceEventDecoder());
 
         self::assertNull($vivistar->replyAccepted(['type' => 'AP01', 'data' => ['configAck' => '1']]));
         self::assertNull($dispenser->replyAccepted(['type' => 'write_config_ack', 'tlv' => []]));

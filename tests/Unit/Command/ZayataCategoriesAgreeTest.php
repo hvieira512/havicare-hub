@@ -9,7 +9,7 @@ use Hub\Domain\Capability\CapabilityCatalog;
 use PHPUnit\Framework\TestCase;
 
 /** O catálogo de capacidades e as definições declaram a categoria cada um por seu lado. */
-final class PillDispenserCategoriesAgreeTest extends TestCase
+final class ZayataCategoriesAgreeTest extends TestCase
 {
     /** O catálogo de capacidades e as definições têm de concordar sobre onde cada coisa vive. */
     public function testTheCategoryIsTheSameOnBothSides(): void

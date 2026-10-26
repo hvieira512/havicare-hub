@@ -6,10 +6,10 @@ namespace Tests\Support\Doubles;
 
 use Hub\Ingress\Tcp\DeviceEventDecoder;
 use Hub\Ingress\Tcp\DeviceSession;
-use Hub\Ingress\Tcp\Zayata\PillDispenserAdapter;
+use Hub\Ingress\Tcp\Zayata\ZayataAdapter;
 
 /** A sessão do dispensador M228 e as tramas TLV que os testes lhe dão a descodificar. */
-final class PillDispenserFixtures
+final class ZayataFixtures
 {
     public const MAC = 'AABBCCDDEEFF';
 
@@ -40,7 +40,7 @@ final class PillDispenserFixtures
             $entries[$tag] = is_array($item) ? $item : ['value' => $item];
         }
 
-        $adapter = new PillDispenserAdapter();
+        $adapter = new ZayataAdapter();
         $decoded = $adapter->decodeIncoming($adapter->encodeOutgoing([
             'packetType' => $packetType,
             'mac' => self::MAC,

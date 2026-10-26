@@ -5,13 +5,13 @@ declare(strict_types=1);
 namespace Tests\Unit\Ingress\Tcp;
 
 use Hub\Ingress\Tcp\DeviceEventDecoder;
-use Hub\Ingress\Tcp\Zayata\PillDispenserAdapter;
-use Hub\Ingress\Tcp\Zayata\PillDispenserTcpProtocol;
+use Hub\Ingress\Tcp\Zayata\ZayataAdapter;
+use Hub\Ingress\Tcp\Zayata\ZayataTcpProtocol;
 use PHPUnit\Framework\TestCase;
-use Tests\Support\Doubles\PillDispenserFixtures;
+use Tests\Support\Doubles\ZayataFixtures;
 
 /** O corpo de um `0x8A`–`0x8C` é uma lista de TAGs coladas: lido como TFLV dá telemetria falsa com identidade e CRC válidos. */
-final class PillDispenserDiscoveryDecodingTest extends TestCase
+final class ZayataDiscoveryDecodingTest extends TestCase
 {
     /** Uma lista de TAGs bem formada não vira telemetria. */
     public function testATagListIsNeverReadAsTlv(): void
@@ -19,7 +19,7 @@ final class PillDispenserDiscoveryDecodingTest extends TestCase
         $decoded = $this->decode(0x8C, pack('v*', 0xA001, 0xA002, 0xA101));
 
         self::assertSame([], $decoded['tlv']);
-        self::assertSame([], (new DeviceEventDecoder())->decode(PillDispenserFixtures::session('869243062262262'), $decoded));
+        self::assertSame([], (new DeviceEventDecoder())->decode(ZayataFixtures::session('869243062262262'), $decoded));
     }
 
     /** E um corpo que não se entende também não. */
@@ -29,7 +29,7 @@ final class PillDispenserDiscoveryDecodingTest extends TestCase
         $decoded = $this->decode(0x8B, "\x01\x81\x02");
 
         self::assertSame([], $decoded['tlv'], 'nada é lido de um corpo que não se entende');
-        self::assertSame([], (new DeviceEventDecoder())->decode(PillDispenserFixtures::session('869243062262262'), $decoded));
+        self::assertSame([], (new DeviceEventDecoder())->decode(ZayataFixtures::session('869243062262262'), $decoded));
     }
 
     /** O `0x8D` é a resposta à lista de parâmetros de evento, e não fecha operação nenhuma. */
@@ -44,11 +44,11 @@ final class PillDispenserDiscoveryDecodingTest extends TestCase
     /** @return array<string, mixed> */
     private function decode(int $packetType, string $appData): array
     {
-        $adapter = new PillDispenserAdapter();
+        $adapter = new ZayataAdapter();
         $decoded = $adapter->decodeIncoming($adapter->encodeOutgoing([
             'packetType' => $packetType,
             'serial' => 1,
-            'deviceNumber' => PillDispenserAdapter::deviceNumberFor('869243062262262'),
+            'deviceNumber' => ZayataAdapter::deviceNumberFor('869243062262262'),
             'appDataRaw' => $appData,
         ]));
         self::assertIsArray($decoded);
@@ -56,8 +56,8 @@ final class PillDispenserDiscoveryDecodingTest extends TestCase
         return $decoded;
     }
 
-    private function protocol(): PillDispenserTcpProtocol
+    private function protocol(): ZayataTcpProtocol
     {
-        return new PillDispenserTcpProtocol(new PillDispenserAdapter(), new DeviceEventDecoder());
+        return new ZayataTcpProtocol(new ZayataAdapter(), new DeviceEventDecoder());
     }
 }

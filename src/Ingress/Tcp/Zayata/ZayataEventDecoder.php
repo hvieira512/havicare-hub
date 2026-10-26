@@ -6,7 +6,7 @@ namespace Hub\Ingress\Tcp\Zayata;
 
 use Hub\Support\Values;
 
-final class PillDispenserEventDecoder
+final class ZayataEventDecoder
 {
     /** As condições que o aparelho mantém acesas enquanto duram, pela TAG que as diz. */
     private const CONDITION_TAGS = [
@@ -122,14 +122,14 @@ final class PillDispenserEventDecoder
         // Se a trama falou das horas, ela diz o plano inteiro — mesmo que o plano inteiro
         // seja nove slots vazios.
         $planReported = false;
-        for ($offset = 0; $offset < PillDispenserAdapter::ALARM_SLOTS; $offset++) {
+        for ($offset = 0; $offset < ZayataAdapter::ALARM_SLOTS; $offset++) {
             $hour = Tlv::u8($tlv, 0x1021 + $offset);
             if ($hour === null) {
                 continue;
             }
             $planReported = true;
             $minute = Tlv::u8($tlv, 0x1031 + $offset) ?? 0;
-            if ($hour >= PillDispenserAdapter::ALARM_UNSET_HOUR || $minute >= PillDispenserAdapter::ALARM_UNSET_MINUTE) {
+            if ($hour >= ZayataAdapter::ALARM_UNSET_HOUR || $minute >= ZayataAdapter::ALARM_UNSET_MINUTE) {
                 continue;
             }
             $plans[] = [
@@ -471,7 +471,7 @@ final class PillDispenserEventDecoder
     private static function doseStates(array $tlv): array
     {
         $doses = [];
-        foreach (range(1, PillDispenserAdapter::ALARM_SLOTS) as $slot) {
+        foreach (range(1, ZayataAdapter::ALARM_SLOTS) as $slot) {
             // São oito, e são duas fases: o aparelho primeiro empurra a dose para fora, e só
             // depois espera que alguém a levante. Cada fase tem o seu tempo esgotado.
             $state = match (Tlv::u8($tlv, 0x8130 + $slot)) {

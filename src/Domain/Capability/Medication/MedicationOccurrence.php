@@ -88,7 +88,7 @@ final class MedicationOccurrence
             return null;
         }
 
-        foreach ((new PillDispenserMedicationRemindersHandler())->fromNative($reminders)['plans'] as $plan) {
+        foreach ((new ZayataMedicationRemindersHandler())->fromNative($reminders)['plans'] as $plan) {
             foreach ((array)($plan['times'] ?? []) as $entry) {
                 if (is_array($entry) && (int)($entry['slot'] ?? 0) === $slot && MedicationPlanShape::enabled($entry['enabled'] ?? true)) {
                     [$hour, $minute] = array_pad(explode(':', (string)($entry['time'] ?? '')), 2, '0');

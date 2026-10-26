@@ -4,20 +4,20 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Ingress\Tcp;
 
-use Hub\Ingress\Tcp\Zayata\PillDispenserAdapter;
+use Hub\Ingress\Tcp\Zayata\ZayataAdapter;
 use PHPUnit\Framework\TestCase;
 
-final class PillDispenserAdapterTest extends TestCase
+final class ZayataAdapterTest extends TestCase
 {
     public function testCrc16ModbusMatchesKnownVector(): void
     {
         // Vetor de referência do CRC-16/MODBUS: "123456789" -> 0x4B37.
-        self::assertSame(0x4B37, PillDispenserAdapter::crc16Modbus('123456789'));
+        self::assertSame(0x4B37, ZayataAdapter::crc16Modbus('123456789'));
     }
 
     public function testEncodedFrameHasTheWireLayout(): void
     {
-        $adapter = new PillDispenserAdapter();
+        $adapter = new ZayataAdapter();
         $frame = $adapter->encodeOutgoing([
             'packetType' => 0x02,
             'mac' => 'AABBCCDDEEFF',
@@ -34,14 +34,14 @@ final class PillDispenserAdapterTest extends TestCase
         // O CRC cobre de Length ao fim dos dados e vai em ordem do anfitrião (LE).
         $region = substr($frame, 1, strlen($frame) - 3);
         self::assertSame(
-            PillDispenserAdapter::crc16Modbus($region),
+            ZayataAdapter::crc16Modbus($region),
             unpack('v', substr($frame, -2))[1],
         );
     }
 
     public function testCanDecodeAcceptsOwnFrameAndRejectsForeign(): void
     {
-        $adapter = new PillDispenserAdapter();
+        $adapter = new ZayataAdapter();
         $frame = $adapter->encodeOutgoing(['packetType' => 0x02, 'mac' => 'AABBCCDDEEFF']);
 
         self::assertTrue($adapter->canDecode($frame));
@@ -51,7 +51,7 @@ final class PillDispenserAdapterTest extends TestCase
 
     public function testCanDecodeRejectsCorruptedCrc(): void
     {
-        $adapter = new PillDispenserAdapter();
+        $adapter = new ZayataAdapter();
         $frame = $adapter->encodeOutgoing(['packetType' => 0x02, 'mac' => 'AABBCCDDEEFF']);
 
         $frame[strlen($frame) - 1] = chr(ord($frame[strlen($frame) - 1]) ^ 0xFF);
@@ -62,7 +62,7 @@ final class PillDispenserAdapterTest extends TestCase
 
     public function testDecodesMacIdentityFromDeviceNumber(): void
     {
-        $adapter = new PillDispenserAdapter();
+        $adapter = new ZayataAdapter();
         $frame = $adapter->encodeOutgoing(['packetType' => 0x01, 'mac' => 'AABBCCDDEEFF']);
 
         $decoded = $adapter->decodeIncoming($frame);
@@ -75,7 +75,7 @@ final class PillDispenserAdapterTest extends TestCase
 
     public function testDecodesImeiIdentityFromDeviceNumber(): void
     {
-        $adapter = new PillDispenserAdapter();
+        $adapter = new ZayataAdapter();
         $frame = $adapter->encodeOutgoing(['packetType' => 0x01, 'imei' => '860123456789012']);
 
         $decoded = $adapter->decodeIncoming($frame);
@@ -87,7 +87,7 @@ final class PillDispenserAdapterTest extends TestCase
 
     public function testOnlyFlagBitOneWaivesTheReply(): void
     {
-        $adapter = new PillDispenserAdapter();
+        $adapter = new ZayataAdapter();
         $decode = static function (int $flag) use ($adapter): array {
             $decoded = $adapter->decodeIncoming($adapter->encodeOutgoing([
                 'packetType' => 0x02,
@@ -108,7 +108,7 @@ final class PillDispenserAdapterTest extends TestCase
 
     public function testEveryPacketTypeHasAName(): void
     {
-        $adapter = new PillDispenserAdapter();
+        $adapter = new ZayataAdapter();
         $name = static function (int $packetType) use ($adapter): string {
             $decoded = $adapter->decodeIncoming($adapter->encodeOutgoing([
                 'packetType' => $packetType,

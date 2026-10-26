@@ -10,7 +10,7 @@ use Hub\Domain\Capability\CapabilityCatalog;
 use PHPUnit\Framework\TestCase;
 
 /** Pedível é um comando `kind: request`, que dá mosaico no ecrã principal, ou uma acção transitória do catálogo, que dá botão no modal. */
-final class PillDispenserRequestableIsReachableTest extends TestCase
+final class ZayataRequestableIsReachableTest extends TestCase
 {
     public function testEveryRequestableCapabilityHasAWayToBeAsked(): void
     {

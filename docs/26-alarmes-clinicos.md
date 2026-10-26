@@ -282,7 +282,7 @@ Verificado no código, condição a condição:
 | `device.disconnected` | `status` `online` (retido) e `device.connected` | [08](08-contrato-mqtt.md) §5 |
 | `zone_exit` da 4P Touch | `zone_entry` | nativo |
 | `help_call` do NCS | `reset` com o mesmo `pagerId` | `src/Ingress/Mqtt/Ncs/MessageNormalizer.php` |
-| `device_fault`, `storage_environment`, `help_call` do dispensador | `dispenser_conditions` (secção 6) | `src/Ingress/Tcp/Zayata/PillDispenserEventDecoder.php` |
+| `device_fault`, `storage_environment`, `help_call` do dispensador | `dispenser_conditions` (secção 6) | `src/Ingress/Tcp/Zayata/ZayataEventDecoder.php` |
 | `dose_missed` | Instante: não há normal | — |
 
 ### Vários do mesmo tipo no mesmo dispositivo

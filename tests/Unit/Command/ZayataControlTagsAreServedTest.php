@@ -6,11 +6,11 @@ namespace Tests\Unit\Command;
 
 use Hub\Command\DeviceCommandCatalog;
 use Hub\Command\DeviceConfigurationCatalog;
-use Hub\Ingress\Tcp\Zayata\PillDispenserAdapter;
+use Hub\Ingress\Tcp\Zayata\ZayataAdapter;
 use PHPUnit\Framework\TestCase;
 
 /** A especificação descreve a série M2 inteira, e este firmware recusa as TAGs fora das doze que o `0x0C` devolve. */
-final class PillDispenserControlTagsAreServedTest extends TestCase
+final class ZayataControlTagsAreServedTest extends TestCase
 {
     /**
      * A resposta ao `0x0C` do M228 de ensaio em 22 de setembro de 2026, escrita à mão e não lida do código.
@@ -34,7 +34,7 @@ final class PillDispenserControlTagsAreServedTest extends TestCase
 
     public function testEveryControlTagTheHubCanSendIsOneTheDeviceServes(): void
     {
-        $adapter = new PillDispenserAdapter();
+        $adapter = new ZayataAdapter();
         $unserved = [];
         $seen = [];
 

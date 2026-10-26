@@ -197,7 +197,7 @@ corresponde, `100` valor ilegal, `101` operação falhou.
 > `01011` STRING — e uma TAG que chegue ao aparelho como `00000` (`UNKONW`)
 > volta com o estado `010` e não produz nada. O tipo de cada TAG está na tabela
 > «TAG Definition - Device Type 02» da especificação, e o hub guarda-a no
-> `PillDispenserAdapter::TAGS_BY_TYPE`; é de lá que sai também o comprimento com
+> `ZayataAdapter::TAGS_BY_TYPE`; é de lá que sai também o comprimento com
 > que uma leitura pede o valor.
 >
 > Isto passou despercebido até o primeiro M228 real se ligar: a suite constrói a
@@ -455,9 +455,9 @@ o protocolo está descrito aqui e as três listas de referência também.
 A resposta `0x86` fecha o ciclo de vida de uma escrita: uma configuração escrita
 fica em `confirmed` com `applied_at` quando o aparelho a reconhece.
 
-**Onde está.** `src/Ingress/Tcp/Zayata/PillDispenserAdapter.php` (a trama),
-`src/Ingress/Tcp/Zayata/PillDispenserEventDecoder.php` (as TAGs), o protocolo de sessão em
-`src/Ingress/Tcp/Zayata/PillDispenserTcpProtocol.php`, e as capacidades em
+**Onde está.** `src/Ingress/Tcp/Zayata/ZayataAdapter.php` (a trama),
+`src/Ingress/Tcp/Zayata/ZayataEventDecoder.php` (as TAGs), o protocolo de sessão em
+`src/Ingress/Tcp/Zayata/ZayataTcpProtocol.php`, e as capacidades em
 `src/Domain/Capability/Definition/PillDispenserCapabilityDefinitions.php`.
 
 ## 7. A API de parceiro (Case 1)

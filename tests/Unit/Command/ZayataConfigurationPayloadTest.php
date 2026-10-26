@@ -8,7 +8,7 @@ use Hub\Command\DeviceConfigurationCatalog;
 use PHPUnit\Framework\TestCase;
 
 /** Uma definição que o validador não conheça sai com payload vazio e o aparelho aceita o zero, por isso entra-se pela dashboard. */
-final class PillDispenserConfigurationPayloadTest extends TestCase
+final class ZayataConfigurationPayloadTest extends TestCase
 {
     /** Sem o `slot` vindo do validador, o construtor colocaria o plano por posição e perderia o alarme escolhido. */
     public function testTheAlarmSlotSurvivesTheValidator(): void

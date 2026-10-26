@@ -61,7 +61,7 @@ final class MedicationRunout
         }
 
         $times = [];
-        foreach ((new PillDispenserMedicationRemindersHandler())->fromNative($reminders)['plans'] as $plan) {
+        foreach ((new ZayataMedicationRemindersHandler())->fromNative($reminders)['plans'] as $plan) {
             if (($plan['enabled'] ?? true) === false) {
                 continue;
             }

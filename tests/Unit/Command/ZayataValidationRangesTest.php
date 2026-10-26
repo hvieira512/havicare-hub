@@ -9,7 +9,7 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 /** Uma escrita que o aparelho recuse fica «em envio» até alguém reparar, por isso cada gama do `ZayataPayloadBuilder` leva um valor ilegal. */
-final class PillDispenserValidationRangesTest extends TestCase
+final class ZayataValidationRangesTest extends TestCase
 {
     /**
      * @return iterable<string, array{string, array<string, mixed>}>

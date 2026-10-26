@@ -7,7 +7,7 @@ namespace Hub\Ingress\Tcp;
 use Hub\Ingress\Tcp\FourPTouch\FourPTouchAdapter;
 use Hub\Ingress\Tcp\Vivistar\VivistarAdapter;
 use Hub\Ingress\Tcp\Wonlex\WonlexAdapter;
-use Hub\Ingress\Tcp\Zayata\PillDispenserAdapter;
+use Hub\Ingress\Tcp\Zayata\ZayataAdapter;
 
 class AdapterRegistry
 {
@@ -20,7 +20,7 @@ class AdapterRegistry
         $this->register(new WonlexAdapter());
         $this->register(new VivistarAdapter());
         $this->register(new FourPTouchAdapter());
-        $this->register(new PillDispenserAdapter());
+        $this->register(new ZayataAdapter());
     }
 
     public function register(DeviceAdapterInterface $adapter): void

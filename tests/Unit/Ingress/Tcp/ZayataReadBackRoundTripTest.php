@@ -6,13 +6,13 @@ namespace Tests\Unit\Ingress\Tcp;
 
 use Hub\Command\DeviceCommandCatalog;
 use Hub\Ingress\Tcp\DeviceEventDecoder;
-use Hub\Ingress\Tcp\Zayata\PillDispenserAdapter;
+use Hub\Ingress\Tcp\Zayata\ZayataAdapter;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
-use Tests\Support\Doubles\PillDispenserFixtures;
+use Tests\Support\Doubles\ZayataFixtures;
 
 /** O `0x06` montado pelo construtor real lê-se como se fosse a resposta `0x86`. */
-final class PillDispenserReadBackRoundTripTest extends TestCase
+final class ZayataReadBackRoundTripTest extends TestCase
 {
     private const IMEI = '869243062262262';
 
@@ -118,7 +118,7 @@ final class PillDispenserReadBackRoundTripTest extends TestCase
      */
     private function roundTrip(string $command, array $payload): array
     {
-        $adapter = new PillDispenserAdapter();
+        $adapter = new ZayataAdapter();
         $written = $adapter->decodeIncoming(
             DeviceCommandCatalog::buildDownlink('zayata-m228', self::IMEI, $command, $payload)
         );
@@ -131,7 +131,7 @@ final class PillDispenserReadBackRoundTripTest extends TestCase
             'tlv' => $written['tlv'],
         ]));
 
-        foreach ((new DeviceEventDecoder())->decode(PillDispenserFixtures::session(), $answer) as $event) {
+        foreach ((new DeviceEventDecoder())->decode(ZayataFixtures::session(), $answer) as $event) {
             if ($event['feature'] === 'device_config') {
                 return $event['value']['settings'] ?? [];
             }

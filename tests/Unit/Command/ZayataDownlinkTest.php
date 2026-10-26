@@ -5,18 +5,18 @@ declare(strict_types=1);
 namespace Tests\Unit\Command;
 
 use Hub\Command\DeviceCommandCatalog;
-use Hub\Ingress\Tcp\Zayata\PillDispenserAdapter;
+use Hub\Ingress\Tcp\Zayata\ZayataAdapter;
 use PHPUnit\Framework\TestCase;
 
 /** Sem o aparelho à mão, o descodificador do próprio hub ler a trama de volta é a única prova de que ela está certa. */
-final class PillDispenserDownlinkTest extends TestCase
+final class ZayataDownlinkTest extends TestCase
 {
     private const MAC = 'AABBCCDDEE01';
 
     /** @return array<int, array{type: int, state: int, value: string}> */
     private function decode(string $frame, int $expectedPacketType): array
     {
-        $adapter = new PillDispenserAdapter();
+        $adapter = new ZayataAdapter();
         $decoded = $adapter->decodeIncoming($frame);
 
         self::assertIsArray($decoded, 'a trama de descida tem de ser válida à luz do protocolo');
@@ -141,7 +141,7 @@ final class PillDispenserDownlinkTest extends TestCase
 
     public function testAnImeiIdentityIsEncodedAsImeiAndNotAsMac(): void
     {
-        $adapter = new PillDispenserAdapter();
+        $adapter = new ZayataAdapter();
         $frame = DeviceCommandCatalog::buildDownlink('zayata-m228', '860123456789012', 'muteAlarm', []);
         $decoded = $adapter->decodeIncoming($frame);
 
@@ -179,7 +179,7 @@ final class PillDispenserDownlinkTest extends TestCase
         );
 
         self::assertSame(45 * 60, unpack('V', $tlv[0x1017]['value'])[1]);
-        self::assertSame(PillDispenserAdapter::T_INT32U, $tlv[0x1017]['type']);
+        self::assertSame(ZayataAdapter::T_INT32U, $tlv[0x1017]['type']);
     }
 
     public function testAnUnknownCommandIsRefused(): void
@@ -206,7 +206,7 @@ final class PillDispenserDownlinkTest extends TestCase
         $wrong = [];
         foreach (self::everyCommand() as [$command, $payload]) {
             $frame = DeviceCommandCatalog::buildDownlink('zayata-m228', self::MAC, $command, $payload);
-            $decoded = (new PillDispenserAdapter())->decodeIncoming($frame);
+            $decoded = (new ZayataAdapter())->decodeIncoming($frame);
             self::assertIsArray($decoded, $command);
 
             foreach ($decoded['tlv'] as $tag => $entry) {

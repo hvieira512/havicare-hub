@@ -8,7 +8,7 @@ use Hub\Command\DeviceConfigurationCatalog;
 use PHPUnit\Framework\TestCase;
 
 /** O fuso escolhe-se pelas zonas da IANA, que mudam de hora sozinhas, e não por desvios fixos. */
-final class PillDispenserTimeZoneOptionsTest extends TestCase
+final class ZayataTimeZoneOptionsTest extends TestCase
 {
     /** O desvio de agora escreve-o a dashboard, e por isso a lista não envelhece com a mudança de hora. */
     public function testTheOptionsAreTheIanaZonesAlone(): void

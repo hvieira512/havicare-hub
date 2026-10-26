@@ -8,7 +8,7 @@ use Hub\Device\FeatureNormalizer;
 use Hub\Ingress\Tcp\FourPTouch\FourPTouchEventDecoder;
 use Hub\Ingress\Tcp\Vivistar\VivistarEventDecoder;
 use Hub\Ingress\Tcp\Wonlex\WonlexEventDecoder;
-use Hub\Ingress\Tcp\Zayata\PillDispenserEventDecoder;
+use Hub\Ingress\Tcp\Zayata\ZayataEventDecoder;
 
 final class DeviceEventDecoder
 {
@@ -36,7 +36,7 @@ final class DeviceEventDecoder
             'wonlex-json' => WonlexEventDecoder::decode($nativeType, $payload),
             'vivistar-iw' => VivistarEventDecoder::decode($nativeType, $payload),
             'four-p-touch' => FourPTouchEventDecoder::decode($nativeType, $payload),
-            'zayata-m228' => PillDispenserEventDecoder::decode($nativeType, $payload),
+            'zayata-m228' => ZayataEventDecoder::decode($nativeType, $payload),
             default => [],
         };
 

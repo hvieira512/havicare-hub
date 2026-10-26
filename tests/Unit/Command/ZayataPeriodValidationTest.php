@@ -8,7 +8,7 @@ use Hub\Command\Configuration\Payload\ZayataPayloadBuilder;
 use PHPUnit\Framework\TestCase;
 
 /** O aparelho aceita as datas sem verificar a ordem, e um plano ao contrário deixa os alarmes calados sem erro. */
-final class PillDispenserPeriodValidationTest extends TestCase
+final class ZayataPeriodValidationTest extends TestCase
 {
     public function testTheSameDayAtBothEndsIsAValidPeriod(): void
     {

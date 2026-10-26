@@ -11,7 +11,7 @@ use Hub\Domain\Capability\ConfigurationInputDefaults;
 use PHPUnit\Framework\TestCase;
 
 /** Percorre-se o catálogo inteiro para cada configuração nova sem contrato próprio entrar no teste sozinha. */
-final class PillDispenserGenericConfigurationTest extends TestCase
+final class ZayataGenericConfigurationTest extends TestCase
 {
     public function testEveryDispenserConfigurationSurvivesTheGenericContract(): void
     {

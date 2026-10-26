@@ -5,11 +5,11 @@ declare(strict_types=1);
 namespace Tests\Unit\Command;
 
 use Hub\Command\DeviceCommandCatalog;
-use Hub\Ingress\Tcp\Zayata\PillDispenserAdapter;
+use Hub\Ingress\Tcp\Zayata\ZayataAdapter;
 use PHPUnit\Framework\TestCase;
 
 /** A TAG `0xA101` não leva fuso e os alarmes são locais: o fuso do hub vai em INT16S HHMM como na `0x1015`, `+100` é uma hora. */
-final class PillDispenserClockCalibrationTest extends TestCase
+final class ZayataClockCalibrationTest extends TestCase
 {
     private const IMEI = '869243062262262';
 
@@ -70,7 +70,7 @@ final class PillDispenserClockCalibrationTest extends TestCase
             $context,
         );
 
-        $decoded = (new PillDispenserAdapter())->decodeIncoming($bytes);
+        $decoded = (new ZayataAdapter())->decodeIncoming($bytes);
         self::assertSame(0x08, $decoded['packetType'], 'a calibração é um pacote de controlo');
 
         return (string)($decoded['tlv'][0xA101]['value'] ?? '');

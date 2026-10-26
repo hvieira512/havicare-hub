@@ -10,7 +10,7 @@ use Hub\Domain\Capability\CapabilityHelpers;
  * A estratégia do dispensador M228 para o plano de medicação. A chave nativa é a genérica, e é
  * o `command` da definição que monta a trama.
  */
-final class PillDispenserMedicationRemindersHandler implements MedicationRemindersHandler
+final class ZayataMedicationRemindersHandler implements MedicationRemindersHandler
 {
     use CapabilityHelpers;
 
