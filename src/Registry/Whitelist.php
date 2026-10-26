@@ -6,6 +6,7 @@ namespace Hub\Registry;
 
 use Hub\Domain\DeviceMetadata;
 use Hub\Infrastructure\Persistence\Repository\WhitelistRepository;
+use Hub\Log\Logger;
 
 class Whitelist
 {
@@ -178,8 +179,12 @@ class Whitelist
             && ($this->databaseCacheTtlSeconds === 0
                 || (time() - $this->databaseCacheLoadedAt) >= $this->databaseCacheTtlSeconds)
         ) {
-            $this->devices = [];
-            $this->loadDatabaseCache();
+            try {
+                $this->loadDatabaseCache();
+            } catch (\Throwable $e) {
+                // Fica a lista anterior: um dispositivo conhecido não passa a desconhecido por uma falha da base.
+                Logger::channel('hub')->error("Whitelist reload failed: {$e->getMessage()}");
+            }
         }
     }
 
@@ -189,7 +194,9 @@ class Whitelist
             return;
         }
 
-        foreach ($this->db->all() as $row) {
+        $rows = $this->db->all();
+        $this->devices = [];
+        foreach ($rows as $row) {
             $this->loadEntry((string)$row['imei'], $row);
         }
         $this->databaseCacheLoadedAt = time();
