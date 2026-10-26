@@ -29,6 +29,25 @@ final class WonlexAndFourPTouchProtocolTest extends TestCase
         self::assertSame('heartbeat', (new WonlexAdapter())->decodeIncoming($heartbeat->responses[0]->bytes)['type']);
     }
 
+    /** O estado custa uma consulta à base: só o lêem as tramas que respondem com ele. */
+    public function testAnOrdinaryUpdateDoesNotReadTheDeviceState(): void
+    {
+        $reads = 0;
+        $protocol = new WonlexTcpProtocol(
+            new WonlexAdapter(),
+            new DeviceEventDecoder(),
+            static function () use (&$reads): array {
+                $reads++;
+                return ['configurations' => []];
+            },
+        );
+        $session = new DeviceSession(new FakeConnection(), true, '868705080300697', 'wonlex-json');
+
+        $protocol->handleIncoming($session, $this->wonlexFrame(['type' => 'upHeartRate', 'ident' => 1, 'ref' => 'w:update', 'imei' => '868705080300697', 'data' => ['heartRate' => 70]]));
+
+        self::assertSame(0, $reads);
+    }
+
     public function testWonlexDeviceRequestsReceiveSpecificDownlinksWithSameIdent(): void
     {
         $protocol = new WonlexTcpProtocol(

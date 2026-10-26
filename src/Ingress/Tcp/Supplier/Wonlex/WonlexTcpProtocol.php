@@ -58,12 +58,12 @@ final class WonlexTcpProtocol extends TcpProtocol
             return [];
         }
 
-        $state = $this->state($session);
         if ($type === 'upGetDevConfig') {
-            return $this->configurationSyncResponses($session, $state['configurations'] ?? [], $ident, $timestamp);
+            return $this->configurationSyncResponses($session, $this->state($session)['configurations'] ?? [], $ident, $timestamp);
         }
         if ($type === 'upSleepFind') {
-            $sleep = is_array($state['sleep'] ?? null) ? $state['sleep'] : [];
+            $sleep = $this->state($session)['sleep'] ?? null;
+            $sleep = is_array($sleep) ? $sleep : [];
             return [$this->downlink($session, 'dnUpSleep', [
                 'upDayStr' => (string)($decoded['data']['upDayStr'] ?? gmdate('Y-m-d')),
                 'value' => $this->sleepSummary($sleep),

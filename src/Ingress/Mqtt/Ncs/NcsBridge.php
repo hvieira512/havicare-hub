@@ -76,7 +76,7 @@ final class NcsBridge extends MqttBridgeBase
                 ident: $from,
                 licenseId: ctype_digit($parsedTopic->scope) ? (int)$parsedTopic->scope : 0
             );
-            Logger::channel('hub')->warning("Ignoring unregistered NCS source from={$from}");
+            $this->warnRepeatedly("unregistered:{$from}", "Ignoring unregistered NCS source from={$from}");
             return;
         }
 

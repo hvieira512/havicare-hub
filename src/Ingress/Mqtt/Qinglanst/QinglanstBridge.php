@@ -181,8 +181,7 @@ final class QinglanstBridge extends MqttBridgeBase
             }
         }
 
-        // O estrangulamento no Redis é por capacidade: as que chegam na mesma mensagem mudam
-        // a ritmos diferentes.
+        // A telemetria guarda-se toda: a planta ao vivo desenha as posições a partir dela.
         foreach ($normalized['telemetry'] as $capability => $telemetry) {
             $this->mqttBridge->publishAndStore($this->deviceStore, 'telemetry', $deviceKey, $telemetry, $deviceType, $licenseId, $company);
         }
@@ -214,7 +213,7 @@ final class QinglanstBridge extends MqttBridgeBase
             licenseId: (int)$topic->licenseId,
             company: self::RADAR_COMPANY
         );
-        Logger::channel('hub')->warning("Ignoring unregistered Qinglanst device uid={$deviceUid}");
+        $this->warnRepeatedly("unregistered:{$deviceUid}", "Ignoring unregistered Qinglanst device uid={$deviceUid}");
         return null;
     }
 

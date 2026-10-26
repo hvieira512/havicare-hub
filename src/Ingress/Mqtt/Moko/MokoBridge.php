@@ -224,7 +224,7 @@ final class MokoBridge extends MqttBridgeBase implements DispatchesQueued
                 (string)($decoded['protocol'] ?? ''),
                 ident: $parsedTopic->gatewayMac
             );
-            Logger::channel('hub')->warning("Ignoring unregistered MOKO gateway mac={$parsedTopic->gatewayMac}");
+            $this->warnRepeatedly("unregistered:{$parsedTopic->gatewayMac}", "Ignoring unregistered MOKO gateway mac={$parsedTopic->gatewayMac}");
             return;
         }
 
