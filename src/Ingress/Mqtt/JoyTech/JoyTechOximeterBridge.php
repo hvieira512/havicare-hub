@@ -93,12 +93,12 @@ final class JoyTechOximeterBridge extends GattBridge
     private function session(GattDeviceContext $context, bool $connected): void
     {
         if ($connected) {
-            $this->presence($context)->markOnline($context->deviceKey, $context->device);
+            $this->presence($context)->markOnline($context->deviceKey, $context->device, $context->gatewayKey);
             return;
         }
 
         $this->finish($context->deviceKey);
-        $this->presence($context)->markOffline($context->deviceKey, $context->device);
+        $this->presence($context)->markOffline($context->deviceKey, $context->device, $context->gatewayKey);
     }
 
     /** O 0x88: SpO2 em %, pulso em bpm, PI, barra e onda, um byte cada. O PI vem sempre a zero. */

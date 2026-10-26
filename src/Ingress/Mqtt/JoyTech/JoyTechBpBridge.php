@@ -141,12 +141,12 @@ final class JoyTechBpBridge extends GattBridge
             unset($this->reading[$deviceKey]);
             $this->ecg->drop($deviceKey);
             unset($this->sessions[$deviceKey]);
-            $this->presence($context)->markOffline($deviceKey, $context->device);
+            $this->presence($context)->markOffline($deviceKey, $context->device, $context->gatewayKey);
             return;
         }
 
         $this->openMemorySession($context, $offsetMinutes);
-        $this->presence($context)->markOnline($deviceKey, $context->device);
+        $this->presence($context)->markOnline($deviceKey, $context->device, $context->gatewayKey);
 
         // O aparelho não pede a hora, e a memória é datada por ela: acerta-se a cada ligação.
         $this->downlinks?->sendDirect($deviceKey, $context->gatewayKey, 'calibrateClock', [], 0, $offsetMinutes);

@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace Hub\Domain\Capability;
 
+use Hub\Domain\Liveness;
+
 /**
  * A gravidade de um acontecimento: `alarm` é perigo e pede alguém já, `alert` pede atenção sem
- * urgência, `info` é um facto. Os eventos de ligação (`device.*`) não levam nenhuma.
+ * urgência, `info` é um facto. A dos eventos de ligação (`device.*`) dá-a `connection()`.
  */
 final class EventSeverity
 {
@@ -17,28 +19,34 @@ final class EventSeverity
     private const BY_TYPE = [
         'help_call' => self::ALARM,
         'proximity_alarm' => self::ALARM,
-        'apnea' => self::ALARM,
         'change_required' => self::ALARM,
+        // O fabricante do radar só manda alarmar logo os vitais fracos, e não a apneia (Cloud2cloud V2.2.3, p. 11 e 39).
+        'weak_vital_signs' => self::ALARM,
+        'apnea' => self::ALERT,
         'heart_rate_abnormal' => self::ALERT,
         'breath_rate_high' => self::ALERT,
         'breath_rate_low' => self::ALERT,
-        'weak_vital_signs' => self::ALERT,
         'device_removed' => self::ALERT,
         'check_required' => self::ALERT,
         'device_fault' => self::ALERT,
         'storage_environment' => self::ALERT,
-        'device_state' => self::ALERT,
         'reset' => self::INFO,
-        // Carregar é manutenção: o que deixa a pessoa sem proteção é o desligado.
+        // O que pede alguém é o aparelho calado, e esse é o `device.disconnected`.
+        'device_state' => self::INFO,
         'low_battery' => self::INFO,
+        'medication_alarm_change' => self::INFO,
+        'medication_intake' => self::INFO,
     ];
 
     /** Os limites da frequência cardíaca abaixo e acima dos quais o alerta passa a alarme. */
     private const HEART_RATE_CRITICAL_LOW_BPM = 20;
     private const HEART_RATE_CRITICAL_HIGH_BPM = 160;
 
-    private const MISSED_DOSE_STATES = ['missed', 'timed_out', 'retrieval_timed_out'];
-    private const ABNORMAL_INTAKE_RESULTS = ['abnormal', 'missed'];
+    /** Desligar-se é um alerta, salvo em quem só se liga para medir e se desliga no fim. */
+    public static function connection(bool $connected, string $protocol): string
+    {
+        return $connected || Liveness::isOnDemand($protocol) ? self::INFO : self::ALERT;
+    }
 
     /** @param array<string, mixed> $data */
     public static function of(string $type, array $data): ?string
@@ -51,8 +59,6 @@ final class EventSeverity
             'heart_rate_low' => $bpm !== null && $bpm < self::HEART_RATE_CRITICAL_LOW_BPM ? self::ALARM : self::ALERT,
             'zone_exit' => ($data['zone'] ?? null) === 'geofence' ? self::ALERT : self::INFO,
             'zone_entry' => self::INFO,
-            'medication_alarm_change' => in_array($data['state'] ?? null, self::MISSED_DOSE_STATES, true) ? self::ALERT : self::INFO,
-            'medication_intake' => in_array($data['result'] ?? null, self::ABNORMAL_INTAKE_RESULTS, true) ? self::ALERT : self::INFO,
             default => self::BY_TYPE[$type] ?? null,
         };
     }
@@ -67,10 +73,25 @@ final class EventSeverity
     {
         $data = is_array($event['data'] ?? null) ? $event['data'] : [];
         $severity = self::of((string)($event['type'] ?? ''), $data);
-        if ($severity === null) {
-            return $event;
-        }
 
+        return $severity === null ? $event : self::put($event, $severity);
+    }
+
+    /**
+     * @param array<string, mixed> $event um `device.connected` ou `device.disconnected`
+     * @return array<string, mixed>
+     */
+    public static function stampConnection(array $event, string $protocol): array
+    {
+        return self::put($event, self::connection(($event['type'] ?? '') === 'device.connected', $protocol));
+    }
+
+    /**
+     * @param array<string, mixed> $event
+     * @return array<string, mixed>
+     */
+    private static function put(array $event, string $severity): array
+    {
         unset($event['severity']);
 
         return array_slice($event, 0, 1, true) + ['severity' => $severity] + array_slice($event, 1, null, true);

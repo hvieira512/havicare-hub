@@ -6,6 +6,7 @@ namespace Hub\Device;
 
 use Hub\Command\DeviceCommandCatalog;
 use Hub\Domain\Capability\CapabilityCatalog;
+use Hub\Domain\Capability\EventSeverity;
 use Hub\Domain\Capability\Medication\MedicationOccurrence;
 use Hub\Domain\Capability\Medication\MedicationRunout;
 use Hub\Domain\Liveness;
@@ -41,6 +42,18 @@ class DeviceHubServer
     private LowBatteryTransitions $lowBattery;
     /** @var (\Closure(string): array<string, mixed>)|null */
     private ?\Closure $effectiveConfiguration;
+    /** @var \Closure(): int */
+    private \Closure $clock;
+
+    /**
+     * As sessões de socket fechado à espera de uma ligação nova, pelo IMEI.
+     *
+     * @var array<string, array{session: DeviceSession, closedAt: int}>
+     */
+    private array $closed = [];
+
+    /** Um relógio que fecha o socket e volta em segundos não se dá por desligado. */
+    private const RECONNECT_GRACE_SECONDS = 60;
 
     public function __construct(
         Whitelist $whitelist,
@@ -61,6 +74,7 @@ class DeviceHubServer
         $this->whitelist = $whitelist;
         $this->denylist = $denylist;
         $this->connections = new ConnectionRegistry($clock);
+        $this->clock = $clock ?? time(...);
         $this->authorizer = new DeviceAuthorizer($whitelist, $commercialModelResolver);
         $this->mqtt = $mqtt;
         $this->deviceStore = $deviceStore;
@@ -106,8 +120,21 @@ class DeviceHubServer
             return;
         }
 
-        $this->goOffline($session);
-        Logger::channel('hub')->info("Device offline IMEI={$session->imei}");
+        $this->closed[$session->imei] = ['session' => $session, 'closedAt' => ($this->clock)()];
+        Logger::channel('hub')->info("Device socket closed IMEI={$session->imei}");
+    }
+
+    /** Dá por desligados os sockets fechados que não voltaram dentro da espera. */
+    public function announceClosedConnections(): void
+    {
+        foreach ($this->closed as $imei => $closed) {
+            if (($this->clock)() - $closed['closedAt'] < self::RECONNECT_GRACE_SECONDS) {
+                continue;
+            }
+            unset($this->closed[$imei]);
+            $this->goOffline($closed['session']);
+            Logger::channel('hub')->info("Device offline IMEI={$imei}");
+        }
     }
 
     public function onError(ConnectionInterface $conn, \Exception $e): void
@@ -127,9 +154,10 @@ class DeviceHubServer
         Logger::channel('hub')->warning("Reply withheld until the event is published IMEI={$imei}");
     }
 
+    /** Um socket fechado ainda à espera de voltar conta como ligado: é o servidor que o anuncia. */
     public function isConnected(string $imei): bool
     {
-        return $this->connections->connectionFor($imei) instanceof ConnectionInterface;
+        return $this->connections->connectionFor($imei) instanceof ConnectionInterface || isset($this->closed[$imei]);
     }
 
     /** @param array<string, mixed>|null $context o pedido de onde o comando vem; o `id` segue no evento */
@@ -281,7 +309,11 @@ class DeviceHubServer
         );
         $this->markSeen($session, (string)$conn->resourceId);
         $this->publishStatus($session, 'online');
-        $this->publishEvent($session, 'device.connected');
+        if (isset($this->closed[$session->imei])) {
+            unset($this->closed[$session->imei]);
+        } else {
+            $this->publishEvent($session, 'device.connected');
+        }
 
         // Um registo por confirmar ainda não deixou o aparelho pronto: as ordens esperam.
         if ($this->handleAuthenticatedMessage($conn, $session, $raw, (string)$conn->resourceId)) {
@@ -589,7 +621,7 @@ class DeviceHubServer
 
     private function publishEvent(DeviceSession $session, string $type): void
     {
-        $device = ['supplier' => $session->supplier, 'model' => $session->model, 'deviceType' => $session->deviceType]
+        $device = ['supplier' => $session->supplier, 'model' => $session->model, 'deviceType' => $session->deviceType, 'protocol' => $session->protocol]
             + $this->current($session->imei, $session);
         try {
             $this->announce($session->imei, $device, $type);
@@ -599,23 +631,20 @@ class DeviceHubServer
     }
 
     /**
-     * Um evento do hub sobre o aparelho, no broker e no histórico; o erro só segue no broker.
+     * Um evento do hub sobre o aparelho, no broker e no histórico; o erro só segue no broker. Com o
+     * `protocol`, é um evento de ligação e leva a gravidade.
      *
-     * @param array{supplier: string, model: string, commercialName: string, deviceType: string, licenseId: int, company: string} $device
+     * @param array{supplier: string, model: string, commercialName: string, deviceType: string, licenseId: int, company: string, protocol?: string} $device
      * @param array<string, mixed>|null $error
      * @param array<string, mixed>|null $command
      */
     private function announce(string $imei, array $device, string $type, ?array $error = null, ?array $command = null): void
     {
-        $event = static fn (?array $error): array => TelemetryEnvelope::event(
-            $imei,
-            $device['supplier'],
-            $device['model'],
-            $type,
-            $error,
-            $command,
-            $device['commercialName'],
-        );
+        $event = static function (?array $error) use ($imei, $device, $type, $command): array {
+            $event = TelemetryEnvelope::event($imei, $device['supplier'], $device['model'], $type, $error, $command, $device['commercialName']);
+
+            return isset($device['protocol']) ? EventSeverity::stampConnection($event, $device['protocol']) : $event;
+        };
         $this->mqtt->publishEvent($imei, $event($error), $device['deviceType'], $device['licenseId'], $device['company']);
         $this->deviceStore?->append($imei, 'events', array_merge(
             $event(null),

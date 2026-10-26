@@ -47,7 +47,8 @@ final class MaintenanceScheduler
                 // Uma ligação TCP aberta decide-a o servidor, que a anuncia ao fechar o socket.
                 foreach ($store->runtime->expireStaleDevices(hasSession: $hubServer->isConnected(...)) as $imei) {
                     try {
-                        $connections->announce($imei, $services->commercialModelResolver->enrich($store->runtime->device($imei)), false);
+                        $device = $store->runtime->device($imei);
+                        $connections->announce($imei, $services->commercialModelResolver->enrich($device), false, $store->runtime->relayedDisconnection($device));
                     } catch (\Throwable $e) {
                         $services->mqttBridge->logPublishFailure('hub', $imei, $e);
                     }
@@ -59,6 +60,7 @@ final class MaintenanceScheduler
             self::INTERVAL_SECONDS,
             static function () use ($hubServer): void {
                 $hubServer->expireIdleConnections();
+                $hubServer->announceClosedConnections();
             }
         );
 

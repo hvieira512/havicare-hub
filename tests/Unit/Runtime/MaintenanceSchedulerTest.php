@@ -148,6 +148,13 @@ final class MaintenanceSchedulerTest extends TestCase
         self::assertSame(1, $this->hubServer->idleSweeps);
     }
 
+    public function testClosedSocketsPastTheirGraceAreAnnouncedOnEveryTick(): void
+    {
+        $this->tick();
+
+        self::assertSame(1, $this->hubServer->closedSweeps);
+    }
+
     /** Um aparelho sem sessão própria, como um sensor atrás de um gateway, só se dá por desligado aqui. */
     public function testASilentDeviceWithoutItsOwnSessionIsAnnouncedDisconnected(): void
     {
@@ -162,6 +169,49 @@ final class MaintenanceSchedulerTest extends TestCase
         self::assertSame(['device.disconnected'], array_column($this->mqtt->events, 'type'));
         self::assertSame('diaper_sensor', $this->mqtt->events[0]['deviceType']);
         self::assertSame(['device.disconnected'], array_column($this->store->recent('eec5000202f9', 'connections'), 'type'));
+    }
+
+    public function testARelayedDeviceOutOfRangeSaysWhichGatewayHeardItLast(): void
+    {
+        $this->relayedSensorAndGateway(gatewayHeardAfterwards: true);
+
+        $this->tick();
+
+        $event = $this->disconnectionOf('eec5000202f9');
+        self::assertSame('alert', $event['severity']);
+        self::assertSame(['gatewayId' => 'd48c49f7909c'], $event['data']);
+    }
+
+    /** O gateway calou-se com ele: a queda é do gateway, e não do aparelho. */
+    public function testARelayedDeviceBehindASilentGatewaySaysTheGatewayIsOffline(): void
+    {
+        $this->relayedSensorAndGateway(gatewayHeardAfterwards: false);
+
+        $this->tick();
+
+        self::assertSame(['gatewayId' => 'd48c49f7909c', 'cause' => 'gateway_offline'], $this->disconnectionOf('eec5000202f9')['data']);
+    }
+
+    public function testARelayedDeviceBehindAGatewayAlreadyOfflineSaysTheGatewayIsOffline(): void
+    {
+        $this->relayedSensorAndGateway(gatewayHeardAfterwards: true);
+        $this->store->deviceOffline('d48c49f7909c');
+
+        $this->tick();
+
+        self::assertSame('gateway_offline', $this->disconnectionOf('eec5000202f9')['data']['cause'] ?? null);
+    }
+
+    public function testAnOnDemandDeviceThatStoppedMeasuringIsInformation(): void
+    {
+        $this->store->deviceSeen('cfe908067329', [
+            'online' => '1', 'deviceType' => 'scale', 'transport' => 'ble_gateway', 'protocol' => 'lefu-torre', 'gatewayId' => 'a1b2c3d4e5f6',
+        ]);
+        $this->rewindLastSeen('cfe908067329', 120);
+
+        $this->tick();
+
+        self::assertSame('info', $this->disconnectionOf('cfe908067329')['severity']);
     }
 
     /** O hitCare lê o estado do gateway: `status` retido `offline` e o `device.disconnected`, na licença dele. */
@@ -250,6 +300,33 @@ final class MaintenanceSchedulerTest extends TestCase
 
         self::assertSame(['device.disconnected'], array_column($this->mqtt->events, 'type'));
         self::assertSame(['offline'], array_column(array_column($this->mqtt->statuses, 'payload'), 'state'));
+    }
+
+    /** O sensor calado há dois anúncios do MKGW4; o gateway ouvido ou não desde então. */
+    private function relayedSensorAndGateway(bool $gatewayHeardAfterwards): void
+    {
+        $this->store->deviceSeen('d48c49f7909c', ['online' => '1', 'deviceType' => 'gateway', 'protocol' => 'moko-mkgw4']);
+        $this->store->deviceSeen('eec5000202f9', [
+            'online' => '1', 'deviceType' => 'diaper_sensor', 'transport' => 'ble_gateway', 'protocol' => 'monit-mecs-pro-ble',
+            'gatewayId' => 'd48c49f7909c',
+        ]);
+        $silentSince = time() - (2 * 600 + 30);
+        $this->redis->hset('hub:dashboard:device:eec5000202f9', 'lastSeenAt', gmdate('Y-m-d\TH:i:s\Z', $silentSince));
+        $this->rewindLastSeen('eec5000202f9', 2 * 600 + 30);
+        if (!$gatewayHeardAfterwards) {
+            $this->redis->hset('hub:dashboard:device:d48c49f7909c', 'lastSeenAt', gmdate('Y-m-d\TH:i:s\Z', $silentSince));
+        }
+    }
+
+    /** @return array<string, mixed> */
+    private function disconnectionOf(string $imei): array
+    {
+        foreach ($this->mqtt->events as $event) {
+            if ($event['imei'] === $imei && $event['type'] === 'device.disconnected') {
+                return $event['payload'];
+            }
+        }
+        self::fail("Sem device.disconnected de {$imei}");
     }
 
     private function rewindLastSeen(string $imei, int $seconds): void
@@ -343,6 +420,8 @@ final class RecordingMaintenanceHubServer extends DeviceHubServer
 
     public int $idleSweeps = 0;
 
+    public int $closedSweeps = 0;
+
     public bool $connected = false;
 
     public function isConnected(string $imei): bool
@@ -360,6 +439,11 @@ final class RecordingMaintenanceHubServer extends DeviceHubServer
     public function expireIdleConnections(): void
     {
         $this->idleSweeps++;
+    }
+
+    public function announceClosedConnections(): void
+    {
+        $this->closedSweeps++;
     }
 }
 

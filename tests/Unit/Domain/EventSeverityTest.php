@@ -41,10 +41,14 @@ final class EventSeverityTest extends TestCase
             'entered the door' => ['zone_entry', ['zone' => 'area', 'areaId' => 2, 'areaName' => 'Porta', 'areaType' => 'door'], 'info'],
             'help call reset' => ['reset', [], 'info'],
             'low battery is maintenance' => ['low_battery', ['percent' => 12], 'info'],
-            'missed dose' => ['medication_alarm_change', ['slot' => 3, 'state' => 'missed'], 'alert'],
+            'missed dose' => ['medication_alarm_change', ['slot' => 3, 'state' => 'missed'], 'info'],
             'dose taken' => ['medication_alarm_change', ['slot' => 3, 'state' => 'taken'], 'info'],
-            'abnormal intake' => ['medication_intake', ['result' => 'abnormal'], 'alert'],
+            'abnormal intake' => ['medication_intake', ['result' => 'abnormal'], 'info'],
+            'missed intake' => ['medication_intake', ['result' => 'missed'], 'info'],
             'intake on time' => ['medication_intake', ['result' => 'on_time'], 'info'],
+            'apnea follows the manufacturer advice' => ['apnea', [], 'alert'],
+            'weak vital signs is the sudden death alarm' => ['weak_vital_signs', [], 'alarm'],
+            'watch shutdown' => ['device_state', ['state' => 'shutdown'], 'info'],
             'connection' => ['device.connected', [], null],
             'reading' => ['battery', ['percent' => 80], null],
         ];
@@ -61,6 +65,23 @@ final class EventSeverityTest extends TestCase
         }
 
         self::assertSame([], array_values(array_unique($unclassified)));
+    }
+
+    public function testADeviceThatGoesSilentIsAnAlert(): void
+    {
+        self::assertSame('alert', EventSeverity::connection(false, 'vivistar-iw'));
+        self::assertSame('alert', EventSeverity::connection(false, ''));
+    }
+
+    /** A balança e os outros que só se ligam para medir desligam-se no fim de cada medição. */
+    public function testAnOnDemandDeviceDisconnectingIsInformation(): void
+    {
+        self::assertSame('info', EventSeverity::connection(false, 'lefu-torre'));
+    }
+
+    public function testAConnectionIsInformation(): void
+    {
+        self::assertSame('info', EventSeverity::connection(true, 'vivistar-iw'));
     }
 
     public function testStampingAddsTheSeverityNextToTheType(): void

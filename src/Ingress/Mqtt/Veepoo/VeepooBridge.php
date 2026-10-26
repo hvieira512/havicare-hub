@@ -167,11 +167,11 @@ final class VeepooBridge extends GattBridge
     {
         if (($data['connected'] ?? true) === false || ($data['authenticated'] ?? true) === false) {
             unset($this->sessionGateway[$context->deviceKey]);
-            $this->presence($context)->markOffline($context->deviceKey, $context->device);
+            $this->presence($context)->markOffline($context->deviceKey, $context->device, $context->gatewayKey);
             return;
         }
 
-        $this->presence($context)->markOnline($context->deviceKey, $context->device);
+        $this->presence($context)->markOnline($context->deviceKey, $context->device, $context->gatewayKey);
         $this->publishFirmware($firmware, $context);
         $this->sessionGateway[$context->deviceKey] = $context->gatewayKey;
         $this->downlinkDispatcher->dispatchPending($context->deviceKey, $context->gatewayKey);

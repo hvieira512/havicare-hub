@@ -37,7 +37,7 @@ final class BraceletPresence
      *
      * @param array<string, mixed> $device como a whitelist o resolve
      */
-    public function markOnline(string $deviceKey, array $device): void
+    public function markOnline(string $deviceKey, array $device, string $gatewayKey = ''): void
     {
         $wasOnline = $this->online[$deviceKey] ?? false;
         $this->online[$deviceKey] = true;
@@ -53,7 +53,7 @@ final class BraceletPresence
             'protocol' => $this->protocol,
             'transport' => 'ble_gateway',
             'online' => '1',
-        ]);
+        ] + ($gatewayKey === '' ? [] : ['gatewayId' => $gatewayKey]));
 
         // O estado é retido e vale a cada anúncio; o acontecimento só sai na transição.
         if ($wasOnline && $cameOnline !== true) {
@@ -65,11 +65,12 @@ final class BraceletPresence
     }
 
     /**
-     * A ligação BLE caiu: o aparelho afastou-se, ficou sem bateria ou foi desligado.
+     * A ligação BLE caiu: o aparelho afastou-se, ficou sem bateria ou foi desligado. Quem o diz
+     * é o gateway, que por isso está de pé.
      *
      * @param array<string, mixed> $device
      */
-    public function markOffline(string $deviceKey, array $device): void
+    public function markOffline(string $deviceKey, array $device, string $gatewayKey = ''): void
     {
         // Sem memória, como depois de um reinício, a queda conta: o estado retido pode dizer `online`.
         if (($this->online[$deviceKey] ?? null) === false) {
@@ -78,6 +79,11 @@ final class BraceletPresence
         $this->online[$deviceKey] = false;
 
         $this->deviceStore?->deviceOffline($deviceKey);
-        $this->announcer->announce($deviceKey, ['protocol' => $this->protocol] + $device, false);
+        $this->announcer->announce(
+            $deviceKey,
+            ['protocol' => $this->protocol] + $device,
+            false,
+            $gatewayKey === '' ? [] : ['gatewayId' => $gatewayKey],
+        );
     }
 }

@@ -160,6 +160,28 @@ final class DeviceRuntimeStore
         ));
     }
 
+    /**
+     * O `data` do desligado de um aparelho retransmitido: o último gateway que o ouviu, e se esse
+     * gateway já está desligado ou se calou com ele.
+     *
+     * @param array<string, mixed> $device como `device()` o devolve
+     * @return array<string, string>
+     */
+    public function relayedDisconnection(array $device): array
+    {
+        $gatewayId = (string)($device['gatewayId'] ?? '');
+        if ($gatewayId === '') {
+            return [];
+        }
+        $gateway = $this->device($gatewayId);
+        $deviceSeenAt = strtotime((string)($device['lastSeenAt'] ?? ''));
+        $gatewaySeenAt = strtotime((string)($gateway['lastSeenAt'] ?? ''));
+        // A última trama do gateway trouxe o aparelho: os dois ficam com a mesma hora, a uns segundos.
+        $silentTogether = $deviceSeenAt !== false && $gatewaySeenAt !== false && $gatewaySeenAt <= $deviceSeenAt + 5;
+
+        return ['gatewayId' => $gatewayId] + ($gateway['online'] && !$silentTogether ? [] : ['cause' => 'gateway_offline']);
+    }
+
     /** @return array<string, array<string, mixed>> chave do gateway => avistamento */
     public function gatewaySightings(string $deviceKey): array
     {

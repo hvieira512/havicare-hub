@@ -111,13 +111,13 @@ final class LefuTorreBridge extends GattBridge
     {
         if (($data['connected'] ?? false) !== true) {
             unset($this->sessions[$context->deviceKey], $this->encodedImpedance[$context->deviceKey], $this->lastStatus[$context->deviceKey]);
-            $this->presence($context)->markOffline($context->deviceKey, $context->device);
+            $this->presence($context)->markOffline($context->deviceKey, $context->device, $context->gatewayKey);
             return;
         }
 
         $mtu = is_int($data['mtu'] ?? null) && $data['mtu'] > 2 ? $data['mtu'] : self::DEFAULT_MTU;
         $this->openSession($context, $mtu, $offsetMinutes);
-        $this->presence($context)->markOnline($context->deviceKey, $context->device);
+        $this->presence($context)->markOnline($context->deviceKey, $context->device, $context->gatewayKey);
 
         $battery = $data['battery'] ?? null;
         if (is_int($battery) && $battery >= 0 && $battery <= 100) {
@@ -138,7 +138,7 @@ final class LefuTorreBridge extends GattBridge
         // Um hub reiniciado com a balança ligada não viu a sessão abrir: a primeira trama abre-a.
         if (!isset($this->sessions[$context->deviceKey])) {
             $this->openSession($context, self::DEFAULT_MTU, $offsetMinutes);
-            $this->presence($context)->markOnline($context->deviceKey, $context->device);
+            $this->presence($context)->markOnline($context->deviceKey, $context->device, $context->gatewayKey);
         }
         $nativeType = $characteristic . ':' . substr(strtolower(preg_replace('/\s+/', '', $hex) ?? ''), 0, 2);
 

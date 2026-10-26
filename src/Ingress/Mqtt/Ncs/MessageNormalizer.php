@@ -6,6 +6,7 @@ namespace Hub\Ingress\Mqtt\Ncs;
 
 use Hub\Device\DeviceDescriptor;
 use Hub\Device\TelemetryEnvelope;
+use Hub\Domain\Capability\EventSeverity;
 use Hub\Support\Values;
 
 final class MessageNormalizer
@@ -56,6 +57,7 @@ final class MessageNormalizer
 
         $eventPayload = [
             'type' => $online ? 'device.connected' : 'device.disconnected',
+            'severity' => EventSeverity::connection($online, 'voerka-ncs'),
             'occurredAt' => gmdate('Y-m-d\TH:i:s\Z'),
             'device' => $statusPayload['device'],
         ];

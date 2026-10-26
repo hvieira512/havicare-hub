@@ -52,6 +52,32 @@ final class BraceletPresenceTest extends TestCase
         self::assertSame(['online', 'offline'], array_column(array_column($mqtt->statuses, 'payload'), 'state'));
     }
 
+    /** O gateway que diz que a sessão caiu está de pé: a queda é do aparelho. */
+    public function testADroppedSessionSaysWhichGatewayReportedIt(): void
+    {
+        $mqtt = new RecordingHubMqttBridge();
+        $store = new DeviceStore(new InMemoryRedisClient());
+        $presence = new BraceletPresence($mqtt, $store, 'veepoo-ble');
+
+        $presence->markOnline('cfe908067329', self::DEVICE, 'a1b2c3d4e5f6');
+        $presence->markOffline('cfe908067329', self::DEVICE, 'a1b2c3d4e5f6');
+
+        self::assertSame('a1b2c3d4e5f6', $store->runtime->device('cfe908067329')['gatewayId'] ?? null);
+        self::assertSame(['info', 'alert'], array_column(array_column($mqtt->events, 'payload'), 'severity'));
+        self::assertSame(['gatewayId' => 'a1b2c3d4e5f6'], $mqtt->events[1]['payload']['data']);
+    }
+
+    public function testAMeasurementEndingIsInformation(): void
+    {
+        $mqtt = new RecordingHubMqttBridge();
+        $presence = new BraceletPresence($mqtt, new DeviceStore(new InMemoryRedisClient()), 'lefu-torre');
+
+        $presence->markOnline('cfe908067329', self::DEVICE, 'a1b2c3d4e5f6');
+        $presence->markOffline('cfe908067329', self::DEVICE, 'a1b2c3d4e5f6');
+
+        self::assertSame('info', $mqtt->events[1]['payload']['severity']);
+    }
+
     /** Um hub acabado de arrancar não sabe que o aparelho estava ligado, e a queda conta na mesma. */
     public function testADisconnectAfterARestartIsAnnounced(): void
     {

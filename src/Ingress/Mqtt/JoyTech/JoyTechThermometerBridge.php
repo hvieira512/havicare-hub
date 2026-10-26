@@ -75,8 +75,8 @@ final class JoyTechThermometerBridge extends GattBridge
     {
         match ($kind) {
             'session' => ($data['connected'] ?? false) === true
-                ? $this->presence($context)->markOnline($context->deviceKey, $context->device)
-                : $this->presence($context)->markOffline($context->deviceKey, $context->device),
+                ? $this->presence($context)->markOnline($context->deviceKey, $context->device, $context->gatewayKey)
+                : $this->presence($context)->markOffline($context->deviceKey, $context->device, $context->gatewayKey),
             'frame' => $this->frame($context, (string)($data['hex'] ?? ''), $offsetMinutes),
             default => null,
         };

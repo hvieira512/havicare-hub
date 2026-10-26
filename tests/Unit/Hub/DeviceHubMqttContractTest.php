@@ -131,12 +131,17 @@ final class DeviceHubMqttContractTest extends TestCase
     public function testDisconnectPublishesRetainedOfflineStatusAndDisconnectedEvent(): void
     {
         $mqtt = new ContractRecordingHubMqttBridge();
-        $hub = new DeviceHubServer($this->whitelist, $mqtt);
+        $now = 1_000;
+        $hub = new DeviceHubServer($this->whitelist, $mqtt, clock: static function () use (&$now): int {
+            return $now;
+        });
         $connection = new FakeConnection(7);
 
         $hub->onOpen($connection);
         $hub->onMessage($connection, 'IWAP00865028000000308#');
         $hub->onClose($connection);
+        $now += 60;
+        $hub->announceClosedConnections();
 
         // O `online` e depois o `offline`, ambos estado, ambos retidos.
         self::assertCount(2, $mqtt->statuses);
@@ -152,6 +157,48 @@ final class DeviceHubMqttContractTest extends TestCase
         ));
         self::assertCount(1, $disconnected, 'o desligamento publica um device.disconnected');
         self::assertSame('865028000000308', $disconnected[0][0]);
+        self::assertSame('alert', $disconnected[0][1]['severity']);
+    }
+
+    public function testAConnectionIsAnnouncedAsInformation(): void
+    {
+        $mqtt = new ContractRecordingHubMqttBridge();
+        $hub = new DeviceHubServer($this->whitelist, $mqtt);
+        $connection = new FakeConnection(7);
+
+        $hub->onOpen($connection);
+        $hub->onMessage($connection, 'IWAP00865028000000308#');
+
+        self::assertSame(['type', 'severity'], array_slice(array_keys($mqtt->events[0][1]), 0, 2));
+        self::assertSame('info', $mqtt->events[0][1]['severity']);
+    }
+
+    /** Um socket fechado espera 60 s por uma ligação nova antes de se dar o aparelho por desligado. */
+    public function testASocketClosedForLessThanAMinuteIsNotAnnounced(): void
+    {
+        $mqtt = new ContractRecordingHubMqttBridge();
+        $now = 1_000;
+        $hub = new DeviceHubServer($this->whitelist, $mqtt, clock: static function () use (&$now): int {
+            return $now;
+        });
+        $first = new FakeConnection(7);
+        $hub->onOpen($first);
+        $hub->onMessage($first, 'IWAP00865028000000308#');
+
+        $hub->onClose($first);
+        $now += 59;
+        $hub->announceClosedConnections();
+        self::assertSame(['device.connected'], array_column(array_column($mqtt->events, 1), 'type'));
+        self::assertTrue($hub->isConnected('865028000000308'), 'a manutenção não o desliga enquanto espera');
+
+        $second = new FakeConnection(8);
+        $hub->onOpen($second);
+        $hub->onMessage($second, 'IWAP00865028000000308#');
+        $now += 60;
+        $hub->announceClosedConnections();
+
+        self::assertSame(['device.connected'], array_column(array_column($mqtt->events, 1), 'type'));
+        self::assertSame(['online', 'online'], array_column(array_column($mqtt->statuses, 1), 'state'));
     }
 
     public function testOfflineDownlinkPublishesDroppedEvent(): void

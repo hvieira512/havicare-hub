@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Hub\Device;
 
+use Hub\Domain\Capability\EventSeverity;
 use Hub\Domain\DeviceMetadata;
 use Hub\Domain\Liveness;
 use Hub\State\DeviceReportStore;
@@ -20,13 +21,16 @@ final class ConnectionAnnouncer
     ) {
     }
 
-    /** @param array<string, mixed> $device como a whitelist ou o estado em tempo real o descrevem */
-    public function announce(string $imei, array $device, bool $connected): void
+    /**
+     * @param array<string, mixed> $device como a whitelist ou o estado em tempo real o descrevem
+     * @param array<string, mixed> $data o gateway e a causa, no desligado de um aparelho retransmitido
+     */
+    public function announce(string $imei, array $device, bool $connected, array $data = []): void
     {
         $this->status($imei, $device, $connected);
 
         [$deviceType, $licenseId, $company] = self::tenant($device);
-        $event = TelemetryEnvelope::event(
+        $event = EventSeverity::stampConnection(TelemetryEnvelope::event(
             $imei,
             (string)($device['supplier'] ?? ''),
             (string)($device['model'] ?? ''),
@@ -34,7 +38,10 @@ final class ConnectionAnnouncer
             null,
             null,
             (string)($device['commercialName'] ?? ''),
-        );
+        ), (string)($device['protocol'] ?? ''));
+        if ($data !== []) {
+            $event['data'] = $data;
+        }
         $this->mqttBridge->publishAndStore($this->deviceStore, 'events', $imei, $event, $deviceType, $licenseId, $company);
     }
 
