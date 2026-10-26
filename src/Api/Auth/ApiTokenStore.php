@@ -10,6 +10,9 @@ final class ApiTokenStore
 {
     private const PREFIX = 'hub:api-tokens';
 
+    /** As sessões de cada utilizador; a mais antiga sai quando entra uma além destas. */
+    private const SESSIONS_PER_USER = 20;
+
     private const TOKEN_TYPE_ACCESS = 'access';
     private const TOKEN_TYPE_REFRESH = 'refresh';
 
@@ -27,6 +30,7 @@ final class ApiTokenStore
     {
         [$accessToken, $access] = $this->issueStoredToken($identity, $accessTtlSeconds, self::TOKEN_TYPE_ACCESS);
         [$refreshToken, $refresh] = $this->issueStoredToken($identity, $refreshTtlSeconds, self::TOKEN_TYPE_REFRESH);
+        $this->trackSession($identity->username, $accessToken, $refreshToken, max($accessTtlSeconds, $refreshTtlSeconds));
 
         // hitcare: os quatro nomes em snake_case são os que o HubApiRepository do hitCare lê; passam a
         // camelCase quando ele mudar.
@@ -90,6 +94,23 @@ final class ApiTokenStore
         }
 
         return $this->contextFromPayload($payload);
+    }
+
+    /** Guarda o par na lista do utilizador e apaga os pares que passem do limite. */
+    private function trackSession(string $username, string $accessToken, string $refreshToken, int $ttlSeconds): void
+    {
+        $key = self::PREFIX . '-by-user:' . $username;
+        $this->redis->zadd($key, ["{$accessToken}:{$refreshToken}" => (int)(microtime(true) * 1_000_000)]);
+        $this->redis->expire($key, max(1, $ttlSeconds));
+
+        $sessions = array_map(strval(...), $this->redis->zrangebyscore($key, '-inf', '+inf'));
+        $evicted = array_slice($sessions, 0, max(0, count($sessions) - self::SESSIONS_PER_USER));
+        if ($evicted === []) {
+            return;
+        }
+        $this->redis->del(array_map(fn (string $pair): string => $this->key(explode(':', $pair)[0]), $evicted));
+        $this->redis->del(array_map(fn (string $pair): string => $this->key(explode(':', $pair)[1] ?? ''), $evicted));
+        $this->redis->zrem($key, ...array_values($evicted));
     }
 
     /** @return array{string, array<string, mixed>} */

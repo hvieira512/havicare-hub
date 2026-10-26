@@ -98,7 +98,7 @@ final class InMemoryRedisClient implements ClientInterface
             'lrange' => $this->lrange((string)$arguments[0], (int)$arguments[1], (int)$arguments[2]),
             'lrem' => $this->lrem((string)$arguments[0], (int)$arguments[1], (string)$arguments[2]),
             'zadd' => $this->zadd((string)$arguments[0], $arguments[1]),
-            'zrem' => $this->zrem((string)$arguments[0], $arguments[1]),
+            'zrem' => $this->zrem((string)$arguments[0], count($arguments) > 2 ? array_slice($arguments, 1) : $arguments[1]),
             'zscore' => isset($this->sortedSets[(string)$arguments[0]][(string)$arguments[1]])
                 ? (string)$this->sortedSets[(string)$arguments[0]][(string)$arguments[1]]
                 : null,
