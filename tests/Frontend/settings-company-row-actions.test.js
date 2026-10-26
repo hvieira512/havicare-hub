@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { cacheElements } from "../../src/Dashboard/dashboard/dom.js";
+import { installDeferredFetch } from "./support/deferred-fetch.js";
 
 const { loadSettingsCompanySection } = await import(
     "../../src/Dashboard/dashboard/settings/companies.js",
@@ -90,4 +91,19 @@ test("a company list that fails to load says so instead of counting zero", async
 
     assert.doesNotMatch(els.companiesTabSummary.textContent, /0 empresas/);
     assert.match(els.companyListBody.textContent, /Não foi possível carregar as empresas/);
+});
+
+test("a late page response does not replace the page requested after it", async () => {
+    const els = setupDom();
+    const fetches = installDeferredFetch();
+
+    const first = loadSettingsCompanySection(1);
+    const second = loadSettingsCompanySection(2);
+    await fetches.respond("/api/licenses", { data: LICENSES });
+    await fetches.respond("page=2", { data: [{ id: 8, name: "segunda" }], pagination: null });
+    await fetches.respond("page=1", { data: COMPANIES, pagination: null });
+    await Promise.all([first, second]);
+
+    assert.match(els.companyListBody.textContent, /segunda/);
+    assert.doesNotMatch(els.companyListBody.textContent, /hitcare/);
 });

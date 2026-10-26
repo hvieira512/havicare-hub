@@ -45,12 +45,18 @@ export function initSettingsCompanies() {
     );
 }
 
+/** Só a última página pedida escreve: as respostas podem chegar trocadas. */
+let generation = 0;
+
 export async function loadSettingsCompanySection(companiesPage = 1) {
+    generation += 1;
+    const current = generation;
     // As licenças vêm todas, porque se desenham dentro da empresa a que pertencem.
     const [companyData, licenses] = await Promise.all([
         apiGetCompanies({ page: companiesPage }),
         ensureLicensesLoaded(),
     ]);
+    if (current !== generation) return;
     if (companyData.error) {
         els.companiesTabSummary.textContent = "";
         els.companyListBody.innerHTML =
