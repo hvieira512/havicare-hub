@@ -410,6 +410,53 @@ entrada tem prazo e renova-se com a repetição, e um aparelho calado para lá d
 volta a anunciar o que trouxer. Mudar o dono do aparelho esquece-as, e o que
 estiver ativo sai de novo, no tópico do dono novo.
 
+#### Proposta: alarmes clínicos
+
+> **Por aprovar e por construir.** Nada desta subsecção está em vigor: as tabelas
+> acima continuam a ser o contrato. O desenho completo, com o inventário que o
+> justifica, está no [capítulo 26](26-alarmes-clinicos.md).
+
+O hub continua a ser um normalizador: publica as leituras e os acontecimentos
+que o aparelho levanta, com a gravidade que lhes dá. Os limites dos sinais vitais
+e o ciclo de vida dos alertas são de quem consome, que já recebe as leituras
+todas. Uma regra só fica no hub quando precisa de dados que só ele tem, como o
+`proximity_alarm`.
+
+Gravidades que mudam:
+
+| `type` | Hoje | Proposta |
+|---|---|---|
+| `apnea` | `alarm` | `alert` |
+| `weak_vital_signs` | `alert` | `alarm` |
+| `device_state` | `alert` | `info` |
+| `medication_alarm_change` · `medication_intake` | `alert` numa dose falhada ou toma anormal | `info`; a dose falhada passa a `dose_missed` |
+| `device.disconnected` | sem `severity` | `alert`; `info` nos aparelhos que só se ligam para medir |
+| `device.connected` | sem `severity` | `info` |
+
+Tipos novos:
+
+| `type` | Canal | `data` | `severity` |
+|---|---|---|---|
+| `dose_missed` | `events` | `slot`, `scheduledAt`, `doseDate` — um por dose, sem evento de fim | `alert` |
+| `dispenser_conditions` | `telemetry` | `faults` (lista das avarias acesas), `storageOutOfRange`, `helpCallActive` — a cada heartbeat do M228 | — |
+
+**O desligado.** Num socket fechado, o `device.disconnected` espera 60 s por uma
+nova ligação antes de sair. O de um aparelho retransmitido por um gateway MOKO ou
+da Havicare leva `data.gatewayId`, o último gateway que o ouviu, e
+`data.cause: "gateway_offline"` quando esse gateway já estava `offline`.
+
+**As leituras que não contam.** `fromHistory: true` passa a marcar todas as
+leituras clínicas que não são ao vivo — da memória, de um lote, ou com a hora do
+aparelho mais de 30 minutos antes da chegada. Um sentinela de «medição falhada»
+(o `temp=0` da 4P Touch) deixa de sair como leitura; uma temperatura corporal
+abaixo de 34,0 °C sai com `implausible: true`.
+
+Os limiares nativos do radar, as cercas da 4P Touch e o `proximity_alarm` ficam
+como estão. Nenhuma gravidade nem nenhum `type` que o hitCare lê muda; a
+`severity` e o `data` nos `device.*` vão coordenados com ele (ver
+[«Pendente do hitCare»](#pendente-do-hitcare) e a secção 8 do
+[capítulo 26](26-alarmes-clinicos.md#8-o-hitcare-e-a-compatibilidade)).
+
 ## 5. `status`
 
 ```json
