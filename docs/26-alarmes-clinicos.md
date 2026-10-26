@@ -1,6 +1,6 @@
 # 26 — Alarmes clínicos
 
-> **Aprovado e construído**, salvo o `dose_missed`, retido até a Havicare o ler.
+> **Aprovado e construído.**
 > O contrato em vigor está no [capítulo 08](08-contrato-mqtt.md#os-tipos) e na
 > [normalização](06-normalizacao.md#as-leituras-que-não-contam); este capítulo
 > guarda o inventário e as razões.
@@ -152,14 +152,12 @@ A gravidade do `heart_rate_high`/`heart_rate_low` do radar fica como está.
 
 ### `dose_missed`
 
-> **Retido.** Ainda não sai: a Havicare abre hoje o seu alerta de dose falhada a
-> partir do `medication_alarm_change` e do `medication_intake`, e publicá-lo já
-> dava dois alertas por dose. Sai quando ela passar a lê-lo.
-
 Novo, `alert`. **Um por dose**, quando ela é dada como falhada pela primeira via
 que chegar: a mudança do alarme para `missed`, `timed_out` ou
 `retrieval_timed_out`, ou a toma com `result: "missed"`. Hoje a mesma dose dá dois
 alertas. Sem evento de fim: a toma tardia sai como `medication_intake` (`info`).
+A dose é o `slot` com o `doseDate`, o dia local que a mudança do alarme e a toma
+também levam; é esse par que impede a segunda via de repetir o alerta.
 
 | `data` | O que é |
 |---|---|

@@ -97,6 +97,7 @@
         "make_call": "Fazer chamada",
         "measure_boundary": "Medir os limites",
         "medication_alarm_change": "Alteração de dose",
+        "dose_missed": "Dose falhada",
         "medication_alarm_status": "Estado dos alarmes",
         "medication_intake": "Toma de medicação",
         "medication_period": "Período do plano",

@@ -30,6 +30,7 @@ final class EventSeverity
         'check_required' => self::ALERT,
         'device_fault' => self::ALERT,
         'storage_environment' => self::ALERT,
+        'dose_missed' => self::ALERT,
         'reset' => self::INFO,
         // O que pede alguém é o aparelho calado, e esse é o `device.disconnected`.
         'device_state' => self::INFO,

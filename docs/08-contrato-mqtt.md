@@ -346,7 +346,8 @@ eventos guardados no histórico da dashboard levam-na igual.
 | `storage_environment` | `outOfRange` | dispensador | `alert` |
 | `device_state` | `state` | relógio Wonlex | `info`: o que pede alguém é o aparelho calado, que é o `device.disconnected` |
 | `medication_alarm_change` | `slot`, `state`, `scheduledAt`, `doseDate` | dispensador | `info` |
-| `medication_intake` | `slot`, `result`, `scheduledAt`, `takenAt`, `cellNumber`, `method` | dispensador | `info` |
+| `medication_intake` | `slot`, `result`, `scheduledAt`, `takenAt`, `doseDate`, `cellNumber`, `method` | dispensador | `info` |
+| `dose_missed` | `slot`, `scheduledAt`, `doseDate` | dispensador | `alert` |
 | `reset` | `pagerId` | NCS | `info` |
 
 #### As horas das tomas do dispensador
@@ -355,7 +356,8 @@ O dispensador conta as horas no relógio dele, sem fuso. O hub situa-as com o
 `time_zone` que o aparelho **confirmou**, e publica-as em UTC com `Z`:
 
 - **`medication_intake`** — o `scheduledAt` (a hora prevista) e o `takenAt` (a
-  hora da toma) passam da hora local do aparelho para UTC.
+  hora da toma) passam da hora local do aparelho para UTC, e o `doseDate` é o dia
+  da hora prevista no fuso do aparelho.
 - **`medication_alarm_change`** — leva o `slot` do alarme que mudou e, do plano
   de medicação confirmado, a dose a que o estado se refere: o `scheduledAt` em
   UTC e o `doseDate` (`AAAA-MM-DD`), o dia dessa dose no fuso do aparelho. A dose
@@ -441,16 +443,15 @@ entrada tem prazo e renova-se com a repetição, e um aparelho calado para lá d
 volta a anunciar o que trouxer. Mudar o dono do aparelho esquece-as, e o que
 estiver ativo sai de novo, no tópico do dono novo.
 
-#### Por construir: `dose_missed`
-
-> **Aprovado, retido até a Havicare o ler.** Ainda não sai.
+#### `dose_missed`
 
 Um evento `alert` por dose dada como falhada, pela primeira via que chegar — a
 mudança do alarme para `missed`, `timed_out` ou `retrieval_timed_out`, ou a toma
 com `result: "missed"` —, com `slot`, `scheduledAt` e `doseDate` no `data`, e sem
-evento de fim. Enquanto não sai, a dose falhada vê-se no `medication_alarm_change`
-e no `medication_intake`, ambos `info`. O desenho está no
-[capítulo 26](26-alarmes-clinicos.md#dose_missed).
+evento de fim. As vias seguintes da mesma dose já não o repetem: a dose é o
+`slot` com o `doseDate`, o mesmo dia local que o `medication_alarm_change` e o
+`medication_intake` levam. Sem fuso confirmado sai só com o `slot`, uma vez em
+cada doze horas. O desenho está no [capítulo 26](26-alarmes-clinicos.md#dose_missed).
 
 ## 5. `status`
 

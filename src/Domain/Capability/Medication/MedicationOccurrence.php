@@ -32,6 +32,10 @@ final class MedicationOccurrence
                 unset($data[$field]);
                 continue;
             }
+            // O dia da dose é o do aparelho, o mesmo que a mudança do alarme leva.
+            if ($field === 'scheduledAt') {
+                $data['doseDate'] = $local->format('Y-m-d');
+            }
             $data[$field] = $local->setTimezone(new DateTimeZone('UTC'))->format(self::UTC);
         }
 

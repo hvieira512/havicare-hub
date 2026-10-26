@@ -132,11 +132,76 @@ final class PillDispenserEndToEndTest extends TestCase
         $intake = $this->ofType($mqtt->events, 'medication_intake');
         self::assertSame('2026-10-19T07:00:00Z', $intake[0]['data']['scheduledAt']);
         self::assertSame('2026-10-19T07:04:10Z', $intake[0]['data']['takenAt']);
+        self::assertSame('2026-10-19', $intake[0]['data']['doseDate']);
 
         $change = $this->ofType($mqtt->events, 'medication_alarm_change');
         self::assertSame(3, $change[0]['data']['slot']);
         self::assertMatchesRegularExpression('/^\d{4}-\d{2}-\d{2}T07:00:00Z$/', $change[0]['data']['scheduledAt']);
         self::assertMatchesRegularExpression('/^\d{4}-\d{2}-\d{2}$/', $change[0]['data']['doseDate']);
+    }
+
+    /** Uma dose dada por falhada é um alerta só, mesmo que o alarme passe por vários estados de falta. */
+    public function testAMissedDoseRaisesOneDoseMissed(): void
+    {
+        $configurations = [
+            'medication_reminders' => ['plans' => [['slot' => 5, 'hour' => 8, 'minute' => 0]]],
+            'time_zone' => ['timeZone' => 100],
+        ];
+        $mqtt = $this->exchange(
+            [
+                $this->frame(0x01, 1),
+                $this->frame(0x04, 2, [0x8135 => ['value' => "\x04"]]),
+                $this->frame(0x04, 3, [0x8135 => ['value' => "\x06"]]),
+            ],
+            3,
+            effectiveConfiguration: static fn (string $imei): array => $imei === self::IMEI ? $configurations : [],
+        );
+
+        $missed = $this->ofType($mqtt->events, 'dose_missed');
+        $change = $this->ofType($mqtt->events, 'medication_alarm_change');
+        self::assertCount(1, $missed);
+        self::assertSame(
+            ['slot' => 5, 'scheduledAt' => $change[0]['data']['scheduledAt'], 'doseDate' => $change[0]['data']['doseDate']],
+            $missed[0]['data'],
+        );
+    }
+
+    /** A toma registada como falhada também dá a dose por falhada, com o dia local do aparelho. */
+    public function testAMissedIntakeRaisesDoseMissed(): void
+    {
+        $configurations = [
+            'medication_reminders' => ['plans' => [['slot' => 2, 'hour' => 8, 'minute' => 0]]],
+            'time_zone' => ['timeZone' => 100],
+        ];
+        $mqtt = $this->exchange(
+            [
+                $this->frame(0x01, 1),
+                $this->frame(0x03, 2, [
+                    0xC201 => ['value' => "\x01"],
+                    0xC202 => ['value' => '2026-10-19T08:00:00'],
+                    0xC206 => ['value' => "\x03"],
+                ]),
+            ],
+            2,
+            effectiveConfiguration: static fn (string $imei): array => $imei === self::IMEI ? $configurations : [],
+        );
+
+        self::assertSame(
+            [['slot' => 2, 'scheduledAt' => '2026-10-19T07:00:00Z', 'doseDate' => '2026-10-19']],
+            array_column($this->ofType($mqtt->events, 'dose_missed'), 'data'),
+        );
+    }
+
+    /** Sem fuso confirmado a dose não tem dia nem hora, mas a falta sai na mesma, uma vez. */
+    public function testWithoutAConfirmedZoneTheDoseMissedCarriesOnlyTheSlot(): void
+    {
+        $mqtt = $this->exchange([
+            $this->frame(0x01, 1),
+            $this->frame(0x04, 2, [0x8135 => ['value' => "\x05"]]),
+            $this->frame(0x04, 3, [0x8135 => ['value' => "\x06"]]),
+        ], 3);
+
+        self::assertSame([['slot' => 5]], array_column($this->ofType($mqtt->events, 'dose_missed'), 'data'));
     }
 
     /** Sem a guarda do TFLV, ruído passaria por TAGs inventadas e viraria telemetria fabricada. */

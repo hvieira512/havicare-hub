@@ -102,6 +102,8 @@ final class PillDispenserCapabilityDefinitions extends CapabilityDefinitions
                     // O que acontece entre dois retratos dos nove. É o único sinal de uma
                     // dose falhada: não houve toma, e por isso não há `medication_intake`.
                     'medication_alarm_change',
+                    // Uma por dose dada por falhada, pela primeira das duas vias acima que chegar.
+                    'dose_missed',
                     // A mesma chave do NCS e da pulseira: o botão de emergência é uma
                     // chamada de ajuda.
                     'help_call',

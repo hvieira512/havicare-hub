@@ -46,6 +46,7 @@ final class EventSeverityTest extends TestCase
             'abnormal intake' => ['medication_intake', ['result' => 'abnormal'], 'info'],
             'missed intake' => ['medication_intake', ['result' => 'missed'], 'info'],
             'intake on time' => ['medication_intake', ['result' => 'on_time'], 'info'],
+            'dose missed' => ['dose_missed', ['slot' => 2], 'alert'],
             'apnea follows the manufacturer advice' => ['apnea', [], 'alert'],
             'weak vital signs is the sudden death alarm' => ['weak_vital_signs', [], 'alarm'],
             'watch shutdown' => ['device_state', ['state' => 'shutdown'], 'info'],

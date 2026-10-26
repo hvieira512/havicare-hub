@@ -71,6 +71,7 @@ final class ReferenceCatalogTest extends MysqlDashboardTestCase
             'dispense_now',
             'dispenser_conditions',
             'do_not_disturb',
+            'dose_missed',
             // A janela configura-se; o estado é outra coisa, e o terceiro valor dele — ligado
             // e a silenciar agora — é o que a configuração sozinha não sabe dizer.
             'early_dispense',

@@ -40,6 +40,7 @@ class DeviceHubServer
     private ?LocationTelemetryEnricherContract $locationTelemetryEnricher;
     private ?Denylist $denylist;
     private LowBatteryTransitions $lowBattery;
+    private DoseMissedTransitions $doseMissed;
     /** @var (\Closure(string): array<string, mixed>)|null */
     private ?\Closure $effectiveConfiguration;
     /** @var \Closure(): int */
@@ -90,6 +91,7 @@ class DeviceHubServer
         $this->downlinkQueueTtlSeconds = max(1, $downlinkQueueTtlSeconds);
         $this->locationTelemetryEnricher = $locationTelemetryEnricher;
         $this->lowBattery = new LowBatteryTransitions($alarms);
+        $this->doseMissed = new DoseMissedTransitions($alarms);
     }
 
     public function onOpen(ConnectionInterface $conn): void
@@ -489,6 +491,13 @@ class DeviceHubServer
         if ($lowBattery !== null && !$this->publishTelemetryEvent($session, $lowBattery)) {
             // Por publicar, o alerta tem de voltar a acender na repetição.
             $this->lowBattery->forget($session->imei);
+            return false;
+        }
+
+        $doseMissed = $this->doseMissed->observe($session->imei, $event);
+        if ($doseMissed !== null && !$this->publishTelemetryEvent($session, $doseMissed)) {
+            // Por publicar, a falta tem de voltar a sair na repetição.
+            $this->doseMissed->forget($session->imei, $doseMissed);
             return false;
         }
 
