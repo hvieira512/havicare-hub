@@ -149,6 +149,7 @@ function plotPoints(points, scale) {
 
 /** As linhas da escala contam-se pela altura do cartão, e por isso redesenha-se quando ela muda. */
 const drawn = new WeakMap();
+const signatures = new WeakMap();
 const resizes = globalThis.ResizeObserver
     ? new ResizeObserver((entries) => entries.forEach(({ target }) => renderChart(target, ...drawn.get(target))))
     : null;
@@ -157,6 +158,10 @@ function renderChart(container, points, vital) {
     const { color, unit } = vital;
     drawn.set(container, [points, vital]);
     resizes?.observe(container);
+    // O stream redesenha a cada mensagem; reescrever o mesmo gráfico apagava a caixa sob o cursor.
+    const signature = JSON.stringify([points, color, container.clientHeight]);
+    if (signatures.get(container) === signature) return;
+    signatures.set(container, signature);
     if (!points.length) {
         container.replaceChildren();
         return;

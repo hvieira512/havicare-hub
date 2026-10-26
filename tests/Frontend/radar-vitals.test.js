@@ -83,3 +83,16 @@ test("without readings there is no chart", () => {
     assert.equal(els.radarBreathRateChart.querySelector("path"), null);
     assert.equal(els.radarBreathRateChart.querySelector(".radar-vital-tooltip"), null);
 });
+
+/** O stream redesenha a cada mensagem; o gráfico igual fica, e com ele a caixa por cima do cursor. */
+test("rendering the same readings again keeps the chart and its tooltip", () => {
+    const els = mountEls();
+    const telemetry = [heartRate(0, 60), heartRate(10, 70)];
+    renderVitals(els, telemetry);
+    const tooltip = hover(els.radarHeartRateChart, 10);
+
+    renderVitals(els, [...telemetry]);
+
+    assert.equal(els.radarHeartRateChart.querySelector(".radar-vital-tooltip"), tooltip);
+    assert.equal(tooltip.hidden, false);
+});
