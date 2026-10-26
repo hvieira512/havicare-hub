@@ -14,7 +14,7 @@ import { apiError, confirmDestructive, reportApiError, toast } from "../dialogs.
 import { clearInvalid } from "../validation.js";
 import { handleSettingsPaginationClick, setSettingsNavCount } from "./shell.js";
 import { renderPagination } from "../pagination.js";
-import { editorOf, focusEditor, inlineEditor, whileBusy } from "./row-editor.js";
+import { editorOf, focusEditor, inlineEditor } from "./row-editor.js";
 import {
     EDITOR_KIND as RADAR_EDITOR_KIND,
     clearRadarCredentials,
@@ -27,7 +27,7 @@ import {
     tryRadarCredentials,
 } from "./radar-credentials.js";
 import { countLabel } from "../i18n.js";
-import { els } from "../dom.js";
+import { els, whileBusy } from "../dom.js";
 
 /** As licenças, dentro de cada empresa; a linha que se toca é a que se transforma. */
 // A página de empresas à vista, para redesenhar depois de mexer numa licença.
@@ -334,12 +334,12 @@ async function checkRadarCredentialsRow(button) {
     const slot = row?.el.querySelector("#radarCheckResult");
     if (!row || !slot) return;
 
-    button.disabled = true;
-    slot.className = "small mt-3 text-body-secondary";
-    slot.textContent = "A experimentar…";
-
-    const result = await tryRadarCredentials(row);
-    button.disabled = false;
+    const result = await whileBusy(button, () => {
+        slot.className = "small mt-3 text-body-secondary";
+        slot.textContent = "A experimentar…";
+        return tryRadarCredentials(row);
+    });
+    if (!result) return;
 
     if (result.error) {
         slot.className = "small mt-3 text-danger";

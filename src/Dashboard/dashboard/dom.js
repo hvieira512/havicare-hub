@@ -29,3 +29,17 @@ export function renderInto(container, markup, beforeWrite = null) {
     container.innerHTML = markup;
     return true;
 }
+
+/** Corre o trabalho com o botão desligado, para dois cliques não criarem dois registos; com o botão já ocupado devolve `undefined`. */
+export async function whileBusy(button, work, busyHtml = null) {
+    if (!button || button.disabled) return;
+    const idleHtml = button.innerHTML;
+    button.disabled = true;
+    if (busyHtml !== null) button.innerHTML = busyHtml;
+    try {
+        return await work();
+    } finally {
+        button.disabled = false;
+        if (busyHtml !== null) button.innerHTML = idleHtml;
+    }
+}

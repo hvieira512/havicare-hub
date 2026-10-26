@@ -12,9 +12,9 @@ import { apiError, confirmDestructive, promptPassword, reportApiError, toast } f
 import { clearInvalid } from "../validation.js";
 import { handleSettingsPaginationClick, setSettingsNavCount } from "./shell.js";
 import { renderPagination } from "../pagination.js";
-import { editorOf, focusEditor, whileBusy } from "./row-editor.js";
+import { editorOf, focusEditor } from "./row-editor.js";
 import { countLabel } from "../i18n.js";
-import { els } from "../dom.js";
+import { els, whileBusy } from "../dom.js";
 
 /** Os utilizadores da API; a busca, os filtros e a paginação são do servidor. */
 let licenses = [];

@@ -9,7 +9,9 @@ import { ago, when } from "./format.js";
 import { countLabel } from "./i18n.js";
 import { html } from "./html.js";
 import { apiError, confirmDestructive, toast } from "./dialogs.js";
-import { els, whileVisible } from "./dom.js";
+import { els, whileBusy, whileVisible } from "./dom.js";
+
+const SPINNER = "<span class=\"spinner-border spinner-border-sm\" aria-hidden=\"true\"></span>";
 
 const POLL_INTERVAL_MS = 15_000;
 
@@ -195,12 +197,9 @@ const handleDropdownShown = async () => {
 };
 
 const dismissNotification = async (id, button) => {
-    button.disabled = true;
-    button.innerHTML = "<span class=\"spinner-border spinner-border-sm\" aria-hidden=\"true\"></span>";
-    const result = await deleteNotification(id);
-    if (result?.error) {
-        button.disabled = false;
-        button.innerHTML = "<i class=\"fa-solid fa-trash-can\" aria-hidden=\"true\"></i>";
+    const result = await whileBusy(button, () => deleteNotification(id), SPINNER);
+    if (!result) return;
+    if (result.error) {
         toast(
             "error",
             "Não foi possível eliminar a notificação",
@@ -224,13 +223,13 @@ const blockDeviceAction = async (notification, button) => {
     );
     if (!isConfirmed) return;
 
-    button.disabled = true;
-    const original = button.innerHTML;
-    button.innerHTML = "<span class=\"spinner-border spinner-border-sm\" aria-hidden=\"true\"></span>";
-    const result = await blockDevice(notification.imei, notification.protocol || "");
-    if (result?.error) {
-        button.disabled = false;
-        button.innerHTML = original;
+    const result = await whileBusy(
+        button,
+        () => blockDevice(notification.imei, notification.protocol || ""),
+        SPINNER,
+    );
+    if (!result) return;
+    if (result.error) {
         toast(
             "error",
             "Não foi possível bloquear o dispositivo",

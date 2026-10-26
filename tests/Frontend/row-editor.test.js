@@ -6,8 +6,8 @@ import {
     editorOf,
     focusEditor,
     inlineEditor,
-    whileBusy,
 } from "../../src/Dashboard/dashboard/settings/row-editor.js";
+import { whileBusy } from "../../src/Dashboard/dashboard/dom.js";
 
 /**
  * A vaga única do editor em linha, partilhada pelas listagens de empresa, licença e utilizador
@@ -192,4 +192,17 @@ test("a failure does not leave the button disabled forever", async () => {
     await whileBusy(button, () => Promise.reject(new Error("falhou"))).catch(() => {});
 
     assert.equal(button.disabled, false);
+});
+
+test("the busy label shows while working and the original returns after", async () => {
+    const button = document.createElement("button");
+    button.innerHTML = "Guardar";
+    const pending = deferred();
+
+    const run = whileBusy(button, () => pending.promise, "A guardar…");
+    assert.equal(button.innerHTML, "A guardar…");
+
+    pending.settle();
+    await run;
+    assert.equal(button.innerHTML, "Guardar");
 });

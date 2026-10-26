@@ -14,7 +14,7 @@ import { renderVitals } from "./radar-vitals.js";
 import { loadScript } from "../load-script.js";
 import { state } from "../state.js";
 import { countLabel } from "../i18n.js";
-import { els } from "../dom.js";
+import { els, whileBusy } from "../dom.js";
 
 /**
  * A planta de um radar com os sinais vitais ao lado. Posições e leituras vêm do stream que o
@@ -280,40 +280,36 @@ export async function syncRadarMap() {
     const imei = state.radarMap.imei;
     if (!imei) return;
 
-    const button = els.radarMapSyncBtn;
-    button.disabled = true;
-    button.innerHTML = "<i class=\"fa-solid fa-rotate fa-spin me-1\" aria-hidden=\"true\"></i>A sincronizar…";
+    await whileBusy(els.radarMapSyncBtn, () => sync(imei),
+        "<i class=\"fa-solid fa-rotate fa-spin me-1\" aria-hidden=\"true\"></i>A sincronizar…");
+}
 
-    try {
-        const response = await apiSyncRadarLayout(imei);
-        if (response.error) {
-            toast("error", apiError(response));
-            return;
-        }
-
-        // Quem fechou antes de a cloud responder não quer nada desenhado.
-        if (state.radarMap.imei !== imei) {
-            return;
-        }
-
-        const result = response.data;
-        if (result.synced > 0) {
-            state.radarMap.layout = result.layout;
-            els.radarMapSubtitle.textContent = subtitle(imei, result.layout);
-            showLayout(result.layout);
-            toast("success", "Planta sincronizada");
-            return;
-        }
-
-        // O `777` do fabricante diz que a cloud não conhece este aparelho.
-        const code = Object.keys(result.codes || {}).find((key) => key !== "200");
-        toast("warning", code === "777"
-            ? "A cloud do fabricante não reconhece este radar."
-            : `A cloud do fabricante não devolveu a planta${code ? ` (código ${code})` : ""}.`);
-    } finally {
-        button.disabled = false;
-        button.innerHTML = "<i class=\"fa-solid fa-rotate me-1\" aria-hidden=\"true\"></i>Sincronizar";
+async function sync(imei) {
+    const response = await apiSyncRadarLayout(imei);
+    if (response.error) {
+        toast("error", apiError(response));
+        return;
     }
+
+    // Quem fechou antes de a cloud responder não quer nada desenhado.
+    if (state.radarMap.imei !== imei) {
+        return;
+    }
+
+    const result = response.data;
+    if (result.synced > 0) {
+        state.radarMap.layout = result.layout;
+        els.radarMapSubtitle.textContent = subtitle(imei, result.layout);
+        showLayout(result.layout);
+        toast("success", "Planta sincronizada");
+        return;
+    }
+
+    // O `777` do fabricante diz que a cloud não conhece este aparelho.
+    const code = Object.keys(result.codes || {}).find((key) => key !== "200");
+    toast("warning", code === "777"
+        ? "A cloud do fabricante não reconhece este radar."
+        : `A cloud do fabricante não devolveu a planta${code ? ` (código ${code})` : ""}.`);
 }
 
 /** Chamado a cada render do detalhe, que é o que o stream despoleta. */

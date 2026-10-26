@@ -57,14 +57,3 @@ export function editorOf(button, kind) {
 export function focusEditor(root) {
     root.querySelector("[data-editor] input, [data-editor] select")?.focus();
 }
-
-/** Corre o trabalho com o botão desligado, para dois cliques não criarem dois registos. */
-export async function whileBusy(button, work) {
-    if (!button || button.disabled) return;
-    button.disabled = true;
-    try {
-        await work();
-    } finally {
-        button.disabled = false;
-    }
-}
