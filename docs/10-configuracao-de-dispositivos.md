@@ -168,7 +168,7 @@ de uma capacidade, a ajuda de uma configuração, a frase de confirmação de um
 acção destrutiva (o `risk: "destructive"` do catálogo), o nome de cada opção e
 o texto de cada botão (o `verb` e os `actions` são enumerações: `read`,
 `factory_reset`, `send_message`, `start`, `stop`, `vibrate`) vivem no
-dicionário da dashboard, o `src/Dashboard/dashboard/pt-PT.json`, chaveados pela
+dicionário da dashboard, o `src/Dashboard/dashboard/core/pt-PT.json`, chaveados pela
 capacidade e, onde o mesmo nome faz coisas diferentes, pelo protocolo. O
 `PortugueseDictionaryTest` falha quando o catálogo ganha uma chave sem tradução.
 

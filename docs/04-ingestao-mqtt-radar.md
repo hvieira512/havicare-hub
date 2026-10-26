@@ -260,7 +260,7 @@ tipo: no radar 208 da emeis Iberia, as três áreas de tipo 7 chamam-se «Mesita
 
 Um número que a tabela não conheça não entra na planta e fica no `skipped` com
 `unknown_area_type`. As cores e os nomes em português estão em
-[`radar-style.js`](../src/Dashboard/dashboard/radar-style.js).
+[`radar-style.js`](../src/Dashboard/dashboard/core/radar-style.js).
 
 ## 7. Ligado e desligado
 
