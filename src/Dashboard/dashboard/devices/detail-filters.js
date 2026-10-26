@@ -182,11 +182,11 @@ function itemTime(item) {
     return Date.parse(p.occurredAt || p.recordedAt || p.requestedAt || "");
 }
 
-export function populateDetailFilterTypes() {
+export function populateDetailFilterTypes(items = allDetailItems()) {
     const select = els.detailFilterType;
     const currentValue = state.detailFiltersDraft?.type || state.detailFilters.type;
     const observedTypes = detailFilterTypesFromItems(
-        allDetailItems().filter((item) => item._source !== "command"),
+        items.filter((item) => item._source !== "command"),
     );
     const signature = observedTypes.join("|");
 

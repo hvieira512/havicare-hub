@@ -170,3 +170,16 @@ test("the key carries the IMEI: switching device does not open the row with the 
         "o `seq` recomeça em cada aparelho, e sem o IMEI a linha abria-se sozinha",
     );
 });
+
+/** As linhas abertas guardam-se só enquanto estão na lista; sem isso o conjunto só cresce. */
+test("a row that left the list comes back closed", () => {
+    const view = els();
+    cacheElements(view);
+    renderTelemetryList([minuteStats(0)]);
+    toggleActivityRow({ target: view.telemetryList.querySelector("[data-row-toggle]"), type: "click" });
+
+    renderTelemetryList([minuteStats(1)]);
+    renderTelemetryList([minuteStats(0)]);
+
+    assert.equal(view.telemetryList.querySelector("[aria-expanded='true']"), null);
+});

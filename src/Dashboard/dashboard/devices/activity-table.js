@@ -5,8 +5,13 @@ import { dayKey, dayLabel } from "../format.js";
 
 /** Tabela de atividade da telemetria e dos pedidos: pinta as linhas e trata da gaveta. */
 
-/** Por chave do registo e não por posição: a lista redesenha-se a cada mensagem do stream. */
-const openActivityRows = new Set();
+/** Por tabela e por chave do registo, e não por posição: a lista redesenha-se a cada mensagem do stream. */
+const openActivityRows = new WeakMap();
+
+const openRowsOf = (rootEl) => {
+    if (!openActivityRows.has(rootEl)) openActivityRows.set(rootEl, new Set());
+    return openActivityRows.get(rootEl);
+};
 
 /** Com `table-layout: fixed` as larguras saem da primeira linha, que é um cabeçalho com `colspan`. */
 const COLGROUP = html`<colgroup>
@@ -22,10 +27,15 @@ export function activityTable(rootEl, rows, emptyText, idPrefix) {
         ? document.activeElement.closest("[data-row-key]")?.dataset.rowKey
         : null;
 
+    // Só se lembram as abertas que ainda estão na lista.
+    const open = openRowsOf(rootEl);
+    const present = new Set(rows.map((row) => row.key));
+    open.forEach((key) => present.has(key) || open.delete(key));
+
     const written = renderInto(rootEl, rows.length
         ? html`<table class="table table-sm align-middle mb-0 telemetry-table">
             ${COLGROUP}
-            <tbody>${groupedByDay(rows, idPrefix)}</tbody>
+            <tbody>${groupedByDay(rows, idPrefix, open)}</tbody>
            </table>`
         : emptyPanel(emptyText));
 
@@ -35,7 +45,7 @@ export function activityTable(rootEl, rows, emptyText, idPrefix) {
 }
 
 /** As linhas com um cabeçalho por dia; uma linha sem instante não abre grupo nenhum. */
-function groupedByDay(rows, idPrefix) {
+function groupedByDay(rows, idPrefix, open) {
     const counts = new Map();
     rows.forEach((row) => {
         const key = dayKey(row.at);
@@ -49,7 +59,7 @@ function groupedByDay(rows, idPrefix) {
             ? dayHeader(dayLabel(row.at), counts.get(key) ?? 0)
             : "";
         if (key) openDay = key;
-        return html`${header}${activityRow(row, `${idPrefix}${index}`)}`;
+        return html`${header}${activityRow(row, `${idPrefix}${index}`, open)}`;
     });
 }
 
@@ -80,10 +90,11 @@ export function toggleActivityRow(event) {
     const open = row.getAttribute("aria-expanded") !== "true";
     row.setAttribute("aria-expanded", open ? "true" : "false");
     panel?.classList.toggle("d-none", !open);
+    const openRows = openRowsOf(row.closest("table")?.parentElement ?? row);
     if (open) {
-        openActivityRows.add(key);
+        openRows.add(key);
     } else {
-        openActivityRows.delete(key);
+        openRows.delete(key);
     }
 
     return true;
@@ -106,7 +117,7 @@ function activityRow({
     key = "",
     time,
     timeTitle = "",
-}, panelId) {
+}, panelId, openRows) {
     // Abaixo do `lg` a hora desce para baixo do nome, para o valor caber na linha.
     const stackedTime = html`<span class="d-lg-none">${sub ? " · " : ""}${time}</span>`;
     const subClass = sub ? "telemetry-row-details" : "telemetry-row-time d-lg-none";
@@ -120,7 +131,7 @@ function activityRow({
         : "";
 
     const openable = expanded !== "";
-    const isOpen = openable && openActivityRows.has(key);
+    const isOpen = openable && openRows.has(key);
     const rowAttrs = openable
         ? html` class="telemetry-row-openable" role="button" tabindex="0" aria-expanded="${isOpen ? "true" : "false"}" aria-controls="${panelId}" data-row-toggle="${panelId}" data-row-key="${key}"`
         : "";

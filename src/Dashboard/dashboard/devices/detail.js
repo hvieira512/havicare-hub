@@ -83,10 +83,10 @@ function renderSelection() {
         state.selectedDetail.linkedDevices || [],
     );
 
-    populateDetailFilterTypes();
+    const allItems = allDetailItems();
+    populateDetailFilterTypes(allItems);
     syncDetailFilterControls();
 
-    const allItems = allDetailItems();
     const filtered = filterDetailItems(allItems);
     const deviceType = normalizeDeviceType(deviceModel?.deviceType || "watch");
     const bySource = Object.groupBy(filtered, (item) => item._source);
@@ -120,12 +120,13 @@ function renderSelection() {
     // Com um «Até» aplicado a faixa acaba nele, e não em agora.
     const to = Date.parse(state.detailFilters.to || "");
     const reported = allItems.some((item) => item._source === "connection");
+    const silent = silentSince(device, allItems);
     renderConnectionHistory(
         els.connectionHistory,
-        [...connectionEvents.map(rowPayload), ...silentSince(device, allItems)],
+        [...connectionEvents.map(rowPayload), ...silent],
         {
             end: Number.isNaN(to) ? undefined : to,
-            reported: reported || silentSince(device, allItems).length > 0,
+            reported: reported || silent.length > 0,
         },
     );
     // A planta aberta acompanha o stream.
