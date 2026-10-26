@@ -280,19 +280,11 @@ final class PrivateRadioMap
      */
     private function trustedGpsFix(array $data): ?array
     {
-        if (
-            strtolower(trim((string)($data['source'] ?? ''))) !== 'gps'
-            || ($data['gpsValid'] ?? true) === false
-            || !is_numeric($data['lat'] ?? null)
-            || !is_numeric($data['lon'] ?? null)
-        ) {
+        if (!LocationResponseValidator::trustedGps($data)) {
             return null;
         }
         $lat = (float)$data['lat'];
         $lon = (float)$data['lon'];
-        if (!LocationResponseValidator::validCoordinates($lat, $lon)) {
-            return null;
-        }
 
         $accuracy = $data['accuracyMeters'] ?? null;
         if (is_numeric($accuracy) && (float)$accuracy > 0.0) {

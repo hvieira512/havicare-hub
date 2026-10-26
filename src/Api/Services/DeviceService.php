@@ -474,6 +474,10 @@ class DeviceService
         if ($auth !== null && !$auth->isAdmin()) {
             return $audit->reject(ApiError::forbidden(), 'metadata_update_requires_admin');
         }
+        // Criar é do POST: um IMEI trocado não regista um aparelho novo.
+        if ($this->whitelist->getMetadata($imei) === null) {
+            return $audit->reject(ApiError::deviceNotFound());
+        }
 
         // Ausente é o do endereço; vazio é uma recusa. Daí o campo ser anulável e o
         // `NotBlank` só valer no grupo `create`.
@@ -508,9 +512,9 @@ class DeviceService
         // O dispositivo pode estar a sair de um cliente, a mudar de tipo ou a mudar de IMEI,
         // e cada uma dessas deixa um estado retido no tópico antigo.
         $previous = $this->whitelist->getMetadata($imei);
-        $previousCompany = $previous?->company ?? 'null';
-        $previousLicenseId = $previous?->licenseId ?? 0;
-        $previousDeviceType = $previous?->deviceType ?? 'watch';
+        $previousCompany = $previous->company;
+        $previousLicenseId = $previous->licenseId;
+        $previousDeviceType = $previous->deviceType;
         if (
             $newImei !== $imei
             || $previousCompany !== $company

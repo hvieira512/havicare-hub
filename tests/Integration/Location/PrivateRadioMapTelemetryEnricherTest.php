@@ -94,6 +94,33 @@ final class PrivateRadioMapTelemetryEnricherTest extends MysqlDashboardTestCase
         self::assertNotNull($map->resolveTelemetry($this->telemetry()));
     }
 
+    /** Um GPS que não trouxe coordenadas não é um GPS em que se confie: o mapa privado tenta primeiro. */
+    public function testGpsWithoutCoordinatesIsResolvedFromThePrivateMap(): void
+    {
+        $map = new PrivateRadioMap(new PdoPrivateRadioMapStore($this->createDashboardDatabase()->pdo()), new BeaconDbRequestBuilder(), 'key');
+        $map->seed(['10:11:12:13:14:15', '20:21:22:23:24:25'], 41.7, -8.8, 30);
+        $fallback = new class implements LocationTelemetryEnricherContract {
+            public int $calls = 0;
+            public function enrich(array $telemetry): PromiseInterface
+            {
+                $this->calls++;
+                return resolve($telemetry);
+            }
+        };
+        $telemetry = $this->telemetry();
+        $telemetry['data']['source'] = 'gps';
+        $telemetry['data']['gpsValid'] = true;
+        $result = null;
+        (new PrivateRadioMapTelemetryEnricher($map, $fallback))->enrich($telemetry)->then(
+            static function (array $value) use (&$result): void {
+                $result = $value;
+            }
+        );
+
+        self::assertSame(0, $fallback->calls);
+        self::assertSame(41.7, $result['data']['lat']);
+    }
+
     /** @return array<string, mixed> */
     private function telemetry(): array
     {

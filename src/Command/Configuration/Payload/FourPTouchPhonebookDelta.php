@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Hub\Command\Configuration\Payload;
 
+use Hub\Command\DeliveryStatus;
+
 /**
  * Traduz a lista telefónica desejada nos comandos que a levam ao aparelho. O `DPHBX` remove
  * sem renumerar, por isso o hub é dono dos índices; o telefone é a identidade do contacto.
@@ -58,11 +60,7 @@ final class FourPTouchPhonebookDelta
      */
     public static function trustedPrevious(mixed $stored, string $lastStatus): array
     {
-        $delivered = !in_array(
-            $lastStatus,
-            ['created', 'failed', 'retry_exhausted', 'response_timeout', 'dropped'],
-            true
-        );
+        $delivered = !in_array($lastStatus, DeliveryStatus::UNDELIVERED, true);
         if (!$delivered || !is_array($stored) || array_is_list($stored)) {
             return [];
         }

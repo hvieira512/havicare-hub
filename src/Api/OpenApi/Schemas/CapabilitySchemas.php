@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Hub\Api\OpenApi\Schemas;
 
 use Hub\Api\OpenApi\Responses;
+use Hub\Domain\Capability\CapabilityCatalog;
 
 /**
  * O catálogo de capacidades, a matriz por dispositivo, e os payloads das que se escrevem.
@@ -32,7 +33,7 @@ final class CapabilitySchemas
                     'deviceType' => ['type' => 'string', 'example' => 'watch'],
                     'section' => [
                         'type' => 'string',
-                        'enum' => ['telemetry', 'health', 'contacts', 'alarms', 'reminders', 'settings_system'],
+                        'enum' => CapabilityCatalog::sections(),
                         'example' => 'telemetry',
                     ],
                     'key' => ['type' => 'string', 'example' => 'heart_rate'],
@@ -136,14 +137,8 @@ final class CapabilitySchemas
             ],
             'DeviceCapabilitiesMatrix' => [
                 'type' => 'object',
-                'properties' => [
-                    'telemetry' => Responses::ref('DeviceTelemetryCapabilitiesSection'),
-                    'health' => $section,
-                    'contacts' => $section,
-                    'alarms' => $section,
-                    'reminders' => $section,
-                    'settings_system' => $section,
-                ],
+                'properties' => ['telemetry' => Responses::ref('DeviceTelemetryCapabilitiesSection')]
+                    + array_fill_keys(CapabilityCatalog::sections(), $section),
             ],
         ];
     }

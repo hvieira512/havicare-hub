@@ -23,6 +23,7 @@ use Hub\Command\Configuration\Payload\VeepooPayloadBuilder;
 use Hub\Command\Configuration\Payload\VivistarPayloadBuilder;
 use Hub\Command\Configuration\Payload\WonlexPayloadBuilder;
 use Hub\Command\Configuration\Payload\ZayataPayloadBuilder;
+use Hub\Domain\Capability\CapabilityCatalog;
 use Hub\Domain\ProtocolRegistry;
 
 final class DeviceConfigurationCatalog
@@ -203,6 +204,27 @@ final class DeviceConfigurationCatalog
         }
 
         return null;
+    }
+
+    /**
+     * A primeira definição do protocolo cuja chave nativa corresponde à chave genérica.
+     *
+     * @return array<string, mixed>|null
+     */
+    public static function entryForCapability(string $protocol, string $genericKey): ?array
+    {
+        static $cache = [];
+        if (!isset($cache[$protocol])) {
+            $cache[$protocol] = [];
+            foreach (self::configsForProtocol($protocol) as $entry) {
+                $generic = CapabilityCatalog::mapConfigurationKey(trim((string)($entry['key'] ?? '')));
+                if ($generic !== null) {
+                    $cache[$protocol][$generic] ??= $entry;
+                }
+            }
+        }
+
+        return $cache[$protocol][$genericKey] ?? null;
     }
 
     /**

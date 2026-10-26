@@ -52,14 +52,9 @@ final class CompanyRepository
 
     public function delete(int $id): void
     {
-        $this->pdo->beginTransaction();
-        try {
+        $this->transactional(function () use ($id): void {
             $this->pdo->prepare('DELETE FROM licenses WHERE company_id = ?')->execute([$id]);
             $this->pdo->prepare('DELETE FROM companies WHERE id = ?')->execute([$id]);
-            $this->pdo->commit();
-        } catch (\Throwable $e) {
-            $this->pdo->rollBack();
-            throw $e;
-        }
+        });
     }
 }

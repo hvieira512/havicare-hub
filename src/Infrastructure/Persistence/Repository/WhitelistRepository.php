@@ -263,31 +263,14 @@ final class WhitelistRepository
     public function unregister(string $imei): void
     {
         // As três remoções são uma só operação: sem cascata, nada repunha a coerência se a
-        // segunda falhasse. O PDO não aninha transacções, e quem a abriu é que a fecha.
-        $ownsTransaction = !$this->pdo->inTransaction();
-        if ($ownsTransaction) {
-            $this->pdo->beginTransaction();
-        }
-
-        // Só as remoções vão no `try`, onde a transacção está aberta com certeza; uma falha do
-        // `commit()` já não deixa nada para desfazer.
-        try {
+        // segunda falhasse.
+        $this->transactional(function () use ($imei): void {
             foreach (['device_configurations', 'device_configuration_changes'] as $table) {
                 $this->pdo->prepare("DELETE FROM `{$table}` WHERE imei = ?")->execute([$imei]);
             }
 
             $this->pdo->prepare('DELETE FROM whitelist WHERE imei = ?')->execute([$imei]);
-        } catch (\Throwable $e) {
-            if ($ownsTransaction) {
-                $this->pdo->rollBack();
-            }
-
-            throw $e;
-        }
-
-        if ($ownsTransaction) {
-            $this->pdo->commit();
-        }
+        });
     }
 
     public function updateAssociation(string $imei, string $company, int $licenseId): bool

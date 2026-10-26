@@ -10,6 +10,8 @@ use PDO;
 
 final class ModelCapabilityRepository
 {
+    use FetchesRows;
+
     /** @var array<int, list<string>> */
     private array $enabledFeatures = [];
 
@@ -169,14 +171,8 @@ final class ModelCapabilityRepository
         $capabilityKeys = $this->normalizeCapabilityKeys($modelId, $capabilityKeys);
         $deviceType = $this->modelContextForModelId($modelId)['device_type'];
 
-        // Desligar tudo e religar o que ficou são uma só operação. O PDO não aninha
-        // transacções, e quem a abriu é que a fecha.
-        $ownsTransaction = !$this->pdo->inTransaction();
-        if ($ownsTransaction) {
-            $this->pdo->beginTransaction();
-        }
-
-        try {
+        // Desligar tudo e religar o que ficou são uma só operação.
+        $this->transactional(function () use ($modelId, $deviceType, $capabilityKeys): void {
             $disable = $this->pdo->prepare('UPDATE model_capabilities SET enabled = 0 WHERE model_id = ?');
             $disable->execute([$modelId]);
 
@@ -191,17 +187,7 @@ final class ModelCapabilityRepository
                     . ' ON DUPLICATE KEY UPDATE enabled = 1'
                 )->execute($params);
             }
-        } catch (\Throwable $e) {
-            if ($ownsTransaction) {
-                $this->pdo->rollBack();
-            }
-
-            throw $e;
-        }
-
-        if ($ownsTransaction) {
-            $this->pdo->commit();
-        }
+        });
         $this->enabledFeatures = [];
     }
 

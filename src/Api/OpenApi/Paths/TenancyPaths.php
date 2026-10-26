@@ -136,11 +136,12 @@ final class TenancyPaths
                 ],
                 'delete' => [
                     'tags' => ['Companies'],
-                    'summary' => 'Delete company and its licenses',
+                    'summary' => 'Delete a company and its licenses; refused while it still has devices',
                     'parameters' => [$id],
                     'responses' => Responses::map(
                         ['200' => Responses::json('Company deleted', 'StatusResponse')],
                         'company_not_found',
+                        'company_in_use',
                     ),
                 ],
             ],
@@ -200,6 +201,7 @@ final class TenancyPaths
                     'responses' => Responses::map(
                         ['200' => Responses::json('License deleted', 'StatusResponse')],
                         'license_not_found',
+                        'license_in_use',
                     ),
                 ],
             ],

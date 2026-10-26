@@ -19,6 +19,7 @@ use Hub\Domain\Capability\CapabilityRegistry;
 use Hub\Domain\Capability\Contacts\WonlexContactCodec;
 use Hub\Domain\Capability\Medication\PillDispenserMedicationRemindersHandler;
 use Hub\Log\Logger;
+use Hub\Command\DeliveryStatus;
 
 final class DeviceConfigurationUpdateService
 {
@@ -193,7 +194,7 @@ final class DeviceConfigurationUpdateService
                     && $existingPayload !== null
                     && $this->valuesEqual($existingPayload, $nativePayload)
                     && (!isset($desiredByKey[$genericKey]) || $this->valuesEqual($desiredByKey[$genericKey], $payload))
-                    && !in_array($existingStatus, ['created', 'failed', 'retry_exhausted', 'response_timeout'], true)
+                    && !in_array($existingStatus, DeliveryStatus::UNDELIVERED, true)
                 ) {
                     continue;
                 }

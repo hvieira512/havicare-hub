@@ -33,7 +33,7 @@ final class BeaconDbTelemetryEnricher implements LocationTelemetryEnricherContra
         }
 
         $data = isset($telemetry['data']) && is_array($telemetry['data']) ? $telemetry['data'] : [];
-        if ($this->hasTrustedGpsCoordinates($data)) {
+        if (LocationResponseValidator::trustedGps($data)) {
             return resolve($telemetry);
         }
         $unresolvedTelemetry = $this->withoutUntrustedCoordinates($telemetry);
@@ -79,17 +79,6 @@ final class BeaconDbTelemetryEnricher implements LocationTelemetryEnricherContra
                 return $unresolvedTelemetry;
             }
         );
-    }
-
-    /** @param array<string, mixed> $data */
-    private function hasTrustedGpsCoordinates(array $data): bool
-    {
-        return strtolower(trim((string)($data['source'] ?? ''))) === 'gps'
-            && ($data['gpsValid'] ?? true) !== false
-            && isset($data['lat'], $data['lon'])
-            && is_numeric($data['lat'])
-            && is_numeric($data['lon'])
-            && LocationResponseValidator::validCoordinates((float)$data['lat'], (float)$data['lon']);
     }
 
     /** @param array<string, mixed> $request */

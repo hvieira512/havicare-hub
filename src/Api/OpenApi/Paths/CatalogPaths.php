@@ -149,11 +149,13 @@ final class CatalogPaths
                 ],
                 'delete' => [
                     'tags' => ['Models'],
-                    'summary' => 'Delete model',
+                    'summary' => 'Delete model; refused while devices still use it',
                     'parameters' => [$id],
-                    'responses' => [
-                        '200' => Responses::json('Model deleted', 'StatusResponse'),
-                    ],
+                    'responses' => Responses::map(
+                        ['200' => Responses::json('Model deleted', 'StatusResponse')],
+                        'model_not_found',
+                        'model_in_use',
+                    ),
                 ],
             ],
         ];

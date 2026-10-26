@@ -193,6 +193,21 @@ final class DeviceConfigurationApiTest extends MysqlDashboardTestCase
         self::assertSame('awaiting_ack', $response['configurationSync']['entries']['alarms']['fall_detection']['status'] ?? null);
     }
 
+    /** Uma entrega largada não chegou ao aparelho: pedir o mesmo valor outra vez volta a enviá-lo. */
+    public function testTheSameValueIsSentAgainAfterADroppedDelivery(): void
+    {
+        $submitted = [];
+        [$api, $db] = $this->makeApi(hub: $this->recordingHub($submitted));
+        $model = $db->models->find('Vivistar', 'L08 Pro');
+        self::assertIsArray($model);
+        $db->modelCapabilities->replaceForModelId((int)$model['id'], ['fall_detection']);
+        ConfigurationFixtures::desired($db, '861265061009822', 'fallDetection', 'vivistar-iw', 'BP76', ['enabled' => true], 'dropped');
+
+        $api->updateConfigurations('861265061009822', ['configurations' => ['fall_detection' => ['enabled' => true]]]);
+
+        self::assertCount(1, $submitted);
+    }
+
     public function testConfigurationPatchPreservesStoredTakePillsVoiceWhenOmitted(): void
     {
         if (!\Hub\Command\Configuration\Payload\FourPTouchPayloadBuilder::supportsVoiceTranscoding()) {

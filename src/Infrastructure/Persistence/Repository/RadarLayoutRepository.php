@@ -14,6 +14,8 @@ use PDO;
  */
 final class RadarLayoutRepository
 {
+    use FetchesRows;
+
     public function __construct(private PDO $pdo)
     {
     }
@@ -26,9 +28,7 @@ final class RadarLayoutRepository
      */
     public function store(string $imei, array $layout, string $fetchedAt): void
     {
-        $this->pdo->beginTransaction();
-
-        try {
+        $this->transactional(function () use ($imei, $layout, $fetchedAt): void {
             $stmt = $this->pdo->prepare('
                 INSERT INTO radar_layouts
                     (imei, room_x_min_dm, room_y_min_dm, room_x_max_dm, room_y_max_dm, fetched_at)
@@ -70,12 +70,7 @@ final class RadarLayoutRepository
                     $area['yMaxDm'],
                 ]);
             }
-
-            $this->pdo->commit();
-        } catch (\Throwable $error) {
-            $this->pdo->rollBack();
-            throw $error;
-        }
+        });
     }
 
     /** @return array<string, mixed>|null */

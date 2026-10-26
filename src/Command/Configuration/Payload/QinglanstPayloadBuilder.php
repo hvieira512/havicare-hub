@@ -27,12 +27,12 @@ final class QinglanstPayloadBuilder extends ConfigurationPayloadBuilder
     public static function build(string $key, array $payload): array
     {
         return match ($key) {
-            'vital_sign_sensitivity' => ['sensitivity' => self::integer($payload['sensitivity'] ?? null, 1, 99, 'sensitivity')],
+            'vital_sign_sensitivity' => ['sensitivity' => self::intInRange($payload['sensitivity'] ?? null, 'sensitivity', 1, 99)],
             'breath_rate_alert' => self::range($payload, 'minPerMinute', 'maxPerMinute'),
             'heart_rate_alert' => self::range($payload, 'minBpm', 'maxBpm'),
             'weak_vital_signs_alarm' => [
                 'enabled' => (bool)self::boolInt($payload['enabled'] ?? null, 'enabled'),
-                'afterMinutes' => self::integer($payload['afterMinutes'] ?? null, 1, 60, 'afterMinutes'),
+                'afterMinutes' => self::intInRange($payload['afterMinutes'] ?? null, 'afterMinutes', 1, 60),
             ],
             'fall_alarm' => ['afterSeconds' => self::tensOfSeconds($payload['afterSeconds'] ?? null, 'afterSeconds')],
             'sitting_on_floor_alarm' => [
@@ -65,8 +65,8 @@ final class QinglanstPayloadBuilder extends ConfigurationPayloadBuilder
      */
     private static function range(array $payload, string $minField, string $maxField): array
     {
-        $min = self::integer($payload[$minField] ?? null, 0, 255, $minField);
-        $max = self::integer($payload[$maxField] ?? null, 0, 255, $maxField);
+        $min = self::intInRange($payload[$minField] ?? null, $minField, 0, 255);
+        $max = self::intInRange($payload[$maxField] ?? null, $maxField, 0, 255);
         if ($min >= $max) {
             throw new \InvalidArgumentException("{$minField} must be below {$maxField}");
         }
@@ -77,7 +77,7 @@ final class QinglanstPayloadBuilder extends ConfigurationPayloadBuilder
     /** O radar conta em blocos de 10 s, de 10 s a 5 minutos. */
     private static function tensOfSeconds(mixed $value, string $field): int
     {
-        $seconds = self::integer($value, 10, 300, $field);
+        $seconds = self::intInRange($value, $field, 10, 300);
         if ($seconds % 10 !== 0) {
             throw new \InvalidArgumentException("{$field} must be a multiple of 10");
         }
@@ -88,7 +88,7 @@ final class QinglanstPayloadBuilder extends ConfigurationPayloadBuilder
     /** A altura vai em decímetros, de 1,5 a 3,3 m. */
     private static function decimetres(mixed $value): int
     {
-        $centimetres = self::integer($value, 150, 330, 'heightCm');
+        $centimetres = self::intInRange($value, 'heightCm', 150, 330);
         if ($centimetres % 10 !== 0) {
             throw new \InvalidArgumentException('heightCm must be a multiple of 10');
         }
@@ -134,7 +134,7 @@ final class QinglanstPayloadBuilder extends ConfigurationPayloadBuilder
             if (!is_array($item)) {
                 throw new \InvalidArgumentException("items[{$index}] must be an object");
             }
-            $key = self::integer($item['key'] ?? null, 0, self::MAX_AREAS - 1, "items[{$index}].key");
+            $key = self::intInRange($item['key'] ?? null, "items[{$index}].key", 0, self::MAX_AREAS - 1);
             if (isset($areas[$key])) {
                 throw new \InvalidArgumentException("items[{$index}].key {$key} is repeated");
             }
@@ -144,7 +144,7 @@ final class QinglanstPayloadBuilder extends ConfigurationPayloadBuilder
             }
             $box = [];
             foreach (['xMinDm', 'yMinDm', 'xMaxDm', 'yMaxDm'] as $field) {
-                $box[$field] = self::integer($item[$field] ?? null, -127, 127, "items[{$index}].{$field}");
+                $box[$field] = self::intInRange($item[$field] ?? null, "items[{$index}].{$field}", -127, 127);
             }
             if ($box['xMinDm'] >= $box['xMaxDm'] || $box['yMinDm'] >= $box['yMaxDm']) {
                 throw new \InvalidArgumentException("items[{$index}] must have a size");
@@ -155,18 +155,5 @@ final class QinglanstPayloadBuilder extends ConfigurationPayloadBuilder
         ksort($areas);
 
         return array_values($areas);
-    }
-
-    /** Um inteiro de verdade: 1,5 não passa a 1 sem ninguém dar por isso. */
-    private static function integer(mixed $value, int $min, int $max, string $field): int
-    {
-        $isInteger = is_int($value)
-            || (is_float($value) && floor($value) === $value)
-            || (is_string($value) && preg_match('/^-?\d+$/', trim($value)) === 1);
-        if (!$isInteger || (int)$value < $min || (int)$value > $max) {
-            throw new \InvalidArgumentException("{$field} must be an integer between {$min} and {$max}");
-        }
-
-        return (int)$value;
     }
 }

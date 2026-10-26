@@ -10,6 +10,21 @@ final class LocationResponseValidator
     {
     }
 
+    /**
+     * Uma posição do GPS em que se confia: dita pelo GPS, não marcada como inválida, e com
+     * coordenadas que existem.
+     *
+     * @param array<string, mixed> $data
+     */
+    public static function trustedGps(array $data): bool
+    {
+        return strtolower(trim((string)($data['source'] ?? ''))) === 'gps'
+            && ($data['gpsValid'] ?? true) !== false
+            && is_numeric($data['lat'] ?? null)
+            && is_numeric($data['lon'] ?? null)
+            && self::validCoordinates((float)$data['lat'], (float)$data['lon']);
+    }
+
     /** Dentro do globo, e não o 0,0 que um aparelho sem posição manda. */
     public static function validCoordinates(float $lat, float $lon): bool
     {

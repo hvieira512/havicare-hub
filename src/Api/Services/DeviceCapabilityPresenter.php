@@ -9,7 +9,6 @@ use Hub\Command\DeviceCommandCatalog;
 use Hub\Domain\Capability\CapabilityRegistry;
 use Hub\Domain\Capability\ConfigurationInputDefaults;
 use Hub\Command\DeviceConfigurationCatalog;
-use Hub\Domain\Capability\CapabilityHelpers;
 use Hub\Domain\Capability\CapabilityCatalog;
 use Hub\Domain\DeviceMetadata;
 
@@ -19,8 +18,6 @@ use Hub\Domain\DeviceMetadata;
  */
 final class DeviceCapabilityPresenter
 {
-    use CapabilityHelpers;
-
     public function __construct(
         private CapabilityRegistry $capabilityRegistry,
         private ApiDataAccess $db,
@@ -33,14 +30,14 @@ final class DeviceCapabilityPresenter
      */
     public function enabledRequestCommandsForModel(?array $model, string $protocol): array
     {
+        if ($model === null) {
+            return [];
+        }
+
         $commands = array_values(array_filter(
             DeviceCommandCatalog::commandsForProtocol($protocol),
             static fn(array $entry): bool => (string)($entry['kind'] ?? '') === 'request'
         ));
-
-        if ($model === null) {
-            return [];
-        }
 
         $enabled = array_flip($this->db->modelCapabilities->requestableFeaturesForModelId((int)$model['id']));
 
@@ -194,7 +191,7 @@ final class DeviceCapabilityPresenter
             if ($this->capabilityRegistry->has($genericKey) && $this->capabilityRegistry->get($genericKey)?->isList()) {
                 $capabilities[$section][$genericKey] = $normalized;
             } else {
-                $capabilities[$section][$genericKey] = $this->mergeCapabilityValue(
+                $capabilities[$section][$genericKey] = $this->capabilityRegistry->merge(
                     $genericKey,
                     isset($storedGenericKeys[$genericKey])
                         ? ($capabilities[$section][$genericKey] ?? null)
@@ -267,7 +264,7 @@ final class DeviceCapabilityPresenter
                     )
                     : [
                         'value' => $sectionCaps[$genericKey],
-                        '_meta' => $this->enrichCapabilityMeta($genericKey, $protocol, $metaData),
+                        '_meta' => ($this->capabilityRegistry->get($genericKey)?->meta($protocol, $metaData) ?? $metaData),
                     ];
                 break;
             }
@@ -329,7 +326,7 @@ final class DeviceCapabilityPresenter
                 if (!$this->capabilityRegistry->has($genericKey)) {
                     $capabilities[$section][$genericKey] = [
                         'value' => $value,
-                        '_meta' => $this->enrichCapabilityMeta($genericKey, $protocol, $meta[$genericKey] ?? []),
+                        '_meta' => ($this->capabilityRegistry->get($genericKey)?->meta($protocol, $meta[$genericKey] ?? []) ?? $meta[$genericKey] ?? []),
                     ];
                     continue;
                 }
@@ -391,7 +388,7 @@ final class DeviceCapabilityPresenter
     /** @return array<string, mixed> */
     private function defaultCapabilityEntry(string $protocol, string $genericKey): array
     {
-        $entry = $this->configurationEntryForGenericKey($protocol, $genericKey);
+        $entry = DeviceConfigurationCatalog::entryForCapability($protocol, $genericKey);
         if ($entry === null) {
             return [];
         }
@@ -425,17 +422,6 @@ final class DeviceCapabilityPresenter
         return $capability;
     }
 
-    /** @return array<string, mixed>|null */
-    private function configurationEntryForGenericKey(string $protocol, string $genericKey): ?array
-    {
-        foreach (DeviceConfigurationCatalog::configsForProtocol($protocol) as $entry) {
-            if (CapabilityCatalog::mapConfigurationKey((string)($entry['key'] ?? '')) === $genericKey) {
-                return $entry;
-            }
-        }
-
-        return null;
-    }
 
     /**
      * @param array<string, mixed> $entry
@@ -448,7 +434,7 @@ final class DeviceCapabilityPresenter
             $meta['limit'] = (int)$entry['limit'];
         }
 
-        return $this->enrichCapabilityMeta($genericKey, $protocol, $meta);
+        return ($this->capabilityRegistry->get($genericKey)?->meta($protocol, $meta) ?? $meta);
     }
 
     /**
@@ -458,14 +444,11 @@ final class DeviceCapabilityPresenter
      */
     public function telemetryCapabilities(?array $model, string $protocol, ?array $matrix = null): array
     {
-        if ($matrix === null) {
-            $deviceType = DeviceMetadata::normalizeDeviceType((string)($model['device_type'] ?? 'watch'));
-            $catalog = $this->db->genericCapabilities->all($deviceType);
-            $supportedKeys = $model !== null
-                ? $this->db->modelCapabilities->enabledFeaturesForModelId((int)($model['id'] ?? 0))
-                : CapabilityCatalog::keysForProtocol($protocol);
-            $matrix = CapabilityCatalog::buildCapabilityMatrix($catalog, $supportedKeys);
-        }
+        $matrix ??= $this->supportedCapabilityMatrix(
+            $model,
+            $protocol,
+            DeviceMetadata::normalizeDeviceType((string)($model['device_type'] ?? 'watch')),
+        );
 
         $requestable = [];
         foreach ($this->enabledRequestCommandsForModel($model, $protocol) as $entry) {
@@ -522,25 +505,11 @@ final class DeviceCapabilityPresenter
     }
 
     /**
-     * @param array<string, mixed> $metaData
-     * @return array<string, mixed>
-     */
-    private function enrichCapabilityMeta(string $genericKey, string $protocol, array $metaData): array
-    {
-        return $this->capabilityRegistry->get($genericKey)?->meta($protocol, $metaData) ?? $metaData;
-    }
-
-    /**
      * @param array<string, mixed> $row
      */
     private function storedNativeConfigurationKey(array $row): ?string
     {
         $key = trim((string)($row['native_key'] ?? $row['config_key'] ?? ''));
         return $key !== '' ? $key : null;
-    }
-
-    private function mergeCapabilityValue(string $genericKey, mixed $existing, mixed $incoming): mixed
-    {
-        return $this->capabilityRegistry->merge($genericKey, $existing, $incoming);
     }
 }

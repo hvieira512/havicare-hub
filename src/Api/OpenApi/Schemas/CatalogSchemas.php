@@ -7,6 +7,7 @@ namespace Hub\Api\OpenApi\Schemas;
 use Hub\Api\OpenApi\Responses;
 use Hub\Api\OpenApi\SchemaFromRequest;
 use Hub\Api\Request\ModelWriteRequest;
+use Hub\Domain\Capability\CapabilityCatalog;
 
 /**
  * Fornecedores, modelos, hierarquias de tipos de dispositivo e catálogos de protocolos.
@@ -96,14 +97,7 @@ final class CatalogSchemas
             ],
             'ModelCapabilitiesMatrix' => [
                 'type' => 'object',
-                'properties' => [
-                    'telemetry' => $capabilitySection,
-                    'health' => $capabilitySection,
-                    'contacts' => $capabilitySection,
-                    'alarms' => $capabilitySection,
-                    'reminders' => $capabilitySection,
-                    'settings_system' => $capabilitySection,
-                ],
+                'properties' => array_fill_keys(CapabilityCatalog::sections(), $capabilitySection),
             ],
             'ModelTemplateResponse' => [
                 'type' => 'object',

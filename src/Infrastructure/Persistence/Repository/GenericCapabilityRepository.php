@@ -10,8 +10,6 @@ use Hub\Domain\DeviceTypeCatalog;
 /** O `CapabilityCatalog` nas linhas que a API lê; não há tabela por trás. */
 final class GenericCapabilityRepository
 {
-    private const SECTION_ORDER = ['telemetry', 'health', 'contacts', 'alarms', 'reminders', 'settings_system'];
-
     /** @return list<array<string, mixed>> */
     public function all(?string $deviceType = null): array
     {
@@ -30,7 +28,7 @@ final class GenericCapabilityRepository
         ], $definitions);
 
         $deviceTypes = array_flip(DeviceTypeCatalog::keys());
-        $sections = array_flip(self::SECTION_ORDER);
+        $sections = array_flip(CapabilityCatalog::sections());
         $order = static fn(array $row): array => [
             $deviceTypes[$row['device_type']] ?? PHP_INT_MAX,
             $sections[$row['section']] ?? PHP_INT_MAX,

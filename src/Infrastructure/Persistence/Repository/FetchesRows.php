@@ -27,6 +27,32 @@ trait FetchesRows
     }
 
     /**
+     * Corre o trabalho numa transacção; dentro de outra já aberta, junta-se a ela, que o PDO não
+     * aninha transacções e quem a abriu é que a fecha.
+     *
+     * @template T
+     * @param \Closure(): T $work
+     * @return T
+     */
+    private function transactional(\Closure $work): mixed
+    {
+        if ($this->pdo->inTransaction()) {
+            return $work();
+        }
+
+        $this->pdo->beginTransaction();
+        try {
+            $result = $work();
+        } catch (\Throwable $e) {
+            $this->pdo->rollBack();
+            throw $e;
+        }
+        $this->pdo->commit();
+
+        return $result;
+    }
+
+    /**
      * @param list<mixed> $params
      * @return list<array<string, mixed>>
      */

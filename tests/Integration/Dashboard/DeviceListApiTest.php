@@ -38,6 +38,17 @@ final class DeviceListApiTest extends MysqlDashboardTestCase
         self::assertSame(200, $api->list('page=1&limit=100000', null, '')['pagination']['limit'] ?? null);
     }
 
+    /** Editar um dispositivo que não existe diz que não existe, em vez de o criar. */
+    public function testUpdatingAnUnknownDeviceIsNotFound(): void
+    {
+        [$api, , , $whitelist] = $this->makeApi();
+
+        $result = $api->update('865028000000999', new DeviceWriteRequest(supplier: 'Vivistar', model: 'L08 Pro'));
+
+        self::assertSame('not_found', $result['error']['code'] ?? null);
+        self::assertNull($whitelist->getMetadata('865028000000999'));
+    }
+
     /** A lista segue o tamanho de página por omissão das outras coleções. */
     public function testThePageSizeDefaultsToTwenty(): void
     {
