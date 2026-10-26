@@ -45,6 +45,16 @@ final class DashboardStoreTest extends TestCase
         self::assertSame('alert', $store->recent('861265061009822', 'events')[0]['severity'] ?? null);
     }
 
+    /** E a leitura como o broker a recebe, com as marcas. */
+    public function testAStoredReadingCarriesItsMarks(): void
+    {
+        $store = new DeviceStore(new InMemoryRedisClient());
+
+        $store->append('861265061009822', 'telemetry', ['type' => 'temperature', 'data' => ['bodyCelsius' => 32.6]]);
+
+        self::assertTrue($store->recent('861265061009822', 'telemetry')[0]['data']['implausible'] ?? null);
+    }
+
     public function testWaitingCommandWithoutSentAtStillExpires(): void
     {
         $redis = new InMemoryRedisClient();

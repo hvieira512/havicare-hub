@@ -28,9 +28,10 @@ final class FourPTouchEventDecoder
             $nativeType === 'oxygen' => [
                 DeviceEventDecoder::event('blood_oxygen', $nativeType, $payload),
             ],
-            $nativeType === 'btemp2' => [
-                DeviceEventDecoder::event('temperature', $nativeType, $payload),
-            ],
+            // O `temp=0` e o `temp=1` são a medição falhada, abaixo e acima da escala do sensor.
+            $nativeType === 'btemp2' => in_array($payload['temp'] ?? null, [0, 1, 0.0, 1.0], true)
+                ? []
+                : array_filter([DeviceEventDecoder::event('temperature', $nativeType, $payload)]),
             self::isPosition($nativeType) => array_values(array_filter([
                 DeviceEventDecoder::locationEvent($nativeType, $payload),
                 DeviceEventDecoder::event('activity', $nativeType, ['steps' => $payload['steps'] ?? null]),

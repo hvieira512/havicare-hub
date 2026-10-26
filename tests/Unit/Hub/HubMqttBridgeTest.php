@@ -54,6 +54,17 @@ final class HubMqttBridgeTest extends TestCase
         );
     }
 
+    /** As marcas das leituras põem-se aqui, por onde passa toda a telemetria. */
+    public function testAnImplausibleReadingLeavesMarked(): void
+    {
+        $publisher = new FakeMqttPublisher();
+        $bridge = new HubMqttBridge($publisher, 'prefix');
+
+        $bridge->publishTelemetry('8800000015', ['type' => 'temperature', 'data' => ['bodyCelsius' => 32.6]], 'watch', 0, 'null');
+
+        self::assertSame(['bodyCelsius' => 32.6, 'implausible' => true], json_decode((string)$publisher->lastMessage, true)['data']);
+    }
+
     /** Um evento sem campos leva `data` como objecto vazio, e não como lista vazia. */
     public function testAnEventWithoutFieldsCarriesAnEmptyObject(): void
     {

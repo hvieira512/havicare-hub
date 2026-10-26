@@ -26,12 +26,15 @@ final class FeatureNormalizer
     public static function normalize(string $feature, array $payload): array
     {
         return match ($feature) {
-            'heart_rate' => self::heartRate($payload),
-            'blood_pressure' => self::bloodPressure($payload),
-            'blood_oxygen' => self::bloodOxygen($payload),
+            'heart_rate' => self::measured(self::heartRate($payload), ['bpm']),
+            'blood_pressure' => self::measured(self::bloodPressure($payload), ['systolicMmHg', 'diastolicMmHg']),
+            'blood_oxygen' => self::measured(self::bloodOxygen($payload), ['spo2Percent']),
             'blood_sugar' => self::bloodSugar($payload),
-            'breath_rate' => self::scalar($payload, 'breathsPerMinute', ['breathRate', 'breathe', 'respiratoryRate', 'value', 'data', 'date']),
-            'temperature' => self::temperature($payload),
+            'breath_rate' => self::measured(
+                self::scalar($payload, 'breathsPerMinute', ['breathRate', 'breathe', 'respiratoryRate', 'value', 'data', 'date']),
+                ['breathsPerMinute'],
+            ),
+            'temperature' => self::measured(self::temperature($payload), ['bodyCelsius']),
             'battery' => self::battery($payload),
             'activity' => self::activity($payload),
             'sleep' => self::sleep($payload),
@@ -85,6 +88,24 @@ final class FeatureNormalizer
     {
         $value = self::first($payload, ['spo2', 'spo2Percent', 'oxygen', 'bloodOxygen', 'bo', 'value', 'data', 'date']);
         return $value === null ? [] : ['spo2Percent' => (int)$value];
+    }
+
+    /**
+     * Sem os sinais vitais a zero: é o que os relógios mandam por «sem leitura», e não um valor.
+     *
+     * @param array<string, mixed> $fields
+     * @param list<string> $vitals
+     * @return array<string, mixed>
+     */
+    private static function measured(array $fields, array $vitals): array
+    {
+        foreach ($vitals as $vital) {
+            if (isset($fields[$vital]) && is_numeric($fields[$vital]) && $fields[$vital] <= 0) {
+                unset($fields[$vital]);
+            }
+        }
+
+        return $fields;
     }
 
     /**

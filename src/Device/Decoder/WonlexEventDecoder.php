@@ -39,7 +39,11 @@ final class WonlexEventDecoder
             'upDeviceConfig' => [DeviceEventDecoder::event('device_config', $nativeType, $payload)],
             'upShutdown' => [DeviceEventDecoder::event('device_state', $nativeType, ['state' => 'shutdown'] + $payload)],
             'upReset' => [DeviceEventDecoder::event('device_state', $nativeType, ['state' => 'factory_reset'] + $payload)],
-            'upBatch' => self::decodeBatch($nativeType, $payload),
+            // O lote é o que o relógio guardou e manda de uma vez: nenhuma leitura é de agora.
+            'upBatch' => array_map(
+                static fn (array $event): array => ['value' => $event['value'] + ['fromHistory' => true]] + $event,
+                self::decodeBatch($nativeType, $payload),
+            ),
             default => [],
         };
     }

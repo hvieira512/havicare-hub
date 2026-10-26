@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Hub\State;
 
 use Hub\Domain\Capability\EventSeverity;
+use Hub\Domain\Capability\ReadingMarks;
 use Hub\Infrastructure\Persistence\Repository\ApiDataAccess;
 use Hub\Command\DeviceConfigurationCatalog;
 use Hub\Log\Logger;
@@ -139,7 +140,11 @@ final class DeviceStore implements DeviceStoreContract
             return;
         }
 
-        $this->events->append($imei, $list, $list === 'events' ? EventSeverity::stamp($payload) : $payload);
+        $this->events->append($imei, $list, match ($list) {
+            'events' => EventSeverity::stamp($payload),
+            'telemetry' => ReadingMarks::mark($payload),
+            default => $payload,
+        });
         // A configuração que o aparelho reporta fica também guardada na base, como a reportada.
         if ($list === 'telemetry' && ($payload['type'] ?? '') === 'device_config') {
             $source = is_array($payload['source'] ?? null) ? $payload['source'] : [];

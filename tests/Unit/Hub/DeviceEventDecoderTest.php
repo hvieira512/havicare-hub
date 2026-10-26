@@ -50,6 +50,19 @@ final class DeviceEventDecoderTest extends TestCase
         self::assertSame([100, 98, 97], array_column(array_column($events, 'value'), 'bpm'));
     }
 
+    /** O lote é o que o relógio guardou e manda de uma vez: nenhuma destas leituras é de agora. */
+    public function testEveryReadingInAWonlexBatchIsFromHistory(): void
+    {
+        $session = $this->session('wonlex-json');
+        $documented = (new DeviceEventDecoder())->decode($session, ['type' => 'upBatch', 'data' => [
+            'dataType' => 'upBO', 'data' => '97,88', 'dataTime' => '1648111390075,1648111390073',
+        ]]);
+        $flat = (new DeviceEventDecoder())->decode($session, ['type' => 'upBatch', 'data' => ['heartRate' => '100', 'bp' => '120/80/72']]);
+
+        self::assertSame([true, true], array_column(array_column($documented, 'value'), 'fromHistory'));
+        self::assertSame([true, true, true], array_column(array_column($flat, 'value'), 'fromHistory'));
+    }
+
     public function testDecodesWonlexBreathingTemperatureSleepAndDeviceState(): void
     {
         $decoder = new DeviceEventDecoder();
@@ -667,6 +680,47 @@ final class DeviceEventDecoderTest extends TestCase
         self::assertCount(1, $events);
         self::assertSame('temperature', $events[0]['feature']);
         self::assertSame(36.7, $events[0]['value']['bodyCelsius']);
+    }
+
+    /** O `temp=0` e o `temp=1` dizem que a medição falhou (4PTouch.html, «VI. Body Temperature Measure»). */
+    #[DataProvider('fourPTouchFailedTemperatures')]
+    public function testAFailedFourPTouchTemperatureIsNotAReading(float $temp): void
+    {
+        $events = (new DeviceEventDecoder())->decode(
+            $this->session('four-p-touch'),
+            ['type' => 'btemp2', 'data' => ['measureType' => 1, 'temp' => $temp]],
+        );
+
+        self::assertSame([], $events);
+    }
+
+    /** @return array<string, array{float}> */
+    public static function fourPTouchFailedTemperatures(): array
+    {
+        return ['too low to measure' => [0.0], 'too high to measure' => [1.0]];
+    }
+
+    /**
+     * Um zero num sinal vital é «sem leitura», e não um valor que alguém possa comparar com um limite.
+     *
+     * @param array<string, mixed> $data
+     */
+    #[DataProvider('zeroVitals')]
+    public function testAZeroVitalIsNotAReading(string $type, array $data): void
+    {
+        self::assertSame([], (new DeviceEventDecoder())->decode($this->session('wonlex-json'), ['type' => $type, 'data' => $data]));
+    }
+
+    /** @return array<string, array{string, array<string, mixed>}> */
+    public static function zeroVitals(): array
+    {
+        return [
+            'heart rate' => ['upHeartRate', ['date' => '0']],
+            'blood oxygen' => ['upBO', ['date' => '0']],
+            'blood pressure' => ['upBP', ['date' => '0/0']],
+            'body temperature' => ['upBodyTemperature', ['date' => '0']],
+            'breath rate' => ['upBreathe', ['date' => '0']],
+        ];
     }
 
     public function testDecodesFourPTouchPositionIntoLocationActivityAndBattery(): void
