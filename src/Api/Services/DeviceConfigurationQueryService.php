@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Hub\Api\Services;
 
-use Hub\Infrastructure\Persistence\Repository\ApiDataAccess;
 use Hub\Domain\Capability\CapabilityCatalog;
 use Hub\Domain\Capability\CapabilityHelpers;
 use Hub\Domain\Capability\CapabilityRegistry;
+use Hub\Infrastructure\Persistence\Repository\ApiDataAccess;
 
 final class DeviceConfigurationQueryService
 {

@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Hub\Infrastructure\Persistence\Repository;
 
-use Hub\Ingress\Mqtt\Qinglanst\QinglanstBridge;
 use Hub\Infrastructure\Persistence\TimestampFormatter;
+use Hub\Ingress\Mqtt\Qinglanst\QinglanstBridge;
 use PDO;
 
 /**

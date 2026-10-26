@@ -8,8 +8,8 @@ use Hub\Api\Auth\ApiAuthContext;
 use Hub\Api\Auth\ApiTokenStore;
 use Hub\Api\Auth\LoginThrottle;
 use Hub\Api\Http\ApiError;
-use Hub\Infrastructure\Persistence\Repository\ApiDataAccess;
 use Hub\Domain\DeviceMetadata;
+use Hub\Infrastructure\Persistence\Repository\ApiDataAccess;
 use Hub\Log\Logger;
 
 class AuthService

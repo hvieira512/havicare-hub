@@ -6,11 +6,11 @@ namespace Hub\Ingress\Tcp;
 
 use Hub\Device\DeviceEventDecoder;
 use Hub\Device\Firmware\FirmwareUpgradeStore;
-use Hub\Protocol\AdapterRegistry;
 use Hub\Ingress\Tcp\Supplier\FourPTouch\FourPTouchTcpProtocol;
 use Hub\Ingress\Tcp\Supplier\Vivistar\VivistarTcpProtocol;
 use Hub\Ingress\Tcp\Supplier\Wonlex\WonlexTcpProtocol;
 use Hub\Ingress\Tcp\Supplier\Zayata\PillDispenserTcpProtocol;
+use Hub\Protocol\AdapterRegistry;
 use Hub\State\ActiveAlarms;
 
 /**

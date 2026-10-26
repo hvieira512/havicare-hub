@@ -11,8 +11,8 @@ use PHPUnit\Framework\TestCase;
 use Tests\Support\Doubles\ArrayObservationStateStore;
 use Tests\Support\Doubles\FakeMqttSubscriber;
 use Tests\Support\Doubles\FixedProximityAlarm;
-use Tests\Support\Doubles\InMemoryRedisClient;
 use Tests\Support\Doubles\IngressFixtures;
+use Tests\Support\Doubles\InMemoryRedisClient;
 use Tests\Support\Doubles\RecordingHubMqttBridge;
 
 /** O `proximity_alarm` que o hub decide quando um dispositivo ligado chega perto de um gateway com o alarme ativo. */

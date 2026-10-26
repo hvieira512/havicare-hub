@@ -17,11 +17,11 @@ use Hub\Ingress\Mqtt\Lefu\LefuTorreBridge;
 use Hub\Ingress\Mqtt\Lefu\ScaleOnlineUsers;
 use Hub\Ingress\Mqtt\Veepoo\VeepooBridge;
 use Hub\State\DeviceStore;
-use PHPUnit\Framework\TestCase;
 use PhpMqtt\Client\MqttClient;
+use PHPUnit\Framework\TestCase;
 use Tests\Support\Doubles\ArrayObservationStateStore;
-use Tests\Support\Doubles\InMemoryRedisClient;
 use Tests\Support\Doubles\IngressFixtures;
+use Tests\Support\Doubles\InMemoryRedisClient;
 
 /**
  * Prende, byte a byte, o que cada ponte GATT põe no fio e no histórico da dashboard. O que depende

@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Dashboard;
 
-use Hub\State\DeviceStore;
 use Hub\Command\DeviceCommandCatalog;
+use Hub\State\DeviceStore;
 use PHPUnit\Framework\TestCase;
 use Tests\Support\Doubles\InMemoryRedisClient;
 

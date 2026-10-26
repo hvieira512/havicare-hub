@@ -4,9 +4,7 @@ declare(strict_types=1);
 
 namespace Hub\Runtime;
 
-use Hub\Infrastructure\Persistence\Repository\ApiDataAccess;
-use Hub\State\ActiveAlarms;
-use Hub\State\DeviceStore;
+use Hub\Api\Services\DeviceService;
 use Hub\Device\CommercialModelResolver;
 use Hub\Device\DeviceHubServer;
 use Hub\Device\Firmware\FirmwareUpgradeStore;
@@ -16,6 +14,7 @@ use Hub\Device\RedisPendingDownlinkQueue;
 use Hub\Domain\Capability\Medication\MedicationRunout;
 use Hub\Domain\Liveness;
 use Hub\Infrastructure\Persistence\DashboardDatabase;
+use Hub\Infrastructure\Persistence\Repository\ApiDataAccess;
 use Hub\Ingress\Http\Qinglanst\LayoutParser;
 use Hub\Ingress\Http\Qinglanst\QinglanstApiClient;
 use Hub\Ingress\Http\Qinglanst\QinglanstCloudCommands;
@@ -25,14 +24,15 @@ use Hub\Ingress\Http\Qinglanst\RadarStateAbsorber;
 use Hub\Location\LocationEnricherFactory;
 use Hub\Location\LocationTelemetryEnricherContract;
 use Hub\Mqtt\ConnectionFactory;
-use React\EventLoop\Loop;
-use React\Http\Browser;
 use Hub\Registry\Denylist;
 use Hub\Registry\Whitelist;
+use Hub\State\ActiveAlarms;
+use Hub\State\DeviceStore;
 use PhpMqtt\Client\MqttClient;
 use Predis\Client as RedisClient;
 use Predis\ClientInterface;
-use Hub\Api\Services\DeviceService;
+use React\EventLoop\Loop;
+use React\Http\Browser;
 
 /**
  * A raiz de composição dos serviços de vida longa do hub, singletons do processo. Uma só

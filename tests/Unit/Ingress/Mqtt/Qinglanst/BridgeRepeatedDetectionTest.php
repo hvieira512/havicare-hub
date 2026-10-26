@@ -8,8 +8,8 @@ use Hub\Ingress\Mqtt\Qinglanst\QinglanstBridge;
 use Hub\State\ActiveAlarms;
 use PHPUnit\Framework\TestCase;
 use Tests\Support\Doubles\FakeMqttSubscriber;
-use Tests\Support\Doubles\InMemoryRedisClient;
 use Tests\Support\Doubles\IngressFixtures;
+use Tests\Support\Doubles\InMemoryRedisClient;
 use Tests\Support\Doubles\RecordingHubMqttBridge;
 
 /** O radar repete postura e vitais a cada segundo: uma queda que dura dá um evento, e não um por segundo. */

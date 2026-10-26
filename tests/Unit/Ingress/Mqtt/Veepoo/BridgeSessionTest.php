@@ -7,8 +7,8 @@ namespace Tests\Unit\Ingress\Mqtt\Veepoo;
 use Hub\Device\RedisPendingDownlinkQueue;
 use Hub\State\DeviceStoreContract;
 use PHPUnit\Framework\TestCase;
-use Tests\Support\Doubles\InMemoryRedisClient;
 use Tests\Support\Doubles\IngressFixtures;
+use Tests\Support\Doubles\InMemoryRedisClient;
 use Tests\Support\Doubles\RecordingHubMqttBridge;
 use Tests\Support\Doubles\VeepooFixtures;
 

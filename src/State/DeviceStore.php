@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace Hub\State;
 
+use Hub\Command\DeviceConfigurationCatalog;
 use Hub\Domain\Capability\EventSeverity;
 use Hub\Domain\Capability\ReadingMarks;
 use Hub\Infrastructure\Persistence\Repository\ApiDataAccess;
-use Hub\Command\DeviceConfigurationCatalog;
-use Hub\Log\Logger;
 use Hub\Ingress\Tcp\TcpProtocolRegistry;
+use Hub\Log\Logger;
 use Predis\ClientInterface;
 
 final class DeviceStore implements DeviceStoreContract

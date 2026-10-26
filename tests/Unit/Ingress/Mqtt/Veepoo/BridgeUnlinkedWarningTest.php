@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Tests\Unit\Ingress\Mqtt\Veepoo;
 
 use PHPUnit\Framework\TestCase;
+use Tests\Support\CapturesLog;
 use Tests\Support\Doubles\IngressFixtures;
 use Tests\Support\Doubles\VeepooFixtures;
-use Tests\Support\CapturesLog;
 
 /** O hub recusa o que não está ligado ao gateway, e o aviso leva o travão dos aparelhos não autorizados. */
 final class BridgeUnlinkedWarningTest extends TestCase

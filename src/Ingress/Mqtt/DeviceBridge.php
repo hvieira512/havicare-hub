@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Hub\Ingress\Mqtt;
 
-use Hub\State\DeviceReportStore;
 use Hub\Device\CommercialModelResolver;
 use Hub\Device\HubMqttBridge;
 use Hub\Domain\GatewayDeviceLinkLookup;
@@ -13,6 +12,7 @@ use Hub\Ingress\Mqtt\Gateway\GattDeviceContext;
 use Hub\Log\Logger;
 use Hub\Registry\Denylist;
 use Hub\Registry\Whitelist;
+use Hub\State\DeviceReportStore;
 use Hub\Support\Throttle;
 
 /** O que todas as pontes de ingestão partilham: a whitelist, os avisos estrangulados e o aparelho GATT. */

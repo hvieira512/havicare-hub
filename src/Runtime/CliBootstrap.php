@@ -6,7 +6,6 @@ namespace Hub\Runtime;
 
 use Dotenv\Dotenv;
 use Hub\Config;
-use Hub\Configuration\HubConfigurationValidator;
 use Hub\Infrastructure\Persistence\DashboardDatabase;
 use Hub\Infrastructure\Persistence\DatabaseSchemaGuard;
 

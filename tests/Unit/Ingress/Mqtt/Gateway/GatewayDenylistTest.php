@@ -17,8 +17,8 @@ use Hub\State\DeviceStoreContract;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Tests\Support\Doubles\ArrayObservationStateStore;
-use Tests\Support\Doubles\InMemoryRedisClient;
 use Tests\Support\Doubles\IngressFixtures;
+use Tests\Support\Doubles\InMemoryRedisClient;
 use Tests\Support\Doubles\RecordingHubMqttBridge;
 
 /** O que as pontes do gateway BLE têm em comum: o bloqueio, o sinal da ligação e o cliente no tópico. */

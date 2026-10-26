@@ -5,15 +5,15 @@ namespace Tests\Support;
 use GuzzleHttp\Psr7\ServerRequest;
 use Hub\Api\Auth\ApiTokenStore;
 use Hub\Api\Auth\LoginThrottle;
-use Hub\Infrastructure\Persistence\Repository\ApiDataAccess;
 use Hub\Dashboard\DashboardHttpOptions;
 use Hub\Dashboard\DashboardHttpServer;
-use Hub\State\DeviceStore;
 use Hub\Device\MessageFanout;
 use Hub\Device\RedisPendingDownlinkQueue;
+use Hub\Infrastructure\Persistence\Repository\ApiDataAccess;
 use Hub\Log\Logger;
 use Hub\Registry\Whitelist;
 use Hub\Runtime\DashboardServerFactory;
+use Hub\State\DeviceStore;
 use Tests\Support\Doubles\InMemoryRedisClient;
 
 /** A cadeia HTTP da dashboard como em produção; sem `strict_types` porque a coerção da licença é testada. */

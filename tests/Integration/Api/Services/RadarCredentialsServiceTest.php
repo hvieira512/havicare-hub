@@ -5,11 +5,11 @@ declare(strict_types=1);
 namespace Tests\Integration\Api\Services;
 
 use Hub\Api\Request\RadarCredentialsWriteRequest;
+use Hub\Api\Services\RadarCredentialsService;
 use Hub\Infrastructure\Persistence\Repository\ApiDataAccess;
 use Hub\Infrastructure\Persistence\Repository\RadarApiCredentialsRepository;
 use Hub\Infrastructure\Persistence\Repository\RadarLayoutRepository;
 use Hub\Infrastructure\Persistence\Repository\WhitelistRepository;
-use Hub\Api\Services\RadarCredentialsService;
 use Hub\Ingress\Http\Qinglanst\LayoutParser;
 use Hub\Ingress\Http\Qinglanst\QinglanstApiClient;
 use Hub\Ingress\Http\Qinglanst\QinglanstApiException;

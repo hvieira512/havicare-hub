@@ -4,16 +4,16 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Runtime;
 
-use Hub\State\DeviceStore;
 use Hub\Device\CommercialModelResolver;
 use Hub\Device\DeviceHubServer;
 use Hub\Runtime\HubServices;
 use Hub\Runtime\MaintenanceScheduler;
+use Hub\State\DeviceStore;
 use PHPUnit\Framework\TestCase;
 use React\EventLoop\LoopInterface;
 use React\EventLoop\TimerInterface;
-use Tests\Support\Doubles\InMemoryRedisClient;
 use Tests\Support\Doubles\IngressFixtures;
+use Tests\Support\Doubles\InMemoryRedisClient;
 use Tests\Support\Doubles\RecordingHubMqttBridge;
 
 /** A manutenção periódica: repetir o que ficou por entregar e largar o que se calou. */

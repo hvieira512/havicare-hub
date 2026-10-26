@@ -7,12 +7,12 @@ namespace Hub\Api\Services;
 use Hub\Api\Auth\ApiAuthContext;
 use Hub\Api\Http\ApiError;
 use Hub\Api\Http\DevicePresentation;
-use Hub\Infrastructure\Persistence\Repository\ApiDataAccess;
 use Hub\Api\Request\DeviceAssociationRequest;
-use Hub\State\DeviceRuntimeStore;
-use Hub\Domain\DeviceMetadata;
 use Hub\Device\DeviceHubServer;
+use Hub\Domain\DeviceMetadata;
+use Hub\Infrastructure\Persistence\Repository\ApiDataAccess;
 use Hub\Registry\Whitelist;
+use Hub\State\DeviceRuntimeStore;
 
 final class DeviceAssociationService
 {

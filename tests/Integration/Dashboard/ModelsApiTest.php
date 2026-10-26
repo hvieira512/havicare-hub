@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace Tests\Integration\Dashboard;
 
+use GuzzleHttp\Psr7\ServerRequest;
 use Hub\Api\Request\ModelWriteRequest;
 use Hub\Api\Request\RequestBinder;
-use GuzzleHttp\Psr7\ServerRequest;
-use Hub\Infrastructure\Persistence\Repository\ApiDataAccess;
 use Hub\Api\Services\ModelService;
 use Hub\Domain\ProtocolRegistry;
 use Hub\Domain\SupplierCapabilityTemplate;
+use Hub\Infrastructure\Persistence\Repository\ApiDataAccess;
 use Tests\Support\MysqlDashboardTestCase;
 
 final class ModelsApiTest extends MysqlDashboardTestCase

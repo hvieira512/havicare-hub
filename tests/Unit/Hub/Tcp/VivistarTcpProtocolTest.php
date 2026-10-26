@@ -6,8 +6,8 @@ namespace Tests\Unit\Hub\Tcp;
 
 use Hub\Device\DeviceEventDecoder;
 use Hub\Device\DeviceSession;
-use Hub\Protocol\Adapter\VivistarAdapter;
 use Hub\Ingress\Tcp\Supplier\Vivistar\VivistarTcpProtocol;
+use Hub\Protocol\Adapter\VivistarAdapter;
 use PHPUnit\Framework\TestCase;
 use Tests\Support\Doubles\FakeConnection;
 

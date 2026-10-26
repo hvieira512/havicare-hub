@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Dashboard;
 
+use Hub\Domain\Capability\CapabilityCatalog;
 use Hub\Domain\ProtocolRegistry;
 use Hub\Domain\SupplierCapabilityTemplate;
-use Hub\Domain\Capability\CapabilityCatalog;
 use PHPUnit\Framework\TestCase;
 
 final class SupplierCapabilityTemplateTest extends TestCase

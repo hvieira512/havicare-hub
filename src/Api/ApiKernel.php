@@ -4,19 +4,19 @@ declare(strict_types=1);
 
 namespace Hub\Api;
 
-use Hub\Api\Controllers\AuthController;
-use Hub\Api\Controllers\DeviceController;
-use Hub\Api\Controllers\StreamController;
-use Hub\Device\MessageFanout;
 use Hub\Api\Auth\ApiAuthContext;
 use Hub\Api\Auth\BearerTokenResolver;
 use Hub\Api\Auth\RouteAccessPolicy;
+use Hub\Api\Controllers\AuthController;
+use Hub\Api\Controllers\DeviceController;
+use Hub\Api\Controllers\StreamController;
 use Hub\Api\Http\ApiError;
 use Hub\Api\Http\JsonResponder;
 use Hub\Api\Http\Middleware\ApiLogContext;
 use Hub\Api\Http\RequestContext;
 use Hub\Api\Routing\ApiRoute;
 use Hub\Api\Routing\ApiRouter;
+use Hub\Device\MessageFanout;
 use Hub\Log\Logger;
 use Psr\Http\Message\ServerRequestInterface;
 use React\Http\Message\Response;

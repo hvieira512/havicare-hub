@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Tests\Integration\Api\Services;
 
-use Hub\Infrastructure\Persistence\Repository\ApiDataAccess;
 use Hub\Api\Services\ConfigurationLifecyclePresenter;
 use Hub\Api\Services\ConfigurationSyncStatus;
 use Hub\Api\Services\DeviceCapabilityPresenter;
 use Hub\Domain\Capability\CapabilityRegistry;
+use Hub\Infrastructure\Persistence\Repository\ApiDataAccess;
 use Tests\Support\MysqlDashboardTestCase;
 
 /** Tirar uma capacidade do catálogo deixa as mudanças por confirmar dela até alguém voltar a escrever a chave. */

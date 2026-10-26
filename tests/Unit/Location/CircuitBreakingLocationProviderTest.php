@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Location;
 
-use Hub\Location\RedisProviderCircuitStateStore;
-use Tests\Support\Doubles\InMemoryRedisClient;
-use Tests\Support\Doubles\CallbackLocationProvider;
 use Hub\Location\CircuitBreakingLocationProvider;
 use Hub\Location\LocationProviderException;
+use Hub\Location\RedisProviderCircuitStateStore;
 use PHPUnit\Framework\TestCase;
+use Tests\Support\Doubles\CallbackLocationProvider;
+use Tests\Support\Doubles\InMemoryRedisClient;
 
 use function React\Promise\reject;
 use function React\Promise\resolve;

@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Hub\Log;
 
-use Monolog\Logger as MonologLogger;
-use Monolog\Level;
-use Monolog\Handler\StreamHandler;
 use Monolog\Formatter\LineFormatter;
+use Monolog\Handler\StreamHandler;
+use Monolog\Level;
+use Monolog\Logger as MonologLogger;
 
 class Logger
 {

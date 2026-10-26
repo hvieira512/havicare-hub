@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Tests\Support\Doubles;
 
-use Hub\Ingress\Mqtt\Gateway\GatewayRelay;
 use Hub\Domain\GatewayDeviceLinkLookup;
+use Hub\Ingress\Mqtt\Gateway\GatewayRelay;
 use Hub\Registry\Whitelist;
 
 /** A `Whitelist` e o `GatewayDeviceLinkLookup` em memória que os testes de ingress partilham. */

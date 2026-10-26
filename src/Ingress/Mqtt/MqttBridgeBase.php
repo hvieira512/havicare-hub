@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace Hub\Ingress\Mqtt;
 
-use Hub\State\DeviceReportStore;
 use Hub\Device\CommercialModelResolver;
 use Hub\Device\HubMqttBridge;
 use Hub\Log\Logger;
 use Hub\Mqtt\ReconnectsOnLoopFailure;
 use Hub\Registry\Denylist;
 use Hub\Registry\Whitelist;
+use Hub\State\DeviceReportStore;
 use PhpMqtt\Client\MqttClient;
 
 /** Uma ponte com sessão própria no broker: subscreve o filtro, gira o loop e volta a ligar. */

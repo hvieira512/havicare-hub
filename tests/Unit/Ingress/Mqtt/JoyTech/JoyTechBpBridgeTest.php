@@ -6,12 +6,12 @@ namespace Tests\Unit\Ingress\Mqtt\JoyTech;
 
 use Hub\Device\RedisPendingDownlinkQueue;
 use Hub\Ingress\Mqtt\JoyTech\BloodPressureHistoryMarks;
-use Hub\Ingress\Mqtt\JoyTech\JoyTechFrame;
 use Hub\Ingress\Mqtt\JoyTech\JoyTechBpBridge;
+use Hub\Ingress\Mqtt\JoyTech\JoyTechFrame;
 use Hub\State\DeviceStoreContract;
 use PHPUnit\Framework\TestCase;
-use Tests\Support\Doubles\InMemoryRedisClient;
 use Tests\Support\Doubles\IngressFixtures;
+use Tests\Support\Doubles\InMemoryRedisClient;
 use Tests\Support\Doubles\RecordingHubMqttBridge;
 
 /** Do gateway ao MQTT, com as tramas que o DBP-6292B mandou à sonda a 2026-10-16. */

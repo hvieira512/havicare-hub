@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Hub\Api\Services;
 
 use Hub\Api\Http\ApiError;
-use Hub\Api\Http\CollectionPresenter;
 use Hub\Api\Http\CollectionColumns;
+use Hub\Api\Http\CollectionPresenter;
 use Hub\Api\Request\DenylistBlockRequest;
 use Hub\Infrastructure\Persistence\Repository\ApiDataAccess;
 

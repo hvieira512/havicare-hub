@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Location;
 
-use Tests\Support\Doubles\CallbackLocationProvider;
 use Hub\Location\ConcurrentLocationProvider;
 use PHPUnit\Framework\TestCase;
 use React\Promise\Deferred;
+use Tests\Support\Doubles\CallbackLocationProvider;
 
 final class ConcurrentLocationProviderTest extends TestCase
 {

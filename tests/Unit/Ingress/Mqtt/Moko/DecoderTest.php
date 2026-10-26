@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Ingress\Mqtt\Moko;
 
+use Hub\Domain\DiaperSensitivity;
+use Hub\Ingress\Mqtt\Gateway\GatewayTopic;
 use Hub\Ingress\Mqtt\Moko\GatewayNormalizer;
 use Hub\Ingress\Mqtt\Moko\Mkgw4MessageDecoder;
-use Hub\Domain\DiaperSensitivity;
+use Hub\Ingress\Mqtt\Moko\W6bDecoder;
 use Hub\Ingress\Mqtt\Monit\MonitMecsProDecoder;
 use Hub\Ingress\Mqtt\Monit\MonitNormalizer;
-use Hub\Ingress\Mqtt\Gateway\GatewayTopic;
-use Hub\Ingress\Mqtt\Moko\W6bDecoder;
 use PHPUnit\Framework\TestCase;
 
 final class DecoderTest extends TestCase

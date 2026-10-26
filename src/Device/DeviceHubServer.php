@@ -5,23 +5,23 @@ declare(strict_types=1);
 namespace Hub\Device;
 
 use Hub\Command\DeviceCommandCatalog;
+use Hub\Device\Firmware\FirmwareUpgradeStore;
 use Hub\Domain\Capability\CapabilityCatalog;
 use Hub\Domain\Capability\EventSeverity;
 use Hub\Domain\Capability\Medication\MedicationOccurrence;
 use Hub\Domain\Capability\Medication\MedicationRunout;
 use Hub\Domain\Liveness;
 use Hub\Domain\ProtocolRegistry;
-use Hub\Log\Logger;
+use Hub\Ingress\Tcp\TcpMessage;
+use Hub\Ingress\Tcp\TcpProtocolRegistry;
+use Hub\Ingress\Tcp\TcpResponse;
 use Hub\Location\LocationTelemetryEnricherContract;
-use Hub\State\ActiveAlarms;
-use Hub\State\DeviceStoreContract;
+use Hub\Log\Logger;
 use Hub\Protocol\AdapterRegistry;
 use Hub\Registry\Denylist;
 use Hub\Registry\Whitelist;
-use Hub\Ingress\Tcp\TcpMessage;
-use Hub\Device\Firmware\FirmwareUpgradeStore;
-use Hub\Ingress\Tcp\TcpProtocolRegistry;
-use Hub\Ingress\Tcp\TcpResponse;
+use Hub\State\ActiveAlarms;
+use Hub\State\DeviceStoreContract;
 
 class DeviceHubServer
 {

@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Hub\Api\Services;
 
 use Hub\Api\Http\ApiError;
-use Hub\Infrastructure\Persistence\Repository\ApiDataAccess;
 use Hub\Api\Request\RadarCredentialsWriteRequest;
+use Hub\Infrastructure\Persistence\Repository\ApiDataAccess;
 use Hub\Ingress\Http\Qinglanst\RadarLayoutSync;
 use React\Promise\PromiseInterface;
 

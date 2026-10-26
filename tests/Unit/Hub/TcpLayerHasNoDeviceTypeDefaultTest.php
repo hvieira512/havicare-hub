@@ -7,9 +7,9 @@ namespace Tests\Unit\Hub;
 use Hub\Device\DeviceHubServer;
 use Hub\Protocol\Adapter\PillDispenserAdapter;
 use PHPUnit\Framework\TestCase;
+use Tests\Support\Doubles\FakeConnection;
 use Tests\Support\Doubles\IngressFixtures;
 use Tests\Support\Doubles\RecordingHubMqttBridge;
-use Tests\Support\Doubles\FakeConnection;
 
 /** Um `'watch'` por omissão publicaria um dispensador debaixo de `/watch/` sem erro; o tipo sai da whitelist. */
 final class TcpLayerHasNoDeviceTypeDefaultTest extends TestCase

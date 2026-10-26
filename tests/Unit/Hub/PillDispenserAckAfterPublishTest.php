@@ -9,11 +9,11 @@ use Hub\Device\Firmware\FirmwareUpgradeStore;
 use Hub\Device\RedisPendingDownlinkQueue;
 use Hub\Protocol\Adapter\PillDispenserAdapter;
 use Hub\State\DeviceStore;
-use Tests\Support\Doubles\InMemoryRedisClient;
 use PHPUnit\Framework\TestCase;
-use Tests\Support\Doubles\IngressFixtures;
-use Tests\Support\Doubles\RecordingHubMqttBridge;
 use Tests\Support\Doubles\FakeConnection;
+use Tests\Support\Doubles\IngressFixtures;
+use Tests\Support\Doubles\InMemoryRedisClient;
+use Tests\Support\Doubles\RecordingHubMqttBridge;
 
 /** O M228 apaga o evento quando recebe a confirmação: ela só sai com o evento publicado. */
 final class PillDispenserAckAfterPublishTest extends TestCase

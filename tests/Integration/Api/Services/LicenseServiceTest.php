@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Tests\Integration\Api\Services;
 
 use Hub\Api\Request\LicenseWriteRequest;
-use Hub\Infrastructure\Persistence\Repository\ApiDataAccess;
 use Hub\Api\Services\LicenseService;
+use Hub\Infrastructure\Persistence\Repository\ApiDataAccess;
 use Tests\Support\MysqlDashboardTestCase;
 
 final class LicenseServiceTest extends MysqlDashboardTestCase

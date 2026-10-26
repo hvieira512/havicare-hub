@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Hub\State;
 
-use Hub\Infrastructure\Persistence\Repository\ApiDataAccess;
 use Hub\Command\DeviceConfigurationCatalog;
+use Hub\Infrastructure\Persistence\Repository\ApiDataAccess;
 
 final class DeviceConfigurationProjection
 {

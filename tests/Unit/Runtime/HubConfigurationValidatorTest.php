@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Tests\Unit\Configuration;
+namespace Tests\Unit\Runtime;
 
-use Hub\Configuration\HubConfigurationValidator;
+use Hub\Runtime\HubConfigurationValidator;
 use PHPUnit\Framework\TestCase;
 
 final class HubConfigurationValidatorTest extends TestCase

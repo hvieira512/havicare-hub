@@ -6,10 +6,10 @@ namespace Hub\Ingress\Tcp\Supplier\FourPTouch;
 
 use Hub\Device\DeviceEventDecoder;
 use Hub\Device\DeviceSession;
-use Hub\Protocol\Adapter\DeviceAdapterInterface;
-use Hub\Protocol\Adapter\FourPTouchAdapter;
 use Hub\Ingress\Tcp\TcpProtocol;
 use Hub\Ingress\Tcp\TcpResponse;
+use Hub\Protocol\Adapter\DeviceAdapterInterface;
+use Hub\Protocol\Adapter\FourPTouchAdapter;
 
 final class FourPTouchTcpProtocol extends TcpProtocol
 {

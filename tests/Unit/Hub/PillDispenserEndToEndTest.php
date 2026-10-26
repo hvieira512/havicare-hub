@@ -13,8 +13,8 @@ use React\EventLoop\StreamSelectLoop;
 use React\Socket\ConnectionInterface;
 use React\Socket\Connector;
 use Tests\Support\Doubles\IngressFixtures;
-use Tests\Support\Doubles\RecordingHubMqttBridge;
 use Tests\Support\Doubles\LocalTcpPort;
+use Tests\Support\Doubles\RecordingHubMqttBridge;
 
 /** Do socket ao canal do MQTT, com as tramas na forma em que o aparelho as manda: cifradas. */
 final class PillDispenserEndToEndTest extends TestCase

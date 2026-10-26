@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Tests\Integration\Dashboard;
 
-use Hub\Infrastructure\Persistence\Repository\ApiDataAccess;
 use Hub\Domain\ProtocolRegistry;
 use Hub\Domain\SupplierCapabilityTemplate;
 use Hub\Infrastructure\Persistence\ReferenceCatalogSeeder;
+use Hub\Infrastructure\Persistence\Repository\ApiDataAccess;
 use Tests\Support\MysqlDashboardTestCase;
 
 final class DatabaseStoreTest extends MysqlDashboardTestCase

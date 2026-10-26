@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Tests\Integration\Dashboard;
 
-use Hub\Infrastructure\Persistence\Repository\ApiDataAccess;
 use Hub\Api\Services\CapabilityService;
+use Hub\Infrastructure\Persistence\Repository\ApiDataAccess;
 use Tests\Support\MysqlDashboardTestCase;
 
 final class CapabilitiesApiTest extends MysqlDashboardTestCase

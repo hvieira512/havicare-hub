@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Tests\Integration\Api\Services;
 
-use Hub\Api\Request\DeviceWriteRequest;
 use Hub\Api\Auth\ApiAuthContext;
+use Hub\Api\Request\DeviceWriteRequest;
 use Hub\Api\Services\DeviceService;
 use Hub\Api\Services\RadarLayoutService;
 use Hub\Device\DeviceHubServer;

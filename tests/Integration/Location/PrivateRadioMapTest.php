@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Tests\Integration\Location;
 
 use Hub\Location\BeaconDbRequestBuilder;
-use Hub\Location\PrivateRadioMap;
 use Hub\Location\PdoPrivateRadioMapStore;
+use Hub\Location\PrivateRadioMap;
 use Tests\Support\MysqlDashboardTestCase;
 
 final class PrivateRadioMapTest extends MysqlDashboardTestCase

@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Ingress\Mqtt\Moko;
 
-use Hub\State\DeviceStore;
-use Tests\Support\Doubles\ArrayObservationStateStore;
 use Hub\Ingress\Mqtt\Moko\MokoBridge;
+use Hub\State\DeviceStore;
 use PHPUnit\Framework\TestCase;
+use Tests\Support\Doubles\ArrayObservationStateStore;
 use Tests\Support\Doubles\FakeMqttSubscriber;
-use Tests\Support\Doubles\InMemoryRedisClient;
 use Tests\Support\Doubles\IngressFixtures;
+use Tests\Support\Doubles\InMemoryRedisClient;
 use Tests\Support\Doubles\RecordingHubMqttBridge;
 
 /** Uma mensagem por avistamento e por gateway (`docs/05-gateways-ble.md` §5): o hub reporta o sinal; o alarme está no `BridgeProximityAlarmTest`. */

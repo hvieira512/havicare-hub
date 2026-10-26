@@ -6,11 +6,11 @@ namespace Tests\Integration\Location;
 
 use Hub\Location\BeaconDbRequestBuilder;
 use Hub\Location\LocationTelemetryEnricherContract;
+use Hub\Location\PdoPrivateRadioMapStore;
 use Hub\Location\PrivateRadioMap;
 use Hub\Location\PrivateRadioMapTelemetryEnricher;
-use Hub\Location\PdoPrivateRadioMapStore;
-use Tests\Support\MysqlDashboardTestCase;
 use React\Promise\PromiseInterface;
+use Tests\Support\MysqlDashboardTestCase;
 
 use function React\Promise\resolve;
 

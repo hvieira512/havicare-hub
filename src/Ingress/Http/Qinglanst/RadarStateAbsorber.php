@@ -5,11 +5,11 @@ declare(strict_types=1);
 namespace Hub\Ingress\Http\Qinglanst;
 
 use Hub\Device\HubMqttBridge;
+use Hub\Device\TelemetryEnvelope;
 use Hub\Domain\DeviceMetadata;
 use Hub\Infrastructure\Persistence\Repository\DeviceConfigurationRepository;
 use Hub\Infrastructure\Persistence\Repository\WhitelistRepository;
 use Hub\State\DeviceStoreContract;
-use Hub\Device\TelemetryEnvelope;
 
 /**
  * O que uma leitura do radar (`deviceProp`) diz passa a ser o que o hub mostra: as configurações

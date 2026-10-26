@@ -4,15 +4,15 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Ingress\Mqtt\Moko;
 
-use Hub\State\DeviceStoreContract;
-use Tests\Support\Doubles\ArrayObservationStateStore;
 use Hub\Ingress\Mqtt\Moko\MokoBridge;
-use PHPUnit\Framework\TestCase;
-use Tests\Support\Doubles\InMemoryRedisClient;
 use Hub\State\DeviceStore;
-use Tests\Support\Doubles\IngressFixtures;
-use Tests\Support\Doubles\RecordingHubMqttBridge;
+use Hub\State\DeviceStoreContract;
+use PHPUnit\Framework\TestCase;
+use Tests\Support\Doubles\ArrayObservationStateStore;
 use Tests\Support\Doubles\FakeMqttSubscriber;
+use Tests\Support\Doubles\IngressFixtures;
+use Tests\Support\Doubles\InMemoryRedisClient;
+use Tests\Support\Doubles\RecordingHubMqttBridge;
 
 final class BridgeTest extends TestCase
 {

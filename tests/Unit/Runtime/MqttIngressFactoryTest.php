@@ -2,24 +2,24 @@
 
 declare(strict_types=1);
 
-namespace Tests\Unit\Ingress\Mqtt;
+namespace Tests\Unit\Runtime;
 
-use Hub\Device\RedisPendingDownlinkQueue;
 use Hub\Device\CommercialModelResolver;
+use Hub\Device\RedisPendingDownlinkQueue;
 use Hub\Infrastructure\Persistence\Repository\ApiDataAccess;
 use Hub\Infrastructure\Persistence\Repository\DiaperSensitivityRepository;
-use Hub\Infrastructure\Persistence\Repository\ProximityAlarmRepository;
 use Hub\Infrastructure\Persistence\Repository\GatewayDeviceLinkRepository;
-use Hub\Ingress\Mqtt\MqttIngressFactory;
+use Hub\Infrastructure\Persistence\Repository\ProximityAlarmRepository;
 use Hub\Mqtt\BrokerSettings;
 use Hub\Mqtt\ConnectionFactory;
 use Hub\Registry\Denylist;
 use Hub\Runtime\HubServices;
+use Hub\Runtime\MqttIngressFactory;
 use Hub\State\DeviceStore;
 use PHPUnit\Framework\TestCase;
 use React\EventLoop\StreamSelectLoop;
-use Tests\Support\Doubles\InMemoryRedisClient;
 use Tests\Support\Doubles\IngressFixtures;
+use Tests\Support\Doubles\InMemoryRedisClient;
 use Tests\Support\Doubles\RecordingConnectionFactory;
 use Tests\Support\Doubles\RecordingHubMqttBridge;
 

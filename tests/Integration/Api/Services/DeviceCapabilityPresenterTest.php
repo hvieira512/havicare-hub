@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Tests\Integration\Api\Services;
 
-use Hub\Infrastructure\Persistence\Repository\ApiDataAccess;
 use Hub\Api\Services\DeviceCapabilityPresenter;
 use Hub\Domain\Capability\CapabilityRegistry;
+use Hub\Infrastructure\Persistence\Repository\ApiDataAccess;
 use Tests\Support\MysqlDashboardTestCase;
 
 /** As regras da projecção de capacidades, afirmadas contra a projecção e não contra o código-fonte. */

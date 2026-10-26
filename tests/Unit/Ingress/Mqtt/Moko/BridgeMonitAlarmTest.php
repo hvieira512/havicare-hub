@@ -6,14 +6,14 @@ namespace Tests\Unit\Ingress\Mqtt\Moko;
 
 use Hub\Domain\DiaperSensitivity;
 use Hub\Domain\DiaperSensitivityLookup;
-use Tests\Support\Doubles\ArrayObservationStateStore;
 use Hub\Ingress\Mqtt\Moko\MokoBridge;
 use Hub\Ingress\Mqtt\Moko\MokoGatewayOptions;
 use PHPUnit\Framework\TestCase;
+use Tests\Support\Doubles\ArrayObservationStateStore;
+use Tests\Support\Doubles\FakeMqttSubscriber;
 use Tests\Support\Doubles\IngressFixtures;
 use Tests\Support\Doubles\MutableDiaperSensitivity;
 use Tests\Support\Doubles\RecordingHubMqttBridge;
-use Tests\Support\Doubles\FakeMqttSubscriber;
 
 /** O `change_required` do MONIT MECS-PRO pelo caminho dos eventos, onde um alarme de primeira observação se pode perder. */
 final class BridgeMonitAlarmTest extends TestCase

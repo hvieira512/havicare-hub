@@ -7,9 +7,9 @@ namespace Tests\Unit\Location;
 use Hub\Location\BeaconDbRequestBuilder;
 use Hub\Location\BeaconDbTelemetryEnricher;
 use Hub\Location\RedisLocationResolutionCache;
+use PHPUnit\Framework\TestCase;
 use Tests\Support\Doubles\CallbackLocationProvider;
 use Tests\Support\Doubles\InMemoryRedisClient;
-use PHPUnit\Framework\TestCase;
 
 use function React\Promise\resolve;
 

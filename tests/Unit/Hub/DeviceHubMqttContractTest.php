@@ -5,22 +5,22 @@ declare(strict_types=1);
 namespace Tests\Unit\Hub;
 
 use Hub\Device\DeviceHubServer;
-use Hub\State\DeviceStore;
 use Hub\Device\HubMqttBridge;
 use Hub\Device\RedisPendingDownlinkQueue;
-use Hub\Protocol\Adapter\WonlexAdapter;
-use Hub\Registry\Denylist;
-use Hub\Registry\Whitelist;
-use Hub\State\DeviceStoreContract;
 use Hub\Location\BeaconDbRequestBuilder;
 use Hub\Location\BeaconDbTelemetryEnricher;
 use Hub\Location\RedisLocationResolutionCache;
-use Tests\Support\Doubles\CallbackLocationProvider;
+use Hub\Protocol\Adapter\WonlexAdapter;
+use Hub\Registry\Denylist;
+use Hub\Registry\Whitelist;
+use Hub\State\DeviceStore;
+use Hub\State\DeviceStoreContract;
 use PHPUnit\Framework\TestCase;
-use Tests\Support\Doubles\InMemoryRedisClient;
-use Tests\Support\Doubles\IngressFixtures;
-use Tests\Support\Doubles\WavFixture;
+use Tests\Support\Doubles\CallbackLocationProvider;
 use Tests\Support\Doubles\FakeConnection;
+use Tests\Support\Doubles\IngressFixtures;
+use Tests\Support\Doubles\InMemoryRedisClient;
+use Tests\Support\Doubles\WavFixture;
 
 use function React\Promise\resolve;
 

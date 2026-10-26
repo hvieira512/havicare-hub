@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace Hub\Api\Services;
 
-use Hub\Api\Http\ApiError;
 use Hub\Api\Auth\ApiAuthContext;
+use Hub\Api\Http\ApiError;
 use Hub\Api\Http\CollectionColumns;
 use Hub\Api\Http\CollectionPresenter;
-use Hub\Infrastructure\Persistence\Repository\ApiDataAccess;
 use Hub\Api\Request\ApiUserWriteRequest;
+use Hub\Infrastructure\Persistence\Repository\ApiDataAccess;
 
 class ApiUserService
 {

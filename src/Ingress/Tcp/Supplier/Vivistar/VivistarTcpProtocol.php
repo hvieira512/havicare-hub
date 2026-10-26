@@ -6,9 +6,9 @@ namespace Hub\Ingress\Tcp\Supplier\Vivistar;
 
 use Hub\Device\DeviceEventDecoder;
 use Hub\Device\DeviceSession;
-use Hub\Protocol\Adapter\DeviceAdapterInterface;
 use Hub\Ingress\Tcp\TcpProtocol;
 use Hub\Ingress\Tcp\TcpResponse;
+use Hub\Protocol\Adapter\DeviceAdapterInterface;
 
 final class VivistarTcpProtocol extends TcpProtocol
 {

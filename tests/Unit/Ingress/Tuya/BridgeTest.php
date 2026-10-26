@@ -6,12 +6,12 @@ namespace Tests\Unit\Ingress\Tuya;
 
 use Hub\Ingress\Tuya\TuyaBridge;
 use Hub\State\DeviceStore;
-use Hub\State\RedisKeys;
 use Hub\State\DeviceStoreContract;
+use Hub\State\RedisKeys;
 use PHPUnit\Framework\TestCase;
 use Predis\ClientInterface;
-use Tests\Support\Doubles\InMemoryRedisClient;
 use Tests\Support\Doubles\IngressFixtures;
+use Tests\Support\Doubles\InMemoryRedisClient;
 use Tests\Support\Doubles\RecordingHubMqttBridge;
 
 final class BridgeTest extends TestCase

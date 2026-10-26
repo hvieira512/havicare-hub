@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Hub\Api\Services;
 
-use Hub\Infrastructure\Persistence\Repository\DeviceConfigurationRepository;
 use Hub\Domain\Capability\CapabilityCatalog;
+use Hub\Infrastructure\Persistence\Repository\DeviceConfigurationRepository;
 
 /**
  * Reconcilia num só retrato as linhas de configuração com ciclo de vida -- revisões,

@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Ingress\Mqtt\Qinglanst;
 
-use Hub\State\DeviceStoreContract;
 use Hub\Ingress\Mqtt\Qinglanst\QinglanstBridge;
 use Hub\Registry\Denylist;
+use Hub\State\DeviceStoreContract;
 use PHPUnit\Framework\TestCase;
+use Tests\Support\Doubles\FakeMqttSubscriber;
 use Tests\Support\Doubles\IngressFixtures;
 use Tests\Support\Doubles\RecordingHubMqttBridge;
-use Tests\Support\Doubles\FakeMqttSubscriber;
 
 final class BridgeTest extends TestCase
 {

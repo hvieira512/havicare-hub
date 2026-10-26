@@ -10,8 +10,8 @@ use Hub\Ingress\Mqtt\Lefu\LefuTorreBridge;
 use Hub\Ingress\Mqtt\Lefu\ScaleOnlineUsers;
 use Hub\State\DeviceStoreContract;
 use PHPUnit\Framework\TestCase;
-use Tests\Support\Doubles\InMemoryRedisClient;
 use Tests\Support\Doubles\IngressFixtures;
+use Tests\Support\Doubles\InMemoryRedisClient;
 use Tests\Support\Doubles\RecordingHubMqttBridge;
 
 /** Do gateway ao MQTT, com as tramas da pesagem real em que a FC foi medida. */

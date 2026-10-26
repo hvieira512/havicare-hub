@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace Tests\Integration\Dashboard;
 
-use Hub\Infrastructure\Persistence\Repository\ApiDataAccess;
 use Hub\Api\OpenApiSpec;
 use Hub\Api\Services\ApiUserService;
 use Hub\Api\Services\CompanyService;
 use Hub\Api\Services\DenylistService;
 use Hub\Api\Services\LicenseService;
 use Hub\Api\Services\ModelService;
+use Hub\Infrastructure\Persistence\Repository\ApiDataAccess;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\Support\MysqlDashboardTestCase;
 

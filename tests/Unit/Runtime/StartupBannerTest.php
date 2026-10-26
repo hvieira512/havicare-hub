@@ -7,8 +7,8 @@ namespace Tests\Unit\Runtime;
 use Hub\Device\HubMqttBridge;
 use Hub\Runtime\StartupBanner;
 use PHPUnit\Framework\TestCase;
-use Tests\Support\Doubles\FakeMqttSubscriber;
 use Tests\Support\CapturesLog;
+use Tests\Support\Doubles\FakeMqttSubscriber;
 
 /** O banner de arranque diz, meses depois, com que configuração se corria. */
 final class StartupBannerTest extends TestCase

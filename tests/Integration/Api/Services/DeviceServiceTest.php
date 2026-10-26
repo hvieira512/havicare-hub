@@ -4,23 +4,23 @@ declare(strict_types=1);
 
 namespace Tests\Integration\Api\Services;
 
+use Hub\Api\Auth\ApiAuthContext;
 use Hub\Api\Request\DeviceAssociationRequest;
 use Hub\Api\Request\DeviceWriteRequest;
-use Hub\Api\Auth\ApiAuthContext;
 use Hub\Api\Services\DeviceService;
+use Hub\Device\DeviceHubServer;
+use Hub\Domain\DeviceMetadata;
 use Hub\Infrastructure\Persistence\Repository\ApiDataAccess;
 use Hub\Ingress\Mqtt\Qinglanst\QinglanstBridge;
+use Hub\Registry\Whitelist;
 use Hub\State\ActiveAlarms;
 use Hub\State\DeviceStore;
 use Hub\State\RedisKeys;
-use Hub\Device\DeviceHubServer;
-use Hub\Domain\DeviceMetadata;
-use Hub\Registry\Whitelist;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\MockObject\Stub;
 use Tests\Support\Doubles\FakeMqttSubscriber;
-use Tests\Support\Doubles\InMemoryRedisClient;
 use Tests\Support\Doubles\IngressFixtures;
+use Tests\Support\Doubles\InMemoryRedisClient;
 use Tests\Support\Doubles\RecordingHubMqttBridge;
 use Tests\Support\MysqlDashboardTestCase;
 

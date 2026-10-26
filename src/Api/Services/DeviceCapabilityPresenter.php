@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace Hub\Api\Services;
 
-use Hub\Infrastructure\Persistence\Repository\ApiDataAccess;
 use Hub\Command\DeviceCommandCatalog;
-use Hub\Domain\Capability\CapabilityRegistry;
-use Hub\Domain\Capability\ConfigurationInputDefaults;
 use Hub\Command\DeviceConfigurationCatalog;
 use Hub\Domain\Capability\CapabilityCatalog;
+use Hub\Domain\Capability\CapabilityRegistry;
+use Hub\Domain\Capability\ConfigurationInputDefaults;
 use Hub\Domain\DeviceMetadata;
+use Hub\Infrastructure\Persistence\Repository\ApiDataAccess;
 
 /**
  * Projecta a configuração guardada de um modelo nas capacidades que a API serve. Só precisa do

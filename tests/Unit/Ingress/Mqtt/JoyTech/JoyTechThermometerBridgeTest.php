@@ -10,8 +10,8 @@ use Hub\Ingress\Mqtt\JoyTech\RecentMeasurementKeys;
 use Hub\State\DeviceStore;
 use Hub\State\RedisKeys;
 use PHPUnit\Framework\TestCase;
-use Tests\Support\Doubles\InMemoryRedisClient;
 use Tests\Support\Doubles\IngressFixtures;
+use Tests\Support\Doubles\InMemoryRedisClient;
 use Tests\Support\Doubles\RecordingHubMqttBridge;
 
 /** Do gateway ao MQTT, com as tramas que o DET-3018B mandou à sonda a 2026-10-16. */

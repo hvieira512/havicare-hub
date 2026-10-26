@@ -7,9 +7,9 @@
 
 declare(strict_types=1);
 
+use Hub\Api\Http\RequestContext;
 use Hub\Api\Routing\ApiRoute;
 use Hub\Api\Services\RadarLayoutService;
-use Hub\Api\Http\RequestContext;
 use Psr\Http\Message\ServerRequestInterface;
 use React\Promise\PromiseInterface;
 

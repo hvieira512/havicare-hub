@@ -8,8 +8,8 @@ use Hub\Device\DeviceHubServer;
 use Hub\State\DeviceStore;
 use PHPUnit\Framework\TestCase;
 use Tests\Support\Doubles\FakeConnection;
-use Tests\Support\Doubles\InMemoryRedisClient;
 use Tests\Support\Doubles\IngressFixtures;
+use Tests\Support\Doubles\InMemoryRedisClient;
 use Tests\Support\Doubles\RecordingHubMqttBridge;
 
 /** Uma exceção que escape do tratamento de uma trama TCP termina o processo do hub. */

@@ -5,13 +5,13 @@ declare(strict_types=1);
 namespace Hub\Api\Services;
 
 use Hub\Api\Auth\ApiAuthContext;
-use Hub\Infrastructure\Persistence\Repository\ApiDataAccess;
 use Hub\Command\DeviceCommandCatalog;
-use Hub\State\DeviceRuntimeStore;
 use Hub\Domain\DeviceMetadata;
 use Hub\Domain\Liveness;
 use Hub\Domain\ProtocolRegistry;
+use Hub\Infrastructure\Persistence\Repository\ApiDataAccess;
 use Hub\Registry\Whitelist;
+use Hub\State\DeviceRuntimeStore;
 
 /** Encontrar um dispositivo e decidir quem o pode ver, para todas as partes da API de dispositivos. */
 final class DeviceDirectory

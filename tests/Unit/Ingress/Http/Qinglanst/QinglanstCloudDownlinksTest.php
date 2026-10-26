@@ -9,9 +9,9 @@ use Hub\Device\RedisPendingDownlinkQueue;
 use Hub\Ingress\Http\Qinglanst\QinglanstApiClient;
 use Hub\Ingress\Http\Qinglanst\QinglanstCloudCommands;
 use Hub\Ingress\Http\Qinglanst\QinglanstCloudDownlinks;
-use Tests\Support\Doubles\InMemoryRedisClient;
 use PHPUnit\Framework\TestCase;
 use React\Promise\PromiseInterface;
+use Tests\Support\Doubles\InMemoryRedisClient;
 
 use function React\Promise\resolve;
 

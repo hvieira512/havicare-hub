@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Tests\Unit\Domain;
 
 use Hub\Command\DeviceConfigurationCatalog;
-use Hub\Domain\Capability\FourPTouch\FourPTouchGenericHandler;
 use Hub\Domain\Capability\CapabilityCatalog;
+use Hub\Domain\Capability\FourPTouch\FourPTouchGenericHandler;
 use PHPUnit\Framework\TestCase;
 
 final class CapabilityCatalogTest extends TestCase

@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Domain\Alarms;
 
-use Hub\Domain\Capability\CapabilityProtocolHandler;
 use Hub\Domain\Capability\AlarmClock\FourPTouch;
 use Hub\Domain\Capability\AlarmClock\Vivistar;
 use Hub\Domain\Capability\AlarmClock\Wonlex;
+use Hub\Domain\Capability\CapabilityProtocolHandler;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 

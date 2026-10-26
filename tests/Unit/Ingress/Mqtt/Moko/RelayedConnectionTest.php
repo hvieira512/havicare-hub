@@ -8,8 +8,8 @@ use Hub\Ingress\Mqtt\Moko\RelayPublisher;
 use Hub\State\DeviceStore;
 use PHPUnit\Framework\TestCase;
 use Tests\Support\Doubles\ArrayObservationStateStore;
-use Tests\Support\Doubles\InMemoryRedisClient;
 use Tests\Support\Doubles\IngressFixtures;
+use Tests\Support\Doubles\InMemoryRedisClient;
 use Tests\Support\Doubles\RecordingHubMqttBridge;
 
 /** Um aparelho que só fala através de um gateway liga-se quando um gateway o volta a ouvir. */

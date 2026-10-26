@@ -8,8 +8,8 @@ use Hub\Domain\Capability\EventSeverity;
 use Hub\Domain\Capability\ReadingMarks;
 use Hub\Log\Logger;
 use Hub\Mqtt\ReconnectsOnLoopFailure;
-use PhpMqtt\Client\MqttClient;
 use Hub\State\DeviceReportStore;
+use PhpMqtt\Client\MqttClient;
 
 class HubMqttBridge
 {

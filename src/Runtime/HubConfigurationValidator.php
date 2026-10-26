@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Hub\Configuration;
+namespace Hub\Runtime;
 
 final class HubConfigurationValidator
 {

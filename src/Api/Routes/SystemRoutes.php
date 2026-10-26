@@ -2,8 +2,8 @@
 
 declare(strict_types=1);
 
-use Hub\Api\Routing\ApiRoute;
 use Hub\Api\OpenApiSpec;
+use Hub\Api\Routing\ApiRoute;
 use React\Http\Message\Response;
 
 return static function (callable $json): array {

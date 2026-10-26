@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Command;
 
-use Hub\Command\DeviceConfigurationCatalog;
 use Hub\Command\DeviceCommandCatalog;
+use Hub\Command\DeviceConfigurationCatalog;
 use Hub\Domain\Capability\CapabilityCatalog;
 use PHPUnit\Framework\TestCase;
 

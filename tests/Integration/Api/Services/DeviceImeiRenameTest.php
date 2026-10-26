@@ -5,11 +5,11 @@ declare(strict_types=1);
 namespace Tests\Integration\Api\Services;
 
 use Hub\Api\Request\DeviceWriteRequest;
-use Hub\Infrastructure\Persistence\Repository\ApiDataAccess;
 use Hub\Api\Services\DeviceService;
-use Hub\State\DeviceStore;
 use Hub\Device\DeviceHubServer;
+use Hub\Infrastructure\Persistence\Repository\ApiDataAccess;
 use Hub\Registry\Whitelist;
+use Hub\State\DeviceStore;
 use Tests\Support\Doubles\InMemoryRedisClient;
 use Tests\Support\MysqlDashboardTestCase;
 

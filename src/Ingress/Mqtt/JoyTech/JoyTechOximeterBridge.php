@@ -9,11 +9,11 @@ use Hub\Device\HubMqttBridge;
 use Hub\Domain\GatewayDeviceLinkLookup;
 use Hub\Ingress\Mqtt\Gateway\GattBridge;
 use Hub\Ingress\Mqtt\Gateway\GattDeviceContext;
-use Hub\Support\Values;
 use Hub\Registry\Denylist;
 use Hub\Registry\Whitelist;
 use Hub\State\DeviceCommandLog;
 use Hub\State\DeviceReportStore;
+use Hub\Support\Values;
 
 /**
  * Ingestão dos oxímetros de dedo JoyTech entregues por um gateway GATT. O aparelho manda a leitura

@@ -8,8 +8,8 @@ use Hub\Ingress\Mqtt\Qinglanst\QinglanstBridge;
 use Hub\State\DeviceStore;
 use PHPUnit\Framework\TestCase;
 use Tests\Support\Doubles\FakeMqttSubscriber;
-use Tests\Support\Doubles\InMemoryRedisClient;
 use Tests\Support\Doubles\IngressFixtures;
+use Tests\Support\Doubles\InMemoryRedisClient;
 use Tests\Support\Doubles\RecordingHubMqttBridge;
 
 /** O radar não abre sessão: ligado é ter falado; desligado dá-o a manutenção do hub. */

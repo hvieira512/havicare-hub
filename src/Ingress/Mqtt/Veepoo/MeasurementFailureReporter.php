@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Hub\Ingress\Mqtt\Veepoo;
 
-use Hub\State\DeviceReportStore;
 use Hub\Device\HubMqttBridge;
 use Hub\Device\TelemetryEnvelope;
+use Hub\State\DeviceReportStore;
 use Hub\Support\Throttle;
 
 /**
