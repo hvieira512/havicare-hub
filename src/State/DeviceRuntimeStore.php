@@ -53,7 +53,13 @@ final class DeviceRuntimeStore
 
         $this->redis->srem(RedisKeys::devices(), $imei);
         $this->redis->zrem(RedisKeys::onlineDevices(), $imei);
-        $keys = [RedisKeys::device($imei), RedisKeys::commandRecords($imei), RedisKeys::sighting($imei), RedisKeys::activeAlarms($imei)];
+        $keys = [
+            RedisKeys::device($imei),
+            RedisKeys::commandRecords($imei),
+            RedisKeys::sighting($imei),
+            RedisKeys::activeAlarms($imei),
+            RedisKeys::proximityAlarmCandidate($imei),
+        ];
         foreach (['raw', 'telemetry', 'events', 'commands', 'connections'] as $list) {
             $list = RedisKeys::list($imei, $list);
             array_push($keys, $list, "{$list}:latest", "{$list}:seq");

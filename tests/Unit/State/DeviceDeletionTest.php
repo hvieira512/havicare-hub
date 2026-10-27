@@ -22,6 +22,7 @@ final class DeviceDeletionTest extends TestCase
             $store->append(self::IMEI, $list, ['type' => 'heart_rate', 'data' => ['bpm' => 70]]);
         }
         $store->append(self::IMEI, 'events', ['type' => 'device.connected']);
+        $store->runtime->recordProximityAlarmCandidate(self::IMEI, 'd48c49f7909c');
 
         $store->deleteDevice(self::IMEI);
         $store->runtime->registerDevice(self::IMEI, 'Vivistar', 'L08 Pro');
@@ -30,5 +31,6 @@ final class DeviceDeletionTest extends TestCase
             self::assertSame([], $store->events->latestOfEachType(self::IMEI, $list), "o último de {$list} ficou");
             self::assertSame(0, $store->events->latestSequence(self::IMEI, $list), "o número de ordem de {$list} ficou");
         }
+        self::assertSame([], $store->runtime->proximityAlarmCandidates(self::IMEI), 'o candidato a alarme de proximidade ficou');
     }
 }
