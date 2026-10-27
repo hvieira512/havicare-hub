@@ -180,6 +180,11 @@ class HubMqttBridge
     /** O único sítio onde o `licenseId` se torna texto: em todo o resto é um inteiro. */
     public function deviceTopic(string $company, int $licenseId, string $deviceType, string $deviceKey, string $kind): string
     {
+        // A chave vem do aparelho: um `#` ou `+` faz o broker largar o publicador, e um `/` abre níveis.
+        if (strpbrk($deviceKey, "/+#\0") !== false) {
+            throw new \InvalidArgumentException('Device key contains MQTT topic syntax');
+        }
+
         return trim($company, '/') . '/' . $licenseId . '/' . trim($deviceType, '/') . '/' . trim($deviceKey, '/') . '/' . trim($kind, '/');
     }
 

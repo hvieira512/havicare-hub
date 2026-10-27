@@ -66,6 +66,19 @@ final class DeviceTopicShapeTest extends TestCase
         );
     }
 
+    /** O IMEI vem do próprio aparelho: um `#` ou `+` num tópico de publicação faz o broker largar o cliente. */
+    public function testADeviceKeyWithTopicSyntaxIsRefused(): void
+    {
+        foreach (['a#', 'a+', 'a/b', "a\0"] as $deviceKey) {
+            try {
+                $this->bridge()->deviceTopic('null', 0, 'watch', $deviceKey, 'status');
+                self::fail("deviceTopic accepted {$deviceKey}");
+            } catch (\InvalidArgumentException) {
+                $this->addToAssertionCount(1);
+            }
+        }
+    }
+
     public function testSlashesInTheCompanyCannotSplitTheTopic(): void
     {
         self::assertSame(
