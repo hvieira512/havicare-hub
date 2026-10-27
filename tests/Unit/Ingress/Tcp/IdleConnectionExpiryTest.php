@@ -51,6 +51,23 @@ final class IdleConnectionExpiryTest extends TestCase
         self::assertSame('online', $this->lastState($mqtt, $imei));
     }
 
+    /** Quem não se identifica tem um minuto desde que abriu, e o lixo que mande entretanto não o prolonga. */
+    public function testAConnectionThatNeverIdentifiesClosesAMinuteAfterOpening(): void
+    {
+        $hub = new DeviceHubServer(IngressFixtures::whitelist([]), new RecordingHubMqttBridge(), clock: fn (): int => $this->now);
+        $connection = new FakeConnection();
+        $hub->onOpen($connection);
+
+        $this->now += 59;
+        $hub->onMessage($connection, 'GET / HTTP/1.1#');
+        $hub->expireIdleConnections();
+        self::assertFalse($connection->closed);
+
+        $this->now += 1;
+        $hub->expireIdleConnections();
+        self::assertTrue($connection->closed);
+    }
+
     public function testAConfirmedPowerSavingModeStretchesTheVivistarInterval(): void
     {
         $configurations = ['working_mode' => ['mode' => 'power_saving']];

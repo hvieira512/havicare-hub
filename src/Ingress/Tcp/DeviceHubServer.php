@@ -62,6 +62,9 @@ class DeviceHubServer
     /** A recusa escreve na base no máximo uma vez por janela, por IMEI e por endereço de origem. */
     private const REJECTED_RECORD_INTERVAL_SECONDS = 60;
 
+    /** Um aparelho identifica-se na primeira trama; quem não o fez num minuto é um varredor. */
+    private const UNIDENTIFIED_TIMEOUT_SECONDS = 60;
+
     private Throttle $rejectedRecords;
 
     public function __construct(
@@ -284,6 +287,9 @@ class DeviceHubServer
     public function expireIdleConnections(): void
     {
         $expired = function (DeviceSession $session, int $idleSeconds): bool {
+            if (!$session->authenticated) {
+                return $idleSeconds >= self::UNIDENTIFIED_TIMEOUT_SECONDS;
+            }
             if ($idleSeconds < (Liveness::idleTimeout($session->protocol) ?? PHP_INT_MAX)) {
                 return false;
             }

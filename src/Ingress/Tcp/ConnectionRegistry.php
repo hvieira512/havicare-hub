@@ -66,7 +66,8 @@ class ConnectionRegistry
 
     public function touch(ConnectionInterface $connection): void
     {
-        if (!isset($this->sessions[$connection->resourceId])) {
+        // Sem identidade, o silêncio conta desde que abriu: o lixo não compra tempo.
+        if (!($this->sessions[$connection->resourceId] ?? null)?->authenticated) {
             return;
         }
 
