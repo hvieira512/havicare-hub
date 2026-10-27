@@ -50,6 +50,14 @@ final class DashboardHttpServerTest extends DashboardHttpTestCase
         self::assertSame($first, $second);
     }
 
+    /** Só a própria origem emoldura a página: outro site não a põe num iframe para lhe roubar cliques. */
+    public function testTheDashboardPageCanOnlyBeFramedByItsOwnOrigin(): void
+    {
+        $page = self::assetServer()(new ServerRequest('GET', '/'));
+
+        self::assertSame("frame-ancestors 'self'", $page->getHeaderLine('Content-Security-Policy'));
+    }
+
     public function testDashboardOnlyServesExplicitPublicAssets(): void
     {
         $server = self::assetServer();

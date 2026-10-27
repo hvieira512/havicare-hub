@@ -172,7 +172,12 @@ final class DashboardHttpServer
         // guardada, o deploy não chegava a quem já lá esteve.
         return new Response(
             200,
-            ['Content-Type' => 'text/html; charset=utf-8', 'Cache-Control' => 'no-cache'],
+            [
+                'Content-Type' => 'text/html; charset=utf-8',
+                'Cache-Control' => 'no-cache',
+                // Só a própria origem a emoldura: outra punha-a num iframe para lhe roubar cliques.
+                'Content-Security-Policy' => "frame-ancestors 'self'",
+            ],
             $body
         );
     }
