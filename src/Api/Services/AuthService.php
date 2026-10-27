@@ -138,7 +138,12 @@ class AuthService
     private function identityForRefresh(ApiAuthContext $context): ?ApiAuthContext
     {
         if ($context->userId === null || $context->userId <= 0) {
-            return $context;
+            // Um token emitido não tem conta: o que se relê é a licença do par.
+            $license = $context->licenseRefId !== null ? $this->db->licenses->findById($context->licenseRefId) : null;
+
+            return is_array($license)
+                && (int)$license['license_id'] === $context->licenseId
+                && (int)$license['company_id'] === $context->companyId ? $context : null;
         }
 
         $user = $this->db->apiUsers->findById($context->userId);

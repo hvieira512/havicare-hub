@@ -140,4 +140,31 @@ final class DashboardApiLicenseTokenTest extends DashboardHttpTestCase
             json_decode((string)$unknownLicense->getBody(), true, 512, JSON_THROW_ON_ERROR)['error']['code'] ?? null
         );
     }
+
+    /** Um token emitido renova-se enquanto o par existir: apagada a licença, a renovação é recusada. */
+    public function testTheMintedTokenStopsRenewingOnceItsLicenseIsGone(): void
+    {
+        [$server, $db] = $this->makeServerWithDatabase();
+        $adminToken = $this->loginToken($server, 'admin', 'secret');
+        $hitcare = $db->companies->findByName('hitcare');
+        $licenseRef = $db->licenses->create((int)$hitcare['id'], 4242, 'Temporary');
+
+        $refreshToken = json_decode((string)$server(new ServerRequest(
+            'POST',
+            '/api/auth/license-token',
+            ['Authorization' => 'Bearer ' . $adminToken, 'Content-Type' => 'application/json'],
+            json_encode(['company' => 'hitcare', 'licenseId' => 4242], JSON_THROW_ON_ERROR)
+        ))->getBody(), true, 512, JSON_THROW_ON_ERROR)['token']['refresh_token'] ?? '';
+        self::assertNotSame('', $refreshToken);
+
+        $db->licenses->delete($licenseRef);
+
+        $refresh = $server(new ServerRequest(
+            'POST',
+            '/api/auth/login',
+            ['Content-Type' => 'application/json'],
+            json_encode(['refresh_token' => $refreshToken], JSON_THROW_ON_ERROR)
+        ));
+        self::assertSame(401, $refresh->getStatusCode(), (string)$refresh->getBody());
+    }
 }
