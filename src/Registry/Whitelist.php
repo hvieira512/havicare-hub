@@ -191,6 +191,8 @@ class Whitelist
             } catch (\Throwable $e) {
                 // Fica a lista anterior: um dispositivo conhecido não passa a desconhecido por uma falha da base.
                 Logger::channel('hub')->error("Whitelist reload failed: {$e->getMessage()}");
+                // A próxima tentativa espera pelo TTL: sem base, cada mensagem bloqueava o loop a tentar.
+                $this->databaseCacheLoadedAt = time();
             }
         }
     }

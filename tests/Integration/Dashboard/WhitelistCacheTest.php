@@ -23,6 +23,23 @@ final class WhitelistCacheTest extends MysqlDashboardTestCase
         self::assertTrue($whitelist->isAuthorized('861265061009822'));
     }
 
+    /** Uma recarga falhada espera pelo TTL como uma bem-sucedida: sem base, cada mensagem tentava outra vez. */
+    public function testAFailedReloadIsNotRetriedBeforeTheTtl(): void
+    {
+        $database = $this->createDashboardDatabase();
+        $db = ApiDataAccess::fromDatabase($database);
+        $db->whitelist->register('861265061009822', 'Vivistar', 'L08 Pro', 'watch', 1001, '', '', 'hitcare');
+        $whitelist = new Whitelist($db->whitelist, databaseCacheTtlSeconds: 1);
+        sleep(1);
+
+        $database->pdo()->exec('RENAME TABLE whitelist TO whitelist_away');
+        $whitelist->isAuthorized('861265061009822');
+        $database->pdo()->exec('RENAME TABLE whitelist_away TO whitelist');
+        $database->pdo()->exec("DELETE FROM whitelist WHERE imei = '861265061009822'");
+
+        self::assertTrue($whitelist->isAuthorized('861265061009822'), 'dentro do TTL não se volta a ler');
+    }
+
     /** O alias resolve-se na lista em memória: uma consulta por mensagem bloqueava o loop. */
     public function testAnAliasResolvesWithoutTheDatabase(): void
     {
