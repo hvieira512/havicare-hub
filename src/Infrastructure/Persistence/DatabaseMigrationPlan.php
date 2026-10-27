@@ -9,6 +9,7 @@ use Hub\Infrastructure\Persistence\Migration\DropUnreadColumns;
 use Hub\Infrastructure\Persistence\Migration\GatewayLocationRemoved;
 use Hub\Infrastructure\Persistence\Migration\Migration;
 use Hub\Infrastructure\Persistence\Migration\PublicConfigurationShape;
+use Hub\Infrastructure\Persistence\Migration\RadarLayoutAreasFollowRename;
 use Hub\Infrastructure\Persistence\Migration\VivistarWorkingModeNames;
 use Hub\Infrastructure\Persistence\Migration\WhitelistReferencesModelAndLicense;
 use Hub\Infrastructure\Persistence\Migration\WonlexPushMessageRemoved;
@@ -30,6 +31,7 @@ final class DatabaseMigrationPlan
             new WonlexPushMessageRemoved(),
             new GatewayLocationRemoved(),
             new WhitelistReferencesModelAndLicense(),
+            new RadarLayoutAreasFollowRename(),
         ];
     }
 

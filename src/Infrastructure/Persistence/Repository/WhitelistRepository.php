@@ -225,11 +225,18 @@ final class WhitelistRepository
         }
     }
 
-    /** A mesma linha com outra chave, para o `ON UPDATE CASCADE` levar o que lhe aponta. */
+    /**
+     * A mesma linha com outra chave, para o `ON UPDATE CASCADE` levar o que lhe aponta. A
+     * configuração não tem chave estrangeira (ver `unregister`) e muda-se à mão.
+     */
     public function rename(string $imei, string $newImei): void
     {
-        $stmt = $this->pdo->prepare('UPDATE whitelist SET imei = ? WHERE imei = ?');
-        $stmt->execute([$newImei, $imei]);
+        $this->transactional(function () use ($imei, $newImei): void {
+            $this->pdo->prepare('UPDATE whitelist SET imei = ? WHERE imei = ?')->execute([$newImei, $imei]);
+            foreach (['device_configurations', 'device_configuration_changes'] as $table) {
+                $this->pdo->prepare("UPDATE `{$table}` SET imei = ? WHERE imei = ?")->execute([$newImei, $imei]);
+            }
+        });
     }
 
     /** A fronteira entre o `NULL` da tabela e a sentinela em memória. */

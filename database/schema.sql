@@ -222,7 +222,7 @@ CREATE TABLE IF NOT EXISTS radar_layout_areas (
     y_max_dm SMALLINT NOT NULL,
     PRIMARY KEY (imei, area_key),
     CONSTRAINT fk_radar_layout_areas_layout FOREIGN KEY (imei)
-        REFERENCES radar_layouts(imei) ON DELETE CASCADE
+        REFERENCES radar_layouts(imei) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS api_users (
