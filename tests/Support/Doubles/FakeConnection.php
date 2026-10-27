@@ -13,13 +13,13 @@ final class FakeConnection implements ConnectionInterface
     public array $sent = [];
     public bool $closed = false;
 
-    public function __construct(public int $resourceId = 1)
+    public function __construct(public int $resourceId = 1, private ?string $remoteAddress = null)
     {
     }
 
     public function remoteAddress(): ?string
     {
-        return null;
+        return $this->remoteAddress;
     }
 
     public function send(string $data): static

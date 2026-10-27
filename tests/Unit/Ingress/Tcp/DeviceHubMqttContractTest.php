@@ -107,6 +107,40 @@ final class DeviceHubMqttContractTest extends TestCase
         self::assertCount(0, $mqtt->events, 'sem evento no broker');
     }
 
+    /** Um relógio por registar repete o login sem parar: a base leva uma escrita por minuto, e o broker todas. */
+    public function testARepeatedRejectionIsRecordedOncePerMinute(): void
+    {
+        $now = 1_000;
+        $mqtt = new ContractRecordingHubMqttBridge();
+        $store = $this->createMock(DeviceStoreContract::class);
+        $store->expects(self::exactly(2))->method('recordRejectedDevice');
+        $hub = new DeviceHubServer($this->whitelist, $mqtt, deviceStore: $store, clock: static function () use (&$now): int {
+            return $now;
+        });
+
+        foreach ([1_000, 1_030, 1_060] as $index => $now) {
+            $connection = new FakeConnection($index + 1, "tcp://198.51.100.{$index}:4000");
+            $hub->onOpen($connection);
+            $hub->onMessage($connection, 'IWAP00865028000000999#');
+        }
+
+        self::assertCount(3, $mqtt->events);
+    }
+
+    /** Um varredor inventa um IMEI por ligação: de cada endereço sai uma escrita por minuto. */
+    public function testRejectionsFromOneAddressAreRecordedOncePerMinute(): void
+    {
+        $store = $this->createMock(DeviceStoreContract::class);
+        $store->expects(self::once())->method('recordRejectedDevice');
+        $hub = new DeviceHubServer($this->whitelist, new ContractRecordingHubMqttBridge(), deviceStore: $store, clock: static fn (): int => 1_000);
+
+        foreach (['865028000000991', '865028000000992', '865028000000993'] as $index => $imei) {
+            $connection = new FakeConnection($index + 1, 'tcp://198.51.100.7:' . (4000 + $index));
+            $hub->onOpen($connection);
+            $hub->onMessage($connection, "IWAP00{$imei}#");
+        }
+    }
+
     public function testNotificationPersistenceFailureDoesNotInterruptDeviceRejection(): void
     {
         $mqtt = new ContractRecordingHubMqttBridge();

@@ -24,6 +24,7 @@ use Hub\Registry\Denylist;
 use Hub\Registry\Whitelist;
 use Hub\State\ActiveAlarms;
 use Hub\State\DeviceStoreContract;
+use Hub\Support\Throttle;
 
 class DeviceHubServer
 {
@@ -57,6 +58,11 @@ class DeviceHubServer
 
     /** Um relógio que fecha o socket e volta em segundos não se dá por desligado. */
     private const RECONNECT_GRACE_SECONDS = 60;
+
+    /** A recusa escreve na base no máximo uma vez por janela, por IMEI e por endereço de origem. */
+    private const REJECTED_RECORD_INTERVAL_SECONDS = 60;
+
+    private Throttle $rejectedRecords;
 
     public function __construct(
         Whitelist $whitelist,
@@ -94,6 +100,7 @@ class DeviceHubServer
         $this->locationTelemetryEnricher = $locationTelemetryEnricher;
         $this->lowBattery = new LowBatteryTransitions($alarms);
         $this->doseMissed = new DoseMissedTransitions($alarms);
+        $this->rejectedRecords = new Throttle();
     }
 
     public function onOpen(ConnectionInterface $conn): void
@@ -515,7 +522,7 @@ class DeviceHubServer
             return;
         }
 
-        if ($reason === 'device_not_authorized') {
+        if ($reason === 'device_not_authorized' && $this->allowsRejectedRecord($conn, $identity->imei)) {
             try {
                 $this->deviceStore?->recordRejectedDevice(
                     $identity->imei,
@@ -544,6 +551,20 @@ class DeviceHubServer
 
         Logger::channel('hub')->warning("Device rejected IMEI={$identity->imei} reason=$reason");
         $conn->close();
+    }
+
+    private function allowsRejectedRecord(ConnectionInterface $conn, string $imei): bool
+    {
+        $now = (float)($this->clock)();
+        if (!$this->rejectedRecords->allow('imei:' . $imei, self::REJECTED_RECORD_INTERVAL_SECONDS, $now)) {
+            return false;
+        }
+
+        // O porto muda a cada ligação: a chave é só o anfitrião.
+        $host = parse_url((string)$conn->remoteAddress(), PHP_URL_HOST);
+
+        return !is_string($host)
+            || $this->rejectedRecords->allow('address:' . $host, self::REJECTED_RECORD_INTERVAL_SECONDS, $now);
     }
 
     private function flushPendingDownlinks(DeviceSession $session): void
