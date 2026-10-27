@@ -15,6 +15,10 @@ final class DeviceCommandStore
     /** Quanto tempo um comando em fila espera que o aparelho volte. */
     private const QUEUED_LIFETIME_SECONDS = 7 * 86400;
 
+    /** O pico real é de 8 por minuto, ao abrir o ecrã de um aparelho; 30 só trava um ciclo. */
+    private const MAX_REQUESTS_PER_WINDOW = 30;
+    private const REQUEST_WINDOW_SECONDS = 60;
+
     private bool $pendingIndexed = false;
 
     /** @var null|\Closure(string, string, array<string, mixed>): void */
@@ -59,6 +63,18 @@ final class DeviceCommandStore
             'superseded' => 'device.downlink.superseded',
             default => null,
         };
+    }
+
+    /** Conta um pedido ao aparelho e diz se ainda cabe na janela, que abre no primeiro. */
+    public function allowsRequest(string $imei): bool
+    {
+        $key = 'hub:command-throttle:' . $imei;
+        $used = (int)$this->redis->incr($key);
+        if ($used === 1) {
+            $this->redis->expire($key, self::REQUEST_WINDOW_SECONDS);
+        }
+
+        return $used <= self::MAX_REQUESTS_PER_WINDOW;
     }
 
     /** @param array<string, mixed> $record */

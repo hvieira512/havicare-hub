@@ -46,6 +46,9 @@ final class DeviceFeatureRequestService
         if (!$this->directory->canAccessDevice($imei, $auth)) {
             return $this->reject('telemetry', $requestId, $imei, ApiError::deviceNotFound(), []);
         }
+        if (!$this->commands->allowsRequest($imei)) {
+            return $this->reject('device', $requestId, $imei, ApiError::tooManyRequests(), []);
+        }
 
         $feature = trim((string)($payload['feature'] ?? ''));
         $capability = trim((string)($payload['capability'] ?? ''));

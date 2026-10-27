@@ -71,6 +71,7 @@ final class ApiError
         'model_in_use' => 409,
         // 429: foi o ritmo de quem pede que o travou.
         'too_many_attempts' => 429,
+        'too_many_requests' => 429,
         'server_error' => 500,
         // 503: o pedido é legítimo, o que falta é lugar no processo.
         'too_many_streams' => 503,
@@ -327,6 +328,12 @@ final class ApiError
     public static function tooManyAttempts(): self
     {
         return new self('too_many_attempts', 'Too many authentication attempts; slow down and retry');
+    }
+
+    /** Cada pedido acorda o aparelho: gasta-lhe a bateria e, nalguns, manda SMS ou toca. */
+    public static function tooManyRequests(): self
+    {
+        return new self('too_many_requests', 'Too many requests for this device; slow down and retry');
     }
 
     public static function deviceIsNotARadar(): self

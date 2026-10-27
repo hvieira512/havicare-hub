@@ -51,6 +51,7 @@ final class RedisPrefixTest extends TestCase
             'location circuit' => ['hub:location:circuit:beacondb'],
             'location resolution' => ['hub:location:resolution:861265061009822'],
             'login throttle' => ['hub:login-throttle:ip:203.0.113.9:29123456'],
+            'command throttle' => ['hub:command-throttle:861265061009822'],
             'firmware upgrade' => ['hub:firmware-upgrade:869243062262262'],
             'blood pressure history' => ['hub:joytech:history-mark:748b34837b1e'],
             'scale' => ['hub:lefu:online-user'],

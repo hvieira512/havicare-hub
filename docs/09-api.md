@@ -364,6 +364,12 @@ forma a um inquilino grande poder crescer sem conseguir esfomear os outros.
 | GET | `/api/devices/{imei}/radar-layout` | A planta das divisões de um radar | **LC** |
 | POST | `/api/devices/{imei}/radar-layout/sync` | Lê a planta ao aparelho e guarda-a | **LC** |
 
+Cada `POST /api/devices/{imei}/requests` acorda o aparelho — gasta bateria e,
+nalguns, toca ou manda SMS. Por isso há um teto de **30 pedidos por aparelho por
+minuto**, contado sobre todos os clientes e papéis juntos; o 31.º responde
+`429 too_many_requests`. O pico real, ao abrir o ecrã de um aparelho, anda pelos
+8: o teto só trava um cliente em ciclo.
+
 ### Catálogo
 
 | | Rota | |
@@ -544,11 +550,11 @@ mais curta de escrever.
 | **404** | `association_not_found`, `company_not_found`, `denylist_not_found`, `license_not_found`, `model_not_found`, `not_found`, `notification_not_found`, `protocol_not_found`, `supplier_not_found`, `user_not_found` |
 | **409** | `device_exists`, `model_exists`, `user_exists`, `duplicate` |
 | **422** | `incomplete_owner` — um dispositivo tem empresa e licença, ou nenhuma; o `fields` diz a que falta · `invalid_radar_areas` — as áreas de um radar partem uma regra; o `fields` diz qual, por área (`items[i]`): `door_off_wall`, `outside_room`, `second_monitoring_bed`, ou `too_many_areas` na lista |
-| **429** | `too_many_attempts` |
+| **429** | `too_many_attempts`, `too_many_requests` |
 | **500** | `server_error` |
 | **503** | `too_many_streams` |
 
-São **46 códigos**. Um código não declarado responde com 400.
+São **48 códigos**. Um código não declarado responde com 400.
 
 Duas distinções relevantes:
 

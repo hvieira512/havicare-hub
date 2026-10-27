@@ -75,6 +75,36 @@ final class DeviceServiceTest extends MysqlDashboardTestCase
         self::assertSame('CALL', $result['commands'][0]['nativeType']);
     }
 
+    /** Um cliente em ciclo acorda o aparelho a cada pedido: gasta-lhe a bateria e toca no quarto. */
+    public function testRequestsToOneDeviceAreCappedPerMinute(): void
+    {
+        $payload = ['capability' => 'make_call', 'value' => ['phone' => '123456789']];
+        $this->whitelist->method('getMetadata')->willReturn(new DeviceMetadata('4P Touch', '4P-TOUCH'));
+        $supplierId = $this->db->suppliers->create('4P Touch');
+        $this->db->models->add($supplierId, '4P-TOUCH', '4P-TOUCH', 'watch');
+        $this->modelId = (int)($this->db->models->find('4P Touch', '4P-TOUCH')['id'] ?? 0);
+        $this->mockModelCapabilities(['make_call']);
+        foreach (['8800000015', '8800000017'] as $imei) {
+            $this->redis->hmset(RedisKeys::device($imei), [
+                'imei' => $imei,
+                'supplier' => '4P Touch',
+                'model' => '4P-TOUCH',
+                'protocol' => 'four-p-touch',
+            ]);
+        }
+        $this->hub->method('submitDownlink')->willReturn('sent');
+
+        for ($i = 0; $i < 30; $i++) {
+            self::assertArrayNotHasKey('error', $this->service->featureRequests->requestFeature('8800000015', $payload));
+        }
+
+        $refused = $this->service->featureRequests->requestFeature('8800000015', $payload);
+        self::assertSame('too_many_requests', $refused['error']['code'] ?? null);
+
+        $other = $this->service->featureRequests->requestFeature('8800000017', $payload);
+        self::assertArrayNotHasKey('error', $other, 'o teto é de cada aparelho');
+    }
+
     /** Um cliente nunca repõe de fábrica: o relógio volta ao servidor do fornecedor e o hub perde-o. */
     public function testALicenseClientCannotFactoryResetADevice(): void
     {
