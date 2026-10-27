@@ -4,11 +4,9 @@ declare(strict_types=1);
 
 namespace Hub\Domain\Capability;
 
-use Hub\Domain\Liveness;
-
 /**
  * A gravidade de um acontecimento: `alarm` é perigo e pede alguém já, `alert` pede atenção sem
- * urgência, `info` é um facto. A dos eventos de ligação (`device.*`) dá-a `connection()`.
+ * urgência, `info` é um facto. Os eventos de ligação (`device.*`) não levam nenhuma.
  */
 final class EventSeverity
 {
@@ -32,7 +30,6 @@ final class EventSeverity
         'storage_environment' => self::ALERT,
         'dose_missed' => self::ALERT,
         'reset' => self::INFO,
-        // O que pede alguém é o aparelho calado, e esse é o `device.disconnected`.
         'device_state' => self::INFO,
         'low_battery' => self::INFO,
         'medication_alarm_change' => self::INFO,
@@ -42,12 +39,6 @@ final class EventSeverity
     /** Os limites da frequência cardíaca abaixo e acima dos quais o alerta passa a alarme. */
     private const HEART_RATE_CRITICAL_LOW_BPM = 20;
     private const HEART_RATE_CRITICAL_HIGH_BPM = 160;
-
-    /** Desligar-se é um alerta, salvo em quem só se liga para medir e se desliga no fim. */
-    public static function connection(bool $connected, string $protocol): string
-    {
-        return $connected || Liveness::isOnDemand($protocol) ? self::INFO : self::ALERT;
-    }
 
     /** @param array<string, mixed> $data */
     public static function of(string $type, array $data): ?string
@@ -76,15 +67,6 @@ final class EventSeverity
         $severity = self::of((string)($event['type'] ?? ''), $data);
 
         return $severity === null ? $event : self::put($event, $severity);
-    }
-
-    /**
-     * @param array<string, mixed> $event um `device.connected` ou `device.disconnected`
-     * @return array<string, mixed>
-     */
-    public static function stampConnection(array $event, string $protocol): array
-    {
-        return self::put($event, self::connection(($event['type'] ?? '') === 'device.connected', $protocol));
     }
 
     /**

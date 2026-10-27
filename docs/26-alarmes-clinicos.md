@@ -135,17 +135,16 @@ movimento e proximidade. Nem `voerka-ncs`, `monit-mecs-pro-ble`, os gateways e o
 
 ## 3. As gravidades que mudam
 
-Só sobre acontecimentos que o aparelho levanta, ou sobre o ciclo de ligação.
+Só sobre acontecimentos que o aparelho levanta. O `device.connected` e o
+`device.disconnected` continuam sem `severity`: a ligação não é um alarme.
 
 | `type` | Antes | Agora |
 |---|---|---|
 | `apnea` | `alarm` | **`alert`**, pela nota da ficha do radar |
 | `weak_vital_signs` | `alert` | **`alarm`**: é o *sudden death* do fabricante (`suddenDeathSwitch`), dez minutos sem batimento, e o único estado de minuto que a ficha manda alarmar logo |
-| `device_state` | `alert` | **`info`**. O desligar e a reposição de fábrica da Wonlex são factos; o que pede alguém é o aparelho calado, e esse é o `device.disconnected` |
+| `device_state` | `alert` | **`info`**. O desligar e a reposição de fábrica da Wonlex são factos |
 | `medication_alarm_change` | `alert` numa dose falhada | **`info`** sempre. A dose falhada vai ser o `dose_missed` |
 | `medication_intake` | `alert` com `abnormal` ou `missed` | **`info`** sempre |
-| `device.disconnected` | sem `severity` | **`alert`**; **`info`** nos que só se ligam para medir (balança, tensiómetro, termómetro, oxímetro) |
-| `device.connected` | sem `severity` | **`info`** |
 | `low_battery` | — | `info` em todos — **já em produção** (hub 350cf776) |
 
 A gravidade do `heart_rate_high`/`heart_rate_low` do radar fica como está.
@@ -178,8 +177,7 @@ não junta duas doses diferentes num alerta.
 ### A espera de 60 s
 
 Um relógio que fecha o socket e volta em segundos publica hoje um
-`device.disconnected` e um `device.connected` de cada vez. Com `severity: alert`,
-cada oscilação seria um alerta. Num socket fechado, o `device.disconnected`
+`device.disconnected` e um `device.connected` de cada vez. Num socket fechado, o `device.disconnected`
 **espera 60 s** por uma nova ligação antes de sair; se ela chegar, não sai nem
 um nem outro.
 
@@ -197,13 +195,13 @@ de um aparelho retransmitido passa a levar:
 | `data.cause: "gateway_offline"` | quando esse gateway já está `offline` no momento em que o aparelho se dá por desligado | A queda é do gateway, e não do aparelho |
 
 ```json
-{ "type": "device.disconnected", "severity": "alert",
+{ "type": "device.disconnected",
   "device": { "id": "d48c49f7909c", "supplier": "MOKO", "model": "W6B" },
   "data": { "gatewayId": "c5e390f30bce", "cause": "gateway_offline" } }
 ```
 
 Sem `cause`, o gateway estava de pé e o aparelho é que deixou de ser ouvido — saiu
-do alcance, ficou sem bateria —, e esse é um alerta por si.
+do alcance, ficou sem bateria.
 
 ## 5. As leituras que não contam
 
@@ -309,8 +307,7 @@ gravidade nem nenhum `type` que ele lê muda.**
 
 | Mudança | Onde | Para quem já consome |
 |---|---|---|
-| `device.disconnected` e `device.connected` ganham `severity` | todos | **Coordenar** com o hitCare |
-| `device.disconnected` de um retransmitido ganha `data.gatewayId` e `data.cause` | pulseiras e sensores de fralda do hitCare | Os eventos de ciclo de vida não levavam `data`: **coordenar**, junto com a linha anterior |
+| `device.disconnected` de um retransmitido ganha `data.gatewayId` e `data.cause` | pulseiras e sensores de fralda do hitCare | Os eventos de ciclo de vida não levavam `data`: **coordenar** com o hitCare |
 | O `device.disconnected` espera 60 s num socket fechado | relógios e o que liga por TCP | Muda quando sai, não o que é; não é família do hitCare |
 | `apnea`, `weak_vital_signs`, `device_state`, `medication_*` | radar, Wonlex, dispensador | Não são do hitCare |
 | `fromHistory`, `implausible`, sentinelas que deixam de sair | sinais vitais | Não são do hitCare |

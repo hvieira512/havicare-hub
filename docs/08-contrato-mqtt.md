@@ -122,7 +122,6 @@ havicare-hub/hitcare/1001/watch/861265061009822/# um dispositivo, todos os canai
 ```json
 {
   "type": "device.connected",
-  "severity": "info",
   "occurredAt": "2026-09-01T10:35:10Z",
   "device": { "id": "861265061009822", "supplier": "Vivistar", "model": "L08 Pro" }
 }
@@ -153,11 +152,6 @@ um `configuration` — nos `device.configuration.*` — ou um `error`. Os segund
 | `device.configuration.confirmation_unavailable` | O aparelho recebeu a alteração, mas não tem forma de confirmar que a aplicou |
 | `device.measurement_failed` | Pulseira — uma medição pedida não produziu valor, e o aparelho disse porquê |
 
-**A ligação leva gravidade.** O `device.connected` é `info`. O
-`device.disconnected` é `alert` — um aparelho calado deixa a pessoa sem proteção —,
-salvo nos que só se ligam para medir (balança, tensiómetro, termómetro, oxímetro),
-que se desligam no fim de cada medição e levam `info`.
-
 **Um socket que volta não é um desligado.** Um relógio que fecha a ligação TCP e
 volta dentro de 60 s não publica nem o `device.disconnected` nem o
 `device.connected`; o `status` fica `online`.
@@ -172,7 +166,7 @@ aparelhos de medição atrás do gateway da Havicare — leva no `data`:
 | `cause: "gateway_offline"` | o gateway já está desligado, ou calou-se ao mesmo tempo que o aparelho | A queda é do gateway, e não do aparelho |
 
 ```json
-{ "type": "device.disconnected", "severity": "alert",
+{ "type": "device.disconnected",
   "device": { "id": "d48c49f7909c", "supplier": "MOKO", "model": "W6B" },
   "data": { "gatewayId": "c5e390f30bce", "cause": "gateway_offline" } }
 ```
@@ -311,9 +305,9 @@ conhecer nenhum dos dois. O `data` traz o pormenor, e a `severity` diz quão gra
 
 #### A gravidade
 
-Todo o evento de domínio leva `severity`, logo a seguir ao `type`, e também o
-`device.connected` e o `device.disconnected`. Os outros eventos de ciclo de vida
-não a levam.
+Todo o evento de domínio leva `severity`, logo a seguir ao `type`. Os eventos de
+ciclo de vida, `device.connected` e `device.disconnected` incluídos, não a levam:
+a ligação é estado do aparelho, e não um alarme.
 
 | `severity` | Quer dizer |
 |---|---|

@@ -27,14 +27,14 @@ final class MessageNormalizerTest extends TestCase
         self::assertArrayNotHasKey('data', $result['status'] ?? []);
         self::assertArrayNotHasKey('source', $result['status'] ?? []);
         self::assertSame('device.connected', $result['event']['type'] ?? null);
-        self::assertSame('info', $result['event']['severity'] ?? null);
+        self::assertArrayNotHasKey('severity', $result['event'] ?? []);
         self::assertArrayNotHasKey('source', $result['event'] ?? []);
         self::assertSame('Qinglanst HC2 Pro', $result['status']['device']['commercialName'] ?? null);
         self::assertSame('Qinglanst HC2 Pro', $result['event']['device']['commercialName'] ?? null);
         self::assertSame('Qinglanst HC2 Pro', $result['raw']['device']['commercialName'] ?? null);
     }
 
-    public function testAGatewayGoingOfflineIsAnAlert(): void
+    public function testAGatewayGoingOfflineCarriesNoSeverity(): void
     {
         $result = (new MessageNormalizer())->normalize(NcsTopic::parse('/voerka/1001/devices/1001/status/online'), [
             'from' => '1001',
@@ -42,7 +42,8 @@ final class MessageNormalizerTest extends TestCase
             'payload' => ['status' => ['online' => false]],
         ], $this->device());
 
-        self::assertSame(['device.disconnected', 'alert'], [$result['event']['type'] ?? null, $result['event']['severity'] ?? null]);
+        self::assertSame('device.disconnected', $result['event']['type'] ?? null);
+        self::assertArrayNotHasKey('severity', $result['event'] ?? []);
     }
 
     public function testNormalizesHelpCallPagerEventWithoutTelemetryOrSource(): void

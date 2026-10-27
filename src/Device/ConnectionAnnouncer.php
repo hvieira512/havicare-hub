@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Hub\Device;
 
-use Hub\Domain\Capability\EventSeverity;
 use Hub\Domain\DeviceMetadata;
 use Hub\Domain\Liveness;
 use Hub\State\DeviceReportStore;
@@ -30,7 +29,7 @@ final class ConnectionAnnouncer
         $this->status($imei, $device, $connected);
 
         [$deviceType, $licenseId, $company] = self::tenant($device);
-        $event = EventSeverity::stampConnection(TelemetryEnvelope::event(
+        $event = TelemetryEnvelope::event(
             $imei,
             (string)($device['supplier'] ?? ''),
             (string)($device['model'] ?? ''),
@@ -38,7 +37,7 @@ final class ConnectionAnnouncer
             null,
             null,
             (string)($device['commercialName'] ?? ''),
-        ), (string)($device['protocol'] ?? ''));
+        );
         if ($data !== []) {
             $event['data'] = $data;
         }

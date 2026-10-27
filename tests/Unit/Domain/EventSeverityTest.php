@@ -51,6 +51,7 @@ final class EventSeverityTest extends TestCase
             'weak vital signs is the sudden death alarm' => ['weak_vital_signs', [], 'alarm'],
             'watch shutdown' => ['device_state', ['state' => 'shutdown'], 'info'],
             'connection' => ['device.connected', [], null],
+            'disconnection' => ['device.disconnected', [], null],
             'reading' => ['battery', ['percent' => 80], null],
         ];
     }
@@ -66,23 +67,6 @@ final class EventSeverityTest extends TestCase
         }
 
         self::assertSame([], array_values(array_unique($unclassified)));
-    }
-
-    public function testADeviceThatGoesSilentIsAnAlert(): void
-    {
-        self::assertSame('alert', EventSeverity::connection(false, 'vivistar-iw'));
-        self::assertSame('alert', EventSeverity::connection(false, ''));
-    }
-
-    /** A balança e os outros que só se ligam para medir desligam-se no fim de cada medição. */
-    public function testAnOnDemandDeviceDisconnectingIsInformation(): void
-    {
-        self::assertSame('info', EventSeverity::connection(false, 'lefu-torre'));
-    }
-
-    public function testAConnectionIsInformation(): void
-    {
-        self::assertSame('info', EventSeverity::connection(true, 'vivistar-iw'));
     }
 
     public function testStampingAddsTheSeverityNextToTheType(): void

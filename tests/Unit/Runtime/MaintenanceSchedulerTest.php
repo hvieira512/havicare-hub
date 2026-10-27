@@ -178,7 +178,7 @@ final class MaintenanceSchedulerTest extends TestCase
         $this->tick();
 
         $event = $this->disconnectionOf('eec5000202f9');
-        self::assertSame('alert', $event['severity']);
+        self::assertArrayNotHasKey('severity', $event);
         self::assertSame(['gatewayId' => 'd48c49f7909c'], $event['data']);
     }
 
@@ -202,7 +202,7 @@ final class MaintenanceSchedulerTest extends TestCase
         self::assertSame('gateway_offline', $this->disconnectionOf('eec5000202f9')['data']['cause'] ?? null);
     }
 
-    public function testAnOnDemandDeviceThatStoppedMeasuringIsInformation(): void
+    public function testAnOnDemandDeviceThatStoppedMeasuringCarriesNoSeverity(): void
     {
         $this->store->deviceSeen('cfe908067329', [
             'online' => '1', 'deviceType' => 'scale', 'transport' => 'ble_gateway', 'protocol' => 'lefu-torre', 'gatewayId' => 'a1b2c3d4e5f6',
@@ -211,7 +211,7 @@ final class MaintenanceSchedulerTest extends TestCase
 
         $this->tick();
 
-        self::assertSame('info', $this->disconnectionOf('cfe908067329')['severity']);
+        self::assertArrayNotHasKey('severity', $this->disconnectionOf('cfe908067329'));
     }
 
     /** O hitCare lê o estado do gateway: `status` retido `offline` e o `device.disconnected`, na licença dele. */

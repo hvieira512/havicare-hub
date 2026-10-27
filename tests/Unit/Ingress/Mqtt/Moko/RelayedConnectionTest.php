@@ -39,7 +39,7 @@ final class RelayedConnectionTest extends TestCase
 
         self::assertSame(['device.connected'], array_column($mqtt->events, 'type'));
         self::assertSame(['device.connected'], array_column($store->recent(self::SENSOR, 'connections'), 'type'));
-        self::assertSame('info', $mqtt->events[0]['payload']['severity']);
+        self::assertArrayNotHasKey('severity', $mqtt->events[0]['payload']);
     }
 
     /** Ouvido por vários gateways, o que conta para o desligado é o último. */

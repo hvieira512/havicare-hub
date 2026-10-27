@@ -157,10 +157,10 @@ final class DeviceHubMqttContractTest extends TestCase
         ));
         self::assertCount(1, $disconnected, 'o desligamento publica um device.disconnected');
         self::assertSame('865028000000308', $disconnected[0][0]);
-        self::assertSame('alert', $disconnected[0][1]['severity']);
+        self::assertArrayNotHasKey('severity', $disconnected[0][1]);
     }
 
-    public function testAConnectionIsAnnouncedAsInformation(): void
+    public function testAConnectionCarriesNoSeverity(): void
     {
         $mqtt = new ContractRecordingHubMqttBridge();
         $hub = new DeviceHubServer($this->whitelist, $mqtt);
@@ -169,8 +169,8 @@ final class DeviceHubMqttContractTest extends TestCase
         $hub->onOpen($connection);
         $hub->onMessage($connection, 'IWAP00865028000000308#');
 
-        self::assertSame(['type', 'severity'], array_slice(array_keys($mqtt->events[0][1]), 0, 2));
-        self::assertSame('info', $mqtt->events[0][1]['severity']);
+        self::assertSame('device.connected', $mqtt->events[0][1]['type']);
+        self::assertArrayNotHasKey('severity', $mqtt->events[0][1]);
     }
 
     /** Um socket fechado espera 60 s por uma ligação nova antes de se dar o aparelho por desligado. */

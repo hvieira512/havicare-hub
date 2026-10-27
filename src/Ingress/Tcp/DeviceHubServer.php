@@ -12,7 +12,6 @@ use Hub\Device\HubMqttBridge;
 use Hub\Device\LowBatteryTransitions;
 use Hub\Device\TelemetryEnvelope;
 use Hub\Domain\Capability\CapabilityCatalog;
-use Hub\Domain\Capability\EventSeverity;
 use Hub\Domain\Capability\Medication\MedicationOccurrence;
 use Hub\Domain\Capability\Medication\MedicationRunout;
 use Hub\Domain\Liveness;
@@ -644,7 +643,7 @@ class DeviceHubServer
 
     private function publishEvent(DeviceSession $session, string $type): void
     {
-        $device = ['supplier' => $session->supplier, 'model' => $session->model, 'deviceType' => $session->deviceType, 'protocol' => $session->protocol]
+        $device = ['supplier' => $session->supplier, 'model' => $session->model, 'deviceType' => $session->deviceType]
             + $this->current($session->imei, $session);
         try {
             $this->announce($session->imei, $device, $type);
@@ -654,20 +653,23 @@ class DeviceHubServer
     }
 
     /**
-     * Um evento do hub sobre o aparelho, no broker e no histórico; o erro só segue no broker. Com o
-     * `protocol`, é um evento de ligação e leva a gravidade.
+     * Um evento do hub sobre o aparelho, no broker e no histórico; o erro só segue no broker.
      *
-     * @param array{supplier: string, model: string, commercialName: string, deviceType: string, licenseId: int, company: string, protocol?: string} $device
+     * @param array{supplier: string, model: string, commercialName: string, deviceType: string, licenseId: int, company: string} $device
      * @param array<string, mixed>|null $error
      * @param array<string, mixed>|null $command
      */
     private function announce(string $imei, array $device, string $type, ?array $error = null, ?array $command = null): void
     {
-        $event = static function (?array $error) use ($imei, $device, $type, $command): array {
-            $event = TelemetryEnvelope::event($imei, $device['supplier'], $device['model'], $type, $error, $command, $device['commercialName']);
-
-            return isset($device['protocol']) ? EventSeverity::stampConnection($event, $device['protocol']) : $event;
-        };
+        $event = static fn (?array $error): array => TelemetryEnvelope::event(
+            $imei,
+            $device['supplier'],
+            $device['model'],
+            $type,
+            $error,
+            $command,
+            $device['commercialName'],
+        );
         $this->mqtt->publishEvent($imei, $event($error), $device['deviceType'], $device['licenseId'], $device['company']);
         $this->deviceStore?->append($imei, 'events', array_merge(
             $event(null),
