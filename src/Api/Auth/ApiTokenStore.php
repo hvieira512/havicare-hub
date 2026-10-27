@@ -81,6 +81,18 @@ final class ApiTokenStore
         }
     }
 
+    /** Fecha todas as sessões de um utilizador: o acesso que já tinha não espera pelo fim do prazo. */
+    public function revokeUser(string $username): void
+    {
+        $key = self::PREFIX . '-by-user:' . $username;
+        foreach (array_map(strval(...), $this->redis->zrangebyscore($key, '-inf', '+inf')) as $pair) {
+            [$accessToken, $refreshToken] = explode(':', $pair) + ['', ''];
+            $this->revoke($accessToken);
+            $this->revoke($refreshToken);
+        }
+        $this->redis->del([$key]);
+    }
+
     public function context(string $token): ?ApiAuthContext
     {
         $payload = $this->payload($token);

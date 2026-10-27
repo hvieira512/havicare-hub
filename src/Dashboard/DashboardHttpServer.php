@@ -79,7 +79,7 @@ final class DashboardHttpServer
                 $deviceService,
                 new ModelService($this->db, $this->whitelist),
                 new CapabilityService($this->db),
-                new ApiUserService($this->db),
+                new ApiUserService($this->db, $this->tokens),
                 new CompanyService($this->db, $this->whitelist),
                 new LicenseService($this->db, $this->whitelist),
                 new RadarCredentialsService($this->db, sync: $radarLayoutSync),

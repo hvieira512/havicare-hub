@@ -266,6 +266,32 @@ final class DashboardApiAuthTest extends DashboardHttpTestCase
         self::assertSame(200, $dashboardResponse->getStatusCode());
     }
 
+    /** Desativado pela API, o token de acesso que já tinha deixa de abrir as rotas logo, e não ao fim da hora. */
+    public function testDisablingAUserRevokesTheAccessTokenItAlreadyHas(): void
+    {
+        [$server, $db] = $this->makeServerWithDatabase();
+        $adminToken = $this->loginToken($server, 'admin', 'secret');
+        $tenantToken = $this->loginToken($server, 'tenant', 'tenant-secret');
+        $tenant = $db->apiUsers->findByUsername('tenant');
+        self::assertIsArray($tenant);
+
+        $update = $server(new ServerRequest(
+            'PUT',
+            '/api/users/' . $tenant['id'],
+            ['Authorization' => 'Bearer ' . $adminToken, 'Content-Type' => 'application/json'],
+            json_encode([
+                'username' => 'tenant',
+                'role' => 'license_client',
+                'licenseRefId' => (int)$tenant['license_ref_id'],
+                'enabled' => false,
+            ], JSON_THROW_ON_ERROR)
+        ));
+        self::assertSame(200, $update->getStatusCode(), (string)$update->getBody());
+
+        $devices = $server(new ServerRequest('GET', '/api/devices', ['Authorization' => 'Bearer ' . $tenantToken]));
+        self::assertSame(401, $devices->getStatusCode(), (string)$devices->getBody());
+    }
+
     /** A renovação relê o utilizador: desativado depois de a sessão abrir, deixa de renovar. */
     public function testApiRefreshRejectsAfterUserDisabled(): void
     {

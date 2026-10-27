@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Hub\Api\Services;
 
 use Hub\Api\Auth\ApiAuthContext;
+use Hub\Api\Auth\ApiTokenStore;
 use Hub\Api\Http\ApiError;
 use Hub\Api\Http\CollectionColumns;
 use Hub\Api\Http\CollectionPresenter;
@@ -15,7 +16,7 @@ class ApiUserService
 {
     private CollectionPresenter $presenter;
 
-    public function __construct(private ApiDataAccess $db)
+    public function __construct(private ApiDataAccess $db, private ?ApiTokenStore $tokens = null)
     {
         $this->presenter = new CollectionPresenter();
     }
@@ -80,7 +81,8 @@ class ApiUserService
      */
     public function update(int $id, ApiUserWriteRequest $request): array
     {
-        if ($this->db->apiUsers->findById($id) === null) {
+        $before = $this->db->apiUsers->findById($id);
+        if ($before === null) {
             return ApiError::userNotFound()->toArray();
         }
 
@@ -105,17 +107,31 @@ class ApiUserService
             $license['licenseRefId'],
         );
 
+        // Só o que muda o que o token abre fecha as sessões.
+        $previousLicenseRef = isset($before['license_ref_id']) ? (int)$before['license_ref_id'] : null;
+        if (
+            !$request->enabled
+            || $passwordHash !== null
+            || $before['username'] !== $request->username
+            || $before['role'] !== $request->role
+            || $previousLicenseRef !== $license['licenseRefId']
+        ) {
+            $this->tokens?->revokeUser((string)$before['username']);
+        }
+
         return ['status' => 'ok', 'id' => $id];
     }
 
     /** @return array<string, mixed> */
     public function delete(int $id): array
     {
-        if ($this->db->apiUsers->findById($id) === null) {
+        $user = $this->db->apiUsers->findById($id);
+        if ($user === null) {
             return ApiError::userNotFound()->toArray();
         }
 
         $this->db->apiUsers->delete($id);
+        $this->tokens?->revokeUser((string)$user['username']);
 
         return ['status' => 'ok'];
     }
