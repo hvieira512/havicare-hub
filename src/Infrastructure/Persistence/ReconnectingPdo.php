@@ -10,7 +10,8 @@ use PDOStatement;
 
 /**
  * Um PDO que refaz a ligação quando o MySQL a larga; a ligação real vive no `$inner`, e por
- * isso o construtor não chama o pai. Só o `prepare` e o `query` repetem depois de reconectar.
+ * isso o construtor não chama o pai. Só o `prepare`, o `query` e o `beginTransaction` repetem
+ * depois de reconectar.
  */
 final class ReconnectingPdo extends PDO
 {
@@ -86,7 +87,15 @@ final class ReconnectingPdo extends PDO
 
     public function beginTransaction(): bool
     {
-        $result = $this->inner()->beginTransaction();
+        try {
+            $result = $this->inner()->beginTransaction();
+        } catch (PDOException $e) {
+            if (!$this->isRetryable($e)) {
+                throw $e;
+            }
+            $this->drop();
+            $result = $this->inner()->beginTransaction();
+        }
         $this->inTransaction = true;
         return $result;
     }

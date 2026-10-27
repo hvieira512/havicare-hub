@@ -55,6 +55,29 @@ final class ReconnectingPdoTest extends TestCase
         self::assertSame(2, $calls, 'deveria ter reconectado uma vez e repetido a leitura');
     }
 
+    /** Abrir uma transacção ainda não escreveu nada: numa ligação perdida, reconecta e abre. */
+    public function testRetriesBeginTransactionAfterTheConnectionIsLost(): void
+    {
+        $calls = 0;
+        $db = new ReconnectingPdo($this->connector(function (int $call): PDO {
+            if ($call === 1) {
+                return new class extends PDO {
+                    public function __construct()
+                    {
+                    }
+                    public function beginTransaction(): bool
+                    {
+                        throw new PDOException('SQLSTATE[HY000]: MySQL server has gone away');
+                    }
+                };
+            }
+            return $this->liveSqlite();
+        }, $calls));
+
+        self::assertTrue($db->beginTransaction());
+        self::assertSame(2, $calls);
+    }
+
     public function testDoesNotRetryAWriteButRecoversForTheNextCall(): void
     {
         $calls = 0;
