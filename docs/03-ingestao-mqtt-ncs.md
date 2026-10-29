@@ -133,6 +133,14 @@ Um `status/online` produz também um evento, `device.connected` ou
 
 O identificador do comando de chamada, quando vem, sai em `data.pagerId`.
 
+Quando vários gateways da mesma licença ouvem o mesmo comando, cada um reporta o
+clique. O `help_call` ou o `reset` sai **uma vez**, pelo gateway cuja cópia
+chegou primeiro: outro evento do mesmo tipo e do mesmo `pagerId`, na mesma
+licença, a menos de 500 ms, é uma cópia e não sai. O `raw` continua a sair por
+todos os gateways. O comando não traz nada que mude de clique para clique, e por
+isso só o tempo separa uma cópia de um clique repetido — que nunca vem a menos
+de um segundo.
+
 ### `raw`
 
 Leva sempre a mensagem original completa, mais o contexto de onde veio:

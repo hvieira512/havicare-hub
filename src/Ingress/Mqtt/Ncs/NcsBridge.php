@@ -11,7 +11,13 @@ use Hub\State\DeviceRuntimeStore;
 
 final class NcsBridge extends MqttBridgeBase
 {
+    /** As cópias do mesmo clique chegam pelos gateways com milissegundos de diferença; um clique real repetido nunca vem a menos de um segundo. */
+    private const DUPLICATE_WINDOW_SECONDS = 0.5;
+
     private readonly MessageNormalizer $normalizer;
+
+    /** @var array<string, float> */
+    private array $lastCallAt = [];
 
     public function __construct(
         \PhpMqtt\Client\MqttClient $subscriber,
@@ -22,6 +28,7 @@ final class NcsBridge extends MqttBridgeBase
         ?\Hub\State\DeviceReportStore $deviceStore = null,
         ?\Hub\Device\CommercialModelResolver $commercialModelResolver = null,
         ?\Hub\Registry\Denylist $denylist = null,
+        ?callable $clock = null,
     ) {
         parent::__construct(
             $subscriber,
@@ -32,6 +39,7 @@ final class NcsBridge extends MqttBridgeBase
             reconnectSubscriber: $reconnectSubscriber,
             deviceStore: $deviceStore,
             denylist: $denylist,
+            clock: $clock,
             commercialModelResolver: $commercialModelResolver,
         );
         $this->normalizer = new MessageNormalizer();
@@ -110,8 +118,29 @@ final class NcsBridge extends MqttBridgeBase
             }
         }
 
-        if (isset($normalized['event']) && is_array($normalized['event'])) {
+        if (isset($normalized['event']) && is_array($normalized['event']) && !$this->isCopyFromAnotherGateway($licenseId, $normalized['event'])) {
             $this->mqttBridge->publishAndStore($this->deviceStore, 'events', $deviceKey, $normalized['event'], $deviceType, $licenseId, $company);
         }
+    }
+
+    /** @param array<string, mixed> $event */
+    private function isCopyFromAnotherGateway(int|string $licenseId, array $event): bool
+    {
+        $pagerId = $event['data']['pagerId'] ?? null;
+        if ($pagerId === null) {
+            return false;
+        }
+
+        $now = $this->clockNow();
+        $this->lastCallAt = array_filter($this->lastCallAt, static fn (float $at): bool => $now - $at < self::DUPLICATE_WINDOW_SECONDS);
+        $key = "{$licenseId}|{$pagerId}|{$event['type']}";
+        if (isset($this->lastCallAt[$key])) {
+            $gapMs = (int)round(($now - $this->lastCallAt[$key]) * 1000);
+            Logger::channel('hub')->info("Dropping NCS {$event['type']} for pager {$pagerId} already heard by another gateway {$gapMs} ms earlier");
+            return true;
+        }
+        $this->lastCallAt[$key] = $now;
+
+        return false;
     }
 }
