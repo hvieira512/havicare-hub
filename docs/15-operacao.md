@@ -197,6 +197,7 @@ O `limit-nofile.conf` **só se instala depois de uma extensão de event loop**,
 pelas razões da secção seguinte.
 
 ```bash
+sudo apt install logrotate
 sudo cp config/logrotate/havicare-hub /etc/logrotate.d/havicare-hub
 sudo install -Dm644 config/systemd/watchdog.conf \
     /etc/systemd/system/havicare-hub-dev.service.d/watchdog.conf
@@ -207,7 +208,9 @@ sudo systemctl daemon-reload && sudo systemctl restart havicare-hub-dev
 porque é o volume que cresce sem parar. O padrão `/opt/havicare-hub*/var/log/`
 cobre as duas instâncias: sem o asterisco, a de desenvolvimento crescia sem
 limite — chegou aos 47 MB num único ficheiro. O `copytruncate` é obrigatório,
-porque o processo mantém os descritores abertos e o Monolog não os reabre.
+porque o processo mantém os descritores abertos e o Monolog não os reabre. O
+Debian 13 não traz o `logrotate`: sem o pacote, o ficheiro em `/etc/logrotate.d/`
+fica lá e ninguém o lê.
 
 **A firewall** é da máquina e gere-se fora deste repositório. Ao MySQL chega-se
 por um túnel:
