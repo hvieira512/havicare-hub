@@ -4,16 +4,7 @@ declare(strict_types=1);
 
 namespace Hub\Infrastructure\Persistence;
 
-use Hub\Infrastructure\Persistence\Migration\DropCapabilitiesTable;
-use Hub\Infrastructure\Persistence\Migration\DropUnreadColumns;
-use Hub\Infrastructure\Persistence\Migration\GatewayLocationRemoved;
 use Hub\Infrastructure\Persistence\Migration\Migration;
-use Hub\Infrastructure\Persistence\Migration\PublicConfigurationShape;
-use Hub\Infrastructure\Persistence\Migration\RadarLayoutAreasFollowRename;
-use Hub\Infrastructure\Persistence\Migration\VivistarWorkingModeNames;
-use Hub\Infrastructure\Persistence\Migration\WhitelistReferencesModelAndLicense;
-use Hub\Infrastructure\Persistence\Migration\WifiSosButtonRemoved;
-use Hub\Infrastructure\Persistence\Migration\WonlexPushMessageRemoved;
 
 /**
  * As migrações posteriores à baseline (`schema.sql` e catálogo semeado). Uma migração sai daqui
@@ -24,17 +15,7 @@ final class DatabaseMigrationPlan
     /** @return list<Migration> */
     public function migrations(): array
     {
-        return [
-            new DropUnreadColumns(),
-            new DropCapabilitiesTable(),
-            new PublicConfigurationShape(),
-            new VivistarWorkingModeNames(),
-            new WonlexPushMessageRemoved(),
-            new GatewayLocationRemoved(),
-            new WhitelistReferencesModelAndLicense(),
-            new RadarLayoutAreasFollowRename(),
-            new WifiSosButtonRemoved(),
-        ];
+        return [];
     }
 
     /** @return list<string> */

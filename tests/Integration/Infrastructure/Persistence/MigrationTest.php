@@ -82,4 +82,22 @@ final class MigrationTest extends MysqlDashboardTestCase
 
         (new DatabaseSchemaGuard($pdo))->assertCurrent();
     }
+
+    /** O catálogo de capacidades vive só no código, e a `model_capabilities` tem de concordar com ele. */
+    public function testTheGuardRefusesAModelCapabilityTheCatalogueDoesNotDeclare(): void
+    {
+        $pdo = $this->createDashboardDatabase()->pdo();
+        $modelId = (int)$pdo->query("
+            SELECT m.id FROM models m JOIN suppliers s ON s.id = m.supplier_id
+            WHERE s.name = 'Zayata' AND m.internal_model = 'M228'
+        ")->fetchColumn();
+        $pdo->exec("
+            INSERT INTO model_capabilities (model_id, device_type, capability_key, enabled)
+            VALUES ({$modelId}, 'pill_dispenser', 'invented', 1)
+        ");
+
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('pill_dispenser:invented');
+        (new DatabaseSchemaGuard($pdo))->assertCurrent();
+    }
 }

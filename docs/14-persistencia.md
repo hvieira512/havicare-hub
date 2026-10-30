@@ -168,6 +168,21 @@ sobram na `schema_migrations` não incomodam.
 
 ### O que a linha de base já traz feito
 
+As nove de 21 a 30 de outubro de 2026 foram dobradas no `schema.sql` e no
+`ReferenceCatalogSeeder`:
+
+| Migração | O que faz |
+|---|---|
+| `2026_10_21_drop_unread_columns` | Larga seis colunas escritas e nunca lidas: os tokens das credenciais do radar, o `max_attempts`, o `source_payload` da planta e o `last_error` |
+| `2026_10_21_drop_capabilities_table` | Larga a tabela `capabilities`: o catálogo vive só no código, e a `model_capabilities` aponta para os `device_types` |
+| `2026_10_21_public_configuration_shape` | Passa as configurações guardadas para os nomes e valores do contrato público |
+| `2026_10_22_vivistar_working_mode_names` | O `working_mode` da Vivistar guarda o modo pelo nome |
+| `2026_10_22_wonlex_push_message_removed` | Tira o `push_message` aos modelos `wonlex-json` |
+| `2026_10_26_gateway_location_removed` | Tira a `location` aos gateways |
+| `2026_10_26_whitelist_references_model_and_license` | O dispositivo aponta para o modelo e para a licença pela chave, em vez dos nomes |
+| `2026_10_27_radar_layout_areas_follow_rename` | As áreas da planta do radar acompanham a renomeação do IMEI |
+| `2026_10_30_wifi_sos_button_removed` | Apaga o fornecedor PST, o modelo e os aparelhos dele |
+
 As treze de outubro de 2026 foram dobradas no `schema.sql` e no
 `ReferenceCatalogSeeder`:
 
