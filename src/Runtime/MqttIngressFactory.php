@@ -20,7 +20,6 @@ use Hub\Ingress\Mqtt\Ncs\NcsBridge;
 use Hub\Ingress\Mqtt\Qinglanst\QinglanstBridge;
 use Hub\Ingress\Mqtt\SubscriberFactory;
 use Hub\Ingress\Mqtt\Veepoo\VeepooBridge;
-use Hub\Ingress\Tuya\TuyaBridge;
 use Hub\Mqtt\BrokerSettings;
 use Hub\Mqtt\ConnectionFactory;
 use Hub\State\ActiveAlarms;
@@ -48,7 +47,6 @@ final class MqttIngressFactory
         $runner->add('Gateway ingress', self::gateway($config, $services, $subscribers), 'gateway');
 
         $runner->add('Qinglanst ingress', self::qinglanst($config, $services), 'qinglanst');
-        $runner->add('Tuya ingress', self::tuya($config, $services, $loop), 'tuya');
 
         return $runner;
     }
@@ -149,28 +147,6 @@ final class MqttIngressFactory
                 denylist: $services->denylist,
                 relays: $relays,
             ),
-        );
-    }
-
-    /** @param array<string, mixed> $config */
-    private static function tuya(array $config, HubServices $services, LoopInterface $loop): ?MqttIngress
-    {
-        if (!$config['tuya']['enabled']) {
-            return null;
-        }
-
-        return new TuyaBridge(
-            (string)$config['tuya']['access_id'],
-            (string)$config['tuya']['access_secret'],
-            (string)$config['tuya']['pulsar_url'],
-            (string)$config['tuya']['subscription'],
-            $services->whitelist,
-            $services->mqttBridge,
-            $services->deviceStore,
-            $services->commercialModelResolver,
-            $services->denylist,
-            $loop,
-            $services->redis,
         );
     }
 

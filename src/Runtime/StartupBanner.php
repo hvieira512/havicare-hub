@@ -79,10 +79,5 @@ final class StartupBanner
             $filter = trim((string)$config[$key]['topic_filter']);
             $log->info("{$label}: {$filter} -> " . $mqttBridge->topic($target));
         }
-
-        if (in_array('tuya', $enabledIngresses, true)) {
-            $log->info("Tuya ingress: subscription {$config['tuya']['subscription']} -> "
-                . $mqttBridge->topic('{company}/{licenseId}/bracelet/{deviceKey}/{raw|status|events|telemetry}'));
-        }
     }
 }

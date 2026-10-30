@@ -127,7 +127,7 @@ export async function refreshGatewayOptions(selectedKeys = null) {
     const deviceType = normalizeDeviceType(
         els.deviceForm.dataset.deviceType || "watch",
     );
-    const isGatewayLinked = linksToGateway(deviceType, state.deviceModal.protocol);
+    const isGatewayLinked = linksToGateway(deviceType);
     els.deviceGatewayLinksRow.classList.toggle("d-none", !isGatewayLinked);
     if (!isGatewayLinked) {
         renderGatewayOptions([], []);

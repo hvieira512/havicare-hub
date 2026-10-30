@@ -323,9 +323,8 @@ export function renderDeviceTypeSelector(selectedType = "watch") {
     applyDeviceTypeFields();
 }
 
-/** Os campos do tipo, corrigidos pelo protocolo do modelo. */
 function applyDeviceTypeFields() {
-    const fields = deviceTypeFields(els.deviceForm.dataset.deviceType, state.deviceModal.protocol);
+    const fields = deviceTypeFields(els.deviceForm.dataset.deviceType);
     const byImei = fields.identity.field === "imei";
     els.deviceImeiRow?.classList.toggle("d-none", !byImei);
     els.deviceSimRow?.classList.toggle("d-none", !fields.sim);
@@ -414,7 +413,7 @@ export async function saveDevice() {
     const supplier = els.deviceForm.dataset.supplier || "";
     const model = els.deviceForm.dataset.model || "";
     // A identidade e o SIM são perguntas distintas: o gateway identifica-se por MAC e leva SIM.
-    const fields = deviceTypeFields(deviceType, state.deviceModal.protocol);
+    const fields = deviceTypeFields(deviceType);
     const identifiedByImei = fields.identity.field === "imei";
     const deviceId = identifiedByImei ? "" : els.deviceDeviceId.value.trim();
 
@@ -436,7 +435,7 @@ export async function saveDevice() {
 
     const originalImei = els.deviceImei.dataset.originalImei;
     const company = els.deviceCompany.value;
-    const desiredGatewayKeys = linksToGateway(deviceType, state.deviceModal.protocol)
+    const desiredGatewayKeys = linksToGateway(deviceType)
         ? selectedGatewayKeys()
         : [];
 
@@ -459,7 +458,7 @@ export async function saveDevice() {
         return;
     }
 
-    if (linksToGateway(deviceType, state.deviceModal.protocol)) {
+    if (linksToGateway(deviceType)) {
         const currentGatewayKeys = originalImei !== imei
             ? []
             : state.deviceModal.linkedGatewayKeys || [];

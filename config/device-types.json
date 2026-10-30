@@ -70,18 +70,7 @@
             "placeholder": "d48c49f7909c"
         },
         "sim": false,
-        "gatewayLinks": true,
-        "byProtocol": {
-            "tuya-cloud": {
-                "identity": {
-                    "field": "deviceId",
-                    "label": "ID do dispositivo na Tuya",
-                    "help": "O identificador que a cloud Tuya dá à pulseira, como aparece na app.",
-                    "placeholder": "bf7cbe84a6199e98168qvb"
-                },
-                "gatewayLinks": false
-            }
-        }
+        "gatewayLinks": true
     },
     "pill_dispenser": {
         "label": "Dispensador de comprimidos",

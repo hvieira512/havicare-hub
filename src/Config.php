@@ -12,11 +12,10 @@ namespace Hub;
  * @phpstan-type NcsConfig array{enabled: bool, topic_filter: string}
  * @phpstan-type GatewayConfig array{enabled: bool, topic_filter: string, dedupe_ttl_seconds: int, telemetry_refresh_seconds: int}
  * @phpstan-type QinglanstConfig array{enabled: bool, host: string, port: int, username: string, password: string, topic_filter: string, client_id_prefix: string, tls_enabled: bool, tls_verify_peer: bool, tls_ca_file: string, tls_cert_file: string, tls_key_file: string, dashboard_seen_min_interval_ms: int, raw_history_sample_ms: int}
- * @phpstan-type TuyaConfig array{enabled: bool, access_id: string, access_secret: string, pulsar_url: string, subscription: string}
  * @phpstan-type MqttConfig array{host: string, port: int, username: string, password: string, topic_prefix: string, client_id_prefix: string, keepalive: int, timeout: float, tls_enabled: bool, tls_verify_peer: bool, tls_ca_file: string, tls_cert_file: string, tls_key_file: string}
  * @phpstan-type RedisConfig array{host: string, port: int, password: string}
  * @phpstan-type DatabaseConfig array{driver: string, host: string, port: int, name: string, username: string, password: string, charset: string}
- * @phpstan-type HubConfig array{tcp_ingress: TcpIngressConfig, dashboard: DashboardConfig, hub: HubRuntimeConfig, location_resolution: LocationResolutionConfig, ncs: NcsConfig, gateway: GatewayConfig, qinglanst: QinglanstConfig, tuya: TuyaConfig, mqtt: MqttConfig, redis: RedisConfig, database: DatabaseConfig}
+ * @phpstan-type HubConfig array{tcp_ingress: TcpIngressConfig, dashboard: DashboardConfig, hub: HubRuntimeConfig, location_resolution: LocationResolutionConfig, ncs: NcsConfig, gateway: GatewayConfig, qinglanst: QinglanstConfig, mqtt: MqttConfig, redis: RedisConfig, database: DatabaseConfig}
  */
 class Config
 {
@@ -131,14 +130,6 @@ class Config
                 // Quanto se espera pela cloud do fabricante ao sincronizar uma planta. A
                 // sincronização acontece a pedido e mais nada: não há relógio nenhum atrás.
                 'layout_sync_timeout_seconds' => max(1, (int)(getenv('QINGLANST_LAYOUT_SYNC_TIMEOUT_SECONDS') ?: 15)),
-            ],
-            'tuya' => [
-                'enabled' => self::flag('TUYA_ENABLED', false),
-                'access_id' => getenv('TUYA_ACCESS_ID') ?: '',
-                'access_secret' => getenv('TUYA_ACCESS_SECRET') ?: '',
-                'pulsar_url' => getenv('TUYA_PULSAR_URL') ?: 'wss://mqe.tuyaeu.com:8285/',
-                // Uma por instância, sem valor por omissão: duas instâncias na mesma repartem as mensagens.
-                'subscription' => getenv('TUYA_SUBSCRIPTION') ?: '',
             ],
             'mqtt' => [
                 'host' => getenv('MQTT_HOST') ?: '',

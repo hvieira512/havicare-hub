@@ -139,7 +139,7 @@ um `configuration` — nos `device.configuration.*` — ou um `error`. Os segund
 | `type` | Condição de emissão |
 |---|---|
 | `device.connected` | Um aparelho autenticou-se, um NCS reportou-se online, ou um radar ou aparelho retransmitido voltou a falar |
-| `device.disconnected` | Ligação fechada há 60 s sem uma nova, dois sinais de vida falhados, ou uma sessão GATT que acabou. Adormecer não é desligar: a pulseira Tuya a dormir não o emite |
+| `device.disconnected` | Ligação fechada há 60 s sem uma nova, dois sinais de vida falhados, ou uma sessão GATT que acabou |
 | `device.rejected` | Um aparelho não registado tentou entrar |
 | `device.downlink.queued` | O aparelho estava offline; o comando ficou em fila. Sai uma vez por pedido: renovar a fila enquanto o aparelho não volta não o repete |
 | `device.downlink.sent` | O comando saiu para o aparelho, por socket, por gateway ou pela cloud do fabricante. Sai a cada tentativa |
@@ -459,8 +459,7 @@ cada doze horas. O desenho está no [capítulo 26](26-alarmes-clinicos.md#dose_m
 
 `state` vale `online`, `offline` ou `error`; nos aparelhos que só se ligam para
 medir — balança, tensiómetro, termómetro e oxímetro — vale `measuring` durante a
-sessão e `idle` fora dela, e nunca `offline`; e na pulseira Tuya vale `idle`
-enquanto dorme. O `error` traz um objeto `error` com
+sessão e `idle` fora dela, e nunca `offline`. O `error` traz um objeto `error` com
 o código, e é o **único** que não é retido — uma recusa é um acontecimento, não
 um estado que valha a pena guardar.
 
@@ -477,7 +476,6 @@ calado `2 × intervalo + 30 s`; os intervalos e as fontes estão na
 | Balança, tensiómetro, termómetro e oxímetro | `measuring` quando o gateway liga ao aparelho | `idle` quando a ligação cai, ou 120 s sem tramas |
 | Radares | Na primeira mensagem | 150 s calados |
 | Gateways | Na primeira mensagem | 90 s no MKGW3 e no MKGW-mini, 1230 s no MKGW4, 150 s no da Havicare |
-| Pulseira Tuya | No `deviceOnline` ou numa leitura; `idle`, sem evento, no `deviceOffline` da cloud, que é o botão a adormecer | 57630 s sem acordar |
 | NCS | Pelo estado que o próprio aparelho publica | Pelo testamento que publica, ou 2430 s sem o estado periódico |
 
 Um relógio ligado quando o hub reinicia e que não volta a ligar passa a `offline`

@@ -170,17 +170,6 @@ final class ReferenceCatalogTest extends MysqlDashboardTestCase
         );
     }
 
-    /** A pulseira SOS Wi-Fi da PST só tem dois pontos de dados na Tuya: o botão e a bateria. */
-    public function testTheWifiSosButtonHasOnlyTheButtonAndTheBattery(): void
-    {
-        $db = ApiDataAccess::fromDatabase($this->createDashboardDatabase());
-
-        $button = $db->models->find('PST', 'CF103W');
-        self::assertIsArray($button);
-        self::assertSame('bracelet', $button['device_type']);
-        self::assertSame(['battery', 'help_call'], $db->modelCapabilities->enabledFeaturesForModelId((int)$button['id']));
-    }
-
     /** @return list<array<string, mixed>> */
     private function catalogue(string $deviceType, ?string $section = null): array
     {

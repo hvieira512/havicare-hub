@@ -49,14 +49,14 @@ final class ConnectionAnnouncer
      *
      * @param array<string, mixed> $device
      */
-    public function status(string $imei, array $device, bool $connected, bool $asleep = false): void
+    public function status(string $imei, array $device, bool $connected): void
     {
         [$deviceType, $licenseId, $company] = self::tenant($device);
         $status = TelemetryEnvelope::status(
             $imei,
             (string)($device['supplier'] ?? ''),
             (string)($device['model'] ?? ''),
-            Liveness::presence((string)($device['protocol'] ?? ''), $connected, $asleep),
+            Liveness::presence((string)($device['protocol'] ?? ''), $connected),
             null,
             (string)($device['commercialName'] ?? ''),
         );

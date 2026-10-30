@@ -19,15 +19,3 @@ test("an unknown type falls back to the watch, like normalizeDeviceType", () => 
     // A tabela normaliza o tipo, para nenhum chamador ter de o fazer.
     assert.equal(deviceTypeFields("nao-existe").identity.field, "imei");
 });
-
-/** A pulseira PST fala pela cloud Tuya: o tipo é o mesmo das BLE, mas não tem MAC nem gateways. */
-test("the protocol overrides what the type says", () => {
-    const tuya = deviceTypeFields("bracelet", "tuya-cloud");
-    const ble = deviceTypeFields("bracelet", "moko-w6");
-
-    assert.equal(tuya.gatewayLinks, false);
-    assert.doesNotMatch(tuya.identity.label, /MAC/);
-    assert.equal(tuya.identity.field, "deviceId");
-    assert.equal(ble.gatewayLinks, true);
-    assert.equal(ble.identity.label, "MAC");
-});

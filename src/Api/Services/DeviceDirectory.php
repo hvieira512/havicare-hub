@@ -149,8 +149,7 @@ final class DeviceDirectory
         $device['online'] = (bool)($device['online'] ?? false);
         $protocol = (string)($device['protocol'] ?? '')
             ?: ProtocolRegistry::forModel((string)($device['supplier'] ?? ''), (string)($device['model'] ?? ''));
-        $asleep = ($runtimeStates[$imei]['asleep'] ?? '0') === '1';
-        $device['presence'] = Liveness::presence($protocol, $device['online'], $asleep);
+        $device['presence'] = Liveness::presence($protocol, $device['online']);
 
         return $device;
     }

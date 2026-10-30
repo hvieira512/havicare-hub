@@ -121,7 +121,7 @@ final class DeviceListApiTest extends MysqlDashboardTestCase
 
     /**
      * «Ligados» são os que se alcançam agora, a medir incluídos; «Desligados», só os que falharam.
-     * Um termómetro entre leituras e um botão a dormir não estão em nenhum dos dois.
+     * Um termómetro entre leituras não está em nenhum dos dois.
      */
     public function testTheOnlineFilterGroupsByPresence(): void
     {
@@ -129,11 +129,8 @@ final class DeviceListApiTest extends MysqlDashboardTestCase
         $whitelist->register('900000000000011', 'Vivistar', 'L08 Pro');
         $whitelist->register('748b34830e5b', 'JoyTech', 'HC-3018B', 'thermometer');
         $whitelist->register('748b34838278', 'JoyTech', 'HC-101', 'pulse_oximeter');
-        $whitelist->register('bf7cbe84a6199e98168qvb', 'PST', 'CF103W', 'bracelet');
         $store->deviceSeen('861265061009822', ['online' => '1', 'protocol' => 'vivistar-iw']);
         $store->deviceSeen('748b34838278', ['online' => '1', 'protocol' => 'joytech-spo2']);
-        $store->deviceSeen('bf7cbe84a6199e98168qvb', ['online' => '1', 'protocol' => 'tuya-cloud']);
-        $store->deviceAsleep('bf7cbe84a6199e98168qvb', true);
 
         $imeis = static fn (array $response): array => array_column($response['data'], 'imei');
         $online = $imeis($api->list('page=1&limit=100&online=online', null, ''));
@@ -142,13 +139,12 @@ final class DeviceListApiTest extends MysqlDashboardTestCase
 
         self::assertEqualsCanonicalizing(['861265061009822', '748b34838278'], $online);
         self::assertContains('900000000000011', $offline);
-        foreach (['861265061009822', '748b34838278', '748b34830e5b', 'bf7cbe84a6199e98168qvb'] as $imei) {
+        foreach (['861265061009822', '748b34838278', '748b34830e5b'] as $imei) {
             self::assertNotContains($imei, $offline);
         }
         self::assertSame(2, $all['summary']['online'] ?? null);
         $presence = array_column($all['data'], 'presence', 'imei');
         self::assertSame('idle', $presence['748b34830e5b'] ?? null);
-        self::assertSame('idle', $presence['bf7cbe84a6199e98168qvb'] ?? null);
         self::assertSame('measuring', $presence['748b34838278'] ?? null);
     }
 

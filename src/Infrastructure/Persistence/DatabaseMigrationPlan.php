@@ -12,6 +12,7 @@ use Hub\Infrastructure\Persistence\Migration\PublicConfigurationShape;
 use Hub\Infrastructure\Persistence\Migration\RadarLayoutAreasFollowRename;
 use Hub\Infrastructure\Persistence\Migration\VivistarWorkingModeNames;
 use Hub\Infrastructure\Persistence\Migration\WhitelistReferencesModelAndLicense;
+use Hub\Infrastructure\Persistence\Migration\WifiSosButtonRemoved;
 use Hub\Infrastructure\Persistence\Migration\WonlexPushMessageRemoved;
 
 /**
@@ -32,6 +33,7 @@ final class DatabaseMigrationPlan
             new GatewayLocationRemoved(),
             new WhitelistReferencesModelAndLicense(),
             new RadarLayoutAreasFollowRename(),
+            new WifiSosButtonRemoved(),
         ];
     }
 

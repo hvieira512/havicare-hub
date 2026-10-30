@@ -31,15 +31,6 @@ final class HubConfigurationValidator
                 }
             }
         }
-
-        $tuya = $config['tuya'] ?? [];
-        if (($tuya['enabled'] ?? false) === true) {
-            foreach (['TUYA_ACCESS_ID' => 'access_id', 'TUYA_ACCESS_SECRET' => 'access_secret', 'TUYA_SUBSCRIPTION' => 'subscription'] as $environmentName => $key) {
-                if (trim((string)($tuya[$key] ?? '')) === '') {
-                    throw new \InvalidArgumentException("{$environmentName} is required when TUYA_ENABLED=true");
-                }
-            }
-        }
     }
 
     /**

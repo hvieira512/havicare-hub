@@ -42,7 +42,6 @@ final class LivenessSweepTest extends TestCase
         yield 'moko w6b bracelet' => ['moko-w6b', 600];
         yield 'veepoo bracelet' => ['veepoo-ble', 30];
         yield 'ncs' => ['voerka-ncs', 1200];
-        yield 'tuya sos button' => ['tuya-cloud', 28800];
     }
 
     #[DataProvider('intervals')]
@@ -61,28 +60,6 @@ final class LivenessSweepTest extends TestCase
 
         self::assertSame([], $this->store->runtime->expireStaleDevices());
         self::assertTrue($this->store->runtime->device(self::DEVICE)['online']);
-    }
-
-    /** Adormecido continua alcançável: o prazo conta do último despertar, durma ou não. */
-    public function testASleepingTuyaButtonGoesOfflineOnlyAfterTwoMissedWakeUps(): void
-    {
-        $this->seen(self::DEVICE, 'tuya-cloud', 28800 + 60);
-        $this->store->deviceAsleep(self::DEVICE, true);
-        self::assertSame([], $this->store->runtime->expireStaleDevices());
-
-        $this->seen(self::DEVICE, 'tuya-cloud', 2 * 28800 + 30);
-        $this->store->deviceAsleep(self::DEVICE, true);
-        self::assertSame([self::DEVICE], $this->store->runtime->expireStaleDevices());
-    }
-
-    public function testOnlyAnOnlineDeviceFallsAsleep(): void
-    {
-        self::assertFalse($this->store->deviceAsleep(self::DEVICE, true));
-
-        $this->seen(self::DEVICE, 'tuya-cloud', 10);
-        self::assertTrue($this->store->deviceAsleep(self::DEVICE, true));
-        self::assertFalse($this->store->deviceAsleep(self::DEVICE, true));
-        self::assertTrue($this->store->deviceAsleep(self::DEVICE, false));
     }
 
     /** @return iterable<string, array{string}> */

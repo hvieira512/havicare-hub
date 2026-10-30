@@ -131,40 +131,6 @@ final class DeviceRuntimeStore
         return !$wasOnline;
     }
 
-    /**
-     * Adormece ou acorda quem está ligado, sem mexer no prazo dele.
-     *
-     * @return bool se mudou
-     */
-    public function deviceAsleep(string $imei, bool $asleep): bool
-    {
-        $state = $this->redis->hmget(RedisKeys::device($imei), ['online', 'asleep']);
-        if (($state[0] ?? null) !== '1' || (($state[1] ?? null) === '1') === $asleep) {
-            return false;
-        }
-        $this->redis->hset(RedisKeys::device($imei), 'asleep', $asleep ? '1' : '0');
-
-        return true;
-    }
-
-    /**
-     * Os que se alcançam agora: ligados e acordados, a medir incluídos.
-     *
-     * @return list<string>
-     */
-    public function reachableDeviceImeis(): array
-    {
-        $candidates = array_map('strval', $this->redis->zrangebyscore(RedisKeys::onlineDevices(), '-inf', '+inf'));
-        $reachable = [];
-        foreach ($this->runtimeStates($candidates) as $imei => $state) {
-            if (($state['online'] ?? false) === true && (string)($state['asleep'] ?? '0') !== '1') {
-                $reachable[] = (string)$imei;
-            }
-        }
-
-        return $reachable;
-    }
-
     /** Uma trama de quem já está ligado prova-o vivo, sem o voltar a ligar. */
     public function deviceHeard(string $imei): void
     {
@@ -245,7 +211,6 @@ final class DeviceRuntimeStore
             $pipe->hmset(RedisKeys::device($imei), [
                 'imei' => $imei,
                 'online' => '0',
-                'asleep' => '0',
                 'lastStateAt' => gmdate('Y-m-d\\TH:i:s\\Z'),
             ]);
             $pipe->zrem(RedisKeys::onlineDevices(), $imei);

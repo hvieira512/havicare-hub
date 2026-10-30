@@ -297,7 +297,7 @@ final class ModelsApiTest extends MysqlDashboardTestCase
             static fn (array $supplier): string => (string)($supplier['name'] ?? ''),
             $groups[4]['suppliers'] ?? []
         )));
-        self::assertSame(['MOKO', 'PST', 'Wonlex'], array_values(array_map(
+        self::assertSame(['MOKO', 'Wonlex'], array_values(array_map(
             static fn (array $supplier): string => (string)($supplier['name'] ?? ''),
             $groups[5]['suppliers'] ?? []
         )));

@@ -119,7 +119,7 @@ daí as gravidades da secção 3.
 | `joytech-spo2` | `blood_oxygen`, `heart_rate` | Não | Quem consome |
 | `lefu-torre` | `weight`, `body_composition`, `heart_rate` | Não | Quem consome |
 
-`moko-w6`, `moko-w6b` e `tuya-cloud` não têm sinais vitais: botão, bateria,
+`moko-w6` e `moko-w6b` não têm sinais vitais: botão, bateria,
 movimento e proximidade. Nem `voerka-ncs`, `monit-mecs-pro-ble`, os gateways e o
 `zayata-m228`.
 
@@ -219,7 +219,7 @@ a telemetria que não é ao vivo:
 - entregue no lote `upBatch` da Wonlex, que traz o que o relógio guardou;
 - com a hora do aparelho **mais de 30 minutos antes da chegada**, onde o
   `occurredAt` é a hora do aparelho (os aparelhos de medição, os blocos da
-  Veepoo, os alarmes da 4P Touch, a Tuya).
+  Veepoo, os alarmes da 4P Touch).
 
 Uma leitura com `fromHistory: true` é verdadeira e entra no histórico de quem
 consome, mas um alerta por ela já passou. Sem o campo, a leitura é ao vivo.
@@ -322,10 +322,7 @@ comentário `hitcare:` no código.
 1. **Retirar o evento `low_battery`**, a favor do `battery.lowBattery` na
    telemetria. Antes, confirmar quem o lê: o hitCare não; a dashboard do hub sim
    (`pt-PT.json`, `components/cards/telemetry.js`); falta a Havicare.
-2. **A pulseira Tuya demora cerca de 16 h a dar-se por desligada** (dois
-   despertares de 8 h falhados, [21](21-pulseira-sos-wifi.md) §3). Problema da
-   deteção de ligação, a resolver aí.
-3. **Atraso dos blocos da Veepoo.** A SpO2 e a frequência da Veepoo chegam nos
+2. **Atraso dos blocos da Veepoo.** A SpO2 e a frequência da Veepoo chegam nos
    blocos de cinco minutos que o gateway relê. Os 30 minutos do `fromHistory`
    supõem que a releitura é mais frequente do que isso; falta medir.
 
@@ -337,7 +334,6 @@ Correções de código, sem mudança de contrato.
 |---|---|---|
 | a | O primeiro toque de uma W6B depois de 24 h sem toques perdia-se na linha de base do contador | **Testado e fechado**: não é defeito. Em produção, no `fbd87c59ba8b` sem ninguém a carregar, a pulseira anuncia os três contadores (`bxp-button`, `frame_type` 0, 1 e 2) a cada 4–5 s, e a linha de base não expira enquanto está ao alcance |
 | b | Um `AL` da 4P Touch reenviado levava a hora de chegada | **Feito**, em produção: leva a hora da trama |
-| c | Uma reentrega do Pulsar voltava a publicar o `help_call` | **Feito**, em produção |
 | d | Um gateway atrasado inventava um toque da W6B | **Feito**, em produção |
 | e | Um reinício voltava a anunciar as quedas do radar, as avarias do dispensador e a bateria fraca | **Feito**, em produção: o estado vive no Redis |
 | g | Mudar o dono de um aparelho não esquecia os alarmes que duram | **Feito**, em produção |

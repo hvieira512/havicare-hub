@@ -22,13 +22,6 @@ interface DeviceReportStore
     /** Uma trama de quem já está ligado prova-o vivo, sem o voltar a ligar. */
     public function deviceHeard(string $imei): void;
 
-    /**
-     * Adormece ou acorda quem está ligado, sem mexer no prazo dele.
-     *
-     * @return bool se mudou
-     */
-    public function deviceAsleep(string $imei, bool $asleep): bool;
-
     /** @param array<string, mixed> $payload */
     public function append(string $imei, string $list, array $payload): void;
 

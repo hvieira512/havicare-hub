@@ -17,7 +17,6 @@ import {
     modelDeviceType,
     modelInternalName,
     modelsForSupplierAndType,
-    supplierProtocol,
     suppliersForDeviceType,
 } from "../core/domain.js";
 import { createWizard } from "../core/wizard.js";
@@ -275,17 +274,8 @@ function renderOwner(owner) {
 }
 
 /** Os campos do tipo, corrigidos pelo protocolo do modelo. */
-function identityFields(answers) {
-    const protocol = supplierProtocol(
-        answers.model?.supplier,
-        state.deviceTypeSuppliersModels,
-        answers.model?.model,
-    );
-    return deviceTypeFields(answers.type, protocol);
-}
-
 function renderIdentity(answers) {
-    const fields = identityFields(answers);
+    const fields = deviceTypeFields(answers.type);
     // A autorização é por empresa e licença.
     const gateways = eligibleGateways(state.wizardGateways, answers.owner?.company, answers.owner?.licenseId);
 
@@ -474,7 +464,7 @@ async function loadWizardGateways() {
  * falha, o dispositivo já existe: o assistente fecha e avisa o que faltou.
  */
 export async function createDeviceFromWizard(answers) {
-    const fields = identityFields(answers);
+    const fields = deviceTypeFields(answers.type);
     const identity = String(answers.identity || "").trim();
     const byImei = fields.identity.field === "imei";
 

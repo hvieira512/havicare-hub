@@ -55,7 +55,6 @@ final class RedisPrefixTest extends TestCase
             'firmware upgrade' => ['hub:firmware-upgrade:869243062262262'],
             'blood pressure history' => ['hub:joytech:history-mark:748b34837b1e'],
             'scale' => ['hub:lefu:online-user'],
-            'tuya redeliveries' => ['hub:tuya:handled:CAAQARgAIAA='],
         ];
     }
 

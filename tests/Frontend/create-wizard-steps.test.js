@@ -175,16 +175,3 @@ test("the supplier and model names reach the picture as text, not markup", () =>
     assert.equal(els.wizardArt.querySelector("b"), null);
     assert.match(text(els.wizardArt), /Evil<b>Co<\/b> M<b>1<\/b>/);
 });
-
-test("a Tuya bracelet asks for its Tuya id and offers no gateways", () => {
-    state.deviceTypeSuppliersModels = [
-        { supplier: "PST", internalModel: "SOS-WIFI", commercialName: "SOS Wi-Fi", deviceType: "bracelet", protocol: "tuya-cloud" },
-    ];
-    state.wizardGateways = [];
-    pick("[data-wizard-type=\"bracelet\"]");
-    pick("[data-wizard-model=\"SOS-WIFI\"]");
-    pick("[data-license-id=\"1001\"]");
-
-    assert.match(text(els.wizardAsk), /ID do dispositivo na Tuya/);
-    assert.equal(root.querySelector("#wizardAsk .gateway-picker-empty"), null);
-});

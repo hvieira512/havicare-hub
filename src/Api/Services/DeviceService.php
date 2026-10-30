@@ -116,7 +116,7 @@ class DeviceService
         // agora; desligados, os que falharam; quem dorme ou espera a próxima leitura fica fora dos dois.
         $queryFilters = $filters;
         if ($online === true) {
-            $queryFilters['imeiIn'] = $this->store->runtime->reachableDeviceImeis();
+            $queryFilters['imeiIn'] = $this->store->runtime->onlineDeviceImeis();
         } elseif ($online === false) {
             $queryFilters['imeiNotIn'] = [...$this->store->runtime->onlineDeviceImeis(), ...$this->onDemandImeis()];
         }
@@ -166,7 +166,7 @@ class DeviceService
         return [
             'total' => $this->db->whitelist->countDevices([], $licenseScope, $companyScope),
             'online' => $this->db->whitelist->countDevices(
-                ['imeiIn' => $this->store->runtime->reachableDeviceImeis()],
+                ['imeiIn' => $this->store->runtime->onlineDeviceImeis()],
                 $licenseScope,
                 $companyScope
             ),

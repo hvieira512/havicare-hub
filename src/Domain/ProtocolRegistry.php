@@ -96,12 +96,6 @@ final class ProtocolRegistry
                 // O firmware BXP Nordic dá cliques simples, duplos e triplos, sem toque longo.
                 'helpCallPressModes' => ['single', 'double', 'triple'],
             ],
-            // A pulseira dorme e só fala com a cloud da Tuya, que a entrega ao hub pelo Pulsar.
-            'tuya-cloud' => [
-                'label' => 'PST',
-                'deviceType' => 'bracelet',
-                'supportsConfigCatalog' => false,
-            ],
             // A balança fala por GATT com um gateway por software, e não por anúncio.
             'lefu-torre' => [
                 'label' => 'Unique Scales',

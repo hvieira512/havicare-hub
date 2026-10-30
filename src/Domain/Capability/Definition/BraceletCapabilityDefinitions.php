@@ -27,12 +27,12 @@ final class BraceletCapabilityDefinitions extends CapabilityDefinitions
     protected static function publishedBy(): array
     {
         return [
-            'battery' => ['veepoo-ble', 'moko-w6b', 'moko-w6', 'tuya-cloud'],
+            'battery' => ['veepoo-ble', 'moko-w6b', 'moko-w6'],
             // Vêm do anúncio BLE e do avistamento por um gateway, que é o que as W6/W6B dão.
             'motion' => ['moko-w6b', 'moko-w6'],
             'proximity' => ['moko-w6b', 'moko-w6'],
             'proximity_alarm' => ['moko-w6b', 'moko-w6'],
-            'help_call' => ['moko-w6b', 'moko-w6', 'tuya-cloud'],
+            'help_call' => ['moko-w6b', 'moko-w6'],
             // A MF91 não exporta onda nenhuma: o que a app do fabricante chama `ppgs` são as
             // cinco frequências de pulso do bloco, que já saem como `heart_rate`.
             'ppg' => [],
